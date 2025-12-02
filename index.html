@@ -1,1007 +1,614 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>ユーザーデータベース編集（ld_users）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8">
+  <title>ラッキー傭兵団 攻略 wiki</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     :root {
-      --bg: #fafafa;
-      --card-bg: #ffffff;
-      --border: #dddddd;
-      --text-main: #222222;
-      --text-sub: #666666;
-      --accent: #3874ff;
-      --accent-soft: #e7f0ff;
-      --danger: #d33;
+      --bg: #0c1016;
+      --bg-elevated: #161b22;
+      --accent: #3fbfff;
+      --accent-soft: rgba(63, 191, 255, 0.18);
+      --text-main: #f5f7ff;
+      --text-sub: #a9b4c8;
+      --border-soft: #252b36;
+      --danger: #ff6584;
+      --radius-card: 12px;
+      --shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.4);
+      --transition-fast: 0.22s ease-out;
     }
-    * { box-sizing: border-box; }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans JP",
-        "Noto Sans", "Helvetica Neue", Arial, sans-serif;
-      background-color: var(--bg);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #20283a 0, #05070a 55%);
       color: var(--text-main);
-    }
-    .app {
-      max-width: 420px;
-      margin: 0 auto;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      border-left: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      background-color: var(--bg);
     }
-    header.app-header {
-      padding: 8px 12px;
-      border-bottom: 1px solid var(--border);
-      background-color: #ffffff;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+
+    /* レイアウト全体 */
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px 16px 32px;
     }
-    .app-title {
-      font-size: 14px;
-      font-weight: 600;
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+      padding-top: 16px;
     }
-    .app-subtitle {
-      font-size: 11px;
-      color: var(--text-sub);
+
+    header h1 {
+      font-size: 1.4rem;
+      margin: 0 0 4px;
+      letter-spacing: 0.04em;
     }
+
+    header p.subtitle {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--accent);
+      opacity: 0.9;
+    }
+
     main {
-      flex: 1;
-      padding: 8px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 20px;
     }
-    .card {
-      background-color: #ffffff;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      padding: 8px;
-    }
-    .card-title {
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-    .field {
-      margin-bottom: 6px;
-    }
-    .field label {
-      display: block;
-      font-size: 11px;
-      margin-bottom: 2px;
-      color: var(--text-sub);
-    }
-    .field input[type="text"],
-    .field select {
-      width: 100%;
-      padding: 4px 6px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      font-size: 13px;
-    }
-    .field input[disabled] {
-      background-color: #f5f5f5;
-      color: var(--text-sub);
-    }
-    .btn-row {
+
+    .category-list {
       display: flex;
-      gap: 6px;
-      margin-top: 6px;
+      flex-direction: column;
+      gap: 12px;
     }
-    button {
+
+    .category-card {
+      background: rgba(10, 12, 18, 0.85);
+      border-radius: var(--radius-card);
+      border: 1px solid var(--border-soft);
+      padding: 12px 14px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
       cursor: pointer;
-    }
-    .btn-primary {
-      flex: 1;
-      padding: 6px 10px;
-      font-size: 13px;
-      border-radius: 999px;
-      border: 1px solid var(--accent);
-      background-color: var(--accent-soft);
-      color: var(--accent);
-    }
-    .btn-secondary {
-      flex: 1;
-      padding: 6px 10px;
-      font-size: 13px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-      color: var(--text-main);
-    }
-    .btn-small {
-      padding: 3px 8px;
-      font-size: 11px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-      color: var(--text-main);
-    }
-    .btn-small.primary {
-      border-color: var(--accent);
-      background-color: var(--accent-soft);
-      color: var(--accent);
-    }
-    .search-row {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-    }
-    .search-row input {
-      flex: 1;
-    }
-    .search-results {
-      margin-top: 6px;
-      max-height: 260px;
-      overflow-y: auto;
-      border-top: 1px solid var(--border);
-    }
-    .search-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 4px 0;
-      border-bottom: 1px solid #f0f0f0;
-      font-size: 12px;
-    }
-    .search-main {
-      flex: 1;
-      padding-left: 4px;
-    }
-    .search-name {
-      font-size: 12px;
-    }
-    .search-meta {
-      font-size: 10px;
-      color: var(--text-sub);
-    }
-    .hidden {
-      display: none;
-    }
-    .mode-label {
-      font-size: 11px;
-      color: var(--text-sub);
-      margin-bottom: 4px;
-    }
-    /* ユニットアイコンエディタ */
-    .unit-controls-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      margin-bottom: 4px;
-    }
-    .unit-controls-row button {
-      flex: 1;
-      min-width: 0;
-    }
-    .unit-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 4px;
-      margin-top: 4px;
-    }
-    .unit-item {
       position: relative;
-      width: 100%;
-      padding-top: 100%; /* 正方形 */
-      border-radius: 6px;
-      border: 1px solid var(--border);
       overflow: hidden;
-      background-color: #f5f5f5;
     }
-    .unit-inner {
+
+    .category-card::before {
+      content: "";
       position: absolute;
       inset: 0;
+      background: linear-gradient(135deg, rgba(63,191,255,0.18), transparent 55%);
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+      pointer-events: none;
+    }
+
+    .category-card:hover::before {
+      opacity: 1;
+    }
+
+    .category-title {
+      font-size: 1rem;
+      font-weight: 600;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 2px;
+      gap: 8px;
     }
-    .unit-img {
-      width: 32px;
-      height: 32px;
-      image-rendering: pixelated;
+
+    .category-title span.icon {
+      font-size: 1.15rem;
     }
-    .unit-badge {
-      margin-top: 1px;
-      font-size: 9px;
+
+    .category-desc {
+      font-size: 0.8rem;
       color: var(--text-sub);
-      text-align: center;
-      width: 100%;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.4;
     }
-    .unit-item.dim {
-      opacity: 0.45;
+
+    .category-arrow {
+      margin-left: auto;
+      font-size: 0.9rem;
+      color: var(--accent);
     }
-    .unit-item.selected {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px var(--accent-soft);
+
+    /* 下部セクション */
+    .section {
+      margin-top: 8px;
+      padding: 12px 14px;
+      border-radius: var(--radius-card);
+      border: 1px solid var(--border-soft);
+      background: rgba(6, 8, 12, 0.9);
+      box-shadow: var(--shadow-soft);
     }
-    .mythic-note {
-      font-size: 10px;
+
+    .section h2 {
+      font-size: 0.95rem;
+      margin: 0 0 8px;
+      border-bottom: 1px solid var(--border-soft);
+      padding-bottom: 4px;
+    }
+
+    .section ul {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+      font-size: 0.8rem;
       color: var(--text-sub);
-      margin-top: 2px;
     }
-    .status-row {
-      font-size: 11px;
-      color: var(--text-sub);
-      display: flex;
-      justify-content: space-between;
-      gap: 6px;
+
+    .section li + li {
       margin-top: 4px;
     }
-    .status-row span {
-      white-space: nowrap;
+
+    .muted {
+      color: var(--text-sub);
+      font-size: 0.78rem;
     }
-    .modal-backdrop {
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* 左側ドロワーメニュー関連 */
+
+    /* 40x150 px 全体がタップ領域 */
+    .drawer-handle-wrapper {
       position: fixed;
-      inset: 0;
-      background-color: rgba(0,0,0,0.32);
-      display: none;
+      left: 0;
+      top: 50%;
+      width: 40px;
+      height: 150px;
+      transform: translateY(-50%);
+      z-index: 1000;
+      /* 透明だけどタップ可能 */
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      pointer-events: auto;
+    }
+
+    /* 中央 7〜8mm × 30mm 相当の可視ピル部分 */
+    .drawer-handle-visible {
+      position: relative;
+      width: 28px;        /* 7〜8mm 相当の目安 */
+      height: 110px;      /* 30mm弱の目安 */
+      margin-left: 0;
+      margin-right: auto;
+      border-radius: 999px;
+      background: radial-gradient(circle at center, var(--accent) 0, #297aa8 40%, rgba(25,35,50,0.9) 100%);
+      box-shadow: 0 0 10px rgba(63,191,255,0.8);
+      display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 50;
+      border: 1px solid rgba(255,255,255,0.2);
     }
-    .modal {
-      width: 90%;
+
+    .drawer-handle-button {
+      all: unset;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      color: #f7fbff;
+      font-size: 1.1rem;
+      text-align: center;
+      user-select: none;
+    }
+
+    /* ドロワー本体 */
+    .drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: min(280px, 80vw);
       max-width: 320px;
-      background-color: #ffffff;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      padding: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      background: linear-gradient(135deg, #05070c, #151927);
+      border-right: 1px solid var(--border-soft);
+      box-shadow: 0 0 30px rgba(0,0,0,0.7);
+      transform: translateX(-100%);
+      transition: transform var(--transition-fast);
+      z-index: 1100;
+      display: flex;
+      flex-direction: column;
     }
-    .modal-title {
-      font-size: 13px;
+
+    .drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      padding: 16px 14px 10px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .drawer-title {
+      font-size: 0.95rem;
       font-weight: 600;
-      margin-bottom: 4px;
+      margin: 0 0 2px;
     }
-    .modal-body {
-      font-size: 12px;
-      margin-bottom: 6px;
+
+    .drawer-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      margin: 0;
     }
-    .modal-actions {
+
+    .drawer-close-row {
       display: flex;
       justify-content: flex-end;
-      gap: 6px;
-      margin-top: 6px;
+      padding: 8px 12px 0;
+      font-size: 0.85rem;
     }
-    .toast {
+
+    .drawer-close-button {
+      all: unset;
+      cursor: pointer;
+      color: var(--accent);
+      font-size: 0.8rem;
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    .drawer-close-button:hover {
+      background: var(--accent-soft);
+    }
+
+    .drawer-body {
+      padding: 8px 8px 12px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .drawer-nav {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+      font-size: 0.85rem;
+    }
+
+    .drawer-nav-item {
+      margin: 2px 0;
+    }
+
+    .drawer-link {
+      display: block;
+      padding: 6px 8px;
+      border-radius: 8px;
+      color: var(--text-main);
+      text-decoration: none;
+    }
+
+    .drawer-link:hover {
+      background: var(--accent-soft);
+    }
+
+    .drawer-group-separator {
+      height: 10px;
+    }
+
+    .drawer-section-label {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      margin: 6px 0 2px;
+      padding: 0 8px;
+    }
+
+    .drawer-footer {
+      padding: 10px 12px 12px;
+      border-top: 1px solid var(--border-soft);
+      font-size: 0.75rem;
+      color: var(--text-sub);
+    }
+
+    /* メニュー開閉時のオーバーレイ */
+    .drawer-overlay {
       position: fixed;
-      left: 50%;
-      bottom: 16px;
-      transform: translateX(-50%);
-      background-color: #333333;
-      color: #ffffff;
-      font-size: 11px;
-      padding: 6px 10px;
-      border-radius: 999px;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.2s ease-out;
-      z-index: 60;
-      max-width: 90%;
-      text-align: center;
-      white-space: pre-line;
+      transition: opacity var(--transition-fast);
+      z-index: 1050;
     }
-    .toast.show {
-      opacity: 0.95;
+
+    .drawer-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
     }
-    .text-danger {
-      color: var(--danger);
+
+    /* 少し広い画面用 */
+    @media (min-width: 768px) {
+      header h1 {
+        font-size: 1.6rem;
+      }
+      .category-card {
+        padding: 14px 16px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <header class="app-header">
-      <div>
-        <div class="app-title">ユーザーデータベース</div>
-        <div class="app-subtitle">ld_users（検索 → 編集 → 保存）</div>
-      </div>
-      <div id="headerStats" class="app-subtitle"></div>
+  <!-- 左側ドロワーメニュー -->
+  <nav class="drawer" id="drawer" aria-label="サイトメニュー">
+    <div class="drawer-header">
+      <p class="drawer-title">ラッキー傭兵団 攻略 wiki</p>
+      <p class="drawer-subtitle">(試験運用・作成中)</p>
+    </div>
+    <div class="drawer-close-row">
+      <button class="drawer-close-button" type="button" id="drawerCloseBtn">閉じる ◀</button>
+    </div>
+    <div class="drawer-body">
+      <ul class="drawer-nav">
+        <!-- 上段：メイン導線 -->
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">トップページ</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">情報掲示板</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">ユーザーデータベース</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">攻略の手引き</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">ユニットDB</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">データツール</a>
+        </li>
+
+        <!-- スペース -->
+        <li class="drawer-group-separator"></li>
+
+        <!-- 中段：サイト情報系 -->
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">サイトについて</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">利用ルール</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">更新履歴</a>
+        </li>
+
+        <!-- スペース -->
+        <li class="drawer-group-separator"></li>
+
+        <!-- 下段：編集者向け -->
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">編集者ログイン / ログアウト</a>
+        </li>
+      </ul>
+    </div>
+    <div class="drawer-footer">
+      編集メニューや子ツリー（攻略・ユニットDB・データツール）は、後日ここから展開予定。
+    </div>
+  </nav>
+
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+
+  <!-- 左端の縦長ピルボタン（40x150 / 真ん中だけ可視） -->
+  <div class="drawer-handle-wrapper" id="drawerHandleWrapper">
+    <div class="drawer-handle-visible">
+      <button class="drawer-handle-button" id="drawerHandleBtn" aria-label="メニューを開閉">
+        ▶
+      </button>
+    </div>
+  </div>
+
+  <!-- ページ本体 -->
+  <div class="page">
+    <header>
+      <h1>ラッキー傭兵団 攻略 wiki</h1>
+      <p class="subtitle">(試験運用・作成中)</p>
     </header>
 
     <main>
-      <section id="homeView" class="card">
-        <div class="card-title">メニュー</div>
-        <div class="field">
-          <button id="btnGoNew" class="btn-primary">＋ 新規ユーザー登録</button>
-        </div>
-        <div class="card-title" style="margin-top:8px;">ユーザー検索</div>
-        <div class="field">
-          <div class="search-row">
-            <input id="searchNameInput" type="text" placeholder="ユーザー名（部分一致可）" />
-            <button id="btnSearch" class="btn-small primary">検索</button>
+      <section class="category-list" aria-label="主要カテゴリ">
+        <article class="category-card" data-link="#">
+          <div class="category-title">
+            <span class="icon">🏠</span>
+            <span>トップページ</span>
+            <span class="category-arrow">›</span>
           </div>
-        </div>
-        <div id="searchResults" class="search-results"></div>
+          <p class="category-desc">
+            サイト全体の案内・新着情報への入口です。（このページ）
+          </p>
+        </article>
+
+        <article class="category-card" data-link="#">
+          <div class="category-title">
+            <span class="icon">📡</span>
+            <span>情報掲示板</span>
+            <span class="category-arrow">›</span>
+          </div>
+          <p class="category-desc">
+            検証結果やアップデート情報などを共有し、議論するための掲示板です。
+          </p>
+        </article>
+
+        <article class="category-card" data-link="#">
+          <div class="category-title">
+            <span class="icon">👤</span>
+            <span>ユーザーデータベース</span>
+            <span class="category-arrow">›</span>
+          </div>
+          <p class="category-desc">
+            自分の金庫・育成状況を登録し、質問や議論時の前提情報として参照できる予定のページです。
+          </p>
+        </article>
+
+        <article class="category-card" data-link="#">
+          <div class="category-title">
+            <span class="icon">📖</span>
+            <span>攻略の手引き</span>
+            <span class="category-arrow">›</span>
+          </div>
+          <p class="category-desc">
+            ゲームシステムの基本や育成指針などをまとめた解説ページ群です。
+          </p>
+        </article>
+
+        <article class="category-card" data-link="#">
+          <div class="category-title">
+            <span class="icon">📚</span>
+            <span>ユニットDB</span>
+            <span class="category-arrow">›</span>
+          </div>
+          <p class="category-desc">
+            各ユニットのステータスやスキル、運用例を整理するデータベースです。
+          </p>
+        </article>
+
+        <article class="category-card" data-link="#">
+          <div class="category-title">
+            <span class="icon">🧮</span>
+            <span>データツール</span>
+            <span class="category-arrow">›</span>
+          </div>
+          <p class="category-desc">
+            DPS計算や月間リソース期待値など、各種シミュレーターや計算ツールをまとめたページです。
+          </p>
+        </article>
       </section>
 
-      <section id="formView" class="card hidden">
-        <div id="formModeLabel" class="mode-label"></div>
-        <div class="field">
-          <label for="inputName">ユーザー名</label>
-          <input id="inputName" type="text" autocomplete="off" />
-        </div>
-        <div class="field" id="fieldTag">
-          <label for="inputTag">識別番号（2桁）</label>
-          <input id="inputTag" type="text" maxlength="2" placeholder="00〜99" autocomplete="off" />
-        </div>
-        <div class="field">
-          <label for="selectVaultLevel">金庫レベル（1〜11）</label>
-          <select id="selectVaultLevel"></select>
-        </div>
-        <div class="field">
-          <label>神話ユニット育成状態（画像一覧）</label>
-          <div id="mythicGrid"></div>
-          <div class="mythic-note">
-            ※ アイコンをタップして選択。<br />
-            「全選択」「選択解除」「Lv6/12/15」「専用👑」ボタンで一括変更できます。<br />
-            画像パスは <code>ICON_BASE_PATH + "501.png"</code> 形式を想定。
-          </div>
-        </div>
-        <div class="status-row">
-          <span id="statusComments">コメ数: -</span>
-          <span id="statusMisInputs">誤入力: -</span>
-          <span id="statusLikes">イイね: -</span>
-        </div>
-        <div class="btn-row">
-          <button id="btnBackHome" class="btn-secondary">戻る</button>
-          <button id="btnSaveUser" class="btn-primary">保存</button>
-        </div>
+      <!-- 下部セクション -->
+      <section class="section" aria-label="最近の更新">
+        <h2>最近の更新</h2>
+        <ul>
+          <li>2025-12-03: トップページのモックアップ作成</li>
+          <li>（ここに、ユニットDBやツールの更新情報などを追記予定）</li>
+        </ul>
+      </section>
+
+      <section class="section" aria-label="お知らせ">
+        <h2>お知らせ</h2>
+        <p class="muted">
+          現在は試験運用中です。内容・構成・URLなどは予告なく変更される可能性があります。
+        </p>
+      </section>
+
+      <section class="section" aria-label="利用規約・ルール">
+        <h2>利用ルール・方針</h2>
+        <p class="muted">
+          利用ルール・編集方針などの詳細ページへのリンクを、後日ここに配置予定です。<br>
+          荒らし対策やコメント方針、編集権限についても明文化していきます。
+        </p>
       </section>
     </main>
-
-    <div id="modalBackdrop" class="modal-backdrop">
-      <div class="modal">
-        <div class="modal-title">ユーザーデータ編集</div>
-        <div id="modalBody" class="modal-body"></div>
-        <div class="field">
-          <label for="modalTagInput">識別番号（2桁）</label>
-          <input id="modalTagInput" type="text" maxlength="2" autocomplete="off" />
-        </div>
-        <div id="modalError" class="modal-body text-danger" style="display:none;"></div>
-        <div class="modal-actions">
-          <button id="btnModalCancel" class="btn-small">キャンセル</button>
-          <button id="btnModalOk" class="btn-small primary">決定</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="toast" class="toast"></div>
   </div>
 
-  <script type="module">
-    const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
+  <script>
+    const drawer = document.getElementById('drawer');
+    const drawerOverlay = document.getElementById('drawerOverlay');
+    const drawerHandleBtn = document.getElementById('drawerHandleBtn');
+    const drawerHandleWrapper = document.getElementById('drawerHandleWrapper');
+    const drawerCloseBtn = document.getElementById('drawerCloseBtn');
 
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const appState = {
-      mode: "home",
-      currentUser: null,
-      usersCount: null,
-    };
-
-    const MYTHIC_IDS = [
-      "501","502","503","504","505",
-      "506","507","508","509","510",
-      "511","512","513","514","515",
-      "516","517","518","519","520",
-      "521","522","523","524","525",
-      "526","527","528"
-    ];
-
-    const ICON_BASE_PATH = "./"; // 例: "./mythic_icons/" に 501.png などを置く
-
-    let multiSelectMode = false;
-    let selectedUnitIds = new Set();
-
-    function showToast(message, ms = 2000) {
-      const toast = document.getElementById("toast");
-      toast.textContent = message;
-      toast.classList.add("show");
-      setTimeout(() => {
-        toast.classList.remove("show");
-      }, ms);
+    function openDrawer() {
+      drawer.classList.add('open');
+      drawerOverlay.classList.add('visible');
+      drawerHandleBtn.textContent = '◀';
     }
 
-    function setView(mode) {
-      appState.mode = mode;
-      const home = document.getElementById("homeView");
-      const form = document.getElementById("formView");
-      if (mode === "home") {
-        home.classList.remove("hidden");
-        form.classList.add("hidden");
+    function closeDrawer() {
+      drawer.classList.remove('open');
+      drawerOverlay.classList.remove('visible');
+      drawerHandleBtn.textContent = '▶';
+    }
+
+    function toggleDrawer() {
+      if (drawer.classList.contains('open')) {
+        closeDrawer();
       } else {
-        home.classList.add("hidden");
-        form.classList.remove("hidden");
+        openDrawer();
       }
     }
 
-    function lockEditingFor10Minutes() {
-      const lockUntil = Date.now() + 10 * 60 * 1000;
-      localStorage.setItem("ld_user_edit_lock_until", String(lockUntil));
-    }
-
-    function getEditLockRemainingMs() {
-      const raw = localStorage.getItem("ld_user_edit_lock_until");
-      if (!raw) return 0;
-      const lockUntil = parseInt(raw, 10);
-      const now = Date.now();
-      return Math.max(0, lockUntil - now);
-    }
-
-    function checkEditLocked() {
-      const remain = getEditLockRemainingMs();
-      if (remain > 0) {
-        const minutes = Math.ceil(remain / 60000);
-        showToast(`誤入力が続いたため、あと約${minutes}分は編集できません。`, 2500);
-        return true;
-      }
-      return false;
-    }
-
-    function formatStatsHeader() {
-      const el = document.getElementById("headerStats");
-      if (appState.usersCount == null) {
-        el.textContent = "";
-      } else {
-        el.textContent = `登録数: ${appState.usersCount}`;
-      }
-    }
-
-    async function fetchUsersCount() {
-      const { count, error } = await supabase
-        .from("ld_users")
-        .select("*", { count: "exact", head: true });
-      if (!error) {
-        appState.usersCount = count ?? 0;
-        formatStatsHeader();
-      }
-    }
-
-    // ユニットアイコンエディタ描画
-    function renderMythicGrid(mythicState) {
-      const container = document.getElementById("mythicGrid");
-      container.innerHTML = "";
-
-      const state = mythicState || {};
-      selectedUnitIds = new Set();
-      multiSelectMode = false;
-
-      const row1 = document.createElement("div");
-      row1.className = "unit-controls-row";
-
-      const btnAll = document.createElement("button");
-      btnAll.className = "btn-small";
-      btnAll.textContent = "全選択";
-      btnAll.addEventListener("click", () => {
-        selectedUnitIds = new Set(MYTHIC_IDS);
-        refreshUnitSelectionVisual();
-      });
-
-      const btnClear = document.createElement("button");
-      btnClear.className = "btn-small";
-      btnClear.textContent = "選択解除";
-      btnClear.addEventListener("click", () => {
-        selectedUnitIds = new Set();
-        refreshUnitSelectionVisual();
-      });
-
-      const btnMulti = document.createElement("button");
-      btnMulti.className = "btn-small";
-      btnMulti.textContent = "複数選択:OFF";
-      btnMulti.addEventListener("click", () => {
-        multiSelectMode = !multiSelectMode;
-        btnMulti.textContent = multiSelectMode ? "複数選択:ON" : "複数選択:OFF";
-      });
-
-      row1.appendChild(btnAll);
-      row1.appendChild(btnClear);
-      row1.appendChild(btnMulti);
-      container.appendChild(row1);
-
-      const row2 = document.createElement("div");
-      row2.className = "unit-controls-row";
-
-      const btnLv6 = document.createElement("button");
-      btnLv6.className = "btn-small";
-      btnLv6.textContent = "Lv6";
-      btnLv6.addEventListener("click", () => applyLevelToSelection(6));
-
-      const btnLv12 = document.createElement("button");
-      btnLv12.className = "btn-small";
-      btnLv12.textContent = "Lv12";
-      btnLv12.addEventListener("click", () => applyLevelToSelection(12));
-
-      const btnLv15 = document.createElement("button");
-      btnLv15.className = "btn-small";
-      btnLv15.textContent = "Lv15";
-      btnLv15.addEventListener("click", () => applyLevelToSelection(15));
-
-      const btnTreasure = document.createElement("button");
-      btnTreasure.className = "btn-small";
-      btnTreasure.textContent = "専用👑切替";
-      btnTreasure.addEventListener("click", () => toggleTreasureOnSelection());
-
-      row2.appendChild(btnLv6);
-      row2.appendChild(btnLv12);
-      row2.appendChild(btnLv15);
-      row2.appendChild(btnTreasure);
-      container.appendChild(row2);
-
-      const grid = document.createElement("div");
-      grid.className = "unit-grid";
-
-      MYTHIC_IDS.forEach(id => {
-        const item = document.createElement("div");
-        item.className = "unit-item dim";
-        item.dataset.id = id;
-        item.dataset.level = "0";
-        item.dataset.treasure = "0";
-
-        const inner = document.createElement("div");
-        inner.className = "unit-inner";
-
-        const img = document.createElement("img");
-        img.className = "unit-img";
-        img.alt = id;
-        img.src = ICON_BASE_PATH + id + ".png";
-
-        const badge = document.createElement("div");
-        badge.className = "unit-badge";
-        badge.textContent = "Lv0";
-
-        inner.appendChild(img);
-        inner.appendChild(badge);
-        item.appendChild(inner);
-        grid.appendChild(item);
-
-        const info = state[id];
-        if (info) {
-          const lv = typeof info.level === "number" ? info.level : 0;
-          const tre = info.treasure === true;
-          item.dataset.level = String(lv);
-          item.dataset.treasure = tre ? "1" : "0";
-        }
-        updateUnitVisual(item);
-
-        item.addEventListener("click", () => {
-          onClickUnitItem(id);
-        });
-      });
-
-      container.appendChild(grid);
-    }
-
-    function onClickUnitItem(id) {
-      if (!multiSelectMode) {
-        selectedUnitIds = new Set([id]);
-      } else {
-        if (selectedUnitIds.has(id)) {
-          selectedUnitIds.delete(id);
-        } else {
-          selectedUnitIds.add(id);
-        }
-      }
-      refreshUnitSelectionVisual();
-    }
-
-    function refreshUnitSelectionVisual() {
-      const grid = document.querySelector("#mythicGrid .unit-grid");
-      if (!grid) return;
-      const items = grid.querySelectorAll(".unit-item");
-      items.forEach(item => {
-        const id = item.dataset.id;
-        if (selectedUnitIds.has(id)) {
-          item.classList.add("selected");
-        } else {
-          item.classList.remove("selected");
-        }
-      });
-    }
-
-    function updateUnitVisual(item) {
-      const level = parseInt(item.dataset.level || "0", 10);
-      const hasTreasure = item.dataset.treasure === "1";
-      const badge = item.querySelector(".unit-badge");
-      if (!badge) return;
-
-      if (level <= 0) {
-        item.classList.add("dim");
-        badge.textContent = "Lv0";
-      } else {
-        item.classList.remove("dim");
-        let text = "Lv" + level;
-        if (hasTreasure) {
-          text += " 👑";
-        }
-        badge.textContent = text;
-      }
-    }
-
-    function applyLevelToSelection(level) {
-      const grid = document.querySelector("#mythicGrid .unit-grid");
-      if (!grid) return;
-      if (selectedUnitIds.size === 0) {
-        showToast("ユニットが選択されていません。");
-        return;
-      }
-      selectedUnitIds.forEach(id => {
-        const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
-        if (!item) return;
-        item.dataset.level = String(level);
-        if (level === 0) {
-          item.dataset.treasure = "0";
-        }
-        updateUnitVisual(item);
-      });
-    }
-
-    function toggleTreasureOnSelection() {
-      const grid = document.querySelector("#mythicGrid .unit-grid");
-      if (!grid) return;
-      if (selectedUnitIds.size === 0) {
-        showToast("ユニットが選択されていません。");
-        return;
-      }
-      selectedUnitIds.forEach(id => {
-        const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
-        if (!item) return;
-        const level = parseInt(item.dataset.level || "0", 10);
-        if (level < 12) {
-          item.dataset.treasure = "0";
-          updateUnitVisual(item);
-          return;
-        }
-        const current = item.dataset.treasure === "1";
-        item.dataset.treasure = current ? "0" : "1";
-        updateUnitVisual(item);
-      });
-    }
-
-    function collectMythicStateFromUI() {
-      const grid = document.querySelector("#mythicGrid .unit-grid");
-      const json = {};
-      if (!grid) return json;
-      const items = grid.querySelectorAll(".unit-item");
-      items.forEach(item => {
-        const id = item.dataset.id;
-        const level = parseInt(item.dataset.level || "0", 10);
-        const hasTreasure = item.dataset.treasure === "1";
-        if (level > 0 || hasTreasure) {
-          json[id] = {
-            form: "mythic",
-            level,
-            treasure: hasTreasure
-          };
-        }
-      });
-      return json;
-    }
-
-    const modalBackdrop = document.getElementById("modalBackdrop");
-    const modalBody = document.getElementById("modalBody");
-    const modalError = document.getElementById("modalError");
-    const modalTagInput = document.getElementById("modalTagInput");
-    const btnModalCancel = document.getElementById("btnModalCancel");
-    const btnModalOk = document.getElementById("btnModalOk");
-    let modalUser = null;
-
-    function openTagModal(user) {
-      modalUser = user;
-      modalBody.textContent = `ユーザー名: ${user.name}`;
-      modalTagInput.value = "";
-      modalError.style.display = "none";
-      modalError.textContent = "";
-      modalBackdrop.style.display = "flex";
-      modalTagInput.focus();
-    }
-
-    function closeTagModal() {
-      modalBackdrop.style.display = "none";
-    }
-
-    btnModalCancel.addEventListener("click", () => {
-      modalUser = null;
-      closeTagModal();
+    drawerHandleWrapper.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDrawer();
     });
 
-    const searchInput = document.getElementById("searchNameInput");
-    const btnSearch = document.getElementById("btnSearch");
-    const searchResults = document.getElementById("searchResults");
+    drawerCloseBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeDrawer();
+    });
 
-    async function doSearch() {
-      const term = searchInput.value.trim();
-      if (!term) {
-        searchResults.innerHTML = "";
-        showToast("ユーザー名を入力してください。");
-        return;
-      }
-      searchResults.innerHTML = "検索中...";
+    drawerOverlay.addEventListener('click', () => {
+      closeDrawer();
+    });
 
-      const { data, error } = await supabase
-        .from("ld_users")
-        .select("id, name, tag, comment_count, mis_input_count")
-        .ilike("name", `%${term}%`)
-        .order("name", { ascending: true });
-
-      if (error) {
-        console.error(error);
-        searchResults.innerHTML = "<div>検索中にエラーが発生しました。</div>";
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        searchResults.innerHTML = "<div>該当ユーザーはいません。</div>";
-        return;
-      }
-
-      searchResults.innerHTML = "";
-      data.forEach(user => {
-        const row = document.createElement("div");
-        row.className = "search-item";
-
-        const btnEdit = document.createElement("button");
-        btnEdit.className = "btn-small";
-        btnEdit.textContent = "編集";
-        btnEdit.addEventListener("click", () => {
-          onClickEditUser(user);
-        });
-
-        const main = document.createElement("div");
-        main.className = "search-main";
-        const nameEl = document.createElement("div");
-        nameEl.className = "search-name";
-        nameEl.textContent = user.name;
-        const meta = document.createElement("div");
-        meta.className = "search-meta";
-        meta.textContent = `タグ:${user.tag}  コメ:${user.comment_count}  誤入力:${user.mis_input_count}`;
-
-        main.appendChild(nameEl);
-        main.appendChild(meta);
-
-        row.appendChild(btnEdit);
-        row.appendChild(main);
-
-        searchResults.appendChild(row);
+    // カテゴリカードクリックで data-link に遷移（今は #）
+    document.querySelectorAll('.category-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const link = card.getAttribute('data-link') || '#';
+        window.location.href = link;
       });
-    }
-
-    btnSearch.addEventListener("click", () => {
-      doSearch();
-    });
-    searchInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        doSearch();
-      }
     });
 
-    async function onClickEditUser(userBasic) {
-      if (checkEditLocked()) {
-        return;
-      }
-      const { data, error } = await supabase
-        .from("ld_users")
-        .select("*")
-        .eq("id", userBasic.id)
-        .single();
+    // シンプルなスワイプ検出（モバイル用）
+    let touchStartX = null;
+    let touchStartY = null;
 
-      if (error || !data) {
-        console.error(error);
-        showToast("ユーザー情報の取得に失敗しました。");
-        return;
-      }
-      openTagModal(data);
+    function onTouchStart(e) {
+      const touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
     }
 
-    btnModalOk.addEventListener("click", async () => {
-      if (!modalUser) return;
-      const inputTagVal = modalTagInput.value.trim();
-      if (inputTagVal.length !== 2) {
-        modalError.style.display = "block";
-        modalError.textContent = "識別番号は2桁で入力してください。";
-        return;
-      }
+    function onTouchEnd(e) {
+      if (touchStartX === null || touchStartY === null) return;
+      const touch = e.changedTouches[0];
+      const dx = touch.clientX - touchStartX;
+      const dy = touch.clientY - touchStartY;
 
-      const correctTag = modalUser.tag;
-      if (inputTagVal === correctTag) {
-        const userToEdit = modalUser;
-        modalUser = null;
-        closeTagModal();
-        openEditForm(userToEdit);
-      } else {
-        const newMis = (modalUser.mis_input_count || 0) + 1;
-        await supabase
-          .from("ld_users")
-          .update({ mis_input_count: newMis })
-          .eq("id", modalUser.id);
-        modalUser.mis_input_count = newMis;
+      const absDx = Math.abs(dx);
+      const absDy = Math.abs(dy);
 
-        lockEditingFor10Minutes();
-        modalError.style.display = "block";
-        modalError.textContent = "識別番号が違います。10分間は編集できません。";
-      }
-    });
-
-    const btnGoNew = document.getElementById("btnGoNew");
-    const btnBackHome = document.getElementById("btnBackHome");
-    const btnSaveUser = document.getElementById("btnSaveUser");
-    const formModeLabel = document.getElementById("formModeLabel");
-    const inputName = document.getElementById("inputName");
-    const inputTag = document.getElementById("inputTag");
-    const fieldTag = document.getElementById("fieldTag");
-    const selectVaultLevel = document.getElementById("selectVaultLevel");
-    const statusComments = document.getElementById("statusComments");
-    const statusMisInputs = document.getElementById("statusMisInputs");
-    const statusLikes = document.getElementById("statusLikes");
-
-    for (let lv = 1; lv <= 11; lv++) {
-      const opt = document.createElement("option");
-      opt.value = String(lv);
-      opt.textContent = String(lv);
-      selectVaultLevel.appendChild(opt);
-    }
-
-    btnGoNew.addEventListener("click", () => {
-      openNewForm();
-    });
-
-    btnBackHome.addEventListener("click", () => {
-      appState.currentUser = null;
-      setView("home");
-    });
-
-    function openNewForm() {
-      appState.mode = "new";
-      appState.currentUser = null;
-
-      formModeLabel.textContent = "新規ユーザー登録";
-      inputName.value = "";
-      inputName.disabled = false;
-      inputTag.value = "";
-      inputTag.disabled = false;
-      fieldTag.style.display = "block";
-      selectVaultLevel.value = "1";
-
-      renderMythicGrid({});
-      statusComments.textContent = "コメ数: 0";
-      statusMisInputs.textContent = "誤入力: 0";
-      statusLikes.textContent = "イイね: 0";
-
-      setView("form");
-    }
-
-    function openEditForm(user) {
-      if (!user) {
-        showToast("内部エラー: 編集対象ユーザーが不明です。");
-        return;
-      }
-      appState.mode = "edit";
-      appState.currentUser = user;
-
-      formModeLabel.textContent = "ユーザーデータ編集";
-      inputName.value = user.name;
-      inputName.disabled = true;
-      inputTag.value = user.tag;
-      inputTag.disabled = true;
-      fieldTag.style.display = "none";
-
-      const v = user.vault_level || 1;
-      selectVaultLevel.value = String(v);
-
-      let state = {};
-      try {
-        state = user.mythic_state || {};
-      } catch {
-        state = {};
-      }
-      renderMythicGrid(state);
-
-      statusComments.textContent = `コメ数: ${user.comment_count ?? 0}`;
-      statusMisInputs.textContent = `誤入力: ${user.mis_input_count ?? 0}`;
-      statusLikes.textContent = `イイね: ${user.like_count ?? 0}`;
-
-      setView("form");
-    }
-
-    async function saveUser() {
-      const name = inputName.value.trim();
-      let tag = inputTag.value.trim();
-      const vaultLevel = parseInt(selectVaultLevel.value, 10);
-      const mythicState = collectMythicStateFromUI();
-
-      if (!name) {
-        showToast("ユーザー名を入力してください。");
-        return;
-      }
-
-      const isNew = appState.mode === "new" || !appState.currentUser;
-
-      if (isNew) {
-        if (tag.length !== 2) {
-          showToast("識別番号は2桁で入力してください。");
-          return;
-        }
-        if (isNaN(parseInt(tag, 10))) {
-          showToast("識別番号は数字2桁で入力してください。";
-          return;
-        }
-      } else {
-        tag = appState.currentUser.tag;
-      }
-
-      if (vaultLevel < 1 || vaultLevel > 11 || Number.isNaN(vaultLevel)) {
-        showToast("金庫レベルは1〜11で指定してください。");
-        return;
-      }
-
-      if (isNew) {
-        const payload = {
-          name,
-          tag,
-          vault_level: vaultLevel,
-          mythic_state: mythicState
-        };
-        const { error } = await supabase
-          .from("ld_users")
-          .insert(payload)
-          .single();
-        if (error) {
-          console.error(error);
-          if (error.code === "23505") {
-            showToast("同じユーザー名＋番号の組がすでに存在します。");
-          } else {
-            showToast("ユーザーの登録に失敗しました。");
+      // 横方向のスワイプが明確なときだけ処理
+      if (absDx > 40 && absDx > absDy) {
+        if (!drawer.classList.contains('open')) {
+          // 画面左端付近から右へのスワイプで開く
+          if (touchStartX < 24 && dx > 0) {
+            openDrawer();
           }
-          return;
+        } else {
+          // ドロワーが開いているときは左スワイプで閉じる
+          if (dx < 0) {
+            closeDrawer();
+          }
         }
-        showToast("ユーザーを登録しました。");
-        await fetchUsersCount();
-        setView("home");
-      } else {
-        if (!appState.currentUser) {
-          showToast("内部エラー: 編集対象ユーザーが不明です。");
-          return;
-        }
-        const payload = {
-          vault_level: vaultLevel,
-          mythic_state: mythicState
-        };
-        const { error } = await supabase
-          .from("ld_users")
-          .update(payload)
-          .eq("id", appState.currentUser.id);
-        if (error) {
-          console.error(error);
-          showToast("ユーザー情報の更新に失敗しました。");
-          return;
-        }
-        showToast("ユーザー情報を更新しました。");
-        setView("home");
       }
+
+      touchStartX = null;
+      touchStartY = null;
     }
 
-    btnSaveUser.addEventListener("click", () => {
-      saveUser();
-    });
-
-    (async function init() {
-      setView("home");
-      await fetchUsersCount();
-    })();
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
   </script>
 </body>
 </html>
