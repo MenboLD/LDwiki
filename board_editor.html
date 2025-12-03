@@ -248,7 +248,35 @@
     .palette-item img.unit-img-special {
       pointer-events: none;
     }
-    .inspector-wrapper {
+    
+    .cell.selected {
+      outline: 2px solid #ff4d4d;
+      outline-offset: -2px;
+    }
+    .palette-item.selected {
+      outline: 2px solid #ff4d4d;
+      outline-offset: -1px;
+    }
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-2px); }
+      50% { transform: translateX(2px); }
+      75% { transform: translateX(-2px); }
+      100% { transform: translateX(0); }
+    }
+    .shake {
+      animation: shake 0.2s;
+    }
+    /* スマホでの長押し選択や画像保存を抑制 */
+    body, .board, .palette-wrapper, .palette-item, .cell {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    img {
+      -webkit-user-drag: none;
+    }
+.inspector-wrapper {
       background-color: #ffffff;
       border-radius: 8px;
       border: 1px solid var(--border);
@@ -709,7 +737,24 @@
       }
 
       cell.classList.remove('empty');
-      cell.setAttribute('draggable', 'true');
+
+      // 種別判定と背景色設定
+      const kind = getKindFromCode(code);
+      cell.dataset.kind = kind || '';
+
+      // 背景色リセット
+      cell.style.backgroundColor = '';
+      if (!kind || !code) {
+        // 何もしない
+      } else if (kind === 'basic') {
+        cell.style.backgroundColor = '#AFA68C';
+      } else if (kind === 'mythic' || kind === 'mythic-awakable') {
+        cell.style.backgroundColor = '#C58540';
+      } else if (kind === 'immortal' || kind === 'immortal-variant') {
+        cell.style.backgroundColor = '#AF453A';
+      } else if (kind === 'extra') {
+        cell.style.backgroundColor = '#ADB34D';
+      }
 
       const n = parseCodeNumber(code);
       const isBasic = n >= 100 && n < 500;
@@ -726,6 +771,7 @@
       }
       cell.innerHTML = html;
     }
+
 
     function findCell(x, y, root) {
       const selector = '.cell[data-x="' + x + '"][data-y="' + y + '"]';
@@ -750,8 +796,8 @@
         inspectorBody.textContent = code + '（基本ユニット）: ' + count + '体';
 
         const btnMinus = document.createElement('button');
-        btnMinus.textContent = '-';
         btnMinus.className = 'btn-small';
+        btnMinus.textContent = count <= 1 ? '削除' : '-';
         btnMinus.addEventListener('click', () => {
           let c = parseInt(cell.dataset.count || '0', 10);
           const code = cell.dataset.code;
@@ -784,26 +830,40 @@
           recalcUnitCount();
           updateInspectorFromCell(cell);
         });
-inspectorActions.appendChild(btnMinus);
+        inspectorActions.appendChild(btnMinus);
 
         const btnPlus = document.createElement('button');
-        btnPlus.textContent = '+';
         btnPlus.className = 'btn-small';
+        const totalNow = getBoardUnitCount();
+        if (totalNow >= 30 && count < 3) {
+          btnPlus.textContent = '満員';
+        } else {
+          btnPlus.textContent = '+';
+        }
         btnPlus.addEventListener('click', () => {
           let c = parseInt(cell.dataset.count || '0', 10);
-          if (c < 3) {
-            const total = getBoardUnitCount();
-            if (total >= 30) return;
-            c += 1;
-            cell.dataset.count = String(c);
-            renderCellContent(cell);
-            recalcUnitCount();
-            updateInspectorFromCell(cell);
+          if (c >= 3) return;
+          const total = getBoardUnitCount();
+          if (total >= 30) {
+            // 満員：ボタンを震えさせる
+            btnPlus.classList.remove('shake');
+            void btnPlus.offsetWidth;
+            btnPlus.classList.add('shake');
+            setTimeout(() => {
+              btnPlus.classList.remove('shake');
+            }, 300);
+            return;
           }
+          c += 1;
+          cell.dataset.count = String(c);
+          renderCellContent(cell);
+          recalcUnitCount();
+          updateInspectorFromCell(cell);
         });
         inspectorActions.appendChild(btnPlus);
 
       } else if (kind === 'mythic-awakable' && code === '515') {
+        // 515 特例：覚醒先を2種類から選択
         inspectorBody.textContent = code + '（神話）：覚醒先を選べます';
 
         const btnAwBatter = document.createElement('button');
@@ -838,6 +898,27 @@ inspectorActions.appendChild(btnMinus);
         });
         inspectorActions.appendChild(btnAwPitcher);
 
+      } else if (kind === 'mythic' || kind === 'mythic-awakable') {
+        inspectorBody.textContent = code + '（神話）：覚醒で不滅にできます';
+
+        const btnAw = document.createElement('button');
+        btnAw.textContent = '覚醒';
+        btnAw.className = 'btn-small primary';
+        btnAw.addEventListener('click', () => {
+          if (hasOtherImmortalVariant(cell)) {
+            return;
+          }
+          const n = parseCodeNumber(code);
+          const immortalCode = String(n + 100);
+          cell.dataset.code = immortalCode;
+          cell.dataset.kind = 'immortal';
+          cell.dataset.count = '1';
+          renderCellContent(cell);
+          recalcUnitCount();
+          updateInspectorFromCell(cell);
+        });
+        inspectorActions.appendChild(btnAw);
+
       } else if (kind === 'immortal-variant') {
         inspectorBody.textContent = code + '（不滅）：退化で神話に戻せます';
 
@@ -854,10 +935,29 @@ inspectorActions.appendChild(btnMinus);
         });
         inspectorActions.appendChild(btnDevolve);
 
+      } else if (kind === 'immortal') {
+        inspectorBody.textContent = code + '（不滅）：退化で神話に戻せます';
+
+        const btnDevolve = document.createElement('button');
+        btnDevolve.textContent = '退化';
+        btnDevolve.className = 'btn-small';
+        btnDevolve.addEventListener('click', () => {
+          const n = parseCodeNumber(code);
+          const mythicCode = String(n - 100);
+          cell.dataset.code = mythicCode;
+          cell.dataset.kind = getKindFromCode(mythicCode);
+          cell.dataset.count = '1';
+          renderCellContent(cell);
+          recalcUnitCount();
+          updateInspectorFromCell(cell);
+        });
+        inspectorActions.appendChild(btnDevolve);
+
       } else {
         inspectorBody.textContent = code + '（特殊ユニット）: 特別な操作はありません';
       }
     }
+
 
     function canPlaceBasicIntoNewCell(code) {
       const grid = getActiveGrid();
@@ -904,6 +1004,49 @@ inspectorActions.appendChild(btnMinus);
 
         cell.addEventListener('click', () => {
           if (cell.classList.contains('label-row')) return;
+
+          // パレットから選択中なら「タップで配置」も可能にする
+          const selCode = window.__ld_currentPaletteCode;
+          if (selCode) {
+            const n = parseCodeNumber(selCode);
+            const isBasic = n >= 100 && n < 500;
+            const currentCode = cell.dataset.code || '';
+            const currentCount = parseInt(cell.dataset.count || '0', 10);
+
+            if (!currentCode) {
+              // 空マスに新規配置
+              if (isBasic) {
+                if (canPlaceBasicIntoNewCell(selCode)) {
+                  cell.dataset.code = selCode;
+                  cell.dataset.kind = getKindFromCode(selCode);
+                  cell.dataset.count = '1';
+                  renderCellContent(cell);
+                  recalcUnitCount();
+                }
+              } else {
+                if (canAddNewUnit()) {
+                  cell.dataset.code = selCode;
+                  cell.dataset.kind = getKindFromCode(selCode);
+                  cell.dataset.count = '1';
+                  renderCellContent(cell);
+                  recalcUnitCount();
+                }
+              }
+            } else if (isBasic && currentCode === selCode && currentCount < 3) {
+              // 同種基本ユニットなら1マス内の数を増やす
+              const total = getBoardUnitCount();
+              if (total < 30) {
+                cell.dataset.count = String(currentCount + 1);
+                renderCellContent(cell);
+                recalcUnitCount();
+              }
+            }
+          }
+
+          // マス選択の赤枠
+          document.querySelectorAll('.cell.selected').forEach(c => c.classList.remove('selected'));
+          cell.classList.add('selected');
+
           updateInspectorFromCell(cell);
         });
 
@@ -913,10 +1056,14 @@ inspectorActions.appendChild(btnMinus);
 
         cell.addEventListener('drop', (e) => {
           e.preventDefault();
-          const raw = e.dataTransfer.getData('text/plain') || '';
-          if (!raw) return;
-          let data;
-          try { data = JSON.parse(raw); } catch { return; }
+          const json = e.dataTransfer.getData('text/plain');
+          if (!json) return;
+          let data = null;
+          try {
+            data = JSON.parse(json);
+          } catch (err) {
+            return;
+          }
           const target = cell;
           if (target.classList.contains('label-row')) return;
 
@@ -953,14 +1100,12 @@ inspectorActions.appendChild(btnMinus);
                 target.dataset.count = '1';
                 renderCellContent(target);
               }
-            } else if (isBasic && currentCode === code && isBasicCode(currentCode)) {
-              if (currentCount < 3) {
-                if (!canAddNewUnit()) {
-                  return;
-                }
-                target.dataset.count = String(currentCount + 1);
-                renderCellContent(target);
+            } else if (isBasic && currentCode === code) {
+              if (!canAddNewUnit()) {
+                return;
               }
+              target.dataset.count = String(currentCount + 1);
+              renderCellContent(target);
             } else {
               // 他ユニットがいるマスには今は何もしない
             }
@@ -988,16 +1133,16 @@ inspectorActions.appendChild(btnMinus);
             target.dataset.kind = srcKind;
             target.dataset.count = srcCount || '0';
 
-            if (tgtEmpty) src.classList.add('empty'); else src.classList.remove('empty');
-            if (srcEmpty) target.classList.add('empty'); else target.classList.remove('empty');
-
-            if (src.dataset.code) src.setAttribute('draggable', 'true');
-            else src.removeAttribute('draggable');
-            if (target.dataset.code) target.setAttribute('draggable', 'true');
-            else target.removeAttribute('draggable');
-
-            renderCellContent(src);
-            renderCellContent(target);
+            if (!src.dataset.code) {
+              makeEmptyCell(src);
+            } else {
+              renderCellContent(src);
+            }
+            if (!target.dataset.code) {
+              makeEmptyCell(target);
+            } else {
+              renderCellContent(target);
+            }
 
             recalcUnitCount();
           }
@@ -1005,15 +1150,37 @@ inspectorActions.appendChild(btnMinus);
       });
     }
 
-    function attachPaletteHandlers() {
-      document.querySelectorAll('.palette-item').forEach(item => {
+
+    function attachPaletteHandlers(() {
+      const items = document.querySelectorAll('.palette-item');
+      window.__ld_currentPaletteCode = null;
+
+      function clearPaletteSelection() {
+        items.forEach(it => it.classList.remove('selected'));
+      }
+
+      items.forEach(item => {
         item.addEventListener('dragstart', (e) => {
           const code = item.dataset.code;
           const payload = { source: 'palette', code };
           e.dataTransfer.setData('text/plain', JSON.stringify(payload));
         });
+
+        item.addEventListener('click', () => {
+          const code = item.dataset.code;
+          if (window.__ld_currentPaletteCode === code) {
+            // 同じものをもう一度タップで解除
+            window.__ld_currentPaletteCode = null;
+            clearPaletteSelection();
+          } else {
+            window.__ld_currentPaletteCode = code;
+            clearPaletteSelection();
+            item.classList.add('selected');
+          }
+        });
       });
     }
+
 
 
     function attachPaletteTabsHandlers() {
