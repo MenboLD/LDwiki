@@ -1177,6 +1177,35 @@ function attachCellDragStart() {
         clearActiveBoard();
       });
     }
-  </script>
+  
+    function attachPaletteHandlers() {
+      const items = document.querySelectorAll('.palette-item');
+
+      function clearPaletteSelection() {
+        items.forEach(it => it.classList.remove('selected'));
+      }
+
+      items.forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+          const code = item.dataset.code;
+          const payload = { source: 'palette', code };
+          e.dataTransfer.setData('text/plain', JSON.stringify(payload));
+        });
+
+        item.addEventListener('click', () => {
+          const code = item.dataset.code;
+          if (currentPaletteCode === code) {
+            currentPaletteCode = null;
+            clearPaletteSelection();
+          } else {
+            currentPaletteCode = code;
+            clearPaletteSelection();
+            item.classList.add('selected');
+          }
+        });
+      });
+    }
+
+</script>
 </body>
 </html>
