@@ -248,35 +248,7 @@
     .palette-item img.unit-img-special {
       pointer-events: none;
     }
-    
-    .cell.selected {
-      outline: 2px solid #ff4d4d;
-      outline-offset: -2px;
-    }
-    .palette-item.selected {
-      outline: 2px solid #ff4d4d;
-      outline-offset: -1px;
-    }
-    @keyframes ld-shake {
-      0% { transform: translateX(0); }
-      25% { transform: translateX(-2px); }
-      50% { transform: translateX(2px); }
-      75% { transform: translateX(-2px); }
-      100% { transform: translateX(0); }
-    }
-    .shake {
-      animation: ld-shake 0.2s;
-    }
-    /* スマホでのテキスト選択や画像長押しを抑制 */
-    body, .board, .palette-wrapper, .palette-item, .cell {
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-touch-callout: none;
-    }
-    img {
-      -webkit-user-drag: none;
-    }
-.inspector-wrapper {
+    .inspector-wrapper {
       background-color: #ffffff;
       border-radius: 8px;
       border: 1px solid var(--border);
@@ -312,6 +284,131 @@
       background-color: var(--accent-soft);
       color: var(--accent);
     }
+  
+    /* Palette expanded header & toggle */
+    .palette-wrapper {
+      position: relative;
+    }
+    .palette-header {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+    .palette-tabs-normal {
+      flex: 1;
+    }
+    .palette-tabs-expanded {
+      flex: 1;
+    }
+    .palette-toggle {
+      width: 32px;
+      height: 24px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background-color: #ffffff;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .palette-list-wrapper {
+      overflow: hidden;
+    }
+    .palette-wrapper.expanded .palette-list {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+      max-height: 170px; /* 約2.5行分 */
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    .palette-wrapper.expanded .palette-tabs-normal {
+      display: none;
+    }
+    .palette-wrapper.expanded .palette-tabs-expanded {
+      display: flex !important;
+    }
+    .palette-wrapper:not(.expanded) .palette-tabs-expanded {
+      display: none !important;
+    }
+    .palette-wrapper:not(.expanded) .palette-tabs-normal {
+      display: flex;
+    }
+    /* パレット内の画像サイズ拡大 */
+    .palette-item {
+      min-width: 60px;
+      height: 60px;
+    }
+    .palette-item img.unit-img-basic {
+      width: 46px;
+      height: 46px;
+    }
+    .palette-item img.unit-img-special {
+      width: 60px;
+      height: 60px;
+    }
+    /* 選択中のマス・パレットの赤枠 */
+    .cell.selected {
+      outline: 2px solid #ff4a4a;
+      outline-offset: -2px;
+    }
+    .palette-item.selected {
+      border-color: #ff4a4a;
+      box-shadow: 0 0 0 1px #ff4a4a;
+    }
+    /* 満員ボタンのシェイク演出 */
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-2px); }
+      50% { transform: translateX(2px); }
+      75% { transform: translateX(-2px); }
+      100% { transform: translateX(0); }
+    }
+    .shake {
+      animation: shake 0.25s;
+    }
+    /* セル周辺ポップアップボタン */
+    .cell-action-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 50;
+      pointer-events: none;
+    }
+    .cell-action-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .cell-action-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      padding: 2px;
+      pointer-events: none;
+    }
+    .cell-action-row button {
+      pointer-events: auto;
+      flex: 1;
+    }
+    .cell-action-row.double button {
+      flex: initial;
+      min-width: 80px;
+    }
+    /* スマホ向け：長押しの誤操作対策 */
+    body {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    img {
+      -webkit-user-drag: none;
+    }
+
   </style>
 </head>
 <body>
@@ -405,236 +502,252 @@
           <button id="btnClearAll" class="btn-small">全クリア</button>
         </div>
       </section>
+      <div id="cellActionLayer" class="cell-action-layer"></div>
+
+
 
       <!-- パレット -->
       
       <!-- パレット -->
       <section class="palette-wrapper">
-        <div class="palette-tabs">
-          <button class="active" data-group="N">N</button>
-          <button data-group="R">R</button>
-          <button data-group="E">E</button>
-          <button data-group="L">L</button>
-          <button data-group="M">神</button>
-          <button data-group="I">不</button>
-          <button data-group="EX">EX</button>
+        <div class="palette-header">
+          <div class="palette-tabs palette-tabs-normal">
+            <button class="active" data-group="N">N</button>
+            <button data-group="R">R</button>
+            <button data-group="E">E</button>
+            <button data-group="L">L</button>
+            <button data-group="M">神</button>
+            <button data-group="I">不</button>
+            <button data-group="EX">EX</button>
+          </div>
+          <div class="palette-tabs palette-tabs-expanded" style="display:none;">
+            <button class="active" data-group="BASIC">基本ユニット</button>
+            <button data-group="M">神話</button>
+            <button data-group="I">不滅</button>
+            <button data-group="EX">EX</button>
+          </div>
+          <button id="paletteToggle" class="palette-toggle">▼</button>
         </div>
-        <div class="palette-list">
+        <div class="palette-list-wrapper">
+          <div class="palette-list">
           <div class="palette-item" draggable="true" data-code="101" data-group="N">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/101.png" alt="101" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/101_big.png" alt="101" />
           </div>
           <div class="palette-item" draggable="true" data-code="102" data-group="N">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/102.png" alt="102" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/102_big.png" alt="102" />
           </div>
           <div class="palette-item" draggable="true" data-code="103" data-group="N">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/103.png" alt="103" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/103_big.png" alt="103" />
           </div>
           <div class="palette-item" draggable="true" data-code="104" data-group="N">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/104.png" alt="104" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/104_big.png" alt="104" />
           </div>
           <div class="palette-item" draggable="true" data-code="105" data-group="N">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/105.png" alt="105" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/105_big.png" alt="105" />
           </div>
           <div class="palette-item" draggable="true" data-code="106" data-group="N">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/106.png" alt="106" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/106_big.png" alt="106" />
           </div>
           <div class="palette-item" draggable="true" data-code="201" data-group="R">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/201.png" alt="201" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/201_big.png" alt="201" />
           </div>
           <div class="palette-item" draggable="true" data-code="202" data-group="R">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/202.png" alt="202" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/202_big.png" alt="202" />
           </div>
           <div class="palette-item" draggable="true" data-code="203" data-group="R">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/203.png" alt="203" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/203_big.png" alt="203" />
           </div>
           <div class="palette-item" draggable="true" data-code="204" data-group="R">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/204.png" alt="204" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/204_big.png" alt="204" />
           </div>
           <div class="palette-item" draggable="true" data-code="205" data-group="R">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/205.png" alt="205" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/205_big.png" alt="205" />
           </div>
           <div class="palette-item" draggable="true" data-code="301" data-group="E">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/301.png" alt="301" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/301_big.png" alt="301" />
           </div>
           <div class="palette-item" draggable="true" data-code="302" data-group="E">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/302.png" alt="302" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/302_big.png" alt="302" />
           </div>
           <div class="palette-item" draggable="true" data-code="303" data-group="E">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/303.png" alt="303" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/303_big.png" alt="303" />
           </div>
           <div class="palette-item" draggable="true" data-code="304" data-group="E">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/304.png" alt="304" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/304_big.png" alt="304" />
           </div>
           <div class="palette-item" draggable="true" data-code="305" data-group="E">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/305.png" alt="305" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/305_big.png" alt="305" />
           </div>
           <div class="palette-item" draggable="true" data-code="401" data-group="L">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/401.png" alt="401" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/401_big.png" alt="401" />
           </div>
           <div class="palette-item" draggable="true" data-code="402" data-group="L">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/402.png" alt="402" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/402_big.png" alt="402" />
           </div>
           <div class="palette-item" draggable="true" data-code="403" data-group="L">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/403.png" alt="403" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/403_big.png" alt="403" />
           </div>
           <div class="palette-item" draggable="true" data-code="404" data-group="L">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/404.png" alt="404" />
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/404_big.png" alt="404" />
           </div>
           <div class="palette-item" draggable="true" data-code="501" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/501.png" alt="501" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/501_big.png" alt="501" />
           </div>
           <div class="palette-item" draggable="true" data-code="502" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/502.png" alt="502" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/502_big.png" alt="502" />
           </div>
           <div class="palette-item" draggable="true" data-code="503" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/503.png" alt="503" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/503_big.png" alt="503" />
           </div>
           <div class="palette-item" draggable="true" data-code="504" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/504.png" alt="504" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/504_big.png" alt="504" />
           </div>
           <div class="palette-item" draggable="true" data-code="505" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/505.png" alt="505" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/505_big.png" alt="505" />
           </div>
           <div class="palette-item" draggable="true" data-code="506" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/506.png" alt="506" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/506_big.png" alt="506" />
           </div>
           <div class="palette-item" draggable="true" data-code="507" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/507.png" alt="507" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/507_big.png" alt="507" />
           </div>
           <div class="palette-item" draggable="true" data-code="508" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/508.png" alt="508" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/508_big.png" alt="508" />
           </div>
           <div class="palette-item" draggable="true" data-code="509" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/509.png" alt="509" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/509_big.png" alt="509" />
           </div>
           <div class="palette-item" draggable="true" data-code="510" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/510.png" alt="510" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/510_big.png" alt="510" />
           </div>
           <div class="palette-item" draggable="true" data-code="511" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/511.png" alt="511" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/511_big.png" alt="511" />
           </div>
           <div class="palette-item" draggable="true" data-code="512" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/512.png" alt="512" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/512_big.png" alt="512" />
           </div>
           <div class="palette-item" draggable="true" data-code="513" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/513.png" alt="513" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/513_big.png" alt="513" />
           </div>
           <div class="palette-item" draggable="true" data-code="514" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/514.png" alt="514" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/514_big.png" alt="514" />
           </div>
           <div class="palette-item" draggable="true" data-code="515" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/515.png" alt="515" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/515_big.png" alt="515" />
           </div>
           <div class="palette-item" draggable="true" data-code="516" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/516.png" alt="516" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/516_big.png" alt="516" />
           </div>
           <div class="palette-item" draggable="true" data-code="517" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/517.png" alt="517" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/517_big.png" alt="517" />
           </div>
           <div class="palette-item" draggable="true" data-code="518" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/518.png" alt="518" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/518_big.png" alt="518" />
           </div>
           <div class="palette-item" draggable="true" data-code="519" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/519.png" alt="519" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/519_big.png" alt="519" />
           </div>
           <div class="palette-item" draggable="true" data-code="520" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/520.png" alt="520" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/520_big.png" alt="520" />
           </div>
           <div class="palette-item" draggable="true" data-code="521" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/521.png" alt="521" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/521_big.png" alt="521" />
           </div>
           <div class="palette-item" draggable="true" data-code="522" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/522.png" alt="522" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/522_big.png" alt="522" />
           </div>
           <div class="palette-item" draggable="true" data-code="523" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/523.png" alt="523" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/523_big.png" alt="523" />
           </div>
           <div class="palette-item" draggable="true" data-code="524" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/524.png" alt="524" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/524_big.png" alt="524" />
           </div>
           <div class="palette-item" draggable="true" data-code="525" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/525.png" alt="525" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/525_big.png" alt="525" />
           </div>
           <div class="palette-item" draggable="true" data-code="526" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/526.png" alt="526" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/526_big.png" alt="526" />
           </div>
           <div class="palette-item" draggable="true" data-code="527" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/527.png" alt="527" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/527_big.png" alt="527" />
           </div>
           <div class="palette-item" draggable="true" data-code="528" data-group="M">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/528.png" alt="528" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/528_big.png" alt="528" />
           </div>
           <div class="palette-item" draggable="true" data-code="601" data-group="I">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/601.png" alt="601" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/601_big.png" alt="601" />
           </div>
           <div class="palette-item" draggable="true" data-code="602" data-group="I">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/602.png" alt="602" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/602_big.png" alt="602" />
           </div>
           <div class="palette-item" draggable="true" data-code="604" data-group="I">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/604.png" alt="604" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/604_big.png" alt="604" />
           </div>
           <div class="palette-item" draggable="true" data-code="606" data-group="I">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/606.png" alt="606" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/606_big.png" alt="606" />
           </div>
           <div class="palette-item" draggable="true" data-code="609" data-group="I">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/609.png" alt="609" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/609_big.png" alt="609" />
           </div>
           <div class="palette-item" draggable="true" data-code="611" data-group="I">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/611.png" alt="611" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/611_big.png" alt="611" />
           </div>
           <div class="palette-item" draggable="true" data-code="613" data-group="I">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/613.png" alt="613" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/613_big.png" alt="613" />
           </div>
           <div class="palette-item" draggable="true" data-code="614" data-group="I">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/614.png" alt="614" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/614_big.png" alt="614" />
           </div>
           <div class="palette-item" draggable="true" data-code="615a" data-group="I">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/615_a.png" alt="615a" />
+            <img class="unit-img-special" src="unit_imgs/615_a.png" alt="615a" />
           </div>
           <div class="palette-item" draggable="true" data-code="615b" data-group="I">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/615_b.png" alt="615b" />
+            <img class="unit-img-special" src="unit_imgs/615_b.png" alt="615b" />
           </div>
           <div class="palette-item" draggable="true" data-code="616" data-group="I">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/616.png" alt="616" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/616_big.png" alt="616" />
           </div>
           <div class="palette-item" draggable="true" data-code="625" data-group="I">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/625.png" alt="625" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/625_big.png" alt="625" />
           </div>
           <div class="palette-item" draggable="true" data-code="626" data-group="I">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/626.png" alt="626" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/626_big.png" alt="626" />
           </div>
           <div class="palette-item" draggable="true" data-code="627" data-group="I">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/627.png" alt="627" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/627_big.png" alt="627" />
           </div>
           <div class="palette-item" draggable="true" data-code="628" data-group="I">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/628.png" alt="628" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/628_big.png" alt="628" />
           </div>
           <div class="palette-item" draggable="true" data-code="709" data-group="EX">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/709.png" alt="709" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/709_big.png" alt="709" />
           </div>
           <div class="palette-item" draggable="true" data-code="710" data-group="EX">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/710.png" alt="710" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/710_big.png" alt="710" />
           </div>
           <div class="palette-item" draggable="true" data-code="711" data-group="EX">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/711.png" alt="711" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/711_big.png" alt="711" />
           </div>
           <div class="palette-item" draggable="true" data-code="712" data-group="EX">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/712.png" alt="712" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/712_big.png" alt="712" />
           </div>
           <div class="palette-item" draggable="true" data-code="713" data-group="EX">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/713.png" alt="713" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/713_big.png" alt="713" />
           </div>
           <div class="palette-item" draggable="true" data-code="714" data-group="EX">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/714.png" alt="714" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/714_big.png" alt="714" />
           </div>
           <div class="palette-item" draggable="true" data-code="715" data-group="EX">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/715.png" alt="715" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/715_big.png" alt="715" />
           </div>
           <div class="palette-item" draggable="true" data-code="720" data-group="EX">
-            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/720.png" alt="720" />
+            <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/720_big.png" alt="720" />
+          </div>
+        
           </div>
         </div>
       </section>
+
 
 
       <!-- インスペクタ -->
@@ -649,13 +762,15 @@
   </div>
 
   <script>
+
+    const ICON_BASE = "https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/";
+    const ICON_BIG_BASE = ICON_BASE;
+    let currentPaletteCode = null;
     function parseCodeNumber(code) {
       if (!code) return NaN;
       const m = String(code).match(/\d+/);
       return m ? parseInt(m[0], 10) : NaN;
     }
-
-    let currentPaletteCode = null;
 
     function getActiveGrid() {
       const normal = document.getElementById('gridNormal');
@@ -694,10 +809,8 @@
       cell.dataset.count = '0';
       cell.classList.add('empty');
       cell.removeAttribute('draggable');
-      cell.style.backgroundColor = '#f7f7f7';
       cell.innerHTML = '空';
     }
-
 
     function clearActiveBoard() {
       const grid = getActiveGrid();
@@ -721,20 +834,20 @@
       return n >= 100 && n < 500;
     }
 
+    
     function getKindFromCode(code) {
       const n = parseCodeNumber(code);
+      const mythicAwakable = [501, 502, 504, 506, 509, 511, 513, 514, 515, 516, 525, 526, 527, 528];
+      if (mythicAwakable.indexOf(n) !== -1) return 'mythic-awakable';
       if (code === '615a' || code === '615b') return 'immortal-variant';
-
-      const awakenable = [501, 502, 504, 506, 509, 511, 513, 514, 515, 516, 525, 526, 527, 528];
-      if (awakenable.indexOf(n) !== -1) return 'mythic-awakable';
-
       if (n >= 100 && n < 500) return 'basic';
       if (n >= 500 && n < 600) return 'mythic';
       if (n >= 600 && n < 700) return 'immortal';
       return 'extra';
     }
+}
 
-
+    
     function renderCellContent(cell) {
       const code = cell.dataset.code;
       const count = parseInt(cell.dataset.count || '0', 10);
@@ -751,34 +864,37 @@
       const isBasic = n >= 100 && n < 500;
       const imgClass = isBasic ? 'unit-img-basic' : 'unit-img-special';
 
-      // kind と背景色
-      const kind = getKindFromCode(code);
-      cell.dataset.kind = kind || '';
-
-      let bg = '#fdfdfd';
-      if (kind === 'basic') {
-        if (n >= 100 && n < 200) {
-          bg = '#AFA68C'; // ノーマル
-        } else if (n >= 200 && n < 300) {
-          bg = '#3F4C82'; // レア
-        } else if (n >= 300 && n < 400) {
-          bg = '#683A8E'; // エピック
-        } else if (n >= 400 && n < 500) {
-          bg = '#D2A349'; // レジェンド
-        }
-      } else if (kind === 'mythic' || kind === 'mythic-awakable') {
-        bg = '#C58540'; // 神話
-      } else if (kind === 'immortal' || kind === 'immortal-variant') {
-        bg = '#AF453A'; // 不滅
-      } else if (kind === 'extra') {
-        bg = '#ADB34D'; // EX
+      let src = "";
+      if (code === '615a') {
+        src = ICON_BASE + '615_a.png';
+      } else if (code === '615b') {
+        src = ICON_BASE + '615_b.png';
+      } else {
+        src = ICON_BASE + (parseCodeNumber(code)) + '.png';
       }
-      cell.style.backgroundColor = bg;
 
-      let src = '';
-      if (code === '615a') src = 'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/615_a.png';
-      else if (code === '615b') src = 'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/615_b.png';
-      else src = 'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/' + parseCodeNumber(code) + '.png';
+      // 背景色（レアリティ / 種別ごと）
+      cell.style.backgroundColor = '#f7f7f7';
+      if (isBasic) {
+        if (n >= 100 && n < 200) {
+          cell.style.backgroundColor = '#AFA68C'; // N
+        } else if (n >= 200 && n < 300) {
+          cell.style.backgroundColor = '#3F4C82'; // R
+        } else if (n >= 300 && n < 400) {
+          cell.style.backgroundColor = '#683A8E'; // E
+        } else if (n >= 400 && n < 500) {
+          cell.style.backgroundColor = '#D2A349'; // L
+        }
+      } else {
+        const k = cell.dataset.kind || getKindFromCode(code);
+        if (k === 'mythic' || k === 'mythic-awakable') {
+          cell.style.backgroundColor = '#C58540';
+        } else if (k === 'immortal' || k === 'immortal-variant') {
+          cell.style.backgroundColor = '#AF453A';
+        } else if (k === 'extra') {
+          cell.style.backgroundColor = '#ADB34D';
+        }
+      }
 
       let html = '<img class="' + imgClass + '" src="' + src + '" alt="' + code + '" />';
       if (isBasic) {
@@ -786,36 +902,54 @@
       }
       cell.innerHTML = html;
     }
-
+}
 
     function findCell(x, y, root) {
       const selector = '.cell[data-x="' + x + '"][data-y="' + y + '"]';
       return (root || document).querySelector(selector);
     }
 
-    function updateInspectorFromCell(cell) {
-      const inspectorBody = document.getElementById('inspectorBody');
-      const inspectorActions = document.getElementById('inspectorActions');
-      inspectorActions.innerHTML = '';
+    
+    function hideCellActionLayer() {
+      const layer = document.getElementById('cellActionLayer');
+      if (!layer) return;
+      layer.innerHTML = '';
+      layer.style.display = 'none';
+    }
 
-      const code = cell.dataset.code;
-      const kind = cell.dataset.kind || '';
-      const count = parseInt(cell.dataset.count || '0', 10);
+    function buildCellActionButtons(cell, kind, code, count) {
+      const layer = document.getElementById('cellActionLayer');
+      const app = document.querySelector('.app');
+      if (!layer || !app) return;
 
+      layer.innerHTML = '';
       if (!code) {
-        inspectorBody.textContent = '空のマスです。';
+        hideCellActionLayer();
         return;
       }
 
+      const cellRect = cell.getBoundingClientRect();
+      const appRect = app.getBoundingClientRect();
+
+      layer.style.display = 'block';
+      layer.style.top = (cellRect.top - appRect.top + window.scrollY - 4) + 'px';
+      layer.style.left = (cellRect.left - appRect.left + window.scrollX - 4) + 'px';
+      layer.style.width = (cellRect.width + 8) + 'px';
+      layer.style.height = (cellRect.height + 8) + 'px';
+
+      const container = document.createElement('div');
+      container.className = 'cell-action-container';
+
       if (kind === 'basic') {
-        inspectorBody.textContent = code + '（基本ユニット）: ' + count + '体';
+        const row = document.createElement('div');
+        row.className = 'cell-action-row';
 
         const btnMinus = document.createElement('button');
-        btnMinus.textContent = (count <= 1 ? '削除' : '-');
         btnMinus.className = 'btn-small';
+        btnMinus.textContent = (count <= 1) ? '削除' : '−';
         btnMinus.addEventListener('click', () => {
           let c = parseInt(cell.dataset.count || '0', 10);
-          const code = cell.dataset.code;
+          const codeNow = cell.dataset.code;
 
           // 3体→2体に減らすとき、同種ユニットが別マスに存在するなら禁止
           if (c === 3) {
@@ -824,7 +958,7 @@
             grid.querySelectorAll('.cell').forEach(other => {
               if (other === cell) return;
               if (other.classList.contains('label-row')) return;
-              if (other.dataset.code !== code) return;
+              if (other.dataset.code !== codeNow) return;
               const oc = parseInt(other.dataset.count || '0', 10);
               if (oc > 0) {
                 hasOther = true;
@@ -845,7 +979,6 @@
           recalcUnitCount();
           updateInspectorFromCell(cell);
         });
-        inspectorActions.appendChild(btnMinus);
 
         const btnPlus = document.createElement('button');
         btnPlus.className = 'btn-small';
@@ -857,10 +990,10 @@
         }
         btnPlus.addEventListener('click', () => {
           let c = parseInt(cell.dataset.count || '0', 10);
+          const totalCurrent = getBoardUnitCount();
           if (c >= 3) return;
-          const total = getBoardUnitCount();
-          if (total >= 30) {
-            // 満員：ボタンを震えさせる
+          if (totalCurrent >= 30) {
+            btnPlus.textContent = '満員';
             btnPlus.classList.remove('shake');
             void btnPlus.offsetWidth;
             btnPlus.classList.add('shake');
@@ -872,18 +1005,20 @@
           recalcUnitCount();
           updateInspectorFromCell(cell);
         });
-        inspectorActions.appendChild(btnPlus);
+
+        row.appendChild(btnMinus);
+        row.appendChild(btnPlus);
+        container.appendChild(row);
 
       } else if (kind === 'mythic-awakable' && code === '515') {
-        inspectorBody.textContent = code + '（神話）：覚醒先を選べます';
+        const row = document.createElement('div');
+        row.className = 'cell-action-row double';
 
         const btnAwBatter = document.createElement('button');
         btnAwBatter.textContent = '覚醒(打者)';
         btnAwBatter.className = 'btn-small primary';
         btnAwBatter.addEventListener('click', () => {
-          if (hasOtherImmortalVariant(cell)) {
-            return;
-          }
+          if (hasOtherImmortalVariant(cell)) return;
           cell.dataset.code = '615a';
           cell.dataset.kind = 'immortal-variant';
           cell.dataset.count = '1';
@@ -891,15 +1026,12 @@
           recalcUnitCount();
           updateInspectorFromCell(cell);
         });
-        inspectorActions.appendChild(btnAwBatter);
 
         const btnAwPitcher = document.createElement('button');
         btnAwPitcher.textContent = '覚醒(投手)';
         btnAwPitcher.className = 'btn-small primary';
         btnAwPitcher.addEventListener('click', () => {
-          if (hasOtherImmortalVariant(cell)) {
-            return;
-          }
+          if (hasOtherImmortalVariant(cell)) return;
           cell.dataset.code = '615b';
           cell.dataset.kind = 'immortal-variant';
           cell.dataset.count = '1';
@@ -907,11 +1039,14 @@
           recalcUnitCount();
           updateInspectorFromCell(cell);
         });
-        inspectorActions.appendChild(btnAwPitcher);
+
+        row.appendChild(btnAwBatter);
+        row.appendChild(btnAwPitcher);
+        container.appendChild(row);
 
       } else if (kind === 'mythic-awakable') {
-        // 覚醒可能なその他の神話（501,502,504,...など）
-        inspectorBody.textContent = code + '（神話）：覚醒で不滅にできます';
+        const row = document.createElement('div');
+        row.className = 'cell-action-row';
 
         const btnAw = document.createElement('button');
         btnAw.textContent = '覚醒';
@@ -919,6 +1054,7 @@
         btnAw.addEventListener('click', () => {
           const n = parseCodeNumber(code);
           const immortalCode = String(n + 100);
+          if (!canAddNewUnit()) return;
           cell.dataset.code = immortalCode;
           cell.dataset.kind = getKindFromCode(immortalCode);
           cell.dataset.count = '1';
@@ -926,15 +1062,18 @@
           recalcUnitCount();
           updateInspectorFromCell(cell);
         });
-        inspectorActions.appendChild(btnAw);
+
+        row.appendChild(btnAw);
+        container.appendChild(row);
 
       } else if (kind === 'immortal-variant') {
-        inspectorBody.textContent = code + '（不滅）：退化で神話に戻せます';
+        const row = document.createElement('div');
+        row.className = 'cell-action-row';
 
-        const btnDevolve = document.createElement('button');
-        btnDevolve.textContent = '退化';
-        btnDevolve.className = 'btn-small';
-        btnDevolve.addEventListener('click', () => {
+        const btnDev = document.createElement('button');
+        btnDev.textContent = '退化';
+        btnDev.className = 'btn-small';
+        btnDev.addEventListener('click', () => {
           cell.dataset.code = '515';
           cell.dataset.kind = 'mythic-awakable';
           cell.dataset.count = '1';
@@ -942,15 +1081,18 @@
           recalcUnitCount();
           updateInspectorFromCell(cell);
         });
-        inspectorActions.appendChild(btnDevolve);
+
+        row.appendChild(btnDev);
+        container.appendChild(row);
 
       } else if (kind === 'immortal') {
-        inspectorBody.textContent = code + '（不滅）：退化で神話に戻せます';
+        const row = document.createElement('div');
+        row.className = 'cell-action-row';
 
-        const btnDevolve = document.createElement('button');
-        btnDevolve.textContent = '退化';
-        btnDevolve.className = 'btn-small';
-        btnDevolve.addEventListener('click', () => {
+        const btnDev = document.createElement('button');
+        btnDev.textContent = '退化';
+        btnDev.className = 'btn-small';
+        btnDev.addEventListener('click', () => {
           const n = parseCodeNumber(code);
           const mythicCode = String(n - 100);
           cell.dataset.code = mythicCode;
@@ -960,13 +1102,50 @@
           recalcUnitCount();
           updateInspectorFromCell(cell);
         });
-        inspectorActions.appendChild(btnDevolve);
 
+        row.appendChild(btnDev);
+        container.appendChild(row);
+      }
+
+      if (container.children.length === 0) {
+        hideCellActionLayer();
       } else {
-        inspectorBody.textContent = code + '（特殊ユニット）: 特別な操作はありません';
+        layer.appendChild(container);
       }
     }
 
+    function updateInspectorFromCell(cell) {
+      const inspectorBody = document.getElementById('inspectorBody');
+      const inspectorActions = document.getElementById('inspectorActions');
+      inspectorActions.innerHTML = '';
+
+      const code = cell.dataset.code;
+      const kind = cell.dataset.kind || '';
+      const count = parseInt(cell.dataset.count || '0', 10);
+
+      if (!code) {
+        inspectorBody.textContent = '空のマスです。';
+        hideCellActionLayer();
+        return;
+      }
+
+      if (kind === 'basic') {
+        inspectorBody.textContent = code + '（基本ユニット）: ' + count + '体';
+      } else if (kind === 'mythic-awakable' && code === '515') {
+        inspectorBody.textContent = code + '（神話）：覚醒先を選べます';
+      } else if (kind === 'mythic-awakable') {
+        inspectorBody.textContent = code + '（神話）：覚醒で不滅にできます';
+      } else if (kind === 'immortal-variant') {
+        inspectorBody.textContent = code + '（不滅）：退化で神話に戻せます';
+      } else if (kind === 'immortal') {
+        inspectorBody.textContent = code + '（不滅）：退化で神話に戻せます';
+      } else {
+        inspectorBody.textContent = code + '（特殊ユニット）: 特別な操作はありません';
+      }
+
+      buildCellActionButtons(cell, kind, code, count);
+    }
+}
 
     function canPlaceBasicIntoNewCell(code) {
       const grid = getActiveGrid();
@@ -1006,6 +1185,7 @@
       return blocked;
     }
 
+    
     function attachCellHandlers(root) {
       const cells = root.querySelectorAll('.cell');
       cells.forEach(cell => {
@@ -1014,63 +1194,81 @@
         cell.addEventListener('click', () => {
           if (cell.classList.contains('label-row')) return;
 
-          // パレット選択中ならタップで配置・増加も行う
-          if (currentPaletteCode) {
-            const selCode = currentPaletteCode;
-            const n = parseCodeNumber(selCode);
-            const isBasic = n >= 100 && n < 500;
-
-            if (selCode === '615a' || selCode === '615b') {
-              if (hasOtherImmortalVariant(cell)) {
-                // すでに別マスに615a/bがある場合は何もしない
-              } else {
-                if (!cell.dataset.code) {
-                  if (canAddNewUnit()) {
-                    cell.dataset.code = selCode;
-                    cell.dataset.kind = getKindFromCode(selCode);
-                    cell.dataset.count = '1';
-                    renderCellContent(cell);
-                    recalcUnitCount();
-                  }
-                }
-              }
-            } else {
-              const currentCode = cell.dataset.code || '';
-              const currentCount = parseInt(cell.dataset.count || '0', 10);
-
-              if (!currentCode) {
-                if (isBasic) {
-                  if (canPlaceBasicIntoNewCell(selCode)) {
-                    cell.dataset.code = selCode;
-                    cell.dataset.kind = getKindFromCode(selCode);
-                    cell.dataset.count = '1';
-                    renderCellContent(cell);
-                    recalcUnitCount();
-                  }
-                } else {
-                  if (canAddNewUnit()) {
-                    cell.dataset.code = selCode;
-                    cell.dataset.kind = getKindFromCode(selCode);
-                    cell.dataset.count = '1';
-                    renderCellContent(cell);
-                    recalcUnitCount();
-                  }
-                }
-              } else if (isBasic && currentCode === selCode && isBasicCode(currentCode)) {
-                if (currentCount < 3 && canAddNewUnit()) {
-                  cell.dataset.count = String(currentCount + 1);
-                  renderCellContent(cell);
-                  recalcUnitCount();
-                }
-              }
-            }
-          }
-
-          // マス選択の赤枠：マス側だけ選択状態にし、パレットの赤枠は解除
-          document.querySelectorAll('.palette-item.selected').forEach(p => p.classList.remove('selected'));
+          // セル選択の赤枠
           document.querySelectorAll('.cell.selected').forEach(c => c.classList.remove('selected'));
           cell.classList.add('selected');
 
+          // パレットからのタップ配置
+          if (currentPaletteCode) {
+            const code = currentPaletteCode;
+            const n = parseCodeNumber(code);
+            const isBasic = n >= 100 && n < 500;
+
+            // 615a/615b は盤面に同時共存不可
+            if (code === '615a' || code === '615b') {
+              if (hasOtherImmortalVariant(cell)) {
+                updateInspectorFromCell(cell);
+                return;
+              }
+            }
+
+            const currentCode = cell.dataset.code;
+            const currentCount = parseInt(cell.dataset.count || '0', 10);
+
+            if (!currentCode) {
+              // 空マスに新規配置
+              if (isBasic) {
+                if (!canPlaceBasicIntoNewCell(code)) {
+                  updateInspectorFromCell(cell);
+                  return;
+                }
+                cell.dataset.code = code;
+                cell.dataset.kind = getKindFromCode(code);
+                cell.dataset.count = '1';
+                renderCellContent(cell);
+              } else {
+                if (!canAddNewUnit()) {
+                  updateInspectorFromCell(cell);
+                  return;
+                }
+                cell.dataset.code = code;
+                cell.dataset.kind = getKindFromCode(code);
+                cell.dataset.count = '1';
+                renderCellContent(cell);
+              }
+            } else if (currentCode === code && isBasic) {
+              // 同じ基本ユニットならカウントアップ（最大3・総数30まで）
+              let c = currentCount;
+              if (c < 3) {
+                const total = getBoardUnitCount();
+                if (total >= 30) {
+                  // 満員演出はポップアップ側に任せる
+                } else {
+                  c += 1;
+                  cell.dataset.count = String(c);
+                  renderCellContent(cell);
+                }
+              }
+            } else {
+              // 別ユニットを上書き
+              if (!isBasic && !canAddNewUnit()) {
+                updateInspectorFromCell(cell);
+                return;
+              }
+              if (!isBasic || (isBasic && canPlaceBasicIntoNewCell(code))) {
+                cell.dataset.code = code;
+                cell.dataset.kind = getKindFromCode(code);
+                cell.dataset.count = '1';
+                renderCellContent(cell);
+              }
+            }
+
+            recalcUnitCount();
+            updateInspectorFromCell(cell);
+            return;
+          }
+
+          // 通常の情報更新
           updateInspectorFromCell(cell);
         });
 
@@ -1092,7 +1290,7 @@
             const n = parseCodeNumber(code);
             const isBasic = n >= 100 && n < 500;
 
-            // 615a/615b は盤面に同時共存不可（最大1マスだけ）
+            // 615a/615b は盤面に同時共存不可
             if (code === '615a' || code === '615b') {
               if (hasOtherImmortalVariant(target)) {
                 return;
@@ -1120,43 +1318,50 @@
                 target.dataset.count = '1';
                 renderCellContent(target);
               }
-            } else if (isBasic && currentCode === code && isBasicCode(currentCode)) {
-              if (currentCount < 3) {
-                if (!canAddNewUnit()) {
-                  return;
-                }
-                target.dataset.count = String(currentCount + 1);
+            } else if (currentCode === code && isBasic) {
+              let c = currentCount;
+              if (c < 3) {
+                const total = getBoardUnitCount();
+                if (total >= 30) return;
+                c += 1;
+                target.dataset.count = String(c);
                 renderCellContent(target);
               }
             } else {
-              // 他ユニットがいるマスには今は何もしない
+              if (!isBasic && !canAddNewUnit()) {
+                return;
+              }
+              if (!isBasic || (isBasic && canPlaceBasicIntoNewCell(code))) {
+                target.dataset.code = code;
+                target.dataset.kind = getKindFromCode(code);
+                target.dataset.count = '1';
+                renderCellContent(target);
+              }
             }
 
             recalcUnitCount();
+            updateInspectorFromCell(target);
+
           } else if (data.source === 'cell') {
             const src = findCell(data.x, data.y, document);
             if (!src || src === target) return;
-            if (target.classList.contains('label-row')) return;
+            if (src.classList.contains('label-row')) return;
 
             const srcCode = src.dataset.code;
-            const srcKind = src.dataset.kind;
             const srcCount = src.dataset.count;
-            const srcEmpty = src.classList.contains('empty');
+            const srcKind = src.dataset.kind;
 
             const tgtCode = target.dataset.code;
-            const tgtKind = target.dataset.kind;
             const tgtCount = target.dataset.count;
-            const tgtEmpty = target.classList.contains('empty');
+            const tgtKind = target.dataset.kind;
 
-            src.dataset.code = tgtCode;
-            src.dataset.kind = tgtKind;
+            src.dataset.code = tgtCode || '';
             src.dataset.count = tgtCount || '0';
-            target.dataset.code = srcCode;
-            target.dataset.kind = srcKind;
-            target.dataset.count = srcCount || '0';
+            src.dataset.kind = tgtKind || '';
 
-            if (tgtEmpty) src.classList.add('empty'); else src.classList.remove('empty');
-            if (srcEmpty) target.classList.add('empty'); else target.classList.remove('empty');
+            target.dataset.code = srcCode || '';
+            target.dataset.count = srcCount || '0';
+            target.dataset.kind = srcKind || '';
 
             if (src.dataset.code) src.setAttribute('draggable', 'true');
             else src.removeAttribute('draggable');
@@ -1171,93 +1376,7 @@
         });
       });
     }
-
-    function attachPaletteHandlers() {
-      const items = document.querySelectorAll('.palette-item');
-
-      function clearPaletteSelection() {
-        items.forEach(it => it.classList.remove('selected'));
-      }
-
-      items.forEach(item => {
-        item.addEventListener('dragstart', (e) => {
-          const code = item.dataset.code;
-          const payload = { source: 'palette', code };
-          e.dataTransfer.setData('text/plain', JSON.stringify(payload));
-        });
-
-        item.addEventListener('click', () => {
-          const code = item.dataset.code;
-
-          // マス側の選択枠は解除して、パレット側だけを選択状態にする
-          document.querySelectorAll('.cell.selected').forEach(c => c.classList.remove('selected'));
-
-          if (currentPaletteCode === code) {
-            currentPaletteCode = null;
-            clearPaletteSelection();
-          } else {
-            currentPaletteCode = code;
-            clearPaletteSelection();
-            item.classList.add('selected');
-          }
-        });
-      });
-    }
-
-
-
-    function attachPaletteTabsHandlers() {
-      const tabs = document.querySelectorAll('.palette-tabs button');
-      const items = document.querySelectorAll('.palette-item');
-
-      function update(group) {
-        items.forEach(item => {
-          if (item.dataset.group === group) {
-            item.style.display = 'flex';
-          } else {
-            item.style.display = 'none';
-          }
-        });
-      }
-
-      tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-          tabs.forEach(t => t.classList.remove('active'));
-          tab.classList.add('active');
-          update(tab.dataset.group);
-        });
-      });
-
-      const active = document.querySelector('.palette-tabs button.active');
-      if (active) {
-        update(active.dataset.group);
-      }
-    }
-
-    function attachTrashHandlers() {
-      const trash = document.getElementById('trashBox');
-      trash.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        trash.classList.add('drag-over');
-      });
-      trash.addEventListener('dragleave', () => {
-        trash.classList.remove('drag-over');
-      });
-      trash.addEventListener('drop', (e) => {
-        e.preventDefault();
-        trash.classList.remove('drag-over');
-        const raw = e.dataTransfer.getData('text/plain') || '';
-        if (!raw) return;
-        let data;
-        try { data = JSON.parse(raw); } catch { return; }
-        if (data.source === 'cell') {
-          const src = findCell(data.x, data.y, document);
-          if (!src) return;
-          makeEmptyCell(src);
-          recalcUnitCount();
-        }
-      });
-    }
+}
 
     function attachCellDragStart() {
       document.querySelectorAll('#gridNormal .cell, #gridSpecial .cell').forEach(cell => {
