@@ -654,8 +654,8 @@
       const m = String(code).match(/\d+/);
       return m ? parseInt(m[0], 10) : NaN;
     }
-    let currentPaletteCode = null;
 
+    let currentPaletteCode = null;
 
     function getActiveGrid() {
       const normal = document.getElementById('gridNormal');
@@ -698,7 +698,8 @@
       cell.innerHTML = '空';
     }
 
-function clearActiveBoard() {
+
+    function clearActiveBoard() {
       const grid = getActiveGrid();
       grid.querySelectorAll('.cell').forEach(cell => {
         if (cell.classList.contains('label-row')) return;
@@ -722,13 +723,17 @@ function clearActiveBoard() {
 
     function getKindFromCode(code) {
       const n = parseCodeNumber(code);
-      if (code === '515') return 'mythic-awakable';
       if (code === '615a' || code === '615b') return 'immortal-variant';
+
+      const awakenable = [501, 502, 504, 506, 509, 511, 513, 514, 515, 516, 525, 526, 527, 528];
+      if (awakenable.indexOf(n) !== -1) return 'mythic-awakable';
+
       if (n >= 100 && n < 500) return 'basic';
       if (n >= 500 && n < 600) return 'mythic';
       if (n >= 600 && n < 700) return 'immortal';
       return 'extra';
     }
+
 
     function renderCellContent(cell) {
       const code = cell.dataset.code;
@@ -742,10 +747,13 @@ function clearActiveBoard() {
       cell.classList.remove('empty');
       cell.setAttribute('draggable', 'true');
 
-      // 種別と背景色
+      const n = parseCodeNumber(code);
+      const isBasic = n >= 100 && n < 500;
+      const imgClass = isBasic ? 'unit-img-basic' : 'unit-img-special';
+
+      // kind と背景色
       const kind = getKindFromCode(code);
       cell.dataset.kind = kind || '';
-      const n = parseCodeNumber(code);
 
       let bg = '#fdfdfd';
       if (kind === 'basic') {
@@ -767,22 +775,20 @@ function clearActiveBoard() {
       }
       cell.style.backgroundColor = bg;
 
-      const isBasic = n >= 100 && n < 500;
-      const imgClass = isBasic ? 'unit-img-basic' : 'unit-img-special';
-
       let src = '';
       if (code === '615a') src = 'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/615_a.png';
       else if (code === '615b') src = 'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/615_b.png';
       else src = 'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/' + parseCodeNumber(code) + '.png';
 
-      let htmlInner = '<img class="' + imgClass + '" src="' + src + '" alt="' + code + '" />';
+      let html = '<img class="' + imgClass + '" src="' + src + '" alt="' + code + '" />';
       if (isBasic) {
-        htmlInner += '<span class="unit-count-badge">' + count + '</span>';
+        html += '<span class="unit-count-badge">' + count + '</span>';
       }
-      cell.innerHTML = htmlInner;
+      cell.innerHTML = html;
     }
 
-function findCell(x, y, root) {
+
+    function findCell(x, y, root) {
       const selector = '.cell[data-x="' + x + '"][data-y="' + y + '"]';
       return (root || document).querySelector(selector);
     }
@@ -839,7 +845,7 @@ function findCell(x, y, root) {
           recalcUnitCount();
           updateInspectorFromCell(cell);
         });
-inspectorActions.appendChild(btnMinus);
+        inspectorActions.appendChild(btnMinus);
 
         const btnPlus = document.createElement('button');
         btnPlus.className = 'btn-small';
@@ -854,6 +860,7 @@ inspectorActions.appendChild(btnMinus);
           if (c >= 3) return;
           const total = getBoardUnitCount();
           if (total >= 30) {
+            // 満員：ボタンを震えさせる
             btnPlus.classList.remove('shake');
             void btnPlus.offsetWidth;
             btnPlus.classList.add('shake');
@@ -902,6 +909,25 @@ inspectorActions.appendChild(btnMinus);
         });
         inspectorActions.appendChild(btnAwPitcher);
 
+      } else if (kind === 'mythic-awakable') {
+        // 覚醒可能なその他の神話（501,502,504,...など）
+        inspectorBody.textContent = code + '（神話）：覚醒で不滅にできます';
+
+        const btnAw = document.createElement('button');
+        btnAw.textContent = '覚醒';
+        btnAw.className = 'btn-small primary';
+        btnAw.addEventListener('click', () => {
+          const n = parseCodeNumber(code);
+          const immortalCode = String(n + 100);
+          cell.dataset.code = immortalCode;
+          cell.dataset.kind = getKindFromCode(immortalCode);
+          cell.dataset.count = '1';
+          renderCellContent(cell);
+          recalcUnitCount();
+          updateInspectorFromCell(cell);
+        });
+        inspectorActions.appendChild(btnAw);
+
       } else if (kind === 'immortal-variant') {
         inspectorBody.textContent = code + '（不滅）：退化で神話に戻せます';
 
@@ -918,10 +944,29 @@ inspectorActions.appendChild(btnMinus);
         });
         inspectorActions.appendChild(btnDevolve);
 
+      } else if (kind === 'immortal') {
+        inspectorBody.textContent = code + '（不滅）：退化で神話に戻せます';
+
+        const btnDevolve = document.createElement('button');
+        btnDevolve.textContent = '退化';
+        btnDevolve.className = 'btn-small';
+        btnDevolve.addEventListener('click', () => {
+          const n = parseCodeNumber(code);
+          const mythicCode = String(n - 100);
+          cell.dataset.code = mythicCode;
+          cell.dataset.kind = getKindFromCode(mythicCode);
+          cell.dataset.count = '1';
+          renderCellContent(cell);
+          recalcUnitCount();
+          updateInspectorFromCell(cell);
+        });
+        inspectorActions.appendChild(btnDevolve);
+
       } else {
         inspectorBody.textContent = code + '（特殊ユニット）: 特別な操作はありません';
       }
     }
+
 
     function canPlaceBasicIntoNewCell(code) {
       const grid = getActiveGrid();
@@ -980,9 +1025,7 @@ inspectorActions.appendChild(btnMinus);
                 // すでに別マスに615a/bがある場合は何もしない
               } else {
                 if (!cell.dataset.code) {
-                  if (!canAddNewUnit()) {
-                    // 盤面30体など
-                  } else {
+                  if (canAddNewUnit()) {
                     cell.dataset.code = selCode;
                     cell.dataset.kind = getKindFromCode(selCode);
                     cell.dataset.count = '1';
@@ -1014,18 +1057,17 @@ inspectorActions.appendChild(btnMinus);
                   }
                 }
               } else if (isBasic && currentCode === selCode && isBasicCode(currentCode)) {
-                if (currentCount < 3) {
-                  if (canAddNewUnit()) {
-                    cell.dataset.count = String(currentCount + 1);
-                    renderCellContent(cell);
-                    recalcUnitCount();
-                  }
+                if (currentCount < 3 && canAddNewUnit()) {
+                  cell.dataset.count = String(currentCount + 1);
+                  renderCellContent(cell);
+                  recalcUnitCount();
                 }
               }
             }
           }
 
-          // マス選択の赤枠
+          // マス選択の赤枠：マス側だけ選択状態にし、パレットの赤枠は解除
+          document.querySelectorAll('.palette-item.selected').forEach(p => p.classList.remove('selected'));
           document.querySelectorAll('.cell.selected').forEach(c => c.classList.remove('selected'));
           cell.classList.add('selected');
 
@@ -1050,6 +1092,7 @@ inspectorActions.appendChild(btnMinus);
             const n = parseCodeNumber(code);
             const isBasic = n >= 100 && n < 500;
 
+            // 615a/615b は盤面に同時共存不可（最大1マスだけ）
             if (code === '615a' || code === '615b') {
               if (hasOtherImmortalVariant(target)) {
                 return;
@@ -1129,7 +1172,94 @@ inspectorActions.appendChild(btnMinus);
       });
     }
 
-function attachCellDragStart() {
+    function attachPaletteHandlers() {
+      const items = document.querySelectorAll('.palette-item');
+
+      function clearPaletteSelection() {
+        items.forEach(it => it.classList.remove('selected'));
+      }
+
+      items.forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+          const code = item.dataset.code;
+          const payload = { source: 'palette', code };
+          e.dataTransfer.setData('text/plain', JSON.stringify(payload));
+        });
+
+        item.addEventListener('click', () => {
+          const code = item.dataset.code;
+
+          // マス側の選択枠は解除して、パレット側だけを選択状態にする
+          document.querySelectorAll('.cell.selected').forEach(c => c.classList.remove('selected'));
+
+          if (currentPaletteCode === code) {
+            currentPaletteCode = null;
+            clearPaletteSelection();
+          } else {
+            currentPaletteCode = code;
+            clearPaletteSelection();
+            item.classList.add('selected');
+          }
+        });
+      });
+    }
+
+
+
+    function attachPaletteTabsHandlers() {
+      const tabs = document.querySelectorAll('.palette-tabs button');
+      const items = document.querySelectorAll('.palette-item');
+
+      function update(group) {
+        items.forEach(item => {
+          if (item.dataset.group === group) {
+            item.style.display = 'flex';
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      }
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          update(tab.dataset.group);
+        });
+      });
+
+      const active = document.querySelector('.palette-tabs button.active');
+      if (active) {
+        update(active.dataset.group);
+      }
+    }
+
+    function attachTrashHandlers() {
+      const trash = document.getElementById('trashBox');
+      trash.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        trash.classList.add('drag-over');
+      });
+      trash.addEventListener('dragleave', () => {
+        trash.classList.remove('drag-over');
+      });
+      trash.addEventListener('drop', (e) => {
+        e.preventDefault();
+        trash.classList.remove('drag-over');
+        const raw = e.dataTransfer.getData('text/plain') || '';
+        if (!raw) return;
+        let data;
+        try { data = JSON.parse(raw); } catch { return; }
+        if (data.source === 'cell') {
+          const src = findCell(data.x, data.y, document);
+          if (!src) return;
+          makeEmptyCell(src);
+          recalcUnitCount();
+        }
+      });
+    }
+
+    function attachCellDragStart() {
       document.querySelectorAll('#gridNormal .cell, #gridSpecial .cell').forEach(cell => {
         if (cell.classList.contains('label-row')) return;
         cell.addEventListener('dragstart', (e) => {
@@ -1177,35 +1307,6 @@ function attachCellDragStart() {
         clearActiveBoard();
       });
     }
-  
-    function attachPaletteHandlers() {
-      const items = document.querySelectorAll('.palette-item');
-
-      function clearPaletteSelection() {
-        items.forEach(it => it.classList.remove('selected'));
-      }
-
-      items.forEach(item => {
-        item.addEventListener('dragstart', (e) => {
-          const code = item.dataset.code;
-          const payload = { source: 'palette', code };
-          e.dataTransfer.setData('text/plain', JSON.stringify(payload));
-        });
-
-        item.addEventListener('click', () => {
-          const code = item.dataset.code;
-          if (currentPaletteCode === code) {
-            currentPaletteCode = null;
-            clearPaletteSelection();
-          } else {
-            currentPaletteCode = code;
-            clearPaletteSelection();
-            item.classList.add('selected');
-          }
-        });
-      });
-    }
-
-</script>
+  </script>
 </body>
 </html>
