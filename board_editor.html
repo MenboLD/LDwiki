@@ -1387,6 +1387,128 @@
       });
     }
 
+
+    function attachPaletteHandlers() {
+      const items = document.querySelectorAll('.palette-item');
+      items.forEach(item => {
+        // ドラッグ用（PC向け）
+        item.addEventListener('dragstart', (e) => {
+          const code = item.dataset.code;
+          const payload = { source: 'palette', code };
+          e.dataTransfer.setData('text/plain', JSON.stringify(payload));
+        });
+        // タップ/クリックで選択
+        item.addEventListener('click', () => {
+          const code = item.dataset.code;
+          const already = item.classList.contains('selected');
+          document.querySelectorAll('.palette-item').forEach(i => i.classList.remove('selected'));
+          document.querySelectorAll('.cell.selected').forEach(c => c.classList.remove('selected'));
+          currentPaletteCode = null;
+          if (!already) {
+            currentPaletteCode = code;
+            item.classList.add('selected');
+            hideCellActionLayer();
+          }
+        });
+      });
+    }
+
+    function attachPaletteTabsHandlers() {
+      const wrapper = document.querySelector('.palette-wrapper');
+      const normalTabs = document.querySelectorAll('.palette-tabs-normal button');
+      const expandedTabs = document.querySelectorAll('.palette-tabs-expanded button');
+      const items = document.querySelectorAll('.palette-item');
+      const toggle = document.getElementById('paletteToggle');
+      let currentGroup = 'N';
+
+      function setActive(tabs, target) {
+        tabs.forEach(t => t.classList.remove('active'));
+        if (target) target.classList.add('active');
+      }
+
+      function filterItems() {
+        const expanded = wrapper.classList.contains('expanded');
+        items.forEach(item => {
+          const g = item.dataset.group;
+          let visible = false;
+          if (!expanded) {
+            visible = (g === currentGroup);
+          } else {
+            if (currentGroup === 'BASIC') {
+              visible = (g === 'N' || g === 'R' || g === 'E' || g === 'L');
+            } else {
+              visible = (g === currentGroup);
+            }
+          }
+          item.style.display = visible ? 'flex' : 'none';
+        });
+      }
+
+      normalTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          currentGroup = tab.dataset.group;
+          setActive(normalTabs, tab);
+          filterItems();
+        });
+      });
+
+      expandedTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          currentGroup = tab.dataset.group;
+          setActive(expandedTabs, tab);
+          filterItems();
+        });
+      });
+
+      if (toggle) {
+        toggle.addEventListener('click', () => {
+          const expanded = wrapper.classList.toggle('expanded');
+          if (expanded) {
+            currentGroup = 'BASIC';
+            setActive(normalTabs, null);
+            setActive(expandedTabs, expandedTabs[0] || null);
+          } else {
+            currentGroup = 'N';
+            setActive(expandedTabs, null);
+            setActive(normalTabs, normalTabs[0] || null);
+          }
+          filterItems();
+        });
+      }
+
+      // 初期状態
+      if (normalTabs[0]) {
+        currentGroup = normalTabs[0].dataset.group;
+        setActive(normalTabs, normalTabs[0]);
+      }
+      filterItems();
+    }
+
+    function attachTrashHandlers() {
+      const trash = document.getElementById('trashBox');
+      if (!trash) return;
+
+      trash.addEventListener('dragover', (e) => {
+        e.preventDefault();
+      });
+
+      trash.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const raw = e.dataTransfer.getData('text/plain') || '';
+        if (!raw) return;
+        let data;
+        try { data = JSON.parse(raw); } catch { return; }
+        if (data.source === 'cell') {
+          const src = findCell(data.x, data.y, document);
+          if (!src) return;
+          makeEmptyCell(src);
+          renderCellContent(src);
+          recalcUnitCount();
+        }
+      });
+    }
+
+
     const btnNormal = document.getElementById('btnNormal');
     const btnSpecial = document.getElementById('btnSpecial');
     const gridNormal = document.getElementById('gridNormal');
