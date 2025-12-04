@@ -888,19 +888,28 @@
       return getBoardUnitCount() < 30;
     }
 
-    function canPlaceBasicIntoNewCell(code, targetCell) {
-      const grid = getActiveGrid();
-      if (!grid) return false;
-      let ok = true;
-      grid.querySelectorAll('.cell').forEach(cell => {
-        if (cell === targetCell) return;
-        if (cell.classList.contains('label-row')) return;
-        if (cell.dataset.code === code && parseInt(cell.dataset.count || '0', 10) > 0) {
-          ok = false;
-        }
-      });
-      return ok;
+function canPlaceBasicIntoNewCell(code, targetCell) {
+  const grid = getActiveGrid();
+  if (!grid) return false;
+
+  let ok = true;
+
+  grid.querySelectorAll('.cell').forEach(cell => {
+    if (cell === targetCell) return;
+    if (cell.classList.contains('label-row')) return;
+
+    if (cell.dataset.code === code) {
+      const c = parseInt(cell.dataset.count || '0', 10);
+      // ★ 1体 or 2体を持っているマスが存在したら「新規配置は禁止」
+      if (c > 0 && c < 3) {
+        ok = false;
+      }
     }
+  });
+
+  return ok;
+}
+
 
     function hasOtherImmortalVariant(exceptCell) {
       const grid = getActiveGrid();
