@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>ラッキー傭兵団 盤面エディタ（ドラッグ対応モック v2）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <style>
     :root {
       --bg: #fafafa;
@@ -315,9 +315,9 @@
     }
     .palette-wrapper.expanded .palette-list {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 4px;
-      max-height: 170px; /* 約2.5行分 */
+      max-height: 170px;
       overflow-y: auto;
       overflow-x: hidden;
     }
@@ -333,7 +333,6 @@
     .palette-wrapper:not(.expanded) .palette-tabs-normal {
       display: flex;
     }
-    /* パレット内の画像サイズ拡大 */
     .palette-item {
       min-width: 60px;
       height: 60px;
@@ -346,7 +345,6 @@
       width: 60px;
       height: 60px;
     }
-    /* 選択中のマス・パレットの赤枠 */
     .cell.selected {
       outline: 2px solid #ff4a4a;
       outline-offset: -2px;
@@ -355,7 +353,6 @@
       border-color: #ff4a4a;
       box-shadow: 0 0 0 1px #ff4a4a;
     }
-    /* 満員ボタンのシェイク演出 */
     @keyframes shake {
       0% { transform: translateX(0); }
       25% { transform: translateX(-2px); }
@@ -366,7 +363,6 @@
     .shake {
       animation: shake 0.25s;
     }
-    /* セル周辺ポップアップボタン */
     .cell-action-layer {
       position: absolute;
       top: 0;
@@ -380,7 +376,7 @@
       display: flex;
       flex-direction: column;
       align-items: stretch;
-      justify-content: center;
+      justify-content: flex-start;
       pointer-events: none;
     }
     .cell-action-row {
@@ -394,16 +390,21 @@
     .cell-action-row button {
       pointer-events: auto;
       flex: 1;
+      background-color: rgba(255, 255, 255, 0.9);
+    }
+    .cell-action-row.double {
+      flex-direction: column;
+      align-items: stretch;
     }
     .cell-action-row.double button {
       flex: initial;
       min-width: 80px;
     }
-    /* スマホ向け：長押しの誤操作対策 */
     body {
       -webkit-user-select: none;
       user-select: none;
       -webkit-touch-callout: none;
+      overflow: hidden;
     }
     img {
       -webkit-user-drag: none;
@@ -505,7 +506,6 @@
       <div id="cellActionLayer" class="cell-action-layer"></div>
 
 
-
       <!-- パレット -->
       
       <!-- パレット -->
@@ -545,9 +545,7 @@
           <div class="palette-item" draggable="true" data-code="105" data-group="N">
             <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/105_big.png" alt="105" />
           </div>
-          <div class="palette-item" draggable="true" data-code="106" data-group="N">
-            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/106_big.png" alt="106" />
-          </div>
+          
           <div class="palette-item" draggable="true" data-code="201" data-group="R">
             <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/201_big.png" alt="201" />
           </div>
@@ -589,6 +587,8 @@
           </div>
           <div class="palette-item" draggable="true" data-code="404" data-group="L">
             <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/404_big.png" alt="404" />
+          </div><div class="palette-item" draggable="true" data-code="106" data-group="N">
+            <img class="unit-img-basic" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/106_big.png" alt="106" />
           </div>
           <div class="palette-item" draggable="true" data-code="501" data-group="M">
             <img class="unit-img-special" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/501_big.png" alt="501" />
@@ -761,11 +761,13 @@
     </main>
   </div>
 
+  
   <script>
-
     const ICON_BASE = "https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/";
     const ICON_BIG_BASE = ICON_BASE;
+
     let currentPaletteCode = null;
+
     function parseCodeNumber(code) {
       if (!code) return NaN;
       const m = String(code).match(/\d+/);
@@ -775,66 +777,22 @@
     function getActiveGrid() {
       const normal = document.getElementById('gridNormal');
       const special = document.getElementById('gridSpecial');
-      if (normal.classList.contains('active')) return normal;
-      return special;
-    }
-
-    function getBoardUnitCount() {
-      const grid = getActiveGrid();
-      let total = 0;
-      grid.querySelectorAll('.cell').forEach(cell => {
-        if (cell.classList.contains('label-row')) return;
-        const code = cell.dataset.code;
-        if (!code) return;
-        const count = parseInt(cell.dataset.count || '0', 10);
-        const n = parseCodeNumber(code);
-        if (n >= 100 && n < 500) {
-          total += count;
-        } else {
-          total += 1;
-        }
-      });
-      return total;
-    }
-
-    function recalcUnitCount() {
-      const total = getBoardUnitCount();
-      document.getElementById('unitCountLabel').textContent =
-        'ユニット数: ' + total + ' / 30';
+      if (normal && normal.classList.contains('active')) return normal;
+      if (special && special.classList.contains('active')) return special;
+      return normal || special;
     }
 
     function makeEmptyCell(cell) {
+      cell.classList.add('empty');
       cell.dataset.code = '';
       cell.dataset.kind = '';
       cell.dataset.count = '0';
-      cell.classList.add('empty');
-      cell.removeAttribute('draggable');
       cell.innerHTML = '空';
+      cell.removeAttribute('draggable');
+      cell.style.backgroundColor = '';
+      cell.classList.remove('selected');
     }
 
-    function clearActiveBoard() {
-      const grid = getActiveGrid();
-      grid.querySelectorAll('.cell').forEach(cell => {
-        if (cell.classList.contains('label-row')) return;
-        makeEmptyCell(cell);
-      });
-      recalcUnitCount();
-      const inspectorBody = document.getElementById('inspectorBody');
-      const inspectorActions = document.getElementById('inspectorActions');
-      if (inspectorBody) {
-        inspectorBody.textContent = 'マスをタップすると、ここに操作ボタンが表示されます。';
-      }
-      if (inspectorActions) {
-        inspectorActions.innerHTML = '';
-      }
-    }
-
-    function isBasicCode(code) {
-      const n = parseCodeNumber(code);
-      return n >= 100 && n < 500;
-    }
-
-    
     function getKindFromCode(code) {
       const n = parseCodeNumber(code);
       const mythicAwakable = [501, 502, 504, 506, 509, 511, 513, 514, 515, 516, 525, 526, 527, 528];
@@ -868,20 +826,19 @@
       } else if (code === '615b') {
         src = ICON_BASE + '615_b.png';
       } else {
-        src = ICON_BASE + (parseCodeNumber(code)) + '.png';
+        src = ICON_BASE + n + '.png';
       }
 
-      // 背景色（レアリティ / 種別ごと）
       cell.style.backgroundColor = '#f7f7f7';
       if (isBasic) {
         if (n >= 100 && n < 200) {
-          cell.style.backgroundColor = '#AFA68C'; // N
+          cell.style.backgroundColor = '#AFA68C';
         } else if (n >= 200 && n < 300) {
-          cell.style.backgroundColor = '#3F4C82'; // R
+          cell.style.backgroundColor = '#3F4C82';
         } else if (n >= 300 && n < 400) {
-          cell.style.backgroundColor = '#683A8E'; // E
+          cell.style.backgroundColor = '#683A8E';
         } else if (n >= 400 && n < 500) {
-          cell.style.backgroundColor = '#D2A349'; // L
+          cell.style.backgroundColor = '#D2A349';
         }
       } else {
         const k = cell.dataset.kind || getKindFromCode(code);
@@ -901,12 +858,67 @@
       cell.innerHTML = html;
     }
 
-    function findCell(x, y, root) {
-      const selector = '.cell[data-x="' + x + '"][data-y="' + y + '"]';
-      return (root || document).querySelector(selector);
+    function getBoardUnitCount() {
+      const grid = getActiveGrid();
+      if (!grid) return 0;
+      let total = 0;
+      grid.querySelectorAll('.cell').forEach(cell => {
+        if (cell.classList.contains('label-row')) return;
+        const code = cell.dataset.code;
+        if (!code) return;
+        const n = parseCodeNumber(code);
+        if (n >= 100 && n < 500) {
+          total += parseInt(cell.dataset.count || '0', 10);
+        } else {
+          total += 1;
+        }
+      });
+      return total;
     }
 
-    
+    function recalcUnitCount() {
+      const total = getBoardUnitCount();
+      const lbl = document.getElementById('unitCountLabel');
+      if (lbl) {
+        lbl.textContent = 'ユニット数: ' + total + ' / 30';
+      }
+    }
+
+    function canAddNewUnit() {
+      return getBoardUnitCount() < 30;
+    }
+
+    function canPlaceBasicIntoNewCell(code, targetCell) {
+      const grid = getActiveGrid();
+      if (!grid) return false;
+      let ok = true;
+      grid.querySelectorAll('.cell').forEach(cell => {
+        if (cell === targetCell) return;
+        if (cell.classList.contains('label-row')) return;
+        if (cell.dataset.code === code && parseInt(cell.dataset.count || '0', 10) > 0) {
+          ok = false;
+        }
+      });
+      return ok;
+    }
+
+    function hasOtherImmortalVariant(exceptCell) {
+      const grid = getActiveGrid();
+      if (!grid) return false;
+      let found = false;
+      grid.querySelectorAll('.cell').forEach(cell => {
+        if (cell === exceptCell) return;
+        if (cell.classList.contains('label-row')) return;
+        const code = cell.dataset.code;
+        if (code === '615a' || code === '615b') {
+          if (parseInt(cell.dataset.count || '0', 10) > 0) {
+            found = true;
+          }
+        }
+      });
+      return found;
+    }
+
     function hideCellActionLayer() {
       const layer = document.getElementById('cellActionLayer');
       if (!layer) return;
@@ -914,12 +926,17 @@
       layer.style.display = 'none';
     }
 
-    function buildCellActionButtons(cell, kind, code, count) {
+    function buildCellActionButtons(cell) {
       const layer = document.getElementById('cellActionLayer');
       const app = document.querySelector('.app');
       if (!layer || !app) return;
 
+      const code = cell.dataset.code;
+      const kind = cell.dataset.kind || getKindFromCode(code);
+      const count = parseInt(cell.dataset.count || '0', 10);
+
       layer.innerHTML = '';
+
       if (!code) {
         hideCellActionLayer();
         return;
@@ -929,10 +946,10 @@
       const appRect = app.getBoundingClientRect();
 
       layer.style.display = 'block';
-      layer.style.top = (cellRect.top - appRect.top + window.scrollY - 4) + 'px';
-      layer.style.left = (cellRect.left - appRect.left + window.scrollX - 4) + 'px';
-      layer.style.width = (cellRect.width + 8) + 'px';
-      layer.style.height = (cellRect.height + 8) + 'px';
+      layer.style.top = (cellRect.bottom - appRect.top + window.scrollY + 4) + 'px';
+      layer.style.left = (cellRect.left - appRect.left + window.scrollX) + 'px';
+      layer.style.width = (cellRect.width) + 'px';
+      layer.style.height = 'auto';
 
       const container = document.createElement('div');
       container.className = 'cell-action-container';
@@ -943,12 +960,11 @@
 
         const btnMinus = document.createElement('button');
         btnMinus.className = 'btn-small';
-        btnMinus.textContent = (count <= 1) ? '削除' : '−';
+        btnMinus.textContent = (count <= 1) ? '削' : '−';
         btnMinus.addEventListener('click', () => {
           let c = parseInt(cell.dataset.count || '0', 10);
           const codeNow = cell.dataset.code;
 
-          // 3体→2体に減らすとき、同種ユニットが別マスに存在するなら禁止
           if (c === 3) {
             const grid = getActiveGrid();
             let hasOther = false;
@@ -969,10 +985,10 @@
           if (c > 1) {
             c -= 1;
             cell.dataset.count = String(c);
+            renderCellContent(cell);
           } else {
             makeEmptyCell(cell);
           }
-          renderCellContent(cell);
           recalcUnitCount();
           updateInspectorFromCell(cell);
         });
@@ -1114,15 +1130,20 @@
     function updateInspectorFromCell(cell) {
       const inspectorBody = document.getElementById('inspectorBody');
       const inspectorActions = document.getElementById('inspectorActions');
-      inspectorActions.innerHTML = '';
+      if (inspectorActions) inspectorActions.innerHTML = '';
 
       const code = cell.dataset.code;
-      const kind = cell.dataset.kind || '';
+      if (!code) {
+        if (inspectorBody) inspectorBody.textContent = '空のマスです。';
+        hideCellActionLayer();
+        return;
+      }
+
+      const kind = cell.dataset.kind || getKindFromCode(code);
       const count = parseInt(cell.dataset.count || '0', 10);
 
-      if (!code) {
-        inspectorBody.textContent = '空のマスです。';
-        hideCellActionLayer();
+      if (!inspectorBody) {
+        buildCellActionButtons(cell);
         return;
       }
 
@@ -1140,264 +1161,18 @@
         inspectorBody.textContent = code + '（特殊ユニット）: 特別な操作はありません';
       }
 
-      buildCellActionButtons(cell, kind, code, count);
+      buildCellActionButtons(cell);
     }
-
-    function canPlaceBasicIntoNewCell(code) {
-      const grid = getActiveGrid();
-      let has1or2 = false;
-      grid.querySelectorAll('.cell').forEach(cell => {
-        if (cell.classList.contains('label-row')) return;
-        if (cell.dataset.code !== code) return;
-        const c = parseInt(cell.dataset.count || '0', 10);
-        if (c === 1 || c === 2) {
-          has1or2 = true;
-        }
-      });
-      if (has1or2) return false;
-
-      const total = getBoardUnitCount();
-      if (total >= 30) return false;
-
-      return true;
-    }
-
-    function canAddNewUnit() {
-      const total = getBoardUnitCount();
-      return total < 30;
-    }
-
-    function hasOtherImmortalVariant(targetCell) {
-      const grid = getActiveGrid();
-      let blocked = false;
-      grid.querySelectorAll('.cell').forEach(other => {
-        if (other === targetCell) return;
-        if (other.classList.contains('label-row')) return;
-        const oc = other.dataset.code;
-        if (oc === '615a' || oc === '615b') {
-          blocked = true;
-        }
-      });
-      return blocked;
-    }
-
-    
-    function attachCellHandlers(root) {
-      const cells = root.querySelectorAll('.cell');
-      cells.forEach(cell => {
-        if (cell.classList.contains('label-row')) return;
-
-        cell.addEventListener('click', () => {
-          if (cell.classList.contains('label-row')) return;
-
-          // セル選択の赤枠
-          document.querySelectorAll('.cell.selected').forEach(c => c.classList.remove('selected'));
-          cell.classList.add('selected');
-
-          // パレットからのタップ配置
-          if (currentPaletteCode) {
-            const code = currentPaletteCode;
-            const n = parseCodeNumber(code);
-            const isBasic = n >= 100 && n < 500;
-
-            // 615a/615b は盤面に同時共存不可
-            if (code === '615a' || code === '615b') {
-              if (hasOtherImmortalVariant(cell)) {
-                updateInspectorFromCell(cell);
-                return;
-              }
-            }
-
-            const currentCode = cell.dataset.code;
-            const currentCount = parseInt(cell.dataset.count || '0', 10);
-
-            if (!currentCode) {
-              // 空マスに新規配置
-              if (isBasic) {
-                if (!canPlaceBasicIntoNewCell(code)) {
-                  updateInspectorFromCell(cell);
-                  return;
-                }
-                cell.dataset.code = code;
-                cell.dataset.kind = getKindFromCode(code);
-                cell.dataset.count = '1';
-                renderCellContent(cell);
-              } else {
-                if (!canAddNewUnit()) {
-                  updateInspectorFromCell(cell);
-                  return;
-                }
-                cell.dataset.code = code;
-                cell.dataset.kind = getKindFromCode(code);
-                cell.dataset.count = '1';
-                renderCellContent(cell);
-              }
-            } else if (currentCode === code && isBasic) {
-              // 同じ基本ユニットならカウントアップ（最大3・総数30まで）
-              let c = currentCount;
-              if (c < 3) {
-                const total = getBoardUnitCount();
-                if (total >= 30) {
-                  // 満員演出はポップアップ側に任せる
-                } else {
-                  c += 1;
-                  cell.dataset.count = String(c);
-                  renderCellContent(cell);
-                }
-              }
-            } else {
-              // 別ユニットを上書き
-              if (!isBasic && !canAddNewUnit()) {
-                updateInspectorFromCell(cell);
-                return;
-              }
-              if (!isBasic || (isBasic && canPlaceBasicIntoNewCell(code))) {
-                cell.dataset.code = code;
-                cell.dataset.kind = getKindFromCode(code);
-                cell.dataset.count = '1';
-                renderCellContent(cell);
-              }
-            }
-
-            recalcUnitCount();
-            updateInspectorFromCell(cell);
-            return;
-          }
-
-          // 通常の情報更新
-          updateInspectorFromCell(cell);
-        });
-
-        cell.addEventListener('dragover', (e) => {
-          e.preventDefault();
-        });
-
-        cell.addEventListener('drop', (e) => {
-          e.preventDefault();
-          const raw = e.dataTransfer.getData('text/plain') || '';
-          if (!raw) return;
-          let data;
-          try { data = JSON.parse(raw); } catch { return; }
-          const target = cell;
-          if (target.classList.contains('label-row')) return;
-
-          if (data.source === 'palette') {
-            const code = data.code;
-            const n = parseCodeNumber(code);
-            const isBasic = n >= 100 && n < 500;
-
-            // 615a/615b は盤面に同時共存不可
-            if (code === '615a' || code === '615b') {
-              if (hasOtherImmortalVariant(target)) {
-                return;
-              }
-            }
-
-            const currentCode = target.dataset.code;
-            const currentCount = parseInt(target.dataset.count || '0', 10);
-
-            if (!currentCode) {
-              if (isBasic) {
-                if (!canPlaceBasicIntoNewCell(code)) {
-                  return;
-                }
-                target.dataset.code = code;
-                target.dataset.kind = getKindFromCode(code);
-                target.dataset.count = '1';
-                renderCellContent(target);
-              } else {
-                if (!canAddNewUnit()) {
-                  return;
-                }
-                target.dataset.code = code;
-                target.dataset.kind = getKindFromCode(code);
-                target.dataset.count = '1';
-                renderCellContent(target);
-              }
-            } else if (currentCode === code && isBasic) {
-              let c = currentCount;
-              if (c < 3) {
-                const total = getBoardUnitCount();
-                if (total >= 30) return;
-                c += 1;
-                target.dataset.count = String(c);
-                renderCellContent(target);
-              }
-            } else {
-              if (!isBasic && !canAddNewUnit()) {
-                return;
-              }
-              if (!isBasic || (isBasic && canPlaceBasicIntoNewCell(code))) {
-                target.dataset.code = code;
-                target.dataset.kind = getKindFromCode(code);
-                target.dataset.count = '1';
-                renderCellContent(target);
-              }
-            }
-
-            recalcUnitCount();
-            updateInspectorFromCell(target);
-
-          } else if (data.source === 'cell') {
-            const src = findCell(data.x, data.y, document);
-            if (!src || src === target) return;
-            if (src.classList.contains('label-row')) return;
-
-            const srcCode = src.dataset.code;
-            const srcCount = src.dataset.count;
-            const srcKind = src.dataset.kind;
-
-            const tgtCode = target.dataset.code;
-            const tgtCount = target.dataset.count;
-            const tgtKind = target.dataset.kind;
-
-            src.dataset.code = tgtCode || '';
-            src.dataset.count = tgtCount || '0';
-            src.dataset.kind = tgtKind || '';
-
-            target.dataset.code = srcCode || '';
-            target.dataset.count = srcCount || '0';
-            target.dataset.kind = srcKind || '';
-
-            if (src.dataset.code) src.setAttribute('draggable', 'true');
-            else src.removeAttribute('draggable');
-            if (target.dataset.code) target.setAttribute('draggable', 'true');
-            else target.removeAttribute('draggable');
-
-            renderCellContent(src);
-            renderCellContent(target);
-
-            recalcUnitCount();
-          }
-        });
-      });
-    }
-
-    function attachCellDragStart() {
-      document.querySelectorAll('#gridNormal .cell, #gridSpecial .cell').forEach(cell => {
-        if (cell.classList.contains('label-row')) return;
-        cell.addEventListener('dragstart', (e) => {
-          if (!cell.dataset.code) {
-            e.preventDefault();
-            return;
-          }
-          const payload = { source: 'cell', x: cell.dataset.x, y: cell.dataset.y };
-          e.dataTransfer.setData('text/plain', JSON.stringify(payload));
-        });
-      });
-    }
-
 
     function attachPaletteHandlers() {
       const items = document.querySelectorAll('.palette-item');
       items.forEach(item => {
-        // ドラッグ用（PC向け）
         item.addEventListener('dragstart', (e) => {
           const code = item.dataset.code;
           const payload = { source: 'palette', code };
           e.dataTransfer.setData('text/plain', JSON.stringify(payload));
         });
-        // タップ/クリックで選択
+
         item.addEventListener('click', () => {
           const code = item.dataset.code;
           const already = item.classList.contains('selected');
@@ -1476,7 +1251,6 @@
         });
       }
 
-      // 初期状態
       if (normalTabs[0]) {
         currentGroup = normalTabs[0].dataset.group;
         setActive(normalTabs, normalTabs[0]);
@@ -1499,50 +1273,286 @@
         let data;
         try { data = JSON.parse(raw); } catch { return; }
         if (data.source === 'cell') {
-          const src = findCell(data.x, data.y, document);
+          const grid = getActiveGrid();
+          if (!grid) return;
+          let src = null;
+          grid.querySelectorAll('.cell').forEach(cell => {
+            if (cell.classList.contains('label-row')) return;
+            if (cell.dataset.x === String(data.x) && cell.dataset.y === String(data.y)) {
+              src = cell;
+            }
+          });
           if (!src) return;
           makeEmptyCell(src);
-          renderCellContent(src);
           recalcUnitCount();
+          hideCellActionLayer();
+          const inspectorBody = document.getElementById('inspectorBody');
+          if (inspectorBody) inspectorBody.textContent = '空のマスです。';
         }
       });
     }
 
+    function attachCellHandlers(root) {
+      const cells = root.querySelectorAll('.cell');
+      cells.forEach(cell => {
+        if (cell.classList.contains('label-row')) return;
 
-    const btnNormal = document.getElementById('btnNormal');
-    const btnSpecial = document.getElementById('btnSpecial');
-    const gridNormal = document.getElementById('gridNormal');
-    const gridSpecial = document.getElementById('gridSpecial');
+        cell.addEventListener('click', () => {
+          document.querySelectorAll('.cell.selected').forEach(c => c.classList.remove('selected'));
+          cell.classList.add('selected');
 
-    btnNormal.addEventListener('click', () => {
-      btnNormal.classList.add('active');
-      btnSpecial.classList.remove('active');
-      gridNormal.classList.add('active');
-      gridSpecial.classList.remove('active');
-      recalcUnitCount();
-    });
+          if (currentPaletteCode) {
+            const code = currentPaletteCode;
+            const n = parseCodeNumber(code);
+            const isBasic = n >= 100 && n < 500;
 
-    btnSpecial.addEventListener('click', () => {
-      btnSpecial.classList.add('active');
-      btnNormal.classList.remove('active');
-      gridSpecial.classList.add('active');
-      gridNormal.classList.remove('active');
-      recalcUnitCount();
-    });
+            if (code === '615a' || code === '615b') {
+              if (hasOtherImmortalVariant(cell)) {
+                document.querySelectorAll('.cell.selected').forEach(c => c.classList.remove('selected'));
+                document.querySelectorAll('.palette-item.selected').forEach(i => i.classList.remove('selected'));
+                currentPaletteCode = null;
+                hideCellActionLayer();
+                return;
+              }
+            }
 
-    recalcUnitCount();
-    attachCellHandlers(document);
-    attachPaletteHandlers();
-    attachPaletteTabsHandlers();
-    attachTrashHandlers();
-    attachCellDragStart();
+            const currentCode = cell.dataset.code;
+            const currentCount = parseInt(cell.dataset.count || '0', 10);
 
-    const btnClearAll = document.getElementById('btnClearAll');
-    if (btnClearAll) {
-      btnClearAll.addEventListener('click', () => {
-        clearActiveBoard();
+            if (!currentCode) {
+              if (isBasic) {
+                if (!canPlaceBasicIntoNewCell(code, cell)) {
+                  // do nothing
+                } else {
+                  cell.dataset.code = code;
+                  cell.dataset.kind = getKindFromCode(code);
+                  cell.dataset.count = '1';
+                  renderCellContent(cell);
+                }
+              } else {
+                if (canAddNewUnit()) {
+                  cell.dataset.code = code;
+                  cell.dataset.kind = getKindFromCode(code);
+                  cell.dataset.count = '1';
+                  renderCellContent(cell);
+                }
+              }
+            } else if (currentCode === code && isBasic) {
+              let c = currentCount;
+              if (c < 3) {
+                const total = getBoardUnitCount();
+                if (total < 30) {
+                  c += 1;
+                  cell.dataset.count = String(c);
+                  renderCellContent(cell);
+                }
+              }
+            } else {
+              if (!isBasic && !canAddNewUnit()) {
+                // do nothing
+              } else {
+                if (!isBasic || canPlaceBasicIntoNewCell(code, cell)) {
+                  cell.dataset.code = code;
+                  cell.dataset.kind = getKindFromCode(code);
+                  cell.dataset.count = '1';
+                  renderCellContent(cell);
+                }
+              }
+            }
+
+            recalcUnitCount();
+            document.querySelectorAll('.cell.selected').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll('.palette-item.selected').forEach(i => i.classList.remove('selected'));
+            currentPaletteCode = null;
+            hideCellActionLayer();
+            return;
+          }
+
+          updateInspectorFromCell(cell);
+        });
+
+        cell.addEventListener('dragstart', (e) => {
+          const code = cell.dataset.code;
+          if (!code) {
+            e.preventDefault();
+            return;
+          }
+          const payload = {
+            source: 'cell',
+            x: cell.dataset.x,
+            y: cell.dataset.y
+          };
+          e.dataTransfer.setData('text/plain', JSON.stringify(payload));
+        });
+
+        cell.addEventListener('dragover', (e) => {
+          e.preventDefault();
+        });
+
+        cell.addEventListener('drop', (e) => {
+          e.preventDefault();
+          const raw = e.dataTransfer.getData('text/plain') || '';
+          if (!raw) return;
+          let data;
+          try { data = JSON.parse(raw); } catch { return; }
+
+          const target = cell;
+          if (target.classList.contains('label-row')) return;
+
+          if (data.source === 'palette') {
+            const code = data.code;
+            const n = parseCodeNumber(code);
+            const isBasic = n >= 100 && n < 500;
+
+            if (code === '615a' || code === '615b') {
+              if (hasOtherImmortalVariant(target)) {
+                return;
+              }
+            }
+
+            const currentCode = target.dataset.code;
+            const currentCount = parseInt(target.dataset.count || '0', 10);
+
+            if (!currentCode) {
+              if (isBasic) {
+                if (!canPlaceBasicIntoNewCell(code, target)) {
+                  return;
+                }
+                target.dataset.code = code;
+                target.dataset.kind = getKindFromCode(code);
+                target.dataset.count = '1';
+                renderCellContent(target);
+              } else {
+                if (!canAddNewUnit()) return;
+                target.dataset.code = code;
+                target.dataset.kind = getKindFromCode(code);
+                target.dataset.count = '1';
+                renderCellContent(target);
+              }
+            } else if (currentCode === code && isBasic) {
+              let c = currentCount;
+              if (c < 3) {
+                const total = getBoardUnitCount();
+                if (total >= 30) return;
+                c += 1;
+                target.dataset.count = String(c);
+                renderCellContent(target);
+              }
+            } else {
+              if (!isBasic && !canAddNewUnit()) {
+                return;
+              }
+              if (!isBasic || canPlaceBasicIntoNewCell(code, target)) {
+                target.dataset.code = code;
+                target.dataset.kind = getKindFromCode(code);
+                target.dataset.count = '1';
+                renderCellContent(target);
+              }
+            }
+
+            recalcUnitCount();
+            updateInspectorFromCell(target);
+
+          } else if (data.source === 'cell') {
+            const grid = getActiveGrid();
+            if (!grid) return;
+            let src = null;
+            grid.querySelectorAll('.cell').forEach(c => {
+              if (c.classList.contains('label-row')) return;
+              if (c.dataset.x === String(data.x) && c.dataset.y === String(data.y)) {
+                src = c;
+              }
+            });
+            if (!src || src === target) return;
+
+            const srcCode = src.dataset.code;
+            const srcCount = src.dataset.count;
+            const srcKind = src.dataset.kind;
+
+            const tgtCode = target.dataset.code;
+            const tgtCount = target.dataset.count;
+            const tgtKind = target.dataset.kind;
+
+            src.dataset.code = tgtCode || '';
+            src.dataset.count = tgtCount || '0';
+            src.dataset.kind = tgtKind || '';
+
+            target.dataset.code = srcCode || '';
+            target.dataset.count = srcCount || '0';
+            target.dataset.kind = srcKind || '';
+
+            if (src.dataset.code) src.setAttribute('draggable', 'true');
+            else src.removeAttribute('draggable');
+            if (target.dataset.code) target.setAttribute('draggable', 'true');
+            else target.removeAttribute('draggable');
+
+            renderCellContent(src);
+            renderCellContent(target);
+            recalcUnitCount();
+            updateInspectorFromCell(target);
+          }
+        });
       });
     }
+
+    function clearActiveBoard() {
+      const grid = getActiveGrid();
+      if (!grid) return;
+      grid.querySelectorAll('.cell').forEach(cell => {
+        if (cell.classList.contains('label-row')) return;
+        makeEmptyCell(cell);
+      });
+      recalcUnitCount();
+      hideCellActionLayer();
+      const inspectorBody = document.getElementById('inspectorBody');
+      if (inspectorBody) inspectorBody.textContent = '空のマスです。';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const normal = document.getElementById('gridNormal');
+      const special = document.getElementById('gridSpecial');
+
+      if (normal) attachCellHandlers(normal);
+      if (special) attachCellHandlers(special);
+
+      attachPaletteHandlers();
+      attachPaletteTabsHandlers();
+      attachTrashHandlers();
+      recalcUnitCount();
+
+      const btnNormal = document.getElementById('btnNormal');
+      const btnSpecial = document.getElementById('btnSpecial');
+      if (btnNormal && btnSpecial && normal && special) {
+        btnNormal.addEventListener('click', () => {
+          btnNormal.classList.add('active');
+          btnSpecial.classList.remove('active');
+          normal.classList.add('active');
+          special.classList.remove('active');
+          recalcUnitCount();
+          hideCellActionLayer();
+          const inspectorBody = document.getElementById('inspectorBody');
+          if (inspectorBody) inspectorBody.textContent = '空のマスです。';
+        });
+        btnSpecial.addEventListener('click', () => {
+          btnSpecial.classList.add('active');
+          btnNormal.classList.remove('active');
+          special.classList.add('active');
+          normal.classList.remove('active');
+          recalcUnitCount();
+          hideCellActionLayer();
+          const inspectorBody = document.getElementById('inspectorBody');
+          if (inspectorBody) inspectorBody.textContent = '空のマスです。';
+        });
+      }
+
+      const btnClearAll = document.getElementById('btnClearAll');
+      if (btnClearAll) {
+        btnClearAll.addEventListener('click', () => {
+          clearActiveBoard();
+        });
+      }
+    });
   </script>
+
 </body>
 </html>
