@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>ラッキー傭兵団 情報掲示板</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <style>
+    :root {
+      --bg: #fafafa;
+      --card-bg: #ffffff;
+      --border: #dddddd;
+      --text-main: #222222;
+      --text-sub: #666666;
+      --link: #1a73e8;
+      --accent: #3874ff;
+      --accent-soft: #e7f0ff;
+      --danger: #d33;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background-color: #e5e5e5;
+      color: var(--text-main);
+    }
+
+    .app-frame {
+      max-width: 420px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      background-color: var(--bg);
+    }
+
+    header.app-header {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #ffffff;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .app-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .pill {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background-color: #ffffff;
+      color: var(--text-sub);
+    }
+
+    .toolbar {
+      padding: 4px 8px;
+      border-bottom: 1px solid var(--border);
+      background-color: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .mode-toggle {
+      display: inline-flex;
+      padding: 2px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background-color: #ffffff;
+    }
+
+    .mode-toggle button {
+      border: none;
+      background: none;
+      padding: 3px 8px;
+      font-size: 11px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .mode-toggle button.active {
+      background-color: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .btn-soft {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background-color: #ffffff;
+      padding: 3px 8px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .btn-soft:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .filter-panel {
+      border-bottom: 1px solid var(--border);
+      background-color: #ffffff;
+      display: none;
+    }
+
+    .filter-panel.open {
+      display: block;
+    }
+
+    .filter-inner {
+      padding: 6px 8px 8px;
+      font-size: 12px;
+    }
+
+    .filter-row {
+      margin-bottom: 6px;
+    }
+
+    .filter-label {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-bottom: 2px;
+    }
+
+    .filter-row input[type="text"] {
+      width: 100%;
+      padding: 4px 6px;
+      font-size: 12px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .chip {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background-color: #ffffff;
+      cursor: pointer;
+    }
+
+    .chip.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background-color: var(--accent-soft);
+    }
+
+    .filter-apply {
+      margin-top: 6px;
+      text-align: right;
+    }
+
+    .filter-apply button {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--accent);
+      background-color: var(--accent);
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    .search-status {
+      padding: 4px 8px;
+      font-size: 11px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-sub);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .search-status span {
+      display: inline-block;
+      max-width: 75%;
+    }
+
+    .search-status button {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background-color: #ffffff;
+      cursor: pointer;
+    }
+
+    main.app-main {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 6px 70px;
+    }
+
+    .comment-card {
+      background-color: var(--card-bg);
+      border-radius: 6px;
+      padding: 6px 8px;
+      margin-bottom: 6px;
+      border: 1px solid var(--border);
+      font-size: 12px;
+    }
+
+    .comment-card.thread-card {
+      border-left: 3px solid var(--accent);
+    }
+
+    .meta-line {
+      font-size: 11px;
+      color: var(--text-sub);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+
+    .meta-line strong {
+      color: var(--text-main);
+    }
+
+    .meta-pill {
+      padding: 1px 6px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 10px;
+      background-color: #ffffff;
+    }
+
+    .badge-recruit {
+      background-color: #fff3e0;
+      border-color: #ffb74d;
+    }
+
+    .badge-question {
+      background-color: #e3f2fd;
+      border-color: #64b5f6;
+    }
+
+    .badge-report {
+      background-color: #f3e5f5;
+      border-color: #ba68c8;
+    }
+
+    .body-line {
+      margin: 2px 0 4px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+
+    .highlight {
+      background-color: #fff59d;
+    }
+
+    .image-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      margin-bottom: 3px;
+    }
+
+    .thumb {
+      width: 56px;
+      height: 36px;
+      border-radius: 4px;
+      background-color: #f0f0f0;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: var(--text-sub);
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .btn-link {
+      border: none;
+      background: none;
+      padding: 0;
+      margin: 0;
+      color: var(--link);
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .thread-children {
+      margin-top: 4px;
+      border-top: 1px dashed var(--border);
+      padding-top: 4px;
+    }
+
+    .thread-children-header {
+      font-size: 11px;
+      color: var(--text-sub);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+
+    .thread-child {
+      border-radius: 4px;
+      padding: 4px 6px;
+      margin-bottom: 3px;
+      background-color: #f8f8f8;
+      border: 1px solid #eeeeee;
+    }
+
+    .thread-child .meta-line {
+      margin-bottom: 1px;
+    }
+
+    .footer-comment {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 0;
+      max-width: 420px;
+      width: 100%;
+      border-top: 1px solid var(--border);
+      background-color: #ffffff;
+    }
+
+    .footer-toggle {
+      padding: 4px 10px;
+      font-size: 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-toggle button {
+      border: none;
+      background: none;
+      padding: 0;
+      margin: 0;
+      font-size: 11px;
+      color: var(--link);
+      cursor: pointer;
+    }
+
+    .footer-body {
+      padding: 6px 8px 8px;
+      font-size: 12px;
+      display: none;
+    }
+
+    .footer-body.open {
+      display: block;
+    }
+
+    .user-row {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .user-row input {
+      flex: 1;
+      padding: 4px 6px;
+      font-size: 12px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .user-row input.tag-input {
+      flex: 0 0 60px;
+    }
+
+    .genre-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 4px;
+      font-size: 11px;
+    }
+
+    .genre-row label {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .textarea-row textarea {
+      width: 100%;
+      min-height: 60px;
+      padding: 4px 6px;
+      font-size: 12px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      resize: vertical;
+    }
+
+    .recruit-row {
+      display: flex;
+      gap: 4px;
+      margin: 4px 0;
+      font-size: 11px;
+    }
+
+    .recruit-row select,
+    .recruit-row input {
+      padding: 3px 4px;
+      font-size: 11px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .recruit-row input {
+      width: 70px;
+    }
+
+    .composer-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    .composer-actions-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+    }
+
+    .btn-primary {
+      border-radius: 999px;
+      border: 1px solid var(--accent);
+      background-color: var(--accent);
+      color: #ffffff;
+      font-size: 13px;
+      padding: 5px 14px;
+      cursor: pointer;
+    }
+
+    .btn-secondary {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background-color: #ffffff;
+      color: var(--text-main);
+      font-size: 11px;
+      padding: 4px 10px;
+      cursor: pointer;
+    }
+
+    .small-hint {
+      margin-top: 4px;
+      font-size: 10px;
+      color: var(--text-sub);
+    }
+
+    /* モーダル */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      background-color: #ffffff;
+      border-radius: 10px;
+      max-width: 360px;
+      width: calc(100% - 40px);
+      max-height: calc(100vh - 80px);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+
+    .modal-header {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .modal-header button {
+      border: none;
+      background: none;
+      font-size: 16px;
+      line-height: 1;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 8px 10px 10px;
+      font-size: 12px;
+      overflow-y: auto;
+    }
+
+    .modal-meta {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-bottom: 4px;
+    }
+
+    .modal-text {
+      white-space: pre-wrap;
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+
+    .modal-image-row {
+      font-size: 11px;
+      margin: 4px 0 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .modal-image-row img {
+      max-width: 100%;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .modal-caption {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-top: 4px;
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+      margin-top: 6px;
+    }
+
+    .profile-unit {
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      background-color: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+
+    /* トースト */
+    .toast {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 80px;
+      background-color: rgba(0,0,0,0.8);
+      color: #fff;
+      padding: 6px 12px;
+      font-size: 11px;
+      border-radius: 999px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease-out;
+      z-index: 120;
+    }
+    .toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-frame">
+    <header class="app-header">
+      <div class="app-title">ラッキー傭兵団 情報掲示板</div>
+      <div class="pill" id="boardKindLabel">モード: 情報</div>
+    </header>
+
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button type="button" class="btn-soft" id="toggleFilterBtn">検索・フィルター</button>
+      </div>
+      <div class="toolbar-right">
+        <div class="mode-toggle">
+          <button type="button" id="modeThreads" class="active">スレッド一覧</button>
+          <button type="button" id="modeTimeline">全コメント</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-panel" id="filterPanel">
+      <div class="filter-inner">
+        <div class="filter-row">
+          <div class="filter-label">キーワード</div>
+          <input type="text" id="keywordInput" placeholder="本文・タイトル・ユーザー名から検索" />
+        </div>
+        <div class="filter-row">
+          <div class="filter-label">対象</div>
+          <div class="filter-chips" id="targetChips">
+            <div class="chip active" data-target="body_title">本文＋タイトル</div>
+            <div class="chip" data-target="user">ユーザー名</div>
+            <div class="chip" data-target="user_body">ユーザー名＋本文</div>
+          </div>
+        </div>
+        <div class="filter-row">
+          <div class="filter-label">範囲</div>
+          <div class="filter-chips" id="scopeChips">
+            <div class="chip active" data-scope="threads">スレッド一覧</div>
+            <div class="chip" data-scope="all">全コメント</div>
+          </div>
+        </div>
+        <div class="filter-row">
+          <label><input type="checkbox" id="onlyBoard" /> 盤面付きコメントに限定</label>
+        </div>
+        <div class="filter-apply">
+          <button type="button" id="applyFilterBtn">フィルターを適用</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="search-status" id="searchStatus">
+      <span id="searchStatusText">フィルター未適用 / 全件表示</span>
+      <button type="button" id="clearSearch">検索解除</button>
+    </div>
+
+    <main class="app-main">
+      <div class="list" id="listContainer">
+        <!-- JS でコメントカードを生成 -->
+      </div>
+    </main>
+
+    <footer class="footer-comment">
+      <div class="footer-toggle">
+        <span id="composerLabel">新規コメントを書く</span>
+        <button type="button" id="toggleComposer">▲閉じる</button>
+      </div>
+      <div class="footer-body" id="composerBody">
+        <div class="user-row">
+          <input id="inputName" type="text" maxlength="7" placeholder="ユーザー名（全角7文字まで）" />
+          <input id="inputTag" type="text" maxlength="2" class="tag-input" placeholder="タグ" />
+        </div>
+        <div class="genre-row">
+          <label><input type="radio" name="genre" value="normal" checked />通常</label>
+          <label><input type="radio" name="genre" value="question" />質問</label>
+          <label><input type="radio" name="genre" value="report" />報告</label>
+          <label><input type="radio" name="genre" value="recruit" />募集</label>
+        </div>
+        <div class="textarea-row">
+          <textarea id="inputBody" placeholder="コメントを入力..."></textarea>
+        </div>
+        <div class="recruit-row" id="recruitExtra" style="display:none;">
+          <select id="selectRecruitLevel">
+            <option value="H">H</option>
+            <option value="HELL">地獄</option>
+            <option value="GOD">神</option>
+            <option value="ORIGIN">太初</option>
+            <option value="GUILD">ギルド</option>
+          </select>
+          <input id="inputJoinCode" type="text" maxlength="4" placeholder="4桁コード" />
+          <span style="align-self:center; font-size:10px; color:var(--text-sub);">
+            募集は30分で自動非表示
+          </span>
+        </div>
+        <div class="composer-actions">
+          <div class="composer-actions-left">
+            <button type="button" class="btn-secondary" id="openBoardEditorBtn">盤面を編集（後で実装）</button>
+          </div>
+          <button type="button" class="btn-primary" id="submitCommentBtn">投稿する</button>
+        </div>
+        <div class="small-hint">
+          ※ ユーザー名とタグはこの端末に保存されます。タグが2桁入力されていれば登録ユーザー扱いになります。
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- モーダル -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <span id="modalTitle">詳細</span>
+        <button type="button" id="modalCloseBtn">×</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
+    const SUPABASE_ANON_KEY = "あなたのAnonキーをここに";
+    const BOARD_KIND = "info"; // このページの掲示板種別（必要に応じて変更）
+
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const appState = {
+      mode: "threads",           // "threads" | "timeline"
+      filterPanelOpen: false,
+      filters: {
+        keyword: "",
+        target: "body_title",    // "body_title" | "user" | "user_body"
+        scope: "threads",        // "threads" | "all"
+        onlyBoard: false,
+      },
+      allComments: [],
+      threads: [],
+      timeline: [],
+      currentName: "",
+      currentTag: "",
+      replyTarget: null,         // { parentId, rootId, ownerName }
+      isLoading: false,
+    };
+
+    const listContainer = document.getElementById("listContainer");
+    const searchStatusText = document.getElementById("searchStatusText");
+    const toastEl = document.getElementById("toast");
+
+    function showToast(message, ms = 2000) {
+      toastEl.textContent = message;
+      toastEl.classList.add("show");
+      setTimeout(() => {
+        toastEl.classList.remove("show");
+      }, ms);
+    }
+
+    function simpleHash(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash * 31 + str.charCodeAt(i)) | 0;
+      }
+      return Math.abs(hash).toString(16);
+    }
+
+    function getClientSecret() {
+      let secret = localStorage.getItem("ld_client_secret");
+      if (!secret) {
+        const arr = new Uint32Array(4);
+        window.crypto.getRandomValues(arr);
+        secret = Array.from(arr).map(x => x.toString(16).padStart(8, "0")).join("");
+        localStorage.setItem("ld_client_secret", secret);
+      }
+      return secret;
+    }
+
+    function getGuestDailyId() {
+      const today = new Date().toISOString().slice(0, 10);
+      const base = getClientSecret() + "|" + today + "|" + BOARD_KIND;
+      return simpleHash(base).slice(0, 8);
+    }
+
+    function loadUserFromStorage() {
+      appState.currentName = localStorage.getItem("ld_board_name") || "";
+      appState.currentTag = localStorage.getItem("ld_board_tag") || "";
+      document.getElementById("inputName").value = appState.currentName;
+      document.getElementById("inputTag").value = appState.currentTag;
+    }
+
+    function saveUserToStorage() {
+      const name = document.getElementById("inputName").value.trim();
+      const tag = document.getElementById("inputTag").value.trim();
+      appState.currentName = name;
+      appState.currentTag = tag;
+      localStorage.setItem("ld_board_name", name);
+      localStorage.setItem("ld_board_tag", tag);
+    }
+
+    function getSelectedGenre() {
+      const radios = document.querySelectorAll('input[name="genre"]');
+      for (const r of radios) {
+        if (r.checked) return r.value;
+      }
+      return "normal";
+    }
+
+    function updateRecruitVisibility() {
+      const genre = getSelectedGenre();
+      const row = document.getElementById("recruitExtra");
+      row.style.display = genre === "recruit" ? "flex" : "none";
+    }
+
+    function updateComposerLabel() {
+      const label = document.getElementById("composerLabel");
+      if (appState.replyTarget) {
+        label.textContent = `返信を書く: ★${appState.replyTarget.ownerName}`;
+      } else {
+        label.textContent = "新規コメントを書く";
+      }
+    }
+
+    function setMode(mode) {
+      if (appState.mode === mode) return;
+      appState.mode = mode;
+      document.getElementById("modeThreads").classList.toggle("active", mode === "threads");
+      document.getElementById("modeTimeline").classList.toggle("active", mode === "timeline");
+      applyFiltersAndRender();
+    }
+
+    function setFilterTarget(target) {
+      appState.filters.target = target;
+    }
+    function setFilterScope(scope) {
+      appState.filters.scope = scope;
+    }
+
+    function buildDerivedState() {
+      const all = appState.allComments.slice().filter(c => !c.deleted_at);
+      // 親コメント（parent_comment_id が NULL）
+      const parents = all.filter(c => !c.parent_comment_id);
+      const threads = parents.map(p => {
+        const children = all.filter(c => c.root_comment_id === p.id && c.id !== p.id);
+        children.sort((a, b) => a.created_at.localeCompare(b.created_at));
+        const childCount = children.length;
+        const latestChild = childCount > 0 ? children[childCount - 1] : null;
+        const totalLike = children.reduce((sum, c) => sum + (c.like_count || 0), p.like_count || 0);
+        return { parent: p, children, childCount, latestChild, totalLike };
+      });
+
+      threads.sort((a, b) => {
+        const aTime = (a.latestChild || a.parent).created_at;
+        const bTime = (b.latestChild || b.parent).created_at;
+        return bTime.localeCompare(aTime);
+      });
+
+      const timeline = all.slice().sort((a, b) => b.created_at.localeCompare(a.created_at));
+
+      appState.threads = threads;
+      appState.timeline = timeline;
+    }
+
+    function commentMatchesFilters(comment) {
+      const { keyword, target, onlyBoard } = appState.filters;
+      if (onlyBoard && !comment.board_layout_id) return false;
+      if (!keyword) return true;
+      const kw = keyword.toLowerCase();
+      const body = (comment.body || "").toLowerCase();
+      const title = (comment.thread_title || "").toLowerCase();
+      const owner = (comment.owner_name || "").toLowerCase();
+
+      if (target === "body_title") {
+        return body.includes(kw) || title.includes(kw);
+      } else if (target === "user") {
+        return owner.includes(kw);
+      } else {
+        return owner.includes(kw) && (body.includes(kw) || title.includes(kw));
+      }
+    }
+
+    function threadMatchesFilters(thread) {
+      const { keyword, target, onlyBoard } = appState.filters;
+      const p = thread.parent;
+      const latest = thread.latestChild;
+      if (onlyBoard && !p.board_layout_id && !(latest && latest.board_layout_id)) {
+        return false;
+      }
+      if (!keyword) return true;
+
+      const kw = keyword.toLowerCase();
+      const bodyP = (p.body || "").toLowerCase();
+      const bodyC = (latest?.body || "").toLowerCase();
+      const title = (p.thread_title || "").toLowerCase();
+      const ownerP = (p.owner_name || "").toLowerCase();
+      const ownerC = (latest?.owner_name || "").toLowerCase();
+
+      if (target === "body_title") {
+        return bodyP.includes(kw) || bodyC.includes(kw) || title.includes(kw);
+      } else if (target === "user") {
+        return ownerP.includes(kw) || ownerC.includes(kw);
+      } else {
+        const ownerHit = ownerP.includes(kw) || ownerC.includes(kw);
+        const textHit = bodyP.includes(kw) || bodyC.includes(kw) || title.includes(kw);
+        return ownerHit && textHit;
+      }
+    }
+
+    function describeSearchStatus() {
+      const { keyword, target, scope, onlyBoard } = appState.filters;
+      if (!keyword && !onlyBoard && scope === "threads") {
+        return "フィルター未適用 / 全件表示";
+      }
+      const parts = [];
+      if (keyword) parts.push(`「${keyword}」`);
+      if (target === "body_title") parts.push("本文＋タイトル");
+      else if (target === "user") parts.push("ユーザー名");
+      else parts.push("ユーザー名＋本文");
+
+      if (scope === "threads") parts.push("スレッド一覧");
+      else parts.push("全コメント");
+
+      if (onlyBoard) parts.push("盤面付きのみ");
+
+      return `検索条件: ${parts.join(" / ")}`;
+    }
+
+    function applyFiltersAndRender() {
+      searchStatusText.textContent = describeSearchStatus();
+      const mode = appState.mode;
+      listContainer.innerHTML = "";
+
+      if (mode === "threads") {
+        const threads = appState.threads.filter(threadMatchesFilters);
+        if (threads.length === 0) {
+          const empty = document.createElement("div");
+          empty.style.padding = "8px";
+          empty.style.fontSize = "12px";
+          empty.style.color = "var(--text-sub)";
+          empty.textContent = "該当するスレッドはありません。";
+          listContainer.appendChild(empty);
+          return;
+        }
+        threads.forEach(thread => {
+          listContainer.appendChild(renderThreadCard(thread));
+        });
+      } else {
+        const filtered = appState.timeline.filter(commentMatchesFilters);
+        if (filtered.length === 0) {
+          const empty = document.createElement("div");
+          empty.style.padding = "8px";
+          empty.style.fontSize = "12px";
+          empty.style.color = "var(--text-sub)";
+          empty.textContent = "該当するコメントはありません。";
+          listContainer.appendChild(empty);
+          return;
+        }
+        filtered.forEach(c => {
+          listContainer.appendChild(renderTimelineCard(c));
+        });
+      }
+    }
+
+    function getGenreBadge(comment, isThreadRoot = false) {
+      const g = comment.genre || "normal";
+      if (comment.is_recruit) {
+        const span = document.createElement("span");
+        span.className = "meta-pill badge-recruit";
+        span.textContent = `募集${comment.recruit_level ? ":" + comment.recruit_level : ""}`;
+        return span;
+      }
+      if (g === "question") {
+        const span = document.createElement("span");
+        span.className = "meta-pill badge-question";
+        span.textContent = "質問";
+        return span;
+      }
+      if (g === "report") {
+        const span = document.createElement("span");
+        span.className = "meta-pill badge-report";
+        span.textContent = "報告";
+        return span;
+      }
+      if (isThreadRoot && commentToChildCount(comment.id) > 0) {
+        const span = document.createElement("span");
+        span.className = "meta-pill";
+        span.textContent = "論議";
+        return span;
+      }
+      return null;
+    }
+
+    function commentToChildCount(rootId) {
+      const t = appState.threads.find(t => t.parent.id === rootId);
+      return t ? t.childCount : 0;
+    }
+
+    function formatMetaLineForThread(thread) {
+      const { parent, childCount, totalLike } = thread;
+      const idPart = parent.owner_tag ? parent.owner_tag : (parent.guest_daily_id || "--");
+      return `★${parent.owner_name || "名無し"} ${idPart} コメ:${childCount} (･∀･)ｲｲ!:${totalLike}`;
+    }
+
+    function formatMetaLineForComment(comment) {
+      const idPart = comment.owner_tag ? comment.owner_tag : (comment.guest_daily_id || "--");
+      return `★${comment.owner_name || "名無し"} ${idPart} (･∀･)ｲｲ!:${comment.like_count || 0}`;
+    }
+
+    function formatRecruitRemain(expires_at) {
+      if (!expires_at) return "";
+      const now = new Date();
+      const end = new Date(expires_at);
+      const diffMs = end.getTime() - now.getTime();
+      if (diffMs <= 0) return "募集は終了しました";
+      const minutes = Math.ceil(diffMs / 60000);
+      return `残り${minutes}分`;
+    }
+
+    function renderThreadCard(thread) {
+      const { parent, children, childCount, latestChild } = thread;
+
+      // 募集で期限切れは表示しない（UI側でも弾く）
+      if (parent.is_recruit && parent.expires_at) {
+        const now = new Date();
+        if (now > new Date(parent.expires_at)) {
+          const empty = document.createElement("div");
+          empty.style.display = "none";
+          return empty;
+        }
+      }
+
+      const card = document.createElement("article");
+      card.className = "comment-card thread-card";
+
+      const meta = document.createElement("div");
+      meta.className = "meta-line";
+
+      const metaText = document.createElement("span");
+      metaText.textContent = formatMetaLineForThread(thread);
+      meta.appendChild(metaText);
+
+      const badge = getGenreBadge(parent, true);
+      if (badge) meta.appendChild(badge);
+
+      const profileBtn = document.createElement("button");
+      profileBtn.className = "btn-link";
+      profileBtn.textContent = "プロフィール";
+      profileBtn.addEventListener("click", () => openProfileModal(parent.owner_name, parent.owner_tag));
+      meta.appendChild(profileBtn);
+
+      card.appendChild(meta);
+
+      if (parent.thread_title) {
+        const titleEl = document.createElement("div");
+        titleEl.style.fontSize = "12px";
+        titleEl.style.fontWeight = "600";
+        titleEl.style.marginBottom = "2px";
+        titleEl.textContent = parent.thread_title;
+        card.appendChild(titleEl);
+      }
+
+      const bodyLine = document.createElement("div");
+      bodyLine.className = "body-line";
+      bodyLine.textContent = parent.body || "";
+      card.appendChild(bodyLine);
+
+      if (parent.board_layout_id) {
+        const imgRow = document.createElement("div");
+        imgRow.className = "image-row";
+        const label = document.createElement("span");
+        label.textContent = "盤面:";
+        const btn = document.createElement("button");
+        btn.className = "btn-link";
+        btn.textContent = "画像を表示";
+        btn.addEventListener("click", () => openBoardLayoutModal(parent.board_layout_id));
+        const thumb = document.createElement("div");
+        thumb.className = "thumb";
+        thumb.textContent = "サムネ";
+        imgRow.appendChild(label);
+        imgRow.appendChild(btn);
+        imgRow.appendChild(thumb);
+        card.appendChild(imgRow);
+      }
+
+      if (parent.is_recruit) {
+        const remain = formatRecruitRemain(parent.expires_at);
+        if (remain) {
+          const span = document.createElement("div");
+          span.style.fontSize = "11px";
+          span.style.color = "red";
+          span.textContent = remain;
+          card.appendChild(span);
+        }
+      }
+
+      const actions = document.createElement("div");
+      actions.className = "actions";
+
+      const replyBtn = document.createElement("button");
+      replyBtn.className = "btn-link";
+      replyBtn.textContent = "返信";
+      replyBtn.addEventListener("click", () => startReply(parent));
+      actions.appendChild(replyBtn);
+
+      const likeBtn = document.createElement("button");
+      likeBtn.className = "btn-link";
+      likeBtn.textContent = "(･∀･)ｲｲ!!";
+      likeBtn.addEventListener("click", () => incrementLike(parent.id));
+      actions.appendChild(likeBtn);
+
+      const titleBtn = document.createElement("button");
+      titleBtn.className = "btn-link";
+      titleBtn.textContent = "タイトル編集";
+      titleBtn.addEventListener("click", () => editThreadTitle(parent));
+      actions.appendChild(titleBtn);
+
+      card.appendChild(actions);
+
+      if (childCount > 0) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "thread-children";
+
+        const header = document.createElement("div");
+        header.className = "thread-children-header";
+        const label = document.createElement("span");
+        label.textContent = `子コメント ${childCount}件`;
+        const toggleBtn = document.createElement("button");
+        toggleBtn.className = "btn-link";
+        toggleBtn.textContent = "▼すべての子コメントを表示";
+        header.appendChild(label);
+        header.appendChild(toggleBtn);
+        wrapper.appendChild(header);
+
+        const childrenContainer = document.createElement("div");
+        childrenContainer.style.display = "none";
+
+        children.forEach(child => {
+          const childEl = document.createElement("div");
+          childEl.className = "thread-child";
+
+          const m = document.createElement("div");
+          m.className = "meta-line";
+          const metaSpan = document.createElement("span");
+          metaSpan.textContent = formatMetaLineForComment(child);
+          m.appendChild(metaSpan);
+
+          const profileBtn2 = document.createElement("button");
+          profileBtn2.className = "btn-link";
+          profileBtn2.textContent = "プロフィール";
+          profileBtn2.addEventListener("click", () => openProfileModal(child.owner_name, child.owner_tag));
+          m.appendChild(profileBtn2);
+
+          childEl.appendChild(m);
+
+          const body = document.createElement("div");
+          body.className = "body-line";
+          body.textContent = child.body || "";
+          childEl.appendChild(body);
+
+          if (child.board_layout_id) {
+            const imgRow = document.createElement("div");
+            imgRow.className = "image-row";
+            const label = document.createElement("span");
+            label.textContent = "盤面:";
+            const btn = document.createElement("button");
+            btn.className = "btn-link";
+            btn.textContent = "画像を表示";
+            btn.addEventListener("click", () => openBoardLayoutModal(child.board_layout_id));
+            const thumb = document.createElement("div");
+            thumb.className = "thumb";
+            thumb.textContent = "サムネ";
+            imgRow.appendChild(label);
+            imgRow.appendChild(btn);
+            imgRow.appendChild(thumb);
+            childEl.appendChild(imgRow);
+          }
+
+          const acts = document.createElement("div");
+          acts.className = "actions";
+          const rBtn = document.createElement("button");
+          rBtn.className = "btn-link";
+          rBtn.textContent = "返信";
+          rBtn.addEventListener("click", () => startReply(child));
+          acts.appendChild(rBtn);
+
+          const likeBtn2 = document.createElement("button");
+          likeBtn2.className = "btn-link";
+          likeBtn2.textContent = "(･∀･)ｲｲ!!";
+          likeBtn2.addEventListener("click", () => incrementLike(child.id));
+          acts.appendChild(likeBtn2);
+
+          childEl.appendChild(acts);
+
+          childrenContainer.appendChild(childEl);
+        });
+
+        toggleBtn.addEventListener("click", () => {
+          const visible = childrenContainer.style.display !== "none";
+          childrenContainer.style.display = visible ? "none" : "block";
+          toggleBtn.textContent = visible ? "▼すべての子コメントを表示" : "▲子コメントを閉じる";
+        });
+
+        wrapper.appendChild(childrenContainer);
+        card.appendChild(wrapper);
+      }
+
+      return card;
+    }
+
+    function renderTimelineCard(comment) {
+      const card = document.createElement("article");
+      card.className = "comment-card";
+
+      const meta = document.createElement("div");
+      meta.className = "meta-line";
+
+      const metaSpan = document.createElement("span");
+      metaSpan.textContent = formatMetaLineForComment(comment);
+      meta.appendChild(metaSpan);
+
+      const badge = getGenreBadge(comment, false);
+      if (badge) meta.appendChild(badge);
+
+      const profileBtn = document.createElement("button");
+      profileBtn.className = "btn-link";
+      profileBtn.textContent = "プロフィール";
+      profileBtn.addEventListener("click", () => openProfileModal(comment.owner_name, comment.owner_tag));
+      meta.appendChild(profileBtn);
+
+      card.appendChild(meta);
+
+      if (comment.thread_title && !comment.parent_comment_id) {
+        const titleEl = document.createElement("div");
+        titleEl.style.fontSize = "12px";
+        titleEl.style.fontWeight = "600";
+        titleEl.style.marginBottom = "2px";
+        titleEl.textContent = comment.thread_title;
+        card.appendChild(titleEl);
+      }
+
+      const bodyLine = document.createElement("div");
+      bodyLine.className = "body-line";
+      bodyLine.textContent = comment.body || "";
+      card.appendChild(bodyLine);
+
+      if (comment.board_layout_id) {
+        const imgRow = document.createElement("div");
+        imgRow.className = "image-row";
+        const label = document.createElement("span");
+        label.textContent = "盤面:";
+        const btn = document.createElement("button");
+        btn.className = "btn-link";
+        btn.textContent = "画像を表示";
+        btn.addEventListener("click", () => openBoardLayoutModal(comment.board_layout_id));
+        const thumb = document.createElement("div");
+        thumb.className = "thumb";
+        thumb.textContent = "サムネ";
+        imgRow.appendChild(label);
+        imgRow.appendChild(btn);
+        imgRow.appendChild(thumb);
+        card.appendChild(imgRow);
+      }
+
+      if (comment.is_recruit) {
+        const remain = formatRecruitRemain(comment.expires_at);
+        if (remain) {
+          const span = document.createElement("div");
+          span.style.fontSize = "11px";
+          span.style.color = "red";
+          span.textContent = remain;
+          card.appendChild(span);
+        }
+      }
+
+      const actions = document.createElement("div");
+      actions.className = "actions";
+
+      const replyBtn = document.createElement("button");
+      replyBtn.className = "btn-link";
+      replyBtn.textContent = "返信";
+      replyBtn.addEventListener("click", () => startReply(comment));
+      actions.appendChild(replyBtn);
+
+      const likeBtn = document.createElement("button");
+      likeBtn.className = "btn-link";
+      likeBtn.textContent = "(･∀･)ｲｲ!!";
+      likeBtn.addEventListener("click", () => incrementLike(comment.id));
+      actions.appendChild(likeBtn);
+
+      card.appendChild(actions);
+
+      return card;
+    }
+
+    async function openBoardLayoutModal(boardLayoutId) {
+      try {
+        const { data, error } = await supabase
+          .from("board_layouts")
+          .select("*")
+          .eq("id", boardLayoutId)
+          .maybeSingle();
+        if (error) throw error;
+        if (!data) {
+          showToast("盤面データが見つかりませんでした");
+          return;
+        }
+        const modalBody = document.getElementById("modalBody");
+        modalBody.innerHTML = "";
+        const meta = document.createElement("div");
+        meta.className = "modal-meta";
+        meta.textContent = `★${data.owner_name || "名無し"} #${data.owner_tag || "--"} / ${data.board_type}`;
+        modalBody.appendChild(meta);
+
+        if (data.title) {
+          const titleEl = document.createElement("div");
+          titleEl.style.fontWeight = "600";
+          titleEl.style.marginBottom = "4px";
+          titleEl.textContent = data.title;
+          modalBody.appendChild(titleEl);
+        }
+
+        const imgRow = document.createElement("div");
+        imgRow.className = "modal-image-row";
+        if (data.image_url) {
+          const img = document.createElement("img");
+          img.src = data.image_url;
+          img.alt = "盤面画像";
+          imgRow.appendChild(img);
+        } else {
+          imgRow.textContent = "画像はまだ生成されていません。";
+        }
+        modalBody.appendChild(imgRow);
+
+        const cap = document.createElement("div");
+        cap.className = "modal-caption";
+        cap.textContent = "※ 盤面コードや詳細編集は今後の実装で対応予定です。";
+        modalBody.appendChild(cap);
+
+        openModal("盤面の詳細");
+      } catch (err) {
+        console.error(err);
+        showToast("盤面の読み込みに失敗しました");
+      }
+    }
+
+    async function openProfileModal(name, tag) {
+      if (!name) {
+        showToast("ユーザー名が不明です");
+        return;
+      }
+      try {
+        const query = supabase
+          .from("ld_users")
+          .select("*")
+          .eq("name", name);
+        if (tag) query.eq("tag", tag);
+        const { data, error } = await query.maybeSingle();
+        const modalBody = document.getElementById("modalBody");
+        modalBody.innerHTML = "";
+
+        if (error || !data) {
+          const text = document.createElement("div");
+          text.className = "modal-text";
+          text.textContent = "このユーザーはまだユーザーデータベースに登録されていません。";
+          modalBody.appendChild(text);
+          openModal(`プロフィル: ${name}`);
+          return;
+        }
+
+        const meta = document.createElement("div");
+        meta.className = "modal-meta";
+        meta.textContent = `★${data.name} #${data.tag} / 金庫Lv${data.vault_level}`;
+        modalBody.appendChild(meta);
+
+        const caption = document.createElement("div");
+        caption.className = "modal-caption";
+        caption.textContent = "所持している神話ユニット（Lv・専用👑の有無）";
+        modalBody.appendChild(caption);
+
+        const grid = document.createElement("div");
+        grid.className = "profile-grid";
+        const mythicState = data.mythic_state || {};
+        const ids = Object.keys(mythicState).sort((a, b) => Number(a) - Number(b));
+        if (ids.length === 0) {
+          const t = document.createElement("div");
+          t.className = "modal-text";
+          t.textContent = "神話ユニットの登録はまだありません。";
+          modalBody.appendChild(t);
+        } else {
+          ids.forEach(id => {
+            const info = mythicState[id];
+            const cell = document.createElement("div");
+            cell.className = "profile-unit";
+            const crown = info.treasure ? "👑" : "";
+            cell.textContent = `${id.slice(-2)}${crown}`;
+            cell.title = `ID:${id} Lv${info.level || "?"} ${info.form || ""}`;
+            grid.appendChild(cell);
+          });
+          modalBody.appendChild(grid);
+        }
+
+        openModal(`プロフィール: ${data.name}`);
+      } catch (err) {
+        console.error(err);
+        showToast("プロフィールの取得に失敗しました");
+      }
+    }
+
+    function openModal(title) {
+      document.getElementById("modalTitle").textContent = title;
+      document.getElementById("modalBackdrop").classList.add("show");
+    }
+
+    function closeModal() {
+      document.getElementById("modalBackdrop").classList.remove("show");
+    }
+
+    function startReply(comment) {
+      appState.replyTarget = {
+        parentId: comment.id,
+        rootId: comment.root_comment_id || comment.id,
+        ownerName: comment.owner_name || "名無し",
+      };
+      updateComposerLabel();
+      const body = document.getElementById("composerBody");
+      body.classList.add("open");
+      document.getElementById("inputBody").focus();
+    }
+
+    async function incrementLike(commentId) {
+      try {
+        const target = appState.allComments.find(c => c.id === commentId);
+        if (!target) return;
+        const newCount = (target.like_count || 0) + 1;
+        const { error } = await supabase
+          .from("ld_board_comments")
+          .update({ like_count: newCount })
+          .eq("id", commentId);
+        if (error) throw error;
+        target.like_count = newCount;
+        buildDerivedState();
+        applyFiltersAndRender();
+      } catch (err) {
+        console.error(err);
+        showToast("イイねの送信に失敗しました");
+      }
+    }
+
+    async function editThreadTitle(parentComment) {
+      // スレッド親本人か、ゲストID一致の場合にのみ許可
+      const meName = appState.currentName;
+      const meTag = appState.currentTag;
+      const myGuestId = getGuestDailyId();
+
+      const isRegistered = !!parentComment.owner_tag;
+      let canEdit = false;
+      if (isRegistered) {
+        if (meName && meTag && meName === parentComment.owner_name && meTag === parentComment.owner_tag) {
+          canEdit = true;
+        }
+      } else {
+        if (parentComment.guest_daily_id && parentComment.guest_daily_id === myGuestId) {
+          canEdit = true;
+        }
+      }
+      if (!canEdit) {
+        showToast("このスレのタイトルを編集する権限がありません");
+        return;
+      }
+
+      const current = parentComment.thread_title || "";
+      const next = window.prompt("スレッドタイトルを入力してください（空で削除）", current);
+      if (next === null) return;
+      const newTitle = next.trim() || null;
+      try {
+        const { error } = await supabase
+          .from("ld_board_comments")
+          .update({ thread_title: newTitle })
+          .eq("id", parentComment.id);
+        if (error) throw error;
+        parentComment.thread_title = newTitle;
+        buildDerivedState();
+        applyFiltersAndRender();
+        showToast("タイトルを更新しました");
+      } catch (err) {
+        console.error(err);
+        showToast("タイトルの更新に失敗しました");
+      }
+    }
+
+    async function submitComment() {
+      saveUserToStorage();
+      const name = appState.currentName;
+      const tag = appState.currentTag;
+      const body = document.getElementById("inputBody").value.trim();
+      const genre = getSelectedGenre();
+      const isRecruit = genre === "recruit";
+
+      if (!name) {
+        showToast("ユーザー名を入力してください");
+        return;
+      }
+      if (!body) {
+        showToast("本文を入力してください");
+        return;
+      }
+
+      let recruitLevel = null;
+      let joinCode = null;
+      let expiresAt = null;
+
+      if (isRecruit) {
+        recruitLevel = document.getElementById("selectRecruitLevel").value;
+        joinCode = document.getElementById("inputJoinCode").value.trim();
+        if (!/^[0-9]{4}$/.test(joinCode)) {
+          showToast("募集の4桁コードを正しく入力してください");
+          return;
+        }
+        if (recruitLevel !== "GUILD") {
+          const now = new Date();
+          expiresAt = new Date(now.getTime() + 30 * 60000).toISOString();
+        }
+      }
+
+      const parentId = appState.replyTarget ? appState.replyTarget.parentId : null;
+      const newId = crypto.randomUUID();
+      const rootId = appState.replyTarget ? appState.replyTarget.rootId : newId;
+      const posterType = /^[0-9]{2}$/.test(tag) ? "registered" : "guest";
+      const guestId = posterType === "guest" ? getGuestDailyId() : null;
+
+      const payload = {
+        id: newId,
+        board_kind: BOARD_KIND,
+        body,
+        genre,
+        owner_name: name,
+        owner_tag: posterType === "registered" ? tag : null,
+        poster_type: posterType,
+        guest_daily_id: guestId,
+        parent_comment_id: parentId,
+        root_comment_id: rootId,
+        thread_title: null,
+        is_recruit: isRecruit,
+        recruit_level: isRecruit ? recruitLevel : null,
+        join_code: isRecruit ? joinCode : null,
+        expires_at: isRecruit ? expiresAt : null,
+        board_layout_id: null,
+        like_count: 0,
+      };
+
+      try {
+        const { error } = await supabase
+          .from("ld_board_comments")
+          .insert(payload);
+        if (error) throw error;
+
+        // ローカルにも反映
+        appState.allComments.push({
+          ...payload,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          deleted_at: null,
+        });
+        buildDerivedState();
+        applyFiltersAndRender();
+
+        document.getElementById("inputBody").value = "";
+        if (isRecruit) {
+          document.getElementById("inputJoinCode").value = "";
+        }
+        appState.replyTarget = null;
+        updateComposerLabel();
+        showToast("コメントを投稿しました");
+      } catch (err) {
+        console.error(err);
+        showToast("コメントの投稿に失敗しました");
+      }
+    }
+
+    async function fetchComments() {
+      try {
+        appState.isLoading = true;
+        const { data, error } = await supabase
+          .from("ld_board_comments")
+          .select("*")
+          .eq("board_kind", BOARD_KIND)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: true })
+          .limit(200);
+        if (error) throw error;
+        appState.allComments = data || [];
+        buildDerivedState();
+        applyFiltersAndRender();
+      } catch (err) {
+        console.error(err);
+        showToast("コメントの取得に失敗しました");
+      } finally {
+        appState.isLoading = false;
+      }
+    }
+
+    function initUI() {
+      document.getElementById("boardKindLabel").textContent = "モード: 情報";
+      loadUserFromStorage();
+      updateComposerLabel();
+
+      // フィルタパネル
+      const filterPanel = document.getElementById("filterPanel");
+      document.getElementById("toggleFilterBtn").addEventListener("click", () => {
+        filterPanel.classList.toggle("open");
+      });
+
+      document.querySelectorAll("#targetChips .chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          document.querySelectorAll("#targetChips .chip").forEach(c => c.classList.remove("active"));
+          chip.classList.add("active");
+          setFilterTarget(chip.dataset.target);
+        });
+      });
+
+      document.querySelectorAll("#scopeChips .chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          document.querySelectorAll("#scopeChips .chip").forEach(c => c.classList.remove("active"));
+          chip.classList.add("active");
+          setFilterScope(chip.dataset.scope);
+        });
+      });
+
+      document.getElementById("applyFilterBtn").addEventListener("click", () => {
+        appState.filters.keyword = document.getElementById("keywordInput").value.trim();
+        appState.filters.onlyBoard = document.getElementById("onlyBoard").checked;
+        applyFiltersAndRender();
+      });
+
+      document.getElementById("clearSearch").addEventListener("click", () => {
+        appState.filters.keyword = "";
+        appState.filters.onlyBoard = false;
+        document.getElementById("keywordInput").value = "";
+        document.getElementById("onlyBoard").checked = false;
+        applyFiltersAndRender();
+      });
+
+      // モード切り替え
+      document.getElementById("modeThreads").addEventListener("click", () => setMode("threads"));
+      document.getElementById("modeTimeline").addEventListener("click", () => setMode("timeline"));
+
+      // 作成フォーム
+      const composerBody = document.getElementById("composerBody");
+      document.getElementById("toggleComposer").addEventListener("click", () => {
+        composerBody.classList.toggle("open");
+      });
+
+      document.getElementById("inputName").addEventListener("change", saveUserToStorage);
+      document.getElementById("inputTag").addEventListener("change", saveUserToStorage);
+
+      document.querySelectorAll('input[name="genre"]').forEach(r => {
+        r.addEventListener("change", updateRecruitVisibility);
+      });
+      updateRecruitVisibility();
+
+      document.getElementById("submitCommentBtn").addEventListener("click", submitComment);
+
+      document.getElementById("openBoardEditorBtn").addEventListener("click", () => {
+        showToast("盤面エディタとの連携は後続のフェーズで実装します");
+      });
+
+      // モーダル
+      document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+      document.getElementById("modalBackdrop").addEventListener("click", (e) => {
+        if (e.target.id === "modalBackdrop") closeModal();
+      });
+    }
+
+    window.addEventListener("load", () => {
+      initUI();
+      fetchComments();
+    });
+  </script>
+</body>
+</html>
