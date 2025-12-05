@@ -387,11 +387,18 @@
       padding: 2px;
       pointer-events: none;
     }
-    .cell-action-row button {
-      pointer-events: auto;
-      flex: 1;
-      background-color: rgba(255, 255, 255, 0.9);
-    }
+.cell-action-row button {
+  pointer-events: auto;
+  flex: 1;
+  background-color: rgba(255, 255, 255, 0.9);
+
+  /* ここを追加・調整 */
+  min-height: 36px;     /* 高さを少し大きく */
+  padding: 6px 10px;    /* 内側余白 */
+  font-size: 13px;      /* 文字も少し大きく */
+  border-radius: 8px;   /* 押しやすいように角を丸く */
+}
+
     .cell-action-row.double {
       flex-direction: column;
       align-items: stretch;
