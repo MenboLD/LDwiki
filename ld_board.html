@@ -285,13 +285,10 @@
     }
 
     .body-line {
-      margin: 2px 0 4px;
+      margin: 2px 0 2px;
       line-height: 1.4;
       white-space: pre-wrap;
-    }
-
-    .highlight {
-      background-color: #fff59d;
+      word-break: break-all;
     }
 
     .image-row {
@@ -299,7 +296,8 @@
       align-items: center;
       gap: 6px;
       font-size: 11px;
-      margin-bottom: 3px;
+      margin-top: 4px;
+      margin-bottom: 2px;
     }
 
     .thumb {
@@ -313,14 +311,36 @@
       justify-content: center;
       font-size: 10px;
       color: var(--text-sub);
+      overflow: hidden;
+    }
+    .thumb img {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 4px;
+      display: block;
     }
 
-    .actions {
+    .text-actions-row {
       display: flex;
-      justify-content: flex-end;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .text-actions-row .body-line {
+      flex: 1 1 auto;
+    }
+
+    .actions-inline {
+      display: flex;
       align-items: center;
-      gap: 8px;
       font-size: 11px;
+      white-space: nowrap;
+      margin-left: 4px;
+      align-self: flex-end;
+    }
+
+    .actions-inline .sep {
+      margin: 0 2px;
     }
 
     .btn-link {
@@ -376,17 +396,8 @@
       font-size: 12px;
       border-bottom: 1px solid var(--border);
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
-    }
-
-    .footer-toggle button {
-      border: none;
-      background: none;
-      padding: 0;
-      margin: 0;
-      font-size: 11px;
-      color: var(--link);
       cursor: pointer;
     }
 
@@ -398,6 +409,10 @@
 
     .footer-body.open {
       display: block;
+    }
+
+    .reply-label {
+      margin-bottom: 4px;
     }
 
     .user-row {
@@ -415,7 +430,7 @@
     }
 
     .user-row input.tag-input {
-      flex: 0 0 90px;
+      flex: 0 0 110px;
     }
 
     .genre-row {
@@ -473,6 +488,7 @@
       align-items: center;
       gap: 6px;
       font-size: 11px;
+      flex-wrap: wrap;
     }
 
     .btn-primary {
@@ -568,7 +584,7 @@
       margin: 4px 0 2px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
     }
 
     .modal-image-row img {
@@ -634,8 +650,8 @@
       </div>
       <div class="toolbar-right">
         <div class="mode-toggle">
-          <button type="button" id="modeThreads" class="active">スレッド一覧</button>
-          <button type="button" id="modeTimeline">全コメント</button>
+          <button type="button" id="modeThreads">スレッド一覧</button>
+          <button type="button" id="modeTimeline" class="active">全コメント</button>
         </div>
       </div>
     </div>
@@ -657,12 +673,12 @@
         <div class="filter-row">
           <div class="filter-label">範囲</div>
           <div class="filter-chips" id="scopeChips">
-            <div class="chip active" data-scope="threads">スレッド一覧</div>
-            <div class="chip" data-scope="all">全コメント</div>
+            <div class="chip" data-scope="threads">スレッド一覧</div>
+            <div class="chip active" data-scope="all">全コメント</div>
           </div>
         </div>
         <div class="filter-row">
-          <label><input type="checkbox" id="onlyBoard" /> 盤面付きコメントに限定</label>
+          <label><input type="checkbox" id="onlyBoard" /> 盤面・画像付きコメントに限定</label>
         </div>
         <div class="filter-apply">
           <button type="button" id="applyFilterBtn">フィルターを適用</button>
@@ -681,14 +697,14 @@
     </main>
 
     <footer class="footer-comment">
-      <div class="footer-toggle">
-        <span id="composerLabel">新規コメントを書く</span>
-        <button type="button" id="toggleComposer">▲閉じる</button>
+      <div class="footer-toggle" id="footerToggle">
+        <span id="composerToggleLabel">▲コメントの入力ツールを表示(タップ)</span>
       </div>
       <div class="footer-body" id="composerBody">
+        <div id="replyLabel" class="reply-label small-hint" style="display:none;"></div>
         <div class="user-row">
-          <input id="inputName" type="text" maxlength="12" placeholder="ユーザー名（全角6文字・半角12文字まで）" />
-          <input id="inputTag" type="text" maxlength="10" class="tag-input" placeholder="タグ（全角5文字・半角10文字まで）" />
+          <input id="inputName" type="text" maxlength="12" placeholder="ユーザー名(任意)Max全角6文字" />
+          <input id="inputTag" type="text" maxlength="10" class="tag-input" placeholder="固有ユーザー名のパス" />
         </div>
         <div class="genre-row">
           <label><input type="radio" name="genre" value="normal" checked />通常</label>
@@ -709,12 +725,15 @@
           </select>
           <input id="inputJoinCode" type="text" maxlength="4" placeholder="4桁コード" />
           <span style="align-self:center; font-size:10px; color:var(--text-sub);">
-            募集は30分で自動非表示
+            募集は30分で自動非表示（ギルド以外）
           </span>
         </div>
         <div class="composer-actions">
           <div class="composer-actions-left">
             <button type="button" class="btn-secondary" id="openBoardEditorBtn">盤面を編集（後で実装）</button>
+            <button type="button" class="btn-secondary" id="attachImageBtn">画像を添付</button>
+            <span id="imageAttachedLabel" class="small-hint" style="display:none;">画像を添付済み</span>
+            <input type="file" id="imageInput" accept="image/*" style="display:none;" />
           </div>
           <button type="button" class="btn-primary" id="submitCommentBtn">投稿する</button>
         </div>
@@ -741,17 +760,18 @@
     const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
     const BOARD_KIND = "info";
+    const IMAGE_BUCKET = "ld_board_images";
 
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const appState = {
-      mode: "threads",
+      mode: "timeline",
       filterPanelOpen: false,
       filters: {
         keyword: "",
         target: "body_title",
-        scope: "threads",
+        scope: "all",
         onlyBoard: false,
       },
       allComments: [],
@@ -760,12 +780,15 @@
       currentName: "",
       currentTag: "",
       replyTarget: null,
+      currentImageUrl: null,
       isLoading: false,
     };
 
     const listContainer = document.getElementById("listContainer");
     const searchStatusText = document.getElementById("searchStatusText");
     const toastEl = document.getElementById("toast");
+
+    let composerOpen = false;
 
     function showToast(message, ms = 2000) {
       toastEl.textContent = message;
@@ -857,12 +880,28 @@
       row.style.display = genre === "recruit" ? "flex" : "none";
     }
 
-    function updateComposerLabel() {
-      const label = document.getElementById("composerLabel");
-      if (appState.replyTarget) {
-        label.textContent = `返信を書く: ★${appState.replyTarget.ownerName}`;
+    function setComposerOpen(open) {
+      composerOpen = open;
+      const body = document.getElementById("composerBody");
+      const label = document.getElementById("composerToggleLabel");
+      if (open) {
+        body.classList.add("open");
+        label.textContent = "▼コメントのツールを非表示(タップ)";
       } else {
-        label.textContent = "新規コメントを書く";
+        body.classList.remove("open");
+        label.textContent = "▲コメントの入力ツールを表示(タップ)";
+      }
+    }
+
+    function updateReplyLabel() {
+      const el = document.getElementById("replyLabel");
+      if (!el) return;
+      if (appState.replyTarget) {
+        el.style.display = "block";
+        el.textContent = `返信先: ★${appState.replyTarget.ownerName}`;
+      } else {
+        el.style.display = "none";
+        el.textContent = "";
       }
     }
 
@@ -882,32 +921,52 @@
     }
 
     function buildDerivedState() {
-      const all = appState.allComments.slice().filter(c => !c.deleted_at);
+      const now = new Date();
+      const all = (appState.allComments || []).filter(c => {
+        if (c.deleted_at) return false;
+        if (c.board_kind && c.board_kind !== BOARD_KIND) return false;
+        if (c.is_recruit && c.recruit_level !== "GUILD" && c.expires_at) {
+          try {
+            const end = new Date(c.expires_at);
+            if (end <= now) return false;
+          } catch (_) {}
+        }
+        return true;
+      });
+
+      all.sort((a, b) => {
+        const aT = a.created_at || "";
+        const bT = b.created_at || "";
+        return aT.localeCompare(bT);
+      });
+
       const parents = all.filter(c => !c.parent_comment_id);
       const threads = parents.map(p => {
         const children = all.filter(c => c.root_comment_id === p.id && c.id !== p.id);
-        children.sort((a, b) => a.created_at.localeCompare(b.created_at));
+        children.sort((a, b) => {
+          const aT = a.created_at || "";
+          const bT = b.created_at || "";
+          return aT.localeCompare(bT);
+        });
         const childCount = children.length;
-        const latestChild = childCount > 0 ? children[childCount - 1] : null;
-        const totalLike = children.reduce((sum, c) => sum + (c.like_count || 0), p.like_count || 0);
-        return { parent: p, children, childCount, latestChild, totalLike };
+        const latestChild = childCount ? children[childCount - 1] : null;
+        const totalLikes = children.reduce((sum, c) => sum + (c.like_count || 0), p.like_count || 0);
+        return { parent: p, children, childCount, latestChild, totalLikes };
       });
 
       threads.sort((a, b) => {
-        const aTime = (a.latestChild || a.parent).created_at;
-        const bTime = (b.latestChild || b.parent).created_at;
+        const aTime = (a.latestChild || a.parent).created_at || "";
+        const bTime = (b.latestChild || b.parent).created_at || "";
         return bTime.localeCompare(aTime);
       });
 
-      const timeline = all.slice().sort((a, b) => b.created_at.localeCompare(a.created_at));
-
+      appState.timeline = all;
       appState.threads = threads;
-      appState.timeline = timeline;
     }
 
     function commentMatchesFilters(comment) {
       const { keyword, target, onlyBoard } = appState.filters;
-      if (onlyBoard && !comment.board_layout_id) return false;
+      if (onlyBoard && !comment.board_layout_id && !comment.image_url) return false;
       if (!keyword) return true;
       const kw = keyword.toLowerCase();
       const body = (comment.body || "").toLowerCase();
@@ -927,7 +986,7 @@
       const { keyword, target, onlyBoard } = appState.filters;
       const p = thread.parent;
       const latest = thread.latestChild;
-      if (onlyBoard && !p.board_layout_id && !(latest && latest.board_layout_id)) {
+      if (onlyBoard && !p.board_layout_id && !p.image_url && !(latest && (latest.board_layout_id || latest.image_url))) {
         return false;
       }
       if (!keyword) return true;
@@ -952,7 +1011,7 @@
 
     function describeSearchStatus() {
       const { keyword, target, scope, onlyBoard } = appState.filters;
-      if (!keyword && !onlyBoard && scope === "threads") {
+      if (!keyword && !onlyBoard && scope === "all") {
         return "フィルター未適用 / 全件表示";
       }
       const parts = [];
@@ -964,7 +1023,7 @@
       if (scope === "threads") parts.push("スレッド一覧");
       else parts.push("全コメント");
 
-      if (onlyBoard) parts.push("盤面付きのみ");
+      if (onlyBoard) parts.push("盤面・画像付きのみ");
 
       return `検索条件: ${parts.join(" / ")}`;
     }
@@ -976,7 +1035,7 @@
 
       if (mode === "threads") {
         const threads = appState.threads.filter(threadMatchesFilters);
-        if (threads.length === 0) {
+        if (!threads.length) {
           const empty = document.createElement("div");
           empty.style.padding = "8px";
           empty.style.fontSize = "12px";
@@ -990,7 +1049,7 @@
         });
       } else {
         const filtered = appState.timeline.filter(commentMatchesFilters);
-        if (filtered.length === 0) {
+        if (!filtered.length) {
           const empty = document.createElement("div");
           empty.style.padding = "8px";
           empty.style.fontSize = "12px";
@@ -1005,14 +1064,20 @@
       }
     }
 
-    function getGenreBadge(comment, isThreadRoot = false) {
-      const g = comment.genre || "normal";
+    function formatUserId(comment) {
+      const name = comment.owner_name || "名無し";
+      const idPart = comment.owner_tag || comment.guest_daily_id || "--";
+      return `★${name} ${idPart}`;
+    }
+
+    function getGenreBadge(comment, options = {}) {
       if (comment.is_recruit) {
         const span = document.createElement("span");
         span.className = "meta-pill badge-recruit";
         span.textContent = `募集${comment.recruit_level ? ":" + comment.recruit_level : ""}`;
         return span;
       }
+      const g = comment.genre || "normal";
       if (g === "question") {
         const span = document.createElement("span");
         span.className = "meta-pill badge-question";
@@ -1025,7 +1090,7 @@
         span.textContent = "報告";
         return span;
       }
-      if (isThreadRoot && commentToChildCount(comment.id) > 0) {
+      if (options.isThreadRoot && options.childCount && options.childCount > 0) {
         const span = document.createElement("span");
         span.className = "meta-pill";
         span.textContent = "論議";
@@ -1034,96 +1099,200 @@
       return null;
     }
 
-    function commentToChildCount(rootId) {
-      const t = appState.threads.find(t => t.parent.id === rootId);
-      return t ? t.childCount : 0;
-    }
+    function createMetaLine(comment, options = {}) {
+      const meta = document.createElement("div");
+      meta.className = "meta-line";
 
-    function formatMetaLineForThread(thread) {
-      const { parent, childCount, totalLike } = thread;
-      const idPart = parent.owner_tag ? parent.owner_tag : (parent.guest_daily_id || "--");
-      return `★${parent.owner_name || "名無し"} ${idPart} コメ:${childCount} (･∀･)ｲｲ!:${totalLike}`;
-    }
+      const badge = getGenreBadge(comment, options);
+      if (badge) meta.appendChild(badge);
 
-    function formatMetaLineForComment(comment) {
-      const idPart = comment.owner_tag ? comment.owner_tag : (comment.guest_daily_id || "--");
-      return `★${comment.owner_name || "名無し"} ${idPart} (･∀･)ｲｲ!:${comment.like_count || 0}`;
+      const userSpan = document.createElement("span");
+      userSpan.textContent = formatUserId(comment);
+      meta.appendChild(userSpan);
+
+      const profileBtn = document.createElement("button");
+      profileBtn.className = "btn-link";
+      profileBtn.textContent = "プロフ";
+      profileBtn.addEventListener("click", () => openProfileModal(comment.owner_name, comment.owner_tag));
+      meta.appendChild(profileBtn);
+
+      const likeSpan = document.createElement("span");
+      const likeCount = options.likeCountOverride != null ? options.likeCountOverride : (comment.like_count || 0);
+      likeSpan.textContent = ` (･∀･)ｲｲ!:${likeCount}`;
+      meta.appendChild(likeSpan);
+
+      if (options.showChildCount) {
+        const countSpan = document.createElement("span");
+        countSpan.textContent = ` コメ:${options.childCount || 0}`;
+        meta.appendChild(countSpan);
+      }
+
+      return meta;
     }
 
     function formatRecruitRemain(expires_at) {
       if (!expires_at) return "";
-      const now = new Date();
-      const end = new Date(expires_at);
-      const diffMs = end.getTime() - now.getTime();
-      if (diffMs <= 0) return "募集は終了しました";
-      const minutes = Math.ceil(diffMs / 60000);
-      return `残り${minutes}分`;
+      try {
+        const now = new Date();
+        const end = new Date(expires_at);
+        const diffMs = end.getTime() - now.getTime();
+        if (diffMs <= 0) return "";
+        const minutes = Math.ceil(diffMs / 60000);
+        return `残り${minutes}分`;
+      } catch (_) {
+        return "";
+      }
+    }
+
+    function createTextAndActions(comment) {
+      const row = document.createElement("div");
+      row.className = "text-actions-row";
+
+      const body = document.createElement("div");
+      body.className = "body-line";
+      body.textContent = comment.body || "";
+      row.appendChild(body);
+
+      const actions = document.createElement("div");
+      actions.className = "actions-inline";
+
+      const replyBtn = document.createElement("button");
+      replyBtn.className = "btn-link";
+      replyBtn.textContent = "[ 返信 ]";
+      replyBtn.addEventListener("click", () => startReply(comment));
+
+      const sep = document.createElement("span");
+      sep.className = "sep";
+      sep.textContent = " / ";
+
+      const likeBtn = document.createElement("button");
+      likeBtn.className = "btn-link";
+      likeBtn.textContent = "(･∀･)ｲｲ!";
+      likeBtn.addEventListener("click", () => incrementLike(comment.id));
+
+      actions.appendChild(replyBtn);
+      actions.appendChild(sep);
+      actions.appendChild(likeBtn);
+
+      row.appendChild(actions);
+
+      return { row, body };
+    }
+
+    function applyLongTextClamp(containerEl, bodyEl, rowEl) {
+      if (!containerEl || !bodyEl || !rowEl) return;
+      requestAnimationFrame(() => {
+        const style = window.getComputedStyle(bodyEl);
+        const lineHeight = parseFloat(style.lineHeight || "16");
+        const maxLines = 3;
+        const maxHeight = lineHeight * maxLines;
+        if (bodyEl.scrollHeight <= maxHeight + 1) return;
+
+        bodyEl.style.maxHeight = `${maxHeight}px`;
+        bodyEl.style.overflow = "hidden";
+
+        const toggle = document.createElement("button");
+        toggle.className = "btn-link";
+        toggle.style.display = "block";
+        toggle.style.marginTop = "2px";
+        toggle.textContent = "▼長文表示(タップ)";
+        let expanded = false;
+        toggle.addEventListener("click", () => {
+          expanded = !expanded;
+          if (expanded) {
+            bodyEl.style.maxHeight = "none";
+            toggle.textContent = "▲長文非表示(タップ)";
+          } else {
+            bodyEl.style.maxHeight = `${maxHeight}px`;
+            toggle.textContent = "▼長文表示(タップ)";
+          }
+        });
+
+        containerEl.insertBefore(toggle, rowEl.nextSibling);
+      });
+    }
+
+    function appendBoardLayoutRow(card, comment) {
+      if (!comment.board_layout_id) return;
+      const row = document.createElement("div");
+      row.className = "image-row";
+      const label = document.createElement("span");
+      label.textContent = "盤面:";
+      const btn = document.createElement("button");
+      btn.className = "btn-link";
+      btn.textContent = "画像を表示";
+      btn.addEventListener("click", () => openBoardLayoutModal(comment.board_layout_id));
+      const thumb = document.createElement("div");
+      thumb.className = "thumb";
+      thumb.textContent = "サムネ";
+      row.appendChild(label);
+      row.appendChild(btn);
+      row.appendChild(thumb);
+      card.appendChild(row);
+    }
+
+    function appendImageRow(card, comment) {
+      if (!comment.image_url) return;
+      const row = document.createElement("div");
+      row.className = "image-row";
+      const label = document.createElement("span");
+      label.textContent = "画像:";
+      const btn = document.createElement("button");
+      btn.className = "btn-link";
+      btn.textContent = "画像を開く";
+      btn.addEventListener("click", () => openImageModal(comment.image_url));
+      const thumb = document.createElement("div");
+      thumb.className = "thumb";
+      const img = document.createElement("img");
+      img.src = comment.image_url;
+      img.alt = "添付画像";
+      thumb.appendChild(img);
+      thumb.addEventListener("click", () => openImageModal(comment.image_url));
+      row.appendChild(label);
+      row.appendChild(btn);
+      row.appendChild(thumb);
+      card.appendChild(row);
     }
 
     function renderThreadCard(thread) {
-      const { parent, children, childCount, latestChild } = thread;
+      const { parent, children, childCount, latestChild, totalLikes } = thread;
 
-      if (parent.is_recruit && parent.expires_at) {
+      if (parent.is_recruit && parent.recruit_level !== "GUILD" && parent.expires_at) {
         const now = new Date();
-        if (now > new Date(parent.expires_at)) {
-          const empty = document.createElement("div");
-          empty.style.display = "none";
-          return empty;
+        const end = new Date(parent.expires_at);
+        if (end <= now) {
+          const dummy = document.createElement("div");
+          dummy.style.display = "none";
+          return dummy;
         }
       }
 
       const card = document.createElement("article");
       card.className = "comment-card thread-card";
 
-      const meta = document.createElement("div");
-      meta.className = "meta-line";
-
-      const metaText = document.createElement("span");
-      metaText.textContent = formatMetaLineForThread(thread);
-      meta.appendChild(metaText);
-
-      const badge = getGenreBadge(parent, true);
-      if (badge) meta.appendChild(badge);
-
-      const profileBtn = document.createElement("button");
-      profileBtn.className = "btn-link";
-      profileBtn.textContent = "プロフィール";
-      profileBtn.addEventListener("click", () => openProfileModal(parent.owner_name, parent.owner_tag));
-      meta.appendChild(profileBtn);
-
+      const meta = createMetaLine(parent, {
+        isThreadRoot: true,
+        childCount,
+        showChildCount: true,
+        likeCountOverride: totalLikes,
+      });
       card.appendChild(meta);
 
       if (parent.thread_title) {
         const titleEl = document.createElement("div");
         titleEl.style.fontSize = "12px";
-        titleEl.style.fontWeight = "600";
+        titleEl.style.FontWeight = "600";
         titleEl.style.marginBottom = "2px";
         titleEl.textContent = parent.thread_title;
         card.appendChild(titleEl);
       }
 
-      const bodyLine = document.createElement("div");
-      bodyLine.className = "body-line";
-      bodyLine.textContent = parent.body || "";
-      card.appendChild(bodyLine);
+      const { row, body } = createTextAndActions(parent);
+      card.appendChild(row);
+      applyLongTextClamp(card, body, row);
 
-      if (parent.board_layout_id) {
-        const imgRow = document.createElement("div");
-        imgRow.className = "image-row";
-        const label = document.createElement("span");
-        label.textContent = "盤面:";
-        const btn = document.createElement("button");
-        btn.className = "btn-link";
-        btn.textContent = "画像を表示";
-        btn.addEventListener("click", () => openBoardLayoutModal(parent.board_layout_id));
-        const thumb = document.createElement("div");
-        thumb.className = "thumb";
-        thumb.textContent = "サムネ";
-        imgRow.appendChild(label);
-        imgRow.appendChild(btn);
-        imgRow.appendChild(thumb);
-        card.appendChild(imgRow);
-      }
+      appendBoardLayoutRow(card, parent);
+      appendImageRow(card, parent);
 
       if (parent.is_recruit) {
         const remain = formatRecruitRemain(parent.expires_at);
@@ -1136,28 +1305,14 @@
         }
       }
 
-      const actions = document.createElement("div");
-      actions.className = "actions";
-
-      const replyBtn = document.createElement("button");
-      replyBtn.className = "btn-link";
-      replyBtn.textContent = "返信";
-      replyBtn.addEventListener("click", () => startReply(parent));
-      actions.appendChild(replyBtn);
-
-      const likeBtn = document.createElement("button");
-      likeBtn.className = "btn-link";
-      likeBtn.textContent = "(･∀･)ｲｲ!!";
-      likeBtn.addEventListener("click", () => incrementLike(parent.id));
-      actions.appendChild(likeBtn);
-
+      const titleRow = document.createElement("div");
+      titleRow.style.textAlign = "right";
       const titleBtn = document.createElement("button");
       titleBtn.className = "btn-link";
       titleBtn.textContent = "タイトル編集";
       titleBtn.addEventListener("click", () => editThreadTitle(parent));
-      actions.appendChild(titleBtn);
-
-      card.appendChild(actions);
+      titleRow.appendChild(titleBtn);
+      card.appendChild(titleRow);
 
       if (childCount > 0) {
         const wrapper = document.createElement("div");
@@ -1181,58 +1336,15 @@
           const childEl = document.createElement("div");
           childEl.className = "thread-child";
 
-          const m = document.createElement("div");
-          m.className = "meta-line";
-          const metaSpan = document.createElement("span");
-          metaSpan.textContent = formatMetaLineForComment(child);
-          m.appendChild(metaSpan);
-
-          const profileBtn2 = document.createElement("button");
-          profileBtn2.className = "btn-link";
-          profileBtn2.textContent = "プロフィール";
-          profileBtn2.addEventListener("click", () => openProfileModal(child.owner_name, child.owner_tag));
-          m.appendChild(profileBtn2);
-
+          const m = createMetaLine(child, { isThreadRoot: false });
           childEl.appendChild(m);
 
-          const body = document.createElement("div");
-          body.className = "body-line";
-          body.textContent = child.body || "";
-          childEl.appendChild(body);
+          const { row: rowC, body: bodyC } = createTextAndActions(child);
+          childEl.appendChild(rowC);
+          applyLongTextClamp(childEl, bodyC, rowC);
 
-          if (child.board_layout_id) {
-            const imgRow = document.createElement("div");
-            imgRow.className = "image-row";
-            const label = document.createElement("span");
-            label.textContent = "盤面:";
-            const btn = document.createElement("button");
-            btn.className = "btn-link";
-            btn.textContent = "画像を表示";
-            btn.addEventListener("click", () => openBoardLayoutModal(child.board_layout_id));
-            const thumb = document.createElement("div");
-            thumb.className = "thumb";
-            thumb.textContent = "サムネ";
-            imgRow.appendChild(label);
-            imgRow.appendChild(btn);
-            imgRow.appendChild(thumb);
-            childEl.appendChild(imgRow);
-          }
-
-          const acts = document.createElement("div");
-          acts.className = "actions";
-          const rBtn = document.createElement("button");
-          rBtn.className = "btn-link";
-          rBtn.textContent = "返信";
-          rBtn.addEventListener("click", () => startReply(child));
-          acts.appendChild(rBtn);
-
-          const likeBtn2 = document.createElement("button");
-          likeBtn2.className = "btn-link";
-          likeBtn2.textContent = "(･∀･)ｲｲ!!";
-          likeBtn2.addEventListener("click", () => incrementLike(child.id));
-          acts.appendChild(likeBtn2);
-
-          childEl.appendChild(acts);
+          appendBoardLayoutRow(childEl, child);
+          appendImageRow(childEl, child);
 
           childrenContainer.appendChild(childEl);
         });
@@ -1254,22 +1366,9 @@
       const card = document.createElement("article");
       card.className = "comment-card";
 
-      const meta = document.createElement("div");
-      meta.className = "meta-line";
-
-      const metaSpan = document.createElement("span");
-      metaSpan.textContent = formatMetaLineForComment(comment);
-      meta.appendChild(metaSpan);
-
-      const badge = getGenreBadge(comment, false);
-      if (badge) meta.appendChild(badge);
-
-      const profileBtn = document.createElement("button");
-      profileBtn.className = "btn-link";
-      profileBtn.textContent = "プロフィール";
-      profileBtn.addEventListener("click", () => openProfileModal(comment.owner_name, comment.owner_tag));
-      meta.appendChild(profileBtn);
-
+      const meta = createMetaLine(comment, {
+        isThreadRoot: !comment.parent_comment_id,
+      });
       card.appendChild(meta);
 
       if (comment.thread_title && !comment.parent_comment_id) {
@@ -1281,28 +1380,12 @@
         card.appendChild(titleEl);
       }
 
-      const bodyLine = document.createElement("div");
-      bodyLine.className = "body-line";
-      bodyLine.textContent = comment.body || "";
-      card.appendChild(bodyLine);
+      const { row, body } = createTextAndActions(comment);
+      card.appendChild(row);
+      applyLongTextClamp(card, body, row);
 
-      if (comment.board_layout_id) {
-        const imgRow = document.createElement("div");
-        imgRow.className = "image-row";
-        const label = document.createElement("span");
-        label.textContent = "盤面:";
-        const btn = document.createElement("button");
-        btn.className = "btn-link";
-        btn.textContent = "画像を表示";
-        btn.addEventListener("click", () => openBoardLayoutModal(comment.board_layout_id));
-        const thumb = document.createElement("div");
-        thumb.className = "thumb";
-        thumb.textContent = "サムネ";
-        imgRow.appendChild(label);
-        imgRow.appendChild(btn);
-        imgRow.appendChild(thumb);
-        card.appendChild(imgRow);
-      }
+      appendBoardLayoutRow(card, comment);
+      appendImageRow(card, comment);
 
       if (comment.is_recruit) {
         const remain = formatRecruitRemain(comment.expires_at);
@@ -1314,23 +1397,6 @@
           card.appendChild(span);
         }
       }
-
-      const actions = document.createElement("div");
-      actions.className = "actions";
-
-      const replyBtn = document.createElement("button");
-      replyBtn.className = "btn-link";
-      replyBtn.textContent = "返信";
-      replyBtn.addEventListener("click", () => startReply(comment));
-      actions.appendChild(replyBtn);
-
-      const likeBtn = document.createElement("button");
-      likeBtn.className = "btn-link";
-      likeBtn.textContent = "(･∀･)ｲｲ!!";
-      likeBtn.addEventListener("click", () => incrementLike(comment.id));
-      actions.appendChild(likeBtn);
-
-      card.appendChild(actions);
 
       return card;
     }
@@ -1370,7 +1436,9 @@
           img.alt = "盤面画像";
           imgRow.appendChild(img);
         } else {
-          imgRow.textContent = "画像はまだ生成されていません。";
+          const txt = document.createElement("div");
+          txt.textContent = "画像はまだ生成されていません。";
+          imgRow.appendChild(txt);
         }
         modalBody.appendChild(imgRow);
 
@@ -1384,6 +1452,19 @@
         console.error(err);
         showToast("盤面の読み込みに失敗しました");
       }
+    }
+
+    function openImageModal(url) {
+      const modalBody = document.getElementById("modalBody");
+      modalBody.innerHTML = "";
+      const imgRow = document.createElement("div");
+      imgRow.className = "modal-image-row";
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = "添付画像";
+      imgRow.appendChild(img);
+      modalBody.appendChild(imgRow);
+      openModal("画像の表示");
     }
 
     async function openProfileModal(name, tag) {
@@ -1420,18 +1501,19 @@
         caption.textContent = "所持している神話ユニット（Lv・専用👑の有無）";
         modalBody.appendChild(caption);
 
-        const grid = document.createElement("div");
-        grid.className = "profile-grid";
         const mythicState = data.mythic_state || {};
         const ids = Object.keys(mythicState).sort((a, b) => Number(a) - Number(b));
-        if (ids.length === 0) {
+
+        if (!ids.length) {
           const t = document.createElement("div");
           t.className = "modal-text";
           t.textContent = "神話ユニットの登録はまだありません。";
           modalBody.appendChild(t);
         } else {
+          const grid = document.createElement("div");
+          grid.className = "profile-grid";
           ids.forEach(id => {
-            const info = mythicState[id];
+            const info = mythicState[id] || {};
             const cell = document.createElement("div");
             cell.className = "profile-unit";
             const crown = info.treasure ? "👑" : "";
@@ -1464,15 +1546,14 @@
         rootId: comment.root_comment_id || comment.id,
         ownerName: comment.owner_name || "名無し",
       };
-      updateComposerLabel();
-      const body = document.getElementById("composerBody");
-      body.classList.add("open");
+      updateReplyLabel();
+      setComposerOpen(true);
       document.getElementById("inputBody").focus();
     }
 
     async function incrementLike(commentId) {
       try {
-        const target = appState.allComments.find(c => c.id === commentId);
+        const target = (appState.allComments || []).find(c => c.id === commentId);
         if (!target) return;
         const newCount = (target.like_count || 0) + 1;
         const { error } = await supabase
@@ -1530,19 +1611,74 @@
       }
     }
 
+    async function compressAndUploadImage(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = async () => {
+            try {
+              const maxSize = 800;
+              let w = img.width;
+              let h = img.height;
+              if (w > h && w > maxSize) {
+                h = Math.round(h * (maxSize / w));
+                w = maxSize;
+              } else if (h >= w && h > maxSize) {
+                w = Math.round(w * (maxSize / h));
+                h = maxSize;
+              }
+              const canvas = document.createElement("canvas");
+              canvas.width = w;
+              canvas.height = h;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, w, h);
+              canvas.toBlob(async (blob) => {
+                try {
+                  if (!blob) throw new Error("画像の圧縮に失敗しました");
+                  const fileExt = "jpg";
+                  const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
+                  const filePath = fileName;
+                  const { error } = await supabase
+                    .storage
+                    .from(IMAGE_BUCKET)
+                    .upload(filePath, blob, { contentType: "image/jpeg", upsert: false });
+                  if (error) throw error;
+                  const { data: publicData } = supabase
+                    .storage
+                    .from(IMAGE_BUCKET)
+                    .getPublicUrl(filePath);
+                  if (!publicData || !publicData.publicUrl) {
+                    throw new Error("画像URLの取得に失敗しました");
+                  }
+                  resolve(publicData.publicUrl);
+                } catch (err) {
+                  reject(err);
+                }
+              }, "image/jpeg", 0.8);
+            } catch (err) {
+              reject(err);
+            }
+          };
+          img.onerror = () => reject(new Error("画像の読み込みに失敗しました"));
+          img.src = e.target.result;
+        };
+        reader.onerror = () => reject(new Error("ファイルの読み込みに失敗しました"));
+        reader.readAsDataURL(file);
+      });
+    }
+
     async function submitComment() {
       saveUserToStorage();
-      const name = appState.currentName;
+      const rawName = appState.currentName;
       const tag = appState.currentTag;
-      const body = document.getElementById("inputBody").value.trim();
+      const bodyVal = document.getElementById("inputBody").value.trim();
       const genre = getSelectedGenre();
       const isRecruit = genre === "recruit";
 
-      if (!name) {
-        showToast("ユーザー名を入力してください");
-        return;
-      }
-      if (!body) {
+      const ownerName = rawName || "名無し";
+
+      if (!bodyVal) {
         showToast("本文を入力してください");
         return;
       }
@@ -1573,9 +1709,9 @@
       const payload = {
         id: newId,
         board_kind: BOARD_KIND,
-        body,
+        body: bodyVal,
         genre,
-        owner_name: name,
+        owner_name: ownerName,
         owner_tag: posterType === "registered" ? tag : null,
         poster_type: posterType,
         guest_daily_id: guestId,
@@ -1587,6 +1723,7 @@
         join_code: isRecruit ? joinCode : null,
         expires_at: isRecruit ? expiresAt : null,
         board_layout_id: null,
+        image_url: appState.currentImageUrl,
         like_count: 0,
       };
 
@@ -1606,11 +1743,13 @@
         applyFiltersAndRender();
 
         document.getElementById("inputBody").value = "";
-        if (isRecruit) {
-          document.getElementById("inputJoinCode").value = "";
-        }
+        document.getElementById("inputJoinCode").value = "";
         appState.replyTarget = null;
-        updateComposerLabel();
+        updateReplyLabel();
+        appState.currentImageUrl = null;
+        const imgLabel = document.getElementById("imageAttachedLabel");
+        if (imgLabel) imgLabel.style.display = "none";
+
         showToast("コメントを投稿しました");
       } catch (err) {
         console.error(err);
@@ -1625,7 +1764,6 @@
           .from("ld_board_comments")
           .select("*")
           .eq("board_kind", BOARD_KIND)
-          .is("deleted_at", null)
           .order("created_at", { ascending: true })
           .limit(200);
         if (error) throw error;
@@ -1644,7 +1782,8 @@
       document.getElementById("boardKindLabel").textContent = "モード: 情報";
       applyLengthLimit();
       loadUserFromStorage();
-      updateComposerLabel();
+      updateReplyLabel();
+      setComposerOpen(false);
 
       const filterPanel = document.getElementById("filterPanel");
       document.getElementById("toggleFilterBtn").addEventListener("click", () => {
@@ -1684,9 +1823,8 @@
       document.getElementById("modeThreads").addEventListener("click", () => setMode("threads"));
       document.getElementById("modeTimeline").addEventListener("click", () => setMode("timeline"));
 
-      const composerBody = document.getElementById("composerBody");
-      document.getElementById("toggleComposer").addEventListener("click", () => {
-        composerBody.classList.toggle("open");
+      document.getElementById("footerToggle").addEventListener("click", () => {
+        setComposerOpen(!composerOpen);
       });
 
       document.getElementById("inputName").addEventListener("change", saveUserToStorage);
@@ -1701,6 +1839,33 @@
 
       document.getElementById("openBoardEditorBtn").addEventListener("click", () => {
         showToast("盤面エディタとの連携は後続のフェーズで実装します");
+      });
+
+      const attachBtn = document.getElementById("attachImageBtn");
+      const imageInput = document.getElementById("imageInput");
+      const imgLabel = document.getElementById("imageAttachedLabel");
+
+      attachBtn.addEventListener("click", () => {
+        imageInput.click();
+      });
+
+      imageInput.addEventListener("change", async () => {
+        const file = imageInput.files[0];
+        if (!file) return;
+        try {
+          showToast("画像を処理しています...");
+          const url = await compressAndUploadImage(file);
+          appState.currentImageUrl = url;
+          if (imgLabel) {
+            imgLabel.style.display = "inline";
+          }
+          showToast("画像を添付しました");
+        } catch (err) {
+          console.error(err);
+          showToast("画像のアップロードに失敗しました");
+        } finally {
+          imageInput.value = "";
+        }
       });
 
       document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
