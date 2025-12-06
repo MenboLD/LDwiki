@@ -15,6 +15,9 @@
       --accent: #3874ff;
       --accent-soft: #e7f0ff;
       --danger: #d33;
+      --registered: #2e7d32;
+      --thread-base: #3874ff;
+      --thread-has-children: #4caf50;
     }
 
     *,
@@ -73,43 +76,9 @@
       border-bottom: 1px solid var(--border);
       background-color: #ffffff;
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-start;
       align-items: center;
       gap: 4px;
-    }
-
-    .toolbar-left {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .toolbar-right {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .mode-toggle {
-      display: inline-flex;
-      padding: 2px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-    }
-
-    .mode-toggle button {
-      border: none;
-      background: none;
-      padding: 3px 8px;
-      font-size: 11px;
-      border-radius: 999px;
-      cursor: pointer;
-    }
-
-    .mode-toggle button.active {
-      background-color: var(--accent-soft);
-      color: var(--accent);
     }
 
     .btn-soft {
@@ -119,11 +88,6 @@
       padding: 3px 8px;
       font-size: 11px;
       cursor: pointer;
-    }
-
-    .btn-soft:disabled {
-      opacity: 0.5;
-      cursor: default;
     }
 
     .filter-panel {
@@ -159,26 +123,9 @@
       border: 1px solid var(--border);
     }
 
-    .filter-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      margin-top: 4px;
-    }
-
-    .chip {
+    .filter-row label {
       font-size: 11px;
-      padding: 2px 6px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-      cursor: pointer;
-    }
-
-    .chip.active {
-      border-color: var(--accent);
-      color: var(--accent);
-      background-color: var(--accent-soft);
+      color: var(--text-sub);
     }
 
     .filter-apply {
@@ -244,7 +191,11 @@
     }
 
     .comment-card.thread-card {
-      border-left: 3px solid var(--accent);
+      border-left: 3px solid var(--thread-base);
+    }
+
+    .comment-card.thread-card.has-children {
+      border-left-color: var(--thread-has-children);
     }
 
     .meta-line {
@@ -257,8 +208,10 @@
       margin-bottom: 2px;
     }
 
-    .meta-line strong {
-      color: var(--text-main);
+    .comment-number {
+      padding-right: 2px;
+      font-size: 11px;
+      color: var(--text-sub);
     }
 
     .meta-pill {
@@ -321,12 +274,18 @@
     }
 
     .text-actions-row {
+      margin-top: 2px;
       display: flex;
-      align-items: flex-start;
-      gap: 4px;
+      flex-direction: column;
+      align-items: stretch;
     }
 
-    .text-actions-row .body-line {
+    .text-actions-row.single-line {
+      flex-direction: row;
+      align-items: flex-end;
+    }
+
+    .text-actions-row.single-line .body-line {
       flex: 1 1 auto;
     }
 
@@ -335,8 +294,14 @@
       align-items: center;
       font-size: 11px;
       white-space: nowrap;
+      margin-left: 0;
+      margin-top: 2px;
+      justify-content: flex-end;
+    }
+
+    .text-actions-row.single-line .actions-inline {
       margin-left: 4px;
-      align-self: flex-end;
+      margin-top: 0;
     }
 
     .actions-inline .sep {
@@ -635,6 +600,14 @@
     .toast.show {
       opacity: 1;
     }
+
+    .user-name-registered {
+      color: var(--registered);
+      font-weight: 600;
+    }
+    .user-tag {
+      color: var(--text-sub);
+    }
   </style>
 </head>
 <body>
@@ -645,15 +618,7 @@
     </header>
 
     <div class="toolbar">
-      <div class="toolbar-left">
-        <button type="button" class="btn-soft" id="toggleFilterBtn">検索・フィルター</button>
-      </div>
-      <div class="toolbar-right">
-        <div class="mode-toggle">
-          <button type="button" id="modeThreads">スレッド一覧</button>
-          <button type="button" id="modeTimeline" class="active">全コメント</button>
-        </div>
-      </div>
+      <button type="button" class="btn-soft" id="toggleFilterBtn">検索・フィルター</button>
     </div>
 
     <div class="filter-panel" id="filterPanel">
@@ -661,21 +626,6 @@
         <div class="filter-row">
           <div class="filter-label">キーワード</div>
           <input type="text" id="keywordInput" placeholder="本文・タイトル・ユーザー名から検索" />
-        </div>
-        <div class="filter-row">
-          <div class="filter-label">対象</div>
-          <div class="filter-chips" id="targetChips">
-            <div class="chip active" data-target="body_title">本文＋タイトル</div>
-            <div class="chip" data-target="user">ユーザー名</div>
-            <div class="chip" data-target="user_body">ユーザー名＋本文</div>
-          </div>
-        </div>
-        <div class="filter-row">
-          <div class="filter-label">範囲</div>
-          <div class="filter-chips" id="scopeChips">
-            <div class="chip" data-scope="threads">スレッド一覧</div>
-            <div class="chip active" data-scope="all">全コメント</div>
-          </div>
         </div>
         <div class="filter-row">
           <label><input type="checkbox" id="onlyBoard" /> 盤面・画像付きコメントに限定</label>
@@ -687,13 +637,12 @@
     </div>
 
     <div class="search-status" id="searchStatus">
-      <span id="searchStatusText">フィルター未適用 / 全件表示</span>
+      <span id="searchStatusText">フィルター未適用 / スレッド一覧</span>
       <button type="button" id="clearSearch">検索解除</button>
     </div>
 
     <main class="app-main">
-      <div class="list" id="listContainer">
-      </div>
+      <div class="list" id="listContainer"></div>
     </main>
 
     <footer class="footer-comment">
@@ -766,28 +715,24 @@
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const appState = {
-      mode: "timeline",
       filterPanelOpen: false,
       filters: {
         keyword: "",
-        target: "body_title",
-        scope: "all",
         onlyBoard: false,
       },
       allComments: [],
       threads: [],
-      timeline: [],
       currentName: "",
       currentTag: "",
       replyTarget: null,
       currentImageUrl: null,
       isLoading: false,
+      visibleThreadCount: 20,
     };
 
     const listContainer = document.getElementById("listContainer");
     const searchStatusText = document.getElementById("searchStatusText");
     const toastEl = document.getElementById("toast");
-
     let composerOpen = false;
 
     function showToast(message, ms = 2000) {
@@ -887,6 +832,7 @@
       if (open) {
         body.classList.add("open");
         label.textContent = "▼コメントのツールを非表示(タップ)";
+        listContainer.scrollTop = Math.max(0, listContainer.scrollTop - 120);
       } else {
         body.classList.remove("open");
         label.textContent = "▲コメントの入力ツールを表示(タップ)";
@@ -898,26 +844,11 @@
       if (!el) return;
       if (appState.replyTarget) {
         el.style.display = "block";
-        el.textContent = `返信先: ★${appState.replyTarget.ownerName}`;
+        el.textContent = `返信先: >>${appState.replyTarget.number} ★${appState.replyTarget.ownerName}`;
       } else {
         el.style.display = "none";
         el.textContent = "";
       }
-    }
-
-    function setMode(mode) {
-      if (appState.mode === mode) return;
-      appState.mode = mode;
-      document.getElementById("modeThreads").classList.toggle("active", mode === "threads");
-      document.getElementById("modeTimeline").classList.toggle("active", mode === "timeline");
-      applyFiltersAndRender();
-    }
-
-    function setFilterTarget(target) {
-      appState.filters.target = target;
-    }
-    function setFilterScope(scope) {
-      appState.filters.scope = scope;
     }
 
     function buildDerivedState() {
@@ -951,42 +882,42 @@
         const childCount = children.length;
         const latestChild = childCount ? children[childCount - 1] : null;
         const totalLikes = children.reduce((sum, c) => sum + (c.like_count || 0), p.like_count || 0);
+
+        p._number = 1;
+        children.forEach((c, idx) => {
+          c._number = idx + 2;
+        });
+
         return { parent: p, children, childCount, latestChild, totalLikes };
       });
 
       threads.sort((a, b) => {
         const aTime = (a.latestChild || a.parent).created_at || "";
         const bTime = (b.latestChild || b.parent).created_at || "";
-        return bTime.localeCompare(aTime);
+        return aTime.localeCompare(bTime);
       });
 
-      appState.timeline = all;
       appState.threads = threads;
     }
 
     function commentMatchesFilters(comment) {
-      const { keyword, target, onlyBoard } = appState.filters;
+      const { keyword, onlyBoard } = appState.filters;
       if (onlyBoard && !comment.board_layout_id && !comment.image_url) return false;
       if (!keyword) return true;
       const kw = keyword.toLowerCase();
       const body = (comment.body || "").toLowerCase();
       const title = (comment.thread_title || "").toLowerCase();
       const owner = (comment.owner_name || "").toLowerCase();
-
-      if (target === "body_title") {
-        return body.includes(kw) || title.includes(kw);
-      } else if (target === "user") {
-        return owner.includes(kw);
-      } else {
-        return owner.includes(kw) && (body.includes(kw) || title.includes(kw));
-      }
+      return body.includes(kw) || title.includes(kw) || owner.includes(kw);
     }
 
     function threadMatchesFilters(thread) {
-      const { keyword, target, onlyBoard } = appState.filters;
+      const { keyword, onlyBoard } = appState.filters;
       const p = thread.parent;
       const latest = thread.latestChild;
-      if (onlyBoard && !p.board_layout_id && !p.image_url && !(latest && (latest.board_layout_id || latest.image_url))) {
+
+      if (onlyBoard && !p.board_layout_id && !p.image_url &&
+          !(latest && (latest.board_layout_id || latest.image_url))) {
         return false;
       }
       if (!keyword) return true;
@@ -998,76 +929,62 @@
       const ownerP = (p.owner_name || "").toLowerCase();
       const ownerC = (latest?.owner_name || "").toLowerCase();
 
-      if (target === "body_title") {
-        return bodyP.includes(kw) || bodyC.includes(kw) || title.includes(kw);
-      } else if (target === "user") {
-        return ownerP.includes(kw) || ownerC.includes(kw);
-      } else {
-        const ownerHit = ownerP.includes(kw) || ownerC.includes(kw);
-        const textHit = bodyP.includes(kw) || bodyC.includes(kw) || title.includes(kw);
-        return ownerHit && textHit;
-      }
+      return (
+        bodyP.includes(kw) ||
+        bodyC.includes(kw) ||
+        title.includes(kw) ||
+        ownerP.includes(kw) ||
+        ownerC.includes(kw)
+      );
     }
 
     function describeSearchStatus() {
-      const { keyword, target, scope, onlyBoard } = appState.filters;
-      if (!keyword && !onlyBoard && scope === "all") {
-        return "フィルター未適用 / 全件表示";
+      const { keyword, onlyBoard } = appState.filters;
+      if (!keyword && !onlyBoard) {
+        return "フィルター未適用 / スレッド一覧";
       }
       const parts = [];
       if (keyword) parts.push(`「${keyword}」`);
-      if (target === "body_title") parts.push("本文＋タイトル");
-      else if (target === "user") parts.push("ユーザー名");
-      else parts.push("ユーザー名＋本文");
-
-      if (scope === "threads") parts.push("スレッド一覧");
-      else parts.push("全コメント");
-
       if (onlyBoard) parts.push("盤面・画像付きのみ");
-
       return `検索条件: ${parts.join(" / ")}`;
+    }
+
+    function formatTimestampYYMMDDhhmmsscc(ts) {
+      if (!ts) return "";
+      const d = new Date(ts);
+      if (isNaN(d.getTime())) return "";
+      const yy = String(d.getFullYear() % 100).padStart(2, "0");
+      const MM = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const hh = String(d.getHours()).padStart(2, "0");
+      const mm = String(d.getMinutes()).padStart(2, "0");
+      const ss = String(d.getSeconds()).padStart(2, "0");
+      const cc = "00";
+      return yy + MM + dd + hh + mm + ss + cc;
     }
 
     function applyFiltersAndRender() {
       searchStatusText.textContent = describeSearchStatus();
-      const mode = appState.mode;
       listContainer.innerHTML = "";
 
-      if (mode === "threads") {
-        const threads = appState.threads.filter(threadMatchesFilters);
-        if (!threads.length) {
-          const empty = document.createElement("div");
-          empty.style.padding = "8px";
-          empty.style.fontSize = "12px";
-          empty.style.color = "var(--text-sub)";
-          empty.textContent = "該当するスレッドはありません。";
-          listContainer.appendChild(empty);
-          return;
-        }
-        threads.forEach(thread => {
-          listContainer.appendChild(renderThreadCard(thread));
-        });
-      } else {
-        const filtered = appState.timeline.filter(commentMatchesFilters);
-        if (!filtered.length) {
-          const empty = document.createElement("div");
-          empty.style.padding = "8px";
-          empty.style.fontSize = "12px";
-          empty.style.color = "var(--text-sub)";
-          empty.textContent = "該当するコメントはありません。";
-          listContainer.appendChild(empty);
-          return;
-        }
-        filtered.forEach(c => {
-          listContainer.appendChild(renderTimelineCard(c));
-        });
+      const filteredThreads = appState.threads.filter(threadMatchesFilters);
+      if (!filteredThreads.length) {
+        const empty = document.createElement("div");
+        empty.style.padding = "8px";
+        empty.style.fontSize = "12px";
+        empty.style.color = "var(--text-sub)";
+        empty.textContent = "該当するスレッドはありません。";
+        listContainer.appendChild(empty);
+        return;
       }
-    }
 
-    function formatUserId(comment) {
-      const name = comment.owner_name || "名無し";
-      const idPart = comment.owner_tag || comment.guest_daily_id || "--";
-      return `★${name} ${idPart}`;
+      const total = filteredThreads.length;
+      const count = Math.min(appState.visibleThreadCount, total);
+      const start = Math.max(0, total - count);
+
+      for (let i = start; i < total; i++) {
+        listContainer.appendChild(renderThreadCard(filteredThreads[i]));
+      }
     }
 
     function getGenreBadge(comment, options = {}) {
@@ -1090,7 +1007,7 @@
         span.textContent = "報告";
         return span;
       }
-      if (options.isThreadRoot && options.childCount && options.childCount > 0) {
+      if (options.childCount && options.childCount > 0) {
         const span = document.createElement("span");
         span.className = "meta-pill";
         span.textContent = "論議";
@@ -1103,21 +1020,61 @@
       const meta = document.createElement("div");
       meta.className = "meta-line";
 
-      const badge = getGenreBadge(comment, options);
-      if (badge) meta.appendChild(badge);
+      if (options.number != null) {
+        const numSpan = document.createElement("span");
+        numSpan.className = "comment-number";
+        numSpan.textContent = options.number;
+        meta.appendChild(numSpan);
+      }
 
-      const userSpan = document.createElement("span");
-      userSpan.textContent = formatUserId(comment);
-      meta.appendChild(userSpan);
+      if (options.isThreadRoot) {
+        const badge = getGenreBadge(comment, { childCount: options.childCount });
+        if (badge) meta.appendChild(badge);
+      }
 
-      const profileBtn = document.createElement("button");
-      profileBtn.className = "btn-link";
-      profileBtn.textContent = "プロフ";
-      profileBtn.addEventListener("click", () => openProfileModal(comment.owner_name, comment.owner_tag));
-      meta.appendChild(profileBtn);
+      const ownerNameRaw = comment.owner_name || "";
+      const tag = comment.owner_tag || "";
+      const isRegistered = !!tag;
+      const guestId = comment.guest_daily_id || "--";
+
+      if (isRegistered) {
+        const starSpan = document.createElement("span");
+        starSpan.className = "user-name-registered";
+        starSpan.textContent = `★${ownerNameRaw}`;
+        meta.appendChild(starSpan);
+
+        const tagSpan = document.createElement("span");
+        tagSpan.className = "user-tag";
+        tagSpan.textContent = `#${tag}`;
+        meta.appendChild(tagSpan);
+
+        const profileBtn = document.createElement("button");
+        profileBtn.className = "btn-link";
+        profileBtn.textContent = "プロフ(タップ)";
+        profileBtn.addEventListener("click", () =>
+          openProfileModal(comment.owner_name, comment.owner_tag)
+        );
+        meta.appendChild(profileBtn);
+      } else {
+        const span = document.createElement("span");
+        if (!ownerNameRaw || ownerNameRaw === "名無しの傭兵員") {
+          span.textContent = `名無しの傭兵員 ${guestId}`;
+        } else {
+          span.textContent = `${ownerNameRaw} ${guestId}`;
+        }
+        meta.appendChild(span);
+      }
+
+      const tsStr = formatTimestampYYMMDDhhmmsscc(comment.created_at);
+      if (tsStr) {
+        const tsSpan = document.createElement("span");
+        tsSpan.textContent = tsStr;
+        meta.appendChild(tsSpan);
+      }
 
       const likeSpan = document.createElement("span");
-      const likeCount = options.likeCountOverride != null ? options.likeCountOverride : (comment.like_count || 0);
+      const likeCount =
+        options.likeCountOverride != null ? options.likeCountOverride : (comment.like_count || 0);
       likeSpan.textContent = ` (･∀･)ｲｲ!:${likeCount}`;
       meta.appendChild(likeSpan);
 
@@ -1145,13 +1102,12 @@
     }
 
     function createTextAndActions(comment) {
-      const row = document.createElement("div");
-      row.className = "text-actions-row";
+      const wrapper = document.createElement("div");
+      wrapper.className = "text-actions-row";
 
       const body = document.createElement("div");
       body.className = "body-line";
       body.textContent = comment.body || "";
-      row.appendChild(body);
 
       const actions = document.createElement("div");
       actions.className = "actions-inline";
@@ -1174,17 +1130,29 @@
       actions.appendChild(sep);
       actions.appendChild(likeBtn);
 
-      row.appendChild(actions);
+      wrapper.appendChild(body);
+      wrapper.appendChild(actions);
 
-      return { row, body };
+      const text = comment.body || "";
+      const hasLinebreak = text.includes("\n");
+      let units = 0;
+      for (const ch of text) {
+        const code = ch.codePointAt(0);
+        units += code > 0xff ? 2 : 1;
+      }
+      if (!hasLinebreak && units <= 40) {
+        wrapper.classList.add("single-line");
+      }
+
+      return { wrapper, body };
     }
 
-    function applyLongTextClamp(containerEl, bodyEl, rowEl) {
-      if (!containerEl || !bodyEl || !rowEl) return;
+    function applyLongTextClamp(containerEl, bodyEl, wrapperEl) {
+      if (!containerEl || !bodyEl || !wrapperEl) return;
       requestAnimationFrame(() => {
         const style = window.getComputedStyle(bodyEl);
         const lineHeight = parseFloat(style.lineHeight || "16");
-        const maxLines = 3;
+        const maxLines = 4;
         const maxHeight = lineHeight * maxLines;
         if (bodyEl.scrollHeight <= maxHeight + 1) return;
 
@@ -1208,7 +1176,7 @@
           }
         });
 
-        containerEl.insertBefore(toggle, rowEl.nextSibling);
+        containerEl.insertBefore(toggle, wrapperEl.nextSibling);
       });
     }
 
@@ -1269,27 +1237,31 @@
 
       const card = document.createElement("article");
       card.className = "comment-card thread-card";
+      if (childCount > 0) {
+        card.classList.add("has-children");
+      }
 
       const meta = createMetaLine(parent, {
         isThreadRoot: true,
         childCount,
         showChildCount: true,
         likeCountOverride: totalLikes,
+        number: parent._number || 1,
       });
       card.appendChild(meta);
 
       if (parent.thread_title) {
         const titleEl = document.createElement("div");
         titleEl.style.fontSize = "12px";
-        titleEl.style.FontWeight = "600";
+        titleEl.style.fontWeight = "600";
         titleEl.style.marginBottom = "2px";
         titleEl.textContent = parent.thread_title;
         card.appendChild(titleEl);
       }
 
-      const { row, body } = createTextAndActions(parent);
-      card.appendChild(row);
-      applyLongTextClamp(card, body, row);
+      const { wrapper, body } = createTextAndActions(parent);
+      card.appendChild(wrapper);
+      applyLongTextClamp(card, body, wrapper);
 
       appendBoardLayoutRow(card, parent);
       appendImageRow(card, parent);
@@ -1315,8 +1287,8 @@
       card.appendChild(titleRow);
 
       if (childCount > 0) {
-        const wrapper = document.createElement("div");
-        wrapper.className = "thread-children";
+        const wrapperChildren = document.createElement("div");
+        wrapperChildren.className = "thread-children";
 
         const header = document.createElement("div");
         header.className = "thread-children-header";
@@ -1327,7 +1299,7 @@
         toggleBtn.textContent = "▼すべての子コメントを表示";
         header.appendChild(label);
         header.appendChild(toggleBtn);
-        wrapper.appendChild(header);
+        wrapperChildren.appendChild(header);
 
         const childrenContainer = document.createElement("div");
         childrenContainer.style.display = "none";
@@ -1336,12 +1308,15 @@
           const childEl = document.createElement("div");
           childEl.className = "thread-child";
 
-          const m = createMetaLine(child, { isThreadRoot: false });
+          const m = createMetaLine(child, {
+            isThreadRoot: false,
+            number: child._number,
+          });
           childEl.appendChild(m);
 
-          const { row: rowC, body: bodyC } = createTextAndActions(child);
-          childEl.appendChild(rowC);
-          applyLongTextClamp(childEl, bodyC, rowC);
+          const { wrapper: wC, body: bodyC } = createTextAndActions(child);
+          childEl.appendChild(wC);
+          applyLongTextClamp(childEl, bodyC, wC);
 
           appendBoardLayoutRow(childEl, child);
           appendImageRow(childEl, child);
@@ -1355,47 +1330,8 @@
           toggleBtn.textContent = visible ? "▼すべての子コメントを表示" : "▲子コメントを閉じる";
         });
 
-        wrapper.appendChild(childrenContainer);
-        card.appendChild(wrapper);
-      }
-
-      return card;
-    }
-
-    function renderTimelineCard(comment) {
-      const card = document.createElement("article");
-      card.className = "comment-card";
-
-      const meta = createMetaLine(comment, {
-        isThreadRoot: !comment.parent_comment_id,
-      });
-      card.appendChild(meta);
-
-      if (comment.thread_title && !comment.parent_comment_id) {
-        const titleEl = document.createElement("div");
-        titleEl.style.fontSize = "12px";
-        titleEl.style.fontWeight = "600";
-        titleEl.style.marginBottom = "2px";
-        titleEl.textContent = comment.thread_title;
-        card.appendChild(titleEl);
-      }
-
-      const { row, body } = createTextAndActions(comment);
-      card.appendChild(row);
-      applyLongTextClamp(card, body, row);
-
-      appendBoardLayoutRow(card, comment);
-      appendImageRow(card, comment);
-
-      if (comment.is_recruit) {
-        const remain = formatRecruitRemain(comment.expires_at);
-        if (remain) {
-          const span = document.createElement("div");
-          span.style.fontSize = "11px";
-          span.style.color = "red";
-          span.textContent = remain;
-          card.appendChild(span);
-        }
+        wrapperChildren.appendChild(childrenContainer);
+        card.appendChild(wrapperChildren);
       }
 
       return card;
@@ -1468,16 +1404,16 @@
     }
 
     async function openProfileModal(name, tag) {
-      if (!name) {
-        showToast("ユーザー名が不明です");
+      if (!name || !tag) {
+        showToast("プロフィールを取得できません");
         return;
       }
       try {
         let query = supabase
           .from("ld_users")
           .select("*")
-          .eq("name", name);
-        if (tag) query = query.eq("tag", tag);
+          .eq("name", name)
+          .eq("tag", tag);
         const { data, error } = await query.maybeSingle();
         const modalBody = document.getElementById("modalBody");
         modalBody.innerHTML = "";
@@ -1545,10 +1481,21 @@
         parentId: comment.id,
         rootId: comment.root_comment_id || comment.id,
         ownerName: comment.owner_name || "名無し",
+        number: comment._number || 1,
       };
       updateReplyLabel();
       setComposerOpen(true);
-      document.getElementById("inputBody").focus();
+      const textarea = document.getElementById("inputBody");
+      const label = `>>${appState.replyTarget.number} `;
+      if (!textarea.value.startsWith(label)) {
+        if (textarea.value.trim()) {
+          textarea.value = label + "\n" + textarea.value;
+        } else {
+          textarea.value = label;
+        }
+      }
+      textarea.focus();
+      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
     }
 
     async function incrementLike(commentId) {
@@ -1676,7 +1623,7 @@
       const genre = getSelectedGenre();
       const isRecruit = genre === "recruit";
 
-      const ownerName = rawName || "名無し";
+      const ownerName = rawName || "名無しの傭兵員";
 
       if (!bodyVal) {
         showToast("本文を入力してください");
@@ -1790,25 +1737,10 @@
         filterPanel.classList.toggle("open");
       });
 
-      document.querySelectorAll("#targetChips .chip").forEach(chip => {
-        chip.addEventListener("click", () => {
-          document.querySelectorAll("#targetChips .chip").forEach(c => c.classList.remove("active"));
-          chip.classList.add("active");
-          setFilterTarget(chip.dataset.target);
-        });
-      });
-
-      document.querySelectorAll("#scopeChips .chip").forEach(chip => {
-        chip.addEventListener("click", () => {
-          document.querySelectorAll("#scopeChips .chip").forEach(c => c.classList.remove("active"));
-          chip.classList.add("active");
-          setFilterScope(chip.dataset.scope);
-        });
-      });
-
       document.getElementById("applyFilterBtn").addEventListener("click", () => {
         appState.filters.keyword = document.getElementById("keywordInput").value.trim();
         appState.filters.onlyBoard = document.getElementById("onlyBoard").checked;
+        appState.visibleThreadCount = 20;
         applyFiltersAndRender();
       });
 
@@ -1817,11 +1749,9 @@
         appState.filters.onlyBoard = false;
         document.getElementById("keywordInput").value = "";
         document.getElementById("onlyBoard").checked = false;
+        appState.visibleThreadCount = 20;
         applyFiltersAndRender();
       });
-
-      document.getElementById("modeThreads").addEventListener("click", () => setMode("threads"));
-      document.getElementById("modeTimeline").addEventListener("click", () => setMode("timeline"));
 
       document.getElementById("footerToggle").addEventListener("click", () => {
         setComposerOpen(!composerOpen);
@@ -1871,6 +1801,19 @@
       document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
       document.getElementById("modalBackdrop").addEventListener("click", (e) => {
         if (e.target.id === "modalBackdrop") closeModal();
+      });
+
+      listContainer.addEventListener("scroll", () => {
+        if (listContainer.scrollTop < 40) {
+          const maxThreads = appState.threads.filter(threadMatchesFilters).length;
+          if (appState.visibleThreadCount < maxThreads) {
+            const prevHeight = listContainer.scrollHeight;
+            appState.visibleThreadCount = Math.min(appState.visibleThreadCount + 20, maxThreads);
+            applyFiltersAndRender();
+            const newHeight = listContainer.scrollHeight;
+            listContainer.scrollTop += (newHeight - prevHeight);
+          }
+        }
       });
     }
 
