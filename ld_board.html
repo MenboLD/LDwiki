@@ -49,20 +49,9 @@
       justify-content: space-between;
       align-items: center;
       background-color: #ffffff;
-    }
-
-    .top-fixed {
       position: sticky;
       top: 0;
       z-index: 10;
-      background-color: #ffffff;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .user-pass-row {
-      padding: 4px 8px;
-      border-bottom: 1px solid var(--border);
-      background-color: #ffffff;
     }
 
     .app-title {
@@ -266,6 +255,10 @@
       display: none;
       margin-right: 4px;
       color: var(--text-sub);
+    }
+
+    .thread-children.show-numbers .comment-number {
+      display: inline;
     }
 
     .comment-card.thread-card {
@@ -660,142 +653,51 @@
     .toast.show {
       opacity: 1;
     }
-  
-    .filter-row-hint {
-      margin-top: -2px;
-    }
-
-    .filter-hint {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 11px;
-      color: var(--text-sub);
-    }
-
-    #keywordClearBtn {
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-      cursor: pointer;
-    }
-
-    #keywordClearBtn:active {
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.15);
-    }
-
-    .tag-input:disabled {
-      background-color: #e0e0e0;
-      color: #999999;
-    }
-
-    .pill {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background-color: #ffffff;
-      border: 1px solid var(--border);
-      color: var(--text-sub);
-      cursor: pointer;
-    }
-
-    .pill.active {
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
-      background-color: var(--accent-soft);
-      border-color: var(--accent);
-    }
-
-    .filter-apply button {
-      font-size: 11px;
-      padding: 3px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-      cursor: pointer;
-      color: var(--text-main);
-    }
-
-    .filter-apply button.active {
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
-      background-color: var(--accent-soft);
-      border-color: var(--accent);
-      color: var(--text-main);
-    }
-
-    .filter-apply button:disabled {
-      background-color: #e0e0e0;
-      color: #999999;
-      box-shadow: none;
-      cursor: default;
-    }
-
-    .comment-number {
-      margin-right: 4px;
-      color: var(--text-sub);
-      font-size: 11px;
-    }
-</style>
+  </style>
 </head>
 <body>
   <div class="app-frame">
-    
-<div class="top-fixed">
-  <header class="app-header">
-    <div class="app-title">ラッキー傭兵団 情報掲示板</div>
-    <div class="pill" id="filterToggleHeader">▼検索・フィルター設定を表示する</div>
-  </header>
+    <header class="app-header">
+      <div class="app-title">ラッキー傭兵団 情報掲示板</div>
+      <div class="pill" id="filterToggleHeader">検索フィルター設定を表示する</div>
+    </header>
 
-  <div class="user-pass-row">
-    <div class="user-row">
-      <input id="inputName" type="text" maxlength="12" placeholder="ユーザー名(任意)Max全角6文字" />
-      <input id="inputTag" type="text" maxlength="10" class="tag-input" placeholder="固有ユーザー名のパス" disabled />
-    </div>
-  </div>
-
-  <div class="filter-panel" id="filterPanel">
-    <div class="filter-inner">
-      <div class="filter-row">
-        <div class="filter-label">キーワード</div>
-        <input type="text" id="keywordInput" placeholder="" />
-      </div>
-      <div class="filter-row filter-row-hint">
-        <div class="filter-hint">
-          <span>本文・タイトル・ユーザー名から検索</span>
-          <button type="button" id="keywordClearBtn">クリア</button>
+    <div class="filter-panel" id="filterPanel">
+      <div class="filter-inner">
+        <div class="filter-row">
+          <div class="filter-label">キーワード</div>
+          <input type="text" id="keywordInput" placeholder="本文・タイトル・ユーザー名から検索" />
+        </div>
+        <div class="filter-row">
+          <div class="filter-label">対象</div>
+          <div class="filter-chips" id="targetChips">
+            <div class="chip active" data-target="body_title">本文＋タイトル</div>
+            <div class="chip" data-target="user">ユーザー名</div>
+            <div class="chip" data-target="user_body">ユーザー名＋本文</div>
+          </div>
+        </div>
+        <div class="filter-row">
+          <div class="filter-label">範囲</div>
+          <div class="filter-chips" id="scopeChips">
+            <div class="chip" data-scope="threads">スレッド一覧</div>
+            <div class="chip active" data-scope="all">全コメント</div>
+          </div>
+        </div>
+        <div class="filter-row">
+          <label><input type="checkbox" id="onlyBoard" /> 盤面・画像付きコメントに限定</label>
+        </div>
+        <div class="filter-apply">
+          <button type="button" id="applyFilterBtn">フィルターを適用する</button>
         </div>
       </div>
-      <div class="filter-row">
-        <div class="filter-label">対象</div>
-      </div>
-      <div class="filter-row">
-        <div class="filter-chips" id="targetChips">
-          <div class="chip active" data-target="body_title">本文＋タイトル</div>
-          <div class="chip" data-target="user">ユーザー名</div>
-          <div class="chip" data-target="user_body">ユーザー名＋本文</div>
-        </div>
-      </div>
-      <div class="filter-row">
-        <label><input type="checkbox" id="onlyBoard" /> 盤面・画像付きコメントに限定</label>
-      </div>
-      <div class="filter-apply">
-        <button type="button" id="applyFilterBtn" disabled>フィルターを適用する</button>
-      </div>
     </div>
-  </div>
 
-  <div class="search-status" id="searchStatus">
-    <span id="searchStatusText">フィルター未適用 / 全件表示</span>
-  </div>
-</div>
+    <div class="search-status" id="searchStatus">
+      <span id="searchStatusText">フィルター未適用 / 全件表示</span>
+      <button type="button" id="clearSearch">検索解除</button>
+    </div>
 
-<main class="app-main">
-  <div class="list" id="listContainer">
-  </div>
-</main>
-
-<main class="app-main">
+    <main class="app-main">
       <div class="list" id="listContainer">
       </div>
     </main>
@@ -806,6 +708,10 @@
       </div>
       <div class="footer-body" id="composerBody">
         <div id="replyLabel" class="reply-label small-hint" style="display:none;"></div>
+        <div class="user-row">
+          <input id="inputName" type="text" maxlength="12" placeholder="ユーザー名(任意)Max全角6文字" />
+          <input id="inputTag" type="text" maxlength="10" class="tag-input" placeholder="固有ユーザー名のパス" />
+        </div>
         <div class="genre-row">
           <label><input type="radio" name="genre" value="normal" checked />通常</label>
           <label><input type="radio" name="genre" value="question" />質問</label>
@@ -886,7 +792,6 @@
       currentImageRightUrl: null,
       isLoading: false,
       visibleThreadCount: 20,
-      didInitialScroll: false,
     };
 
     const listContainer = document.getElementById("listContainer");
@@ -1068,7 +973,7 @@
       threads.sort((a, b) => {
         const aTime = (a.latestChild || a.parent).created_at || "";
         const bTime = (b.latestChild || b.parent).created_at || "";
-        return aTime.localeCompare(bTime);
+        return bTime.localeCompare(aTime);
       });
 
       appState.timeline = all;
@@ -1138,7 +1043,7 @@
       return `検索条件: ${parts.join(" / ")}`;
     }
 
-        function applyFiltersAndRender() {
+    function applyFiltersAndRender() {
       searchStatusText.textContent = describeSearchStatus();
       const mode = appState.mode;
       listContainer.innerHTML = "";
@@ -1162,14 +1067,6 @@
         threads.forEach(thread => {
           listContainer.appendChild(renderThreadCard(thread));
         });
-        if (!appState.didInitialScroll) {
-          const maxScroll = listContainer.scrollHeight - listContainer.clientHeight;
-          if (maxScroll > 0) {
-            const target = maxScroll - listContainer.clientHeight * 0.5;
-            listContainer.scrollTop = target;
-          }
-          appState.didInitialScroll = true;
-        }
       } else {
         const filtered = appState.timeline.filter(commentMatchesFilters);
         if (!filtered.length) {
@@ -1185,7 +1082,6 @@
           listContainer.appendChild(renderTimelineCard(c));
         });
       }
-    }
     }
 
     function formatUserId(comment) {
@@ -1449,10 +1345,6 @@
         likeCountOverride: totalLikes,
         commentNo: childCount > 0 ? 1 : null,
       });
-      const parentNoSpan = document.createElement("span");
-      parentNoSpan.className = "comment-number";
-      parentNoSpan.textContent = "1";
-      meta.insertBefore(parentNoSpan, meta.firstChild);
       card.appendChild(meta);
 
       const { row, body } = createTextAndActions(parent);
@@ -1505,10 +1397,6 @@
           childEl.className = "thread-child";
 
           const m = createMetaLine(child, { isThreadRoot: false, commentNo: index + 2 });
-          const numSpan = document.createElement("span");
-          numSpan.className = "comment-number";
-          numSpan.textContent = String(index + 2);
-          m.insertBefore(numSpan, m.firstChild);
           childEl.appendChild(m);
 
           const { row: rowC, body: bodyC } = createTextAndActions(child);
@@ -1728,30 +1616,7 @@
       };
       updateReplyLabel();
       setComposerOpen(true);
-      const bodyInput = document.getElementById("inputBody");
-      if (bodyInput) {
-        let no = null;
-        const rootId = comment.root_comment_id || comment.id;
-        const threads = appState.threads || [];
-        const thread = threads.find(t => t.parent && t.parent.id === rootId);
-        if (thread) {
-          if (comment.id === thread.parent.id) {
-            no = 1;
-          } else if (thread.children && thread.children.length) {
-            const idx = thread.children.findIndex(c => c.id === comment.id);
-            if (idx !== -1) {
-              no = idx + 2;
-            }
-          }
-        }
-        if (no != null) {
-          const anchor = `>>${String(no).padStart(2, "0")} `;
-          if (!bodyInput.value.startsWith(anchor)) {
-            bodyInput.value = anchor + bodyInput.value;
-          }
-        }
-        bodyInput.focus();
-      }
+      document.getElementById("inputBody").focus();
     }
 
     async function incrementLike(commentId) {
@@ -1994,52 +1859,14 @@
       updateReplyLabel();
       setComposerOpen(false);
 
-
-      function updateTagInputState() {
-        const nameInput = document.getElementById("inputName");
-        const tagInput = document.getElementById("inputTag");
-        if (!nameInput || !tagInput) return;
-        const hasName = !!nameInput.value.trim();
-        tagInput.disabled = !hasName;
-      }
-
-      function updateApplyBtnState() {
-        const keywordInput = document.getElementById("keywordInput");
-        const applyBtn = document.getElementById("applyFilterBtn");
-        if (!keywordInput || !applyBtn) return;
-        const hasKeyword = !!keywordInput.value.trim();
-        applyBtn.disabled = !hasKeyword;
-        if (!hasKeyword) {
-          applyBtn.classList.remove("active");
-          applyBtn.textContent = "フィルターを適用する";
-        }
-      }
-
-      const keywordClearBtn = document.getElementById("keywordClearBtn");
-      if (keywordClearBtn) {
-        keywordClearBtn.addEventListener("click", () => {
-          const keywordInput = document.getElementById("keywordInput");
-          if (keywordInput) {
-            keywordInput.value = "";
-            updateApplyBtnState();
-          }
-        });
-      }
-
-      const keywordInputEl = document.getElementById("keywordInput");
-      if (keywordInputEl) {
-        keywordInputEl.addEventListener("input", updateApplyBtnState);
-      }
-
       const filterPanel = document.getElementById("filterPanel");
       const filterToggleHeader = document.getElementById("filterToggleHeader");
       if (filterToggleHeader && filterPanel) {
         filterToggleHeader.addEventListener("click", () => {
           const isOpen = filterPanel.classList.toggle("open");
           filterToggleHeader.textContent = isOpen
-            ? "▲検索・フィルター設定を閉じる"
-            : "▼検索・フィルター設定を表示する";
-          filterToggleHeader.classList.toggle("active", isOpen);
+            ? "検索・フィルター設定を閉じる"
+            : "検索フィルター設定を表示する";
         });
       }
 
@@ -2060,33 +1887,28 @@
       });
 
       const applyBtn = document.getElementById("applyFilterBtn");
-      if (applyBtn) {
-        applyBtn.addEventListener("click", () => {
-          const keywordInput = document.getElementById("keywordInput");
-          const onlyBoardCheckbox = document.getElementById("onlyBoard");
-          const hasActive =
-            !!appState.filters.keyword ||
-            !!appState.filters.onlyBoard;
+      applyBtn.addEventListener("click", () => {
+        const keywordInput = document.getElementById("keywordInput");
+        const onlyBoardCheckbox = document.getElementById("onlyBoard");
+        const hasActive =
+          !!appState.filters.keyword ||
+          !!appState.filters.onlyBoard;
 
-          if (hasActive) {
-            // 解除
-            appState.filters.keyword = "";
-            appState.filters.onlyBoard = false;
-            if (keywordInput) keywordInput.value = "";
-            if (onlyBoardCheckbox) onlyBoardCheckbox.checked = false;
-            applyBtn.textContent = "フィルターを適用する";
-            applyBtn.classList.remove("active");
-          } else {
-            // 適用
-            appState.filters.keyword = keywordInput ? keywordInput.value.trim() : "";
-            appState.filters.onlyBoard = onlyBoardCheckbox ? !!onlyBoardCheckbox.checked : false;
-            applyBtn.textContent = "フィルターを解除する";
-            applyBtn.classList.add("active");
-          }
-          updateApplyBtnState();
-          applyFiltersAndRender();
-        });
-      }
+        if (hasActive) {
+          // 解除
+          appState.filters.keyword = "";
+          appState.filters.onlyBoard = false;
+          if (keywordInput) keywordInput.value = "";
+          if (onlyBoardCheckbox) onlyBoardCheckbox.checked = false;
+          applyBtn.textContent = "フィルターを適用する";
+        } else {
+          // 適用
+          appState.filters.keyword = keywordInput ? keywordInput.value.trim() : "";
+          appState.filters.onlyBoard = onlyBoardCheckbox ? !!onlyBoardCheckbox.checked : false;
+          applyBtn.textContent = "フィルターを解除する";
+        }
+        applyFiltersAndRender();
+      });
 
 
       let isLoadingMore = false;
@@ -2114,8 +1936,8 @@
         setComposerOpen(!composerOpen);
       });
 
-      document.getElementById("inputName").addEventListener("change", () => { saveUserToStorage(); updateTagInputState(); });
-      document.getElementById("inputTag").addEventListener("change", () => { saveUserToStorage(); updateTagInputState(); });
+      document.getElementById("inputName").addEventListener("change", saveUserToStorage);
+      document.getElementById("inputTag").addEventListener("change", saveUserToStorage);
 
       document.querySelectorAll('input[name="genre"]').forEach(r => {
         r.addEventListener("change", updateRecruitVisibility);
@@ -2189,9 +2011,6 @@
           }
         });
       }
-
-      updateTagInputState();
-      updateApplyBtnState();
 
       document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
       document.getElementById("modalBackdrop").addEventListener("click", (e) => {
