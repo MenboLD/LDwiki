@@ -1727,13 +1727,9 @@
     }
     bodyInput.focus();
   }
-};
-      updateReplyLabel();
-      setComposerOpen(true);
-      document.getElementById("inputBody").focus();
-    }
+}
 
-    async function incrementLike(commentId) {
+async function incrementLike(commentId) {
       try {
         const target = (appState.allComments || []).find(c => c.id === commentId);
         if (!target) return;
