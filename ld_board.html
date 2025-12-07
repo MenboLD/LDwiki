@@ -196,6 +196,12 @@
       cursor: pointer;
     }
 
+    .user-pass-bar {
+      padding: 4px 8px;
+      border-bottom: 1px solid var(--border);
+      background-color: #ffffff;
+    }
+
     .search-status {
       padding: 4px 8px;
       font-size: 11px;
@@ -661,6 +667,13 @@
       <div class="app-title">ラッキー傭兵団 情報掲示板</div>
       <div class="pill" id="filterToggleHeader">検索フィルター設定を表示する</div>
     </header>
+    <div class="user-pass-bar">
+      <div class="user-row">
+        <input id="inputName" type="text" maxlength="12" placeholder="ユーザー名(任意)Max全角6文字" />
+        <input id="inputTag" type="text" maxlength="10" class="tag-input" placeholder="固有ユーザー名のパス" />
+      </div>
+    </div>
+
 
     <div class="filter-panel" id="filterPanel">
       <div class="filter-inner">
@@ -677,13 +690,6 @@
           </div>
         </div>
         <div class="filter-row">
-          <div class="filter-label">範囲</div>
-          <div class="filter-chips" id="scopeChips">
-            <div class="chip" data-scope="threads">スレッド一覧</div>
-            <div class="chip active" data-scope="all">全コメント</div>
-          </div>
-        </div>
-        <div class="filter-row">
           <label><input type="checkbox" id="onlyBoard" /> 盤面・画像付きコメントに限定</label>
         </div>
         <div class="filter-apply">
@@ -694,7 +700,6 @@
 
     <div class="search-status" id="searchStatus">
       <span id="searchStatusText">フィルター未適用 / 全件表示</span>
-      <button type="button" id="clearSearch">検索解除</button>
     </div>
 
     <main class="app-main">
@@ -708,10 +713,6 @@
       </div>
       <div class="footer-body" id="composerBody">
         <div id="replyLabel" class="reply-label small-hint" style="display:none;"></div>
-        <div class="user-row">
-          <input id="inputName" type="text" maxlength="12" placeholder="ユーザー名(任意)Max全角6文字" />
-          <input id="inputTag" type="text" maxlength="10" class="tag-input" placeholder="固有ユーザー名のパス" />
-        </div>
         <div class="genre-row">
           <label><input type="radio" name="genre" value="normal" checked />通常</label>
           <label><input type="radio" name="genre" value="question" />質問</label>
@@ -973,7 +974,7 @@
       threads.sort((a, b) => {
         const aTime = (a.latestChild || a.parent).created_at || "";
         const bTime = (b.latestChild || b.parent).created_at || "";
-        return bTime.localeCompare(aTime);
+        return aTime.localeCompare(bTime);
       });
 
       appState.timeline = all;
@@ -1035,8 +1036,6 @@
       if (target === "body_title") parts.push("本文＋タイトル");
       else if (target === "user") parts.push("ユーザー名");
       else parts.push("ユーザー名＋本文");
-
-      parts.push("スレッド一覧");
 
       if (onlyBoard) parts.push("盤面・画像付きのみ");
 
