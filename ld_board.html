@@ -153,79 +153,65 @@
     }
 
     
-    .filter-row-hint {
-      margin-top: -2px;
-    }
+.filter-row-hint {
+  margin-top: -2px;
+}
 
-    .filter-hint {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 11px;
-      color: var(--text-sub);
-    }
+.filter-hint {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-sub);
+}
 
-    #keywordClearBtn {
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-      cursor: pointer;
-    }
+#keywordClearBtn {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background-color: #ffffff;
+}
 
-    #keywordClearBtn:active {
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.15);
-    }
+#keywordClearBtn:active {
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.15);
+}
 
-    .tag-input:disabled {
-      background-color: #e0e0e0;
-      color: #999999;
-    }
+.tag-input:disabled {
+  background-color: #e0e0e0;
+  color: #999999;
+}
 
-    .pill {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-      color: var(--text-sub);
-      cursor: pointer;
-    }
+.pill {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background-color: #ffffff;
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
 
-    .pill.active {
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
-      background-color: var(--accent-soft);
-      border-color: var(--accent);
-    }
+.pill.active {
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+  background-color: var(--accent-soft);
+  border-color: var(--accent);
+}
 
-    .filter-apply button {
-      font-size: 11px;
-      padding: 3px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-      cursor: pointer;
-    }
+.filter-apply button {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background-color: #ffffff;
+  color: var(--text-main);
+  cursor: pointer;
+}
 
-    .filter-apply button.active {
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
-      background-color: var(--accent-soft);
-      border-color: var(--accent);
-    }
-
-    .filter-apply button:disabled {
-      background-color: #e0e0e0;
-      color: #999999;
-      box-shadow: none;
-      cursor: default;
-    }
-
-    .thread-number {
-      font-weight: 600;
-      margin-right: 4px;
-      color: var(--accent);
-    }
+.filter-apply button.active {
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+  background-color: var(--accent-soft);
+  border-color: var(--accent);
+}
 .filter-row {
       margin-bottom: 6px;
     }
@@ -337,14 +323,13 @@
     }
 
     .comment-number {
-      display: none;
-      margin-right: 4px;
-      color: var(--text-sub);
-    }
+  margin-right: 4px;
+  color: var(--text-sub);
+  font-size: 11px;
+  font-weight: 600;
+}
 
-    .thread-children.show-numbers .comment-number {
-      display: inline;
-    }
+    
 
     .comment-card.thread-card {
       border-left: 3px solid var(--accent);
@@ -742,7 +727,8 @@
 </head>
 <body>
   <div class="app-frame">
-    <div class="top-fixed">
+    
+<div class="top-fixed">
   <header class="app-header">
     <div class="app-title">ラッキー傭兵団 情報掲示板</div>
     <div class="pill" id="filterToggleHeader">▼検索・フィルター設定を表示する</div>
@@ -781,7 +767,7 @@
         <label><input type="checkbox" id="onlyBoard" /> 盤面・画像付きコメントに限定</label>
       </div>
       <div class="filter-apply">
-        <button type="button" id="applyFilterBtn" disabled>フィルターを適用する</button>
+        <button type="button" id="applyFilterBtn">フィルターを適用する</button>
       </div>
     </div>
   </div>
@@ -791,10 +777,11 @@
   </div>
 </div>
 
-<main class="app-main">
-  <div class="list" id="listContainer">
-  </div>
-</main>
+
+    <main class="app-main">
+      <div class="list" id="listContainer">
+      </div>
+    </main>
 
 <main class="app-main">
       <div class="list" id="listContainer">
@@ -887,7 +874,6 @@
       currentImageRightUrl: null,
       isLoading: false,
       visibleThreadCount: 20,
-      didInitialScroll: false,
     };
 
     const listContainer = document.getElementById("listContainer");
@@ -1069,7 +1055,7 @@
       threads.sort((a, b) => {
         const aTime = (a.latestChild || a.parent).created_at || "";
         const bTime = (b.latestChild || b.parent).created_at || "";
-        return aTime.localeCompare(bTime);
+        return bTime.localeCompare(aTime);
       });
 
       appState.timeline = all;
@@ -1160,18 +1146,9 @@
           listContainer.appendChild(empty);
           return;
         }
-        threads.forEach((thread, index) => {
-          thread.displayIndex = index + 1;
+        threads.forEach(thread => {
           listContainer.appendChild(renderThreadCard(thread));
         });
-        if (!appState.didInitialScroll) {
-          const maxScroll = listContainer.scrollHeight - listContainer.clientHeight;
-          if (maxScroll > 0) {
-            const target = maxScroll - listContainer.clientHeight * 0.5;
-            listContainer.scrollTop = target;
-          }
-          appState.didInitialScroll = true;
-        }
       } else {
         const filtered = appState.timeline.filter(commentMatchesFilters);
         if (!filtered.length) {
@@ -1247,42 +1224,42 @@
     }
 
     function createMetaLine(comment, options = {}) {
-      const meta = document.createElement("div");
-      meta.className = "meta-line";
+  const meta = document.createElement("div");
+  meta.className = "meta-line";
 
-      if (options.threadNumber != null) {
-        const numSpan = document.createElement("span");
-        numSpan.className = "thread-number";
-        numSpan.textContent = options.threadNumber;
-        meta.appendChild(numSpan);
-      }
+  if (options.commentNo != null) {
+    const numSpan = document.createElement("span");
+    numSpan.className = "comment-number";
+    numSpan.textContent = String(options.commentNo);
+    meta.appendChild(numSpan);
+  }
 
-      const badge = getGenreBadge(comment, options);
-      if (badge) meta.appendChild(badge);
+  const badge = getGenreBadge(comment, options);
+  if (badge) meta.appendChild(badge);
 
-      const userSpan = document.createElement("span");
-      userSpan.textContent = formatUserId(comment);
-      meta.appendChild(userSpan);
+  const userSpan = document.createElement("span");
+  userSpan.textContent = formatUserId(comment);
+  meta.appendChild(userSpan);
 
-      const profileBtn = document.createElement("button");
-      profileBtn.className = "btn-link";
-      profileBtn.textContent = "プロフ";
-      profileBtn.addEventListener("click", () => openProfileModal(comment.owner_name, comment.owner_tag));
-      meta.appendChild(profileBtn);
+  const profileBtn = document.createElement("button");
+  profileBtn.className = "btn-link";
+  profileBtn.textContent = "プロフ";
+  profileBtn.addEventListener("click", () => openProfileModal(comment.owner_name, comment.owner_tag));
+  meta.appendChild(profileBtn);
 
-      const likeSpan = document.createElement("span");
-      const likeCount = options.likeCountOverride != null ? options.likeCountOverride : (comment.like_count || 0);
-      likeSpan.textContent = ` (･∀･)ｲｲ!:${likeCount}`;
-      meta.appendChild(likeSpan);
+  const likeSpan = document.createElement("span");
+  const likeCount = options.likeCountOverride != null ? options.likeCountOverride : (comment.like_count || 0);
+  likeSpan.textContent = ` (･∀･)ｲｲ!:${likeCount}`;
+  meta.appendChild(likeSpan);
 
-      if (options.showChildCount) {
-        const countSpan = document.createElement("span");
-        countSpan.textContent = ` コメ:${options.childCount || 0}`;
-        meta.appendChild(countSpan);
-      }
+  if (options.showChildCount) {
+    const countSpan = document.createElement("span");
+    countSpan.textContent = ` コメ:${options.childCount || 0}`;
+    meta.appendChild(countSpan);
+  }
 
-      return meta;
-    }
+  return meta;
+}
 
     function formatRecruitRemain(expires_at) {
       if (!expires_at) return "";
@@ -1455,7 +1432,7 @@
         childCount,
         showChildCount: true,
         likeCountOverride: totalLikes,
-        threadNumber: thread.displayIndex || null,
+        commentNo: childCount > 0 ? 1 : null,
       });
       card.appendChild(meta);
 
@@ -1721,29 +1698,38 @@
     }
 
     function startReply(comment) {
-      appState.replyTarget = {
-        parentId: comment.id,
-        rootId: comment.root_comment_id || comment.id,
-        ownerName: comment.owner_name || "名無し",
-      };
-      updateReplyLabel();
-      setComposerOpen(true);
-      const bodyInput = document.getElementById("inputBody");
-      if (bodyInput) {
-        const threads = appState.threads || [];
-        const thread = threads.find(t => t.parent && t.parent.id === (comment.root_comment_id || comment.id));
-        const threadNo = thread && thread.displayIndex ? thread.displayIndex : null;
-        if (threadNo != null) {
-          const anchor = `>>${String(threadNo).padStart(2, "0")} `;
-          if (!bodyInput.value.startsWith(anchor)) {
-            bodyInput.value = anchor + bodyInput.value;
-          }
+  appState.replyTarget = {
+    parentId: comment.id,
+    rootId: comment.root_comment_id || comment.id,
+    ownerName: comment.owner_name || "名無し",
+  };
+  updateReplyLabel();
+  setComposerOpen(true);
+  const bodyInput = document.getElementById("inputBody");
+  if (bodyInput) {
+    const threads = appState.threads || [];
+    const rootId = comment.root_comment_id || comment.id;
+    const thread = threads.find(t => t.parent && t.parent.id === rootId);
+    let commentNo = 1;
+    if (thread) {
+      if (comment.id === thread.parent.id) {
+        commentNo = 1;
+      } else {
+        const idx = thread.children.findIndex(c => c.id === comment.id);
+        if (idx >= 0) {
+          commentNo = idx + 2;
         }
-        bodyInput.focus();
       }
     }
+    const anchor = `>>${String(commentNo).padStart(2, "0")} `;
+    if (!bodyInput.value.startsWith(anchor)) {
+      bodyInput.value = anchor + bodyInput.value;
+    }
+    bodyInput.focus();
+  }
+}
 
-    async function incrementLike(commentId) {
+async function incrementLike(commentId) {
       try {
         const target = (appState.allComments || []).find(c => c.id === commentId);
         if (!target) return;
@@ -1980,45 +1966,9 @@
     function initUI() {
       applyLengthLimit();
       loadUserFromStorage();
+      updateTagInputState();
       updateReplyLabel();
       setComposerOpen(false);
-
-      function updateTagInputState() {
-        const nameInput = document.getElementById("inputName");
-        const tagInput = document.getElementById("inputTag");
-        if (!nameInput || !tagInput) return;
-        const hasName = !!nameInput.value.trim();
-        tagInput.disabled = !hasName;
-      }
-
-      function updateApplyBtnState() {
-        const keywordInput = document.getElementById("keywordInput");
-        const applyBtn = document.getElementById("applyFilterBtn");
-        if (!keywordInput || !applyBtn) return;
-        const hasKeyword = !!keywordInput.value.trim();
-        applyBtn.disabled = !hasKeyword;
-        if (!hasKeyword) {
-          applyBtn.classList.remove("active");
-          applyBtn.textContent = "フィルターを適用する";
-        }
-      }
-
-      const keywordClearBtn = document.getElementById("keywordClearBtn");
-      if (keywordClearBtn) {
-        keywordClearBtn.addEventListener("click", () => {
-          const keywordInput = document.getElementById("keywordInput");
-          if (keywordInput) {
-            keywordInput.value = "";
-            updateApplyBtnState();
-          }
-        });
-      }
-
-      const keywordInputEl = document.getElementById("keywordInput");
-      if (keywordInputEl) {
-        keywordInputEl.addEventListener("input", updateApplyBtnState);
-      }
-
 
       const filterPanel = document.getElementById("filterPanel");
       const filterToggleHeader = document.getElementById("filterToggleHeader");
@@ -2051,33 +2001,31 @@
       const applyBtn = document.getElementById("applyFilterBtn");
       if (applyBtn) {
         applyBtn.addEventListener("click", () => {
-          const keywordInput = document.getElementById("keywordInput");
-          const onlyBoardCheckbox = document.getElementById("onlyBoard");
-          const hasActive =
-            !!appState.filters.keyword ||
-            !!appState.filters.onlyBoard;
+const keywordInput = document.getElementById("keywordInput");
+        const onlyBoardCheckbox = document.getElementById("onlyBoard");
+        const hasActive =
+          !!appState.filters.keyword ||
+          !!appState.filters.onlyBoard;
 
-          if (hasActive) {
-            // 解除
-            appState.filters.keyword = "";
-            appState.filters.onlyBoard = false;
-            if (keywordInput) keywordInput.value = "";
-            if (onlyBoardCheckbox) onlyBoardCheckbox.checked = false;
-            applyBtn.textContent = "フィルターを適用する";
-            applyBtn.classList.remove("active");
-          } else {
-            // 適用
-            appState.filters.keyword = keywordInput ? keywordInput.value.trim() : "";
-            appState.filters.onlyBoard = onlyBoardCheckbox ? !!onlyBoardCheckbox.checked : false;
-            applyBtn.textContent = "フィルターを解除する";
-            applyBtn.classList.add("active");
-          }
-          applyFiltersAndRender();
-        });
+        if (hasActive) {
+          // 解除
+          appState.filters.keyword = "";
+          appState.filters.onlyBoard = false;
+          if (keywordInput) keywordInput.value = "";
+          if (onlyBoardCheckbox) onlyBoardCheckbox.checked = false;
+          applyBtn.textContent = "フィルターを適用する";
+          applyBtn.classList.remove("active");
+        } else {
+          // 適用
+          appState.filters.keyword = keywordInput ? keywordInput.value.trim() : "";
+          appState.filters.onlyBoard = onlyBoardCheckbox ? !!onlyBoardCheckbox.checked : false;
+          applyBtn.textContent = "フィルターを解除する";
+          applyBtn.classList.add("active");
+        }
+        applyFiltersAndRender();
+                });
       }
 
-      updateTagInputState();
-      updateApplyBtnState();
 
       let isLoadingMore = false;
       window.addEventListener("scroll", () => {
@@ -2104,8 +2052,26 @@
         setComposerOpen(!composerOpen);
       });
 
+
+function updateTagInputState() {
+  const nameInput = document.getElementById("inputName");
+  const tagInput = document.getElementById("inputTag");
+  if (!nameInput || !tagInput) return;
+  const hasName = !!nameInput.value.trim();
+  tagInput.disabled = !hasName;
+}
+
+const keywordClearBtn = document.getElementById("keywordClearBtn");
+if (keywordClearBtn) {
+  keywordClearBtn.addEventListener("click", () => {
+    const keywordInput = document.getElementById("keywordInput");
+    if (keywordInput) keywordInput.value = "";
+  });
+}
+
       document.getElementById("inputName").addEventListener("change", () => { saveUserToStorage(); updateTagInputState(); });
       document.getElementById("inputTag").addEventListener("change", () => { saveUserToStorage(); updateTagInputState(); });
+      updateTagInputState();
 
       document.querySelectorAll('input[name="genre"]').forEach(r => {
         r.addEventListener("change", updateRecruitVisibility);
