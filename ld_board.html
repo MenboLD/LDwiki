@@ -152,7 +152,81 @@
       font-size: 12px;
     }
 
-    .filter-row {
+    
+    .filter-row-hint {
+      margin-top: -2px;
+    }
+
+    .filter-hint {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    #keywordClearBtn {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background-color: #ffffff;
+      cursor: pointer;
+    }
+
+    #keywordClearBtn:active {
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.15);
+    }
+
+    .tag-input:disabled {
+      background-color: #e0e0e0;
+      color: #999999;
+    }
+
+    .pill {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background-color: #ffffff;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+
+    .pill.active {
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+      background-color: var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .filter-apply button {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background-color: #ffffff;
+      cursor: pointer;
+    }
+
+    .filter-apply button.active {
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+      background-color: var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .filter-apply button:disabled {
+      background-color: #e0e0e0;
+      color: #999999;
+      box-shadow: none;
+      cursor: default;
+    }
+
+    .thread-number {
+      font-weight: 600;
+      margin-right: 4px;
+      color: var(--accent);
+    }
+.filter-row {
       margin-bottom: 6px;
     }
 
@@ -664,125 +738,65 @@
     .toast.show {
       opacity: 1;
     }
-  
-    .filter-row-hint {
-      margin-top: -2px;
-    }
-
-    .filter-hint {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 11px;
-      color: var(--text-sub);
-    }
-
-    #keywordClearBtn {
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-      cursor: pointer;
-    }
-
-    #keywordClearBtn:active {
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.15);
-    }
-
-    .tag-input:disabled {
-      background-color: #e0e0e0;
-      color: #999999;
-    }
-
-    .pill {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-      color: var(--text-sub);
-      cursor: pointer;
-    }
-
-    .pill.active {
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
-      background-color: var(--accent-soft);
-      border-color: var(--accent);
-    }
-
-    .filter-apply button {
-      font-size: 11px;
-      padding: 3px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-      cursor: pointer;
-    }
-
-    .filter-apply button.active {
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
-      background-color: var(--accent-soft);
-      border-color: var(--accent);
-    }
-
-    .filter-apply button:disabled {
-      background-color: #e0e0e0;
-      color: #999999;
-      box-shadow: none;
-      cursor: default;
-    }
-
-    .thread-number {
-      font-weight: 600;
-      margin-right: 4px;
-      color: var(--accent);
-    }
-</style>
+  </style>
 </head>
 <body>
   <div class="app-frame">
-    <header class="app-header">
-      <div class="app-title">ラッキー傭兵団 情報掲示板</div>
-      <div class="pill" id="filterToggleHeader">検索フィルター設定を表示する</div>
-    </header>
+    <div class="top-fixed">
+  <header class="app-header">
+    <div class="app-title">ラッキー傭兵団 情報掲示板</div>
+    <div class="pill" id="filterToggleHeader">▼検索・フィルター設定を表示する</div>
+  </header>
 
-    <div class="filter-panel" id="filterPanel">
-      <div class="filter-inner">
-        <div class="filter-row">
-          <div class="filter-label">キーワード</div>
-          <input type="text" id="keywordInput" placeholder="本文・タイトル・ユーザー名から検索" />
-        </div>
-        <div class="filter-row">
-          <div class="filter-label">対象</div>
-          <div class="filter-chips" id="targetChips">
-            <div class="chip active" data-target="body_title">本文＋タイトル</div>
-            <div class="chip" data-target="user">ユーザー名</div>
-            <div class="chip" data-target="user_body">ユーザー名＋本文</div>
-          </div>
-        </div>
-        <div class="filter-row">
-          <div class="filter-label">範囲</div>
-          <div class="filter-chips" id="scopeChips">
-            <div class="chip" data-scope="threads">スレッド一覧</div>
-            <div class="chip active" data-scope="all">全コメント</div>
-          </div>
-        </div>
-        <div class="filter-row">
-          <label><input type="checkbox" id="onlyBoard" /> 盤面・画像付きコメントに限定</label>
-        </div>
-        <div class="filter-apply">
-          <button type="button" id="applyFilterBtn">フィルターを適用する</button>
+  <div class="user-pass-row">
+    <div class="user-row">
+      <input id="inputName" type="text" maxlength="12" placeholder="ユーザー名(任意)Max全角6文字" />
+      <input id="inputTag" type="text" maxlength="10" class="tag-input" placeholder="固有ユーザー名のパス" disabled />
+    </div>
+  </div>
+
+  <div class="filter-panel" id="filterPanel">
+    <div class="filter-inner">
+      <div class="filter-row">
+        <div class="filter-label">キーワード</div>
+        <input type="text" id="keywordInput" placeholder="" />
+      </div>
+      <div class="filter-row filter-row-hint">
+        <div class="filter-hint">
+          <span>本文・タイトル・ユーザー名から検索</span>
+          <button type="button" id="keywordClearBtn">クリア</button>
         </div>
       </div>
+      <div class="filter-row">
+        <div class="filter-label">対象</div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-chips" id="targetChips">
+          <div class="chip active" data-target="body_title">本文＋タイトル</div>
+          <div class="chip" data-target="user">ユーザー名</div>
+          <div class="chip" data-target="user_body">ユーザー名＋本文</div>
+        </div>
+      </div>
+      <div class="filter-row">
+        <label><input type="checkbox" id="onlyBoard" /> 盤面・画像付きコメントに限定</label>
+      </div>
+      <div class="filter-apply">
+        <button type="button" id="applyFilterBtn" disabled>フィルターを適用する</button>
+      </div>
     </div>
+  </div>
 
-    <div class="search-status" id="searchStatus">
-      <span id="searchStatusText">フィルター未適用 / 全件表示</span>
-      <button type="button" id="clearSearch">検索解除</button>
-    </div>
+  <div class="search-status" id="searchStatus">
+    <span id="searchStatusText">フィルター未適用 / 全件表示</span>
+  </div>
+</div>
 
-    <main class="app-main">
+<main class="app-main">
+  <div class="list" id="listContainer">
+  </div>
+</main>
+
+<main class="app-main">
       <div class="list" id="listContainer">
       </div>
     </main>
@@ -793,10 +807,6 @@
       </div>
       <div class="footer-body" id="composerBody">
         <div id="replyLabel" class="reply-label small-hint" style="display:none;"></div>
-        <div class="user-row">
-          <input id="inputName" type="text" maxlength="12" placeholder="ユーザー名(任意)Max全角6文字" />
-          <input id="inputTag" type="text" maxlength="10" class="tag-input" placeholder="固有ユーザー名のパス" />
-        </div>
         <div class="genre-row">
           <label><input type="radio" name="genre" value="normal" checked />通常</label>
           <label><input type="radio" name="genre" value="question" />質問</label>
@@ -1177,7 +1187,23 @@
           listContainer.appendChild(renderTimelineCard(c));
         });
       }
-    }idSuffix}`;
+    }
+
+    function formatUserId(comment) {
+      const rawName = comment.owner_name;
+      const hasTag = !!comment.owner_tag;
+      const guestId = comment.guest_daily_id || "";
+      const idSuffix = guestId ? ` ${guestId}` : "";
+
+      if (hasTag) {
+        return `★${rawName || "名無しの傭兵員"}`;
+      }
+
+      if (!rawName) {
+        return `名無しの傭兵員${idSuffix}`;
+      }
+
+      return `${rawName}${idSuffix}`;
     }
 
     function getGenreBadge(comment, options = {}) {
@@ -1396,7 +1422,7 @@
     }
 
     function renderThreadCard(thread) {
-      const { parent, children, childCount, latestChild, totalLikes, displayIndex } = thread;
+      const { parent, children, childCount, latestChild, totalLikes } = thread;
 
       if (parent.is_recruit && parent.recruit_level !== "GUILD" && parent.expires_at) {
         const now = new Date();
@@ -1429,7 +1455,7 @@
         childCount,
         showChildCount: true,
         likeCountOverride: totalLikes,
-        threadNumber: displayIndex || null,
+        threadNumber: thread.displayIndex || null,
       });
       card.appendChild(meta);
 
@@ -1704,7 +1730,8 @@
       setComposerOpen(true);
       const bodyInput = document.getElementById("inputBody");
       if (bodyInput) {
-        const thread = (appState.threads || []).find(t => t.parent && t.parent.id === (comment.root_comment_id || comment.id));
+        const threads = appState.threads || [];
+        const thread = threads.find(t => t.parent && t.parent.id === (comment.root_comment_id || comment.id));
         const threadNo = thread && thread.displayIndex ? thread.displayIndex : null;
         if (threadNo != null) {
           const anchor = `>>${String(threadNo).padStart(2, "0")} `;
@@ -1992,6 +2019,7 @@
         keywordInputEl.addEventListener("input", updateApplyBtnState);
       }
 
+
       const filterPanel = document.getElementById("filterPanel");
       const filterToggleHeader = document.getElementById("filterToggleHeader");
       if (filterToggleHeader && filterPanel) {
@@ -2021,29 +2049,35 @@
       });
 
       const applyBtn = document.getElementById("applyFilterBtn");
-      applyBtn.addEventListener("click", () => {
-        const keywordInput = document.getElementById("keywordInput");
-        const onlyBoardCheckbox = document.getElementById("onlyBoard");
-        const hasActive =
-          !!appState.filters.keyword ||
-          !!appState.filters.onlyBoard;
+      if (applyBtn) {
+        applyBtn.addEventListener("click", () => {
+          const keywordInput = document.getElementById("keywordInput");
+          const onlyBoardCheckbox = document.getElementById("onlyBoard");
+          const hasActive =
+            !!appState.filters.keyword ||
+            !!appState.filters.onlyBoard;
 
-        if (hasActive) {
-          // 解除
-          appState.filters.keyword = "";
-          appState.filters.onlyBoard = false;
-          if (keywordInput) keywordInput.value = "";
-          if (onlyBoardCheckbox) onlyBoardCheckbox.checked = false;
-          applyBtn.textContent = "フィルターを適用する";
-        } else {
-          // 適用
-          appState.filters.keyword = keywordInput ? keywordInput.value.trim() : "";
-          appState.filters.onlyBoard = onlyBoardCheckbox ? !!onlyBoardCheckbox.checked : false;
-          applyBtn.textContent = "フィルターを解除する";
-        }
-        applyFiltersAndRender();
-      });
+          if (hasActive) {
+            // 解除
+            appState.filters.keyword = "";
+            appState.filters.onlyBoard = false;
+            if (keywordInput) keywordInput.value = "";
+            if (onlyBoardCheckbox) onlyBoardCheckbox.checked = false;
+            applyBtn.textContent = "フィルターを適用する";
+            applyBtn.classList.remove("active");
+          } else {
+            // 適用
+            appState.filters.keyword = keywordInput ? keywordInput.value.trim() : "";
+            appState.filters.onlyBoard = onlyBoardCheckbox ? !!onlyBoardCheckbox.checked : false;
+            applyBtn.textContent = "フィルターを解除する";
+            applyBtn.classList.add("active");
+          }
+          applyFiltersAndRender();
+        });
+      }
 
+      updateTagInputState();
+      updateApplyBtnState();
 
       let isLoadingMore = false;
       window.addEventListener("scroll", () => {
@@ -2145,9 +2179,6 @@
           }
         });
       }
-
-      updateTagInputState();
-      updateApplyBtnState();
 
       document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
       document.getElementById("modalBackdrop").addEventListener("click", (e) => {
