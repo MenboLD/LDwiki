@@ -150,30 +150,6 @@
       color: var(--text-sub);
       margin-bottom: 2px;
     }
-    .filter-keyword-input {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .filter-keyword-input input {
-      flex: 1;
-    }
-
-    .keyword-clear-btn {
-      font-size: 11px;
-      padding: 2px 6px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #f5f5f5;
-      color: var(--text-sub);
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .keyword-clear-btn:hover {
-      background-color: #e8e8e8;
-    }
 
     .filter-row input[type="text"] {
       width: 100%;
@@ -214,23 +190,10 @@
       font-size: 11px;
       padding: 3px 10px;
       border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-      color: var(--text-main);
+      border: 1px solid var(--accent);
+      background-color: var(--accent);
+      color: #ffffff;
       cursor: pointer;
-    }
-
-    .filter-apply button.active {
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
-      background-color: var(--accent-soft);
-      border-color: var(--accent);
-    }
-
-    .filter-apply button:disabled {
-      background-color: #e0e0e0;
-      color: #999999;
-      box-shadow: none;
-      cursor: default;
     }
 
     .search-status {
@@ -289,13 +252,10 @@
     }
 
     .comment-number {
-      display: none;
       margin-right: 4px;
       color: var(--text-sub);
-    }
-
-    .thread-children.show-numbers .comment-number {
-      display: inline;
+      font-size: 11px;
+      font-weight: 600;
     }
 
     .comment-card.thread-card {
@@ -703,10 +663,7 @@
       <div class="filter-inner">
         <div class="filter-row">
           <div class="filter-label">キーワード</div>
-          <div class="filter-keyword-input">
-            <input type="text" id="keywordInput" placeholder="本文・タイトル・ユーザー名から検索" />
-            <button type="button" id="keywordClearBtn" class="keyword-clear-btn">クリア</button>
-          </div>
+          <input type="text" id="keywordInput" placeholder="本文・タイトル・ユーザー名から検索" />
         </div>
         <div class="filter-row">
           <div class="filter-label">対象</div>
@@ -1013,7 +970,7 @@
       threads.sort((a, b) => {
         const aTime = (a.latestChild || a.parent).created_at || "";
         const bTime = (b.latestChild || b.parent).created_at || "";
-        return bTime.localeCompare(aTime);
+        return aTime.localeCompare(bTime);
       });
 
       appState.timeline = all;
@@ -1383,7 +1340,7 @@
         childCount,
         showChildCount: true,
         likeCountOverride: totalLikes,
-        commentNo: childCount > 0 ? 1 : null,
+        commentNo: 1,
       });
       card.appendChild(meta);
 
@@ -1649,17 +1606,40 @@
     }
 
     function startReply(comment) {
-      appState.replyTarget = {
-        parentId: comment.id,
-        rootId: comment.root_comment_id || comment.id,
-        ownerName: comment.owner_name || "名無し",
-      };
-      updateReplyLabel();
-      setComposerOpen(true);
-      document.getElementById("inputBody").focus();
+  appState.replyTarget = {
+    parentId: comment.id,
+    rootId: comment.root_comment_id || comment.id,
+    ownerName: comment.owner_name || "名無し",
+  };
+  updateReplyLabel();
+  setComposerOpen(true);
+  const bodyInput = document.getElementById("inputBody");
+  if (bodyInput) {
+    let commentNo = null;
+    const threads = appState.threads || [];
+    const rootId = comment.root_comment_id || comment.id;
+    const thread = threads.find(t => t.parent && t.parent.id === rootId);
+    if (thread) {
+      if (comment.id === thread.parent.id) {
+        commentNo = 1;
+      } else {
+        const idx = thread.children.findIndex(c => c.id === comment.id);
+        if (idx >= 0) {
+          commentNo = idx + 2;
+        }
+      }
     }
+    if (commentNo != null) {
+      const anchor = `>>${String(commentNo).padStart(2, "0")} `;
+      if (!bodyInput.value.startsWith(anchor)) {
+        bodyInput.value = anchor + bodyInput.value;
+      }
+    }
+    bodyInput.focus();
+  }
+}
 
-    async function incrementLike(commentId) {
+async function incrementLike(commentId) {
       try {
         const target = (appState.allComments || []).find(c => c.id === commentId);
         if (!target) return;
@@ -1899,100 +1879,59 @@
       updateReplyLabel();
       setComposerOpen(false);
 
-const filterPanel = document.getElementById("filterPanel");
-const filterToggleHeader = document.getElementById("filterToggleHeader");
-if (filterToggleHeader && filterPanel) {
-  filterToggleHeader.addEventListener("click", () => {
-    const isOpen = filterPanel.classList.toggle("open");
-    filterToggleHeader.textContent = isOpen
-      ? "▲検索・フィルター設定を閉じる"
-      : "▼検索・フィルター設定を表示する";
-    filterToggleHeader.classList.toggle("active", isOpen);
-  });
-}
+      const filterPanel = document.getElementById("filterPanel");
+      const filterToggleHeader = document.getElementById("filterToggleHeader");
+      if (filterToggleHeader && filterPanel) {
+        filterToggleHeader.addEventListener("click", () => {
+          const isOpen = filterPanel.classList.toggle("open");
+          filterToggleHeader.textContent = isOpen
+            ? "検索・フィルター設定を閉じる"
+            : "検索フィルター設定を表示する";
+        });
+      }
 
-function updateApplyBtnState() {
-  const keywordInput = document.getElementById("keywordInput");
-  const applyBtn = document.getElementById("applyFilterBtn");
-  if (!keywordInput || !applyBtn) return;
+      document.querySelectorAll("#targetChips .chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          document.querySelectorAll("#targetChips .chip").forEach(c => c.classList.remove("active"));
+          chip.classList.add("active");
+          setFilterTarget(chip.dataset.target);
+        });
+      });
 
-  const hasKeyword = !!keywordInput.value.trim();
-  const hasActive =
-    !!appState.filters.keyword ||
-    !!appState.filters.onlyBoard;
+      document.querySelectorAll("#scopeChips .chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+          document.querySelectorAll("#scopeChips .chip").forEach(c => c.classList.remove("active"));
+          chip.classList.add("active");
+          setFilterScope(chip.dataset.scope);
+        });
+      });
 
-  if (hasActive) {
-    // フィルター適用中
-    applyBtn.disabled = false;
-    applyBtn.classList.add("active");
-    applyBtn.textContent = "フィルターを解除する";
-  } else {
-    // 非適用時
-    applyBtn.classList.remove("active");
-    applyBtn.textContent = "フィルターを適用する";
-    applyBtn.disabled = !hasKeyword;
-  }
-}
+      const applyBtn = document.getElementById("applyFilterBtn");
+      applyBtn.addEventListener("click", () => {
+        const keywordInput = document.getElementById("keywordInput");
+        const onlyBoardCheckbox = document.getElementById("onlyBoard");
+        const hasActive =
+          !!appState.filters.keyword ||
+          !!appState.filters.onlyBoard;
 
-const keywordInputEl = document.getElementById("keywordInput");
-if (keywordInputEl) {
-  keywordInputEl.addEventListener("input", updateApplyBtnState);
-}
+        if (hasActive) {
+          // 解除
+          appState.filters.keyword = "";
+          appState.filters.onlyBoard = false;
+          if (keywordInput) keywordInput.value = "";
+          if (onlyBoardCheckbox) onlyBoardCheckbox.checked = false;
+          applyBtn.textContent = "フィルターを適用する";
+        } else {
+          // 適用
+          appState.filters.keyword = keywordInput ? keywordInput.value.trim() : "";
+          appState.filters.onlyBoard = onlyBoardCheckbox ? !!onlyBoardCheckbox.checked : false;
+          applyBtn.textContent = "フィルターを解除する";
+        }
+        applyFiltersAndRender();
+      });
 
-const keywordClearBtn = document.getElementById("keywordClearBtn");
-if (keywordClearBtn) {
-  keywordClearBtn.addEventListener("click", () => {
-    const keywordInput = document.getElementById("keywordInput");
-    if (keywordInput) {
-      keywordInput.value = "";
-    }
-    updateApplyBtnState();
-  });
-}
 
-document.querySelectorAll("#targetChips .chip").forEach(chip => {
-  chip.addEventListener("click", () => {
-    document.querySelectorAll("#targetChips .chip").forEach(c => c.classList.remove("active"));
-    chip.classList.add("active");
-    setFilterTarget(chip.dataset.target);
-  });
-});
-
-document.querySelectorAll("#scopeChips .chip").forEach(chip => {
-  chip.addEventListener("click", () => {
-    document.querySelectorAll("#scopeChips .chip").forEach(c => c.classList.remove("active"));
-    chip.classList.add("active");
-    setFilterScope(chip.dataset.scope);
-  });
-});
-
-const applyBtn = document.getElementById("applyFilterBtn");
-if (applyBtn) {
-  applyBtn.addEventListener("click", () => {
-    const keywordInput = document.getElementById("keywordInput");
-    const onlyBoardCheckbox = document.getElementById("onlyBoard");
-    const hasActive =
-      !!appState.filters.keyword ||
-      !!appState.filters.onlyBoard;
-
-    if (hasActive) {
-      // 解除
-      appState.filters.keyword = "";
-      appState.filters.onlyBoard = false;
-      if (keywordInput) keywordInput.value = "";
-      if (onlyBoardCheckbox) onlyBoardCheckbox.checked = false;
-    } else {
-      // 適用
-      appState.filters.keyword = keywordInput ? keywordInput.value.trim() : "";
-      appState.filters.onlyBoard = onlyBoardCheckbox ? !!onlyBoardCheckbox.checked : false;
-    }
-
-    updateApplyBtnState();
-    applyFiltersAndRender();
-  });
-}
-
-updateApplyBtnState();      let isLoadingMore = false;
+      let isLoadingMore = false;
       window.addEventListener("scroll", () => {
         const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
         if (scrollTop < 40) {
