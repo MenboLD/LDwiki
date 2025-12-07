@@ -152,81 +152,7 @@
       font-size: 12px;
     }
 
-    
-    .filter-row-hint {
-      margin-top: -2px;
-    }
-
-    .filter-hint {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 11px;
-      color: var(--text-sub);
-    }
-
-    #keywordClearBtn {
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-      cursor: pointer;
-    }
-
-    #keywordClearBtn:active {
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.15);
-    }
-
-    .tag-input:disabled {
-      background-color: #e0e0e0;
-      color: #999999;
-    }
-
-    .pill {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-      color: var(--text-sub);
-      cursor: pointer;
-    }
-
-    .pill.active {
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
-      background-color: var(--accent-soft);
-      border-color: var(--accent);
-    }
-
-    .filter-apply button {
-      font-size: 11px;
-      padding: 3px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-      cursor: pointer;
-    }
-
-    .filter-apply button.active {
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
-      background-color: var(--accent-soft);
-      border-color: var(--accent);
-    }
-
-    .filter-apply button:disabled {
-      background-color: #e0e0e0;
-      color: #999999;
-      box-shadow: none;
-      cursor: default;
-    }
-
-    .thread-number {
-      font-weight: 600;
-      margin-right: 4px;
-      color: var(--accent);
-    }
-.filter-row {
+    .filter-row {
       margin-bottom: 6px;
     }
 
@@ -340,10 +266,6 @@
       display: none;
       margin-right: 4px;
       color: var(--text-sub);
-    }
-
-    .thread-children.show-numbers .comment-number {
-      display: inline;
     }
 
     .comment-card.thread-card {
@@ -738,11 +660,88 @@
     .toast.show {
       opacity: 1;
     }
-  </style>
+  
+    .filter-row-hint {
+      margin-top: -2px;
+    }
+
+    .filter-hint {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    #keywordClearBtn {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background-color: #ffffff;
+      cursor: pointer;
+    }
+
+    #keywordClearBtn:active {
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.15);
+    }
+
+    .tag-input:disabled {
+      background-color: #e0e0e0;
+      color: #999999;
+    }
+
+    .pill {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background-color: #ffffff;
+      border: 1px solid var(--border);
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+
+    .pill.active {
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+      background-color: var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .filter-apply button {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background-color: #ffffff;
+      cursor: pointer;
+      color: var(--text-main);
+    }
+
+    .filter-apply button.active {
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+      background-color: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--text-main);
+    }
+
+    .filter-apply button:disabled {
+      background-color: #e0e0e0;
+      color: #999999;
+      box-shadow: none;
+      cursor: default;
+    }
+
+    .comment-number {
+      margin-right: 4px;
+      color: var(--text-sub);
+      font-size: 11px;
+    }
+</style>
 </head>
 <body>
   <div class="app-frame">
-    <div class="top-fixed">
+    
+<div class="top-fixed">
   <header class="app-header">
     <div class="app-title">ラッキー傭兵団 情報掲示板</div>
     <div class="pill" id="filterToggleHeader">▼検索・フィルター設定を表示する</div>
@@ -1139,7 +1138,7 @@
       return `検索条件: ${parts.join(" / ")}`;
     }
 
-    function applyFiltersAndRender() {
+        function applyFiltersAndRender() {
       searchStatusText.textContent = describeSearchStatus();
       const mode = appState.mode;
       listContainer.innerHTML = "";
@@ -1160,8 +1159,7 @@
           listContainer.appendChild(empty);
           return;
         }
-        threads.forEach((thread, index) => {
-          thread.displayIndex = index + 1;
+        threads.forEach(thread => {
           listContainer.appendChild(renderThreadCard(thread));
         });
         if (!appState.didInitialScroll) {
@@ -1187,6 +1185,7 @@
           listContainer.appendChild(renderTimelineCard(c));
         });
       }
+    }
     }
 
     function formatUserId(comment) {
@@ -1249,13 +1248,6 @@
     function createMetaLine(comment, options = {}) {
       const meta = document.createElement("div");
       meta.className = "meta-line";
-
-      if (options.threadNumber != null) {
-        const numSpan = document.createElement("span");
-        numSpan.className = "thread-number";
-        numSpan.textContent = options.threadNumber;
-        meta.appendChild(numSpan);
-      }
 
       const badge = getGenreBadge(comment, options);
       if (badge) meta.appendChild(badge);
@@ -1455,8 +1447,12 @@
         childCount,
         showChildCount: true,
         likeCountOverride: totalLikes,
-        threadNumber: thread.displayIndex || null,
+        commentNo: childCount > 0 ? 1 : null,
       });
+      const parentNoSpan = document.createElement("span");
+      parentNoSpan.className = "comment-number";
+      parentNoSpan.textContent = "1";
+      meta.insertBefore(parentNoSpan, meta.firstChild);
       card.appendChild(meta);
 
       const { row, body } = createTextAndActions(parent);
@@ -1509,6 +1505,10 @@
           childEl.className = "thread-child";
 
           const m = createMetaLine(child, { isThreadRoot: false, commentNo: index + 2 });
+          const numSpan = document.createElement("span");
+          numSpan.className = "comment-number";
+          numSpan.textContent = String(index + 2);
+          m.insertBefore(numSpan, m.firstChild);
           childEl.appendChild(m);
 
           const { row: rowC, body: bodyC } = createTextAndActions(child);
@@ -1730,11 +1730,22 @@
       setComposerOpen(true);
       const bodyInput = document.getElementById("inputBody");
       if (bodyInput) {
+        let no = null;
+        const rootId = comment.root_comment_id || comment.id;
         const threads = appState.threads || [];
-        const thread = threads.find(t => t.parent && t.parent.id === (comment.root_comment_id || comment.id));
-        const threadNo = thread && thread.displayIndex ? thread.displayIndex : null;
-        if (threadNo != null) {
-          const anchor = `>>${String(threadNo).padStart(2, "0")} `;
+        const thread = threads.find(t => t.parent && t.parent.id === rootId);
+        if (thread) {
+          if (comment.id === thread.parent.id) {
+            no = 1;
+          } else if (thread.children && thread.children.length) {
+            const idx = thread.children.findIndex(c => c.id === comment.id);
+            if (idx !== -1) {
+              no = idx + 2;
+            }
+          }
+        }
+        if (no != null) {
+          const anchor = `>>${String(no).padStart(2, "0")} `;
           if (!bodyInput.value.startsWith(anchor)) {
             bodyInput.value = anchor + bodyInput.value;
           }
@@ -1983,6 +1994,7 @@
       updateReplyLabel();
       setComposerOpen(false);
 
+
       function updateTagInputState() {
         const nameInput = document.getElementById("inputName");
         const tagInput = document.getElementById("inputTag");
@@ -2018,7 +2030,6 @@
       if (keywordInputEl) {
         keywordInputEl.addEventListener("input", updateApplyBtnState);
       }
-
 
       const filterPanel = document.getElementById("filterPanel");
       const filterToggleHeader = document.getElementById("filterToggleHeader");
@@ -2072,12 +2083,11 @@
             applyBtn.textContent = "フィルターを解除する";
             applyBtn.classList.add("active");
           }
+          updateApplyBtnState();
           applyFiltersAndRender();
         });
       }
 
-      updateTagInputState();
-      updateApplyBtnState();
 
       let isLoadingMore = false;
       window.addEventListener("scroll", () => {
@@ -2179,6 +2189,9 @@
           }
         });
       }
+
+      updateTagInputState();
+      updateApplyBtnState();
 
       document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
       document.getElementById("modalBackdrop").addEventListener("click", (e) => {
