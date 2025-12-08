@@ -1262,11 +1262,11 @@
       if (loadInfo) loadInfo.textContent = "読み込み中...";
 
       try {
-const { data, error } = await supabase
-  .from("ld_board_comments")
-  .select("*")
-  .or("board_kind.is.null,board_kind.eq.info")
-  .order("created_at", { ascending: true });
+        const { data, error } = await supabase
+          .from("ld_board_comments")
+          .select("*")
+          .eq("board_kind", BOARD_KIND)
+          .order("created_at", { ascending: true });
 
         if (error) throw error;
 
