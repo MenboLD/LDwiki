@@ -49,9 +49,9 @@
       justify-content: space-between;
       align-items: center;
       background-color: #ffffff;
-      
-      
-      
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
 
     .app-title {
@@ -450,6 +450,26 @@
     .user-row input.tag-input {
       flex: 0 0 110px;
     }
+    input.tag-input:disabled {
+      background-color: #e0e0e0;
+      color: #777777;
+    }
+
+    .anchor-link {
+      color: var(--accent);
+      cursor: pointer;
+    }
+    .anchor-link:hover {
+      text-decoration: underline;
+    }
+
+    .comment-number {
+      margin-right: 4px;
+      color: var(--text-sub);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
 
     .genre-row {
       display: flex;
@@ -653,45 +673,16 @@
     .toast.show {
       opacity: 1;
     }
-  
-.top-fixed {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background-color: #ffffff;
-}
-    input.tag-input:disabled {
-      background-color: #e0e0e0;
-      color: #777777;
-    }
-    
-    .anchor-link {
-      color: var(--accent);
-      cursor: pointer;
-    }
-    .anchor-link:hover {
-      text-decoration: underline;
-    }
-    .comment-number {
-      margin-right: 4px;
-      color: var(--text-sub);
-      font-size: 11px;
-      font-weight: 600;
-    }
-    </style>
+  </style>
 </head>
 <body>
   <div class="app-frame">
-        <div class="top-fixed">
-<header class="app-header">
+    <header class="app-header">
       <div class="app-title">ラッキー傭兵団 情報掲示板</div>
-      <div class="pill" id="filterToggleHeader">▲検索・フィルター設定を閉じる</div>
+      <div class="pill" id="filterToggleHeader">検索フィルター設定を表示する</div>
     </header>
-      <div class="user-row">
-        <input id="inputName" type="text" maxlength="12" placeholder="ユーザー名(任意)Max全角6文字" />
-        <input id="inputTag" type="text" maxlength="10" class="tag-input" placeholder="固有ユーザー名のパス" />
-      </div>
-<div class="filter-panel open" id="filterPanel">
+
+    <div class="filter-panel" id="filterPanel">
       <div class="filter-inner">
         <div class="filter-row">
           <div class="filter-label">キーワード</div>
@@ -723,10 +714,8 @@
 
     <div class="search-status" id="searchStatus">
       <span id="searchStatusText">フィルター未適用 / 全件表示</span>
+      <button type="button" id="clearSearch">検索解除</button>
     </div>
-    </div>
-
-
 
     <main class="app-main">
       <div class="list" id="listContainer">
@@ -739,6 +728,10 @@
       </div>
       <div class="footer-body" id="composerBody">
         <div id="replyLabel" class="reply-label small-hint" style="display:none;"></div>
+        <div class="user-row">
+          <input id="inputName" type="text" maxlength="12" placeholder="ユーザー名(任意)Max全角6文字" />
+          <input id="inputTag" type="text" maxlength="10" class="tag-input" placeholder="固有ユーザー名のパス" />
+        </div>
         <div class="genre-row">
           <label><input type="radio" name="genre" value="normal" checked />通常</label>
           <label><input type="radio" name="genre" value="question" />質問</label>
@@ -791,9 +784,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <script>
-
-
+  <script type="module">
     const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
     const BOARD_KIND = "info";
@@ -894,22 +885,7 @@
       tagInput.value = appState.currentTag;
       limitByUnit(nameInput, 12);
       limitByUnit(tagInput, 10);
-      updateTagInputState();
     }
-
-
-function updateTagInputState() {
-  const nameInput = document.getElementById("inputName");
-  const tagInput = document.getElementById("inputTag");
-  if (!nameInput || !tagInput) return;
-  const hasName = !!nameInput.value.trim();
-  if (hasName) {
-    tagInput.disabled = false;
-  } else {
-    tagInput.disabled = true;
-    tagInput.value = "";
-  }
-}
 
     function saveUserToStorage() {
       const name = document.getElementById("inputName").value.trim();
@@ -1017,7 +993,7 @@ function updateTagInputState() {
       threads.sort((a, b) => {
         const aTime = (a.latestChild || a.parent).created_at || "";
         const bTime = (b.latestChild || b.parent).created_at || "";
-        return bTime.localeCompare(aTime);
+        return aTime.localeCompare(bTime);
       });
 
       appState.timeline = all;
@@ -1186,43 +1162,35 @@ function updateTagInputState() {
     }
 
     function createMetaLine(comment, options = {}) {
-  const meta = document.createElement("div");
-  meta.className = "meta-line";
+      const meta = document.createElement("div");
+      meta.className = "meta-line";
 
-  if (options.commentNo != null) {
-    const numSpan = document.createElement("span");
-    numSpan.className = "comment-number";
-    numSpan.textContent = String(options.commentNo);
-    meta.appendChild(numSpan);
-    meta.dataset.commentNo = String(options.commentNo);
-  }
+      const badge = getGenreBadge(comment, options);
+      if (badge) meta.appendChild(badge);
 
-  const badge = getGenreBadge(comment, options);
-  if (badge) meta.appendChild(badge);
+      const userSpan = document.createElement("span");
+      userSpan.textContent = formatUserId(comment);
+      meta.appendChild(userSpan);
 
-  const userSpan = document.createElement("span");
-  userSpan.textContent = formatUserId(comment);
-  meta.appendChild(userSpan);
+      const profileBtn = document.createElement("button");
+      profileBtn.className = "btn-link";
+      profileBtn.textContent = "プロフ";
+      profileBtn.addEventListener("click", () => openProfileModal(comment.owner_name, comment.owner_tag));
+      meta.appendChild(profileBtn);
 
-  const profileBtn = document.createElement("button");
-  profileBtn.className = "btn-link";
-  profileBtn.textContent = "プロフ";
-  profileBtn.addEventListener("click", () => openProfileModal(comment.owner_name, comment.owner_tag));
-  meta.appendChild(profileBtn);
+      const likeSpan = document.createElement("span");
+      const likeCount = options.likeCountOverride != null ? options.likeCountOverride : (comment.like_count || 0);
+      likeSpan.textContent = ` (･∀･)ｲｲ!:${likeCount}`;
+      meta.appendChild(likeSpan);
 
-  const likeSpan = document.createElement("span");
-  const likeCount = options.likeCountOverride != null ? options.likeCountOverride : (comment.like_count || 0);
-  likeSpan.textContent = ` (･∀･)ｲｲ!:${likeCount}`;
-  meta.appendChild(likeSpan);
+      if (options.showChildCount) {
+        const countSpan = document.createElement("span");
+        countSpan.textContent = ` コメ:${options.childCount || 0}`;
+        meta.appendChild(countSpan);
+      }
 
-  if (options.showChildCount) {
-    const countSpan = document.createElement("span");
-    countSpan.textContent = ` コメ:${options.childCount || 0}`;
-    meta.appendChild(countSpan);
-  }
-
-  return meta;
-}
+      return meta;
+    }
 
     function formatRecruitRemain(expires_at) {
       if (!expires_at) return "";
@@ -1274,28 +1242,28 @@ function updateTagInputState() {
       return { row, body };
     }
 
-
-function decorateAnchors(bodyEl) {
-  if (!bodyEl || !bodyEl.textContent) return;
-  const text = bodyEl.textContent;
-  const parts = text.split(/(>>\d{1,2})/g);
-  if (parts.length === 1) return;
-  bodyEl.textContent = "";
-  parts.forEach(part => {
-    if (!part) return;
-    const match = part.match(/^>>(\d{1,2})$/);
-    if (match) {
-      const num = parseInt(match[1], 10);
-      const span = document.createElement("span");
-      span.className = "anchor-link";
-      span.dataset.anchorNo = String(num);
-      span.textContent = part;
-      bodyEl.appendChild(span);
-    } else {
-      bodyEl.appendChild(document.createTextNode(part));
+    function decorateAnchors(bodyEl) {
+      if (!bodyEl || !bodyEl.textContent) return;
+      const text = bodyEl.textContent;
+      const parts = text.split(/(>>\d{1,2})/g);
+      if (parts.length === 1) return;
+      bodyEl.textContent = "";
+      parts.forEach(part => {
+        if (!part) return;
+        const match = part.match(/^>>(\d{1,2})$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          const span = document.createElement("span");
+          span.className = "anchor-link";
+          span.dataset.anchorNo = String(num);
+          span.textContent = part;
+          bodyEl.appendChild(span);
+        } else {
+          bodyEl.appendChild(document.createTextNode(part));
+        }
+      });
     }
-  });
-}
+
 
     function applyLongTextClamp(containerEl, bodyEl, rowEl) {
       if (!containerEl || !bodyEl || !rowEl) return;
@@ -1502,20 +1470,20 @@ function decorateAnchors(bodyEl) {
       }
 
 
-  card.addEventListener("click", (event) => {
-    const target = event.target;
-    if (target && target.classList && target.classList.contains("anchor-link")) {
-      const no = target.dataset.anchorNo;
-      if (!no) return;
-      const dest = card.querySelector(`[data-comment-no="${no}"]`);
-      if (dest && typeof dest.scrollIntoView === "function") {
-        dest.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    }
-  });
+      card.addEventListener("click", (event) => {
+        const target = event.target;
+        if (target && target.classList && target.classList.contains("anchor-link")) {
+          const no = target.dataset.anchorNo;
+          if (!no) return;
+          const dest = card.querySelector(`[data-comment-no="${no}"]`);
+          if (dest && typeof dest.scrollIntoView === "function") {
+            dest.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }
+      });
 
-  return card;
-}
+      return card;
+    }
 
     function renderTimelineCard(comment) {
       const card = document.createElement("article");
@@ -1945,7 +1913,6 @@ function decorateAnchors(bodyEl) {
     function initUI() {
       applyLengthLimit();
       loadUserFromStorage();
-      updateTagInputState();
       updateReplyLabel();
       setComposerOpen(false);
 
@@ -2029,7 +1996,6 @@ function decorateAnchors(bodyEl) {
       document.getElementById("inputName").addEventListener("change", saveUserToStorage);
       document.getElementById("inputTag").addEventListener("change", saveUserToStorage);
 
-      document.getElementById("inputName").addEventListener("input", updateTagInputState);
       document.querySelectorAll('input[name="genre"]').forEach(r => {
         r.addEventListener("change", updateRecruitVisibility);
       });
@@ -2113,8 +2079,6 @@ function decorateAnchors(bodyEl) {
       initUI();
       fetchComments();
     });
-  
-    
-    </script>
+  </script>
 </body>
 </html>
