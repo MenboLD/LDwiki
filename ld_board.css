@@ -1,0 +1,813 @@
+:root {
+  --bg: #f5f5f5;
+  --surface: #ffffff;
+  --border: #d0d0d0;
+  --border-soft: #e4e4e4;
+  --text-main: #222222;
+  --text-sub: #777777;
+  --accent: #3874ff;
+  --accent-soft: #e3f2fd;
+  --accent-strong: #245dd6;
+  --danger: #d33;
+  --danger-soft: #fdecea;
+  --success: #2e7d32;
+  --success-soft: #e8f5e9;
+  --info: #0288d1;
+  --info-soft: #e1f5fe;
+  --shadow-soft: 0 1px 4px rgba(0, 0, 0, 0.06);
+  --radius: 8px;
+  --radius-lg: 12px;
+  --transition-fast: 0.15s ease-out;
+  --thread-border: #2d78ff;
+}
+
+/* 全体レイアウト */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+    "Segoe UI", sans-serif;
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.page-root {
+  max-width: 960px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding-bottom: 120px; /* 投稿フォームぶんのスペース */
+}
+
+/* ヘッダー */
+
+.page-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 8px 8px 4px;
+  background: linear-gradient(to bottom, #ffffff 0%, #ffffff 70%, #ffffffc0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.header-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.header-title-main {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.header-title-sub {
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+.pill-button {
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background-color: #ffffff;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--accent);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.pill-button:hover {
+  background-color: var(--accent-soft);
+}
+
+/* ユーザー入力 */
+
+.user-auth-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: flex-end;
+  margin-bottom: 6px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.field.inline {
+  flex: 1 1 140px;
+}
+
+.field.inline.small {
+  flex: 0 0 80px;
+}
+
+.field label {
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+.field input[type="text"] {
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  padding: 4px 6px;
+  font-size: 13px;
+}
+
+.user-status {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+#userStatusLabel {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background-color: #f0f0f0;
+}
+
+/* フィルターパネル */
+
+.filter-panel {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-soft);
+  padding: 6px 8px;
+  background-color: #fafafa;
+  max-height: 600px;
+  overflow: hidden;
+  transition: max-height var(--transition-fast), opacity var(--transition-fast),
+    margin-top var(--transition-fast);
+  opacity: 1;
+}
+
+.filter-panel--collapsed {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  opacity: 0;
+  border-width: 0;
+}
+
+.filter-section {
+  margin-bottom: 4px;
+}
+
+.filter-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-sub);
+  margin-bottom: 2px;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.filter-row input[type="text"] {
+  flex: 1;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  padding: 4px 6px;
+}
+
+.check-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.filter-label {
+  font-size: 12px;
+  color: var(--text-sub);
+}
+
+.filter-summary-row {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+/* メイン・コメント一覧 */
+
+.page-main {
+  padding: 8px;
+}
+
+.comment-list-section {
+  background-color: transparent;
+}
+
+.load-older-hint {
+  font-size: 11px;
+  color: var(--text-sub);
+  text-align: center;
+  margin-bottom: 4px;
+  opacity: 0.7;
+}
+
+.threads-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* スレッドカード */
+
+.thread-card {
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
+  padding: 6px 8px 4px;
+  position: relative;
+}
+
+.thread-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  border-radius: 999px;
+  background-color: var(--thread-border);
+}
+
+/* タイトル行 */
+
+.thread-title-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.thread-genre-badge {
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 999px;
+  background-color: var(--accent-soft);
+  color: var(--accent-strong);
+  white-space: nowrap;
+}
+
+.thread-genre-badge.qa {
+  background-color: #fffde7;
+  color: #f9a825;
+}
+
+.thread-genre-badge.report {
+  background-color: var(--info-soft);
+  color: var(--info);
+}
+
+.thread-genre-badge.announce {
+  background-color: var(--danger-soft);
+  color: var(--danger);
+}
+
+.thread-title-text {
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.thread-title-likes {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+/* コメント（親・子共通） */
+
+.comment-block {
+  margin-top: 2px;
+  padding: 2px 0;
+  border-top: 1px dashed #eee;
+}
+
+.comment-block:first-of-type {
+  border-top: none;
+}
+
+.comment-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-sub);
+  margin-bottom: 2px;
+}
+
+.comment-no {
+  font-weight: 600;
+  min-width: 18px;
+}
+
+.comment-name {
+  font-weight: 500;
+}
+
+.comment-name.registered {
+  color: var(--success);
+}
+
+.comment-name.imposter {
+  color: var(--danger);
+}
+
+.comment-prof-link {
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  background-color: #ffffff;
+  cursor: pointer;
+  margin-left: 2px;
+}
+
+.comment-timestamp {
+  margin-left: auto;
+}
+
+.comment-gear-btn {
+  margin-left: 4px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--text-sub);
+}
+
+.comment-gear-btn:hover {
+  color: var(--accent-strong);
+}
+
+.comment-like-count {
+  margin-left: 4px;
+  font-size: 11px;
+}
+
+/* 本文 */
+
+.comment-body {
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.comment-body.collapsed {
+  max-height: 4.2em; /* 約3行分 */
+  overflow: hidden;
+  position: relative;
+}
+
+.comment-body-toggle {
+  font-size: 11px;
+  color: var(--accent);
+  cursor: pointer;
+  margin-top: 1px;
+}
+
+.comment-actions-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: 12px;
+}
+
+.comment-action-link {
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.comment-action-link:hover {
+  text-decoration: underline;
+}
+
+/* 添付系 */
+
+.comment-attachments {
+  margin-top: 3px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.attachment-pill {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background-color: #fafafa;
+  cursor: pointer;
+}
+
+.thumb-image {
+  max-width: 80px;
+  max-height: 80px;
+  border-radius: 6px;
+  border: 1px solid var(--border-soft);
+  object-fit: cover;
+  cursor: pointer;
+}
+
+/* 子コメント */
+
+.children-header-row {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed #ddd;
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+.children-header-row .children-count {
+  flex: 1;
+}
+
+.children-header-row .children-toggle {
+  cursor: pointer;
+  color: var(--accent);
+}
+
+/* 読み込みボタン */
+
+.load-more-area {
+  margin-top: 8px;
+  text-align: center;
+}
+
+#loadMoreBtn {
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  font-size: 12px;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+#loadMoreBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.load-more-status {
+  display: block;
+  font-size: 11px;
+  color: var(--text-sub);
+  margin-top: 2px;
+}
+
+/* 投稿フォーム */
+
+.composer-section {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  background: linear-gradient(to top, #ffffff 0%, #ffffff 80%, #ffffffc0);
+  border-top: 1px solid var(--border-soft);
+  padding: 6px 8px 8px;
+}
+
+.composer-section > * {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.reply-info-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.reply-info-row--hidden {
+  display: none;
+}
+
+#replyInfoText {
+  flex: 1;
+}
+
+#cancelReplyBtn {
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  font-size: 11px;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+.composer-genre-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.composer-label {
+  font-size: 12px;
+  color: var(--text-sub);
+}
+
+.radio-label {
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.composer-body-row textarea {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  padding: 4px 6px;
+  font-size: 13px;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.composer-attach-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.composer-attach-row button {
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background-color: #ffffff;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.composer-attach-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.attach-chip {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background-color: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.attach-chip--hidden {
+  display: none;
+}
+
+.composer-submit-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+#submitCommentBtn {
+  border-radius: 999px;
+  border: none;
+  background-color: var(--accent);
+  color: #ffffff;
+  font-size: 13px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+#submitCommentBtn:hover {
+  background-color: var(--accent-strong);
+}
+
+.composer-status {
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+/* モーダル */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
+.modal-content {
+  position: relative;
+  z-index: 1;
+  max-width: 96vw;
+  max-height: 90vh;
+  background-color: #ffffff;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  padding: 8px;
+}
+
+.modal-content--gear {
+  width: 90vw;
+  max-width: 420px;
+}
+
+.modal-close-btn {
+  position: absolute;
+  right: 6px;
+  top: 4px;
+  border: none;
+  background: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--text-sub);
+}
+
+.modal-image-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 8px;
+}
+
+.modal-image-wrapper img {
+  max-width: 90vw;
+  max-height: 80vh;
+}
+
+/* 歯車モーダル */
+
+.modal-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.gear-modal-body {
+  font-size: 13px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.gear-section {
+  border-top: 1px solid var(--border-soft);
+  padding-top: 4px;
+  margin-top: 4px;
+}
+
+.gear-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.gear-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.gear-row {
+  margin-bottom: 4px;
+}
+
+.gear-row label {
+  font-size: 12px;
+}
+
+.gear-row input[type="text"],
+.gear-row textarea,
+.gear-row select {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  padding: 4px 6px;
+  font-size: 13px;
+}
+
+.gear-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.gear-actions button {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+.gear-actions button.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.gear-actions button.primary {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* 追記表示 */
+
+.comment-append {
+  color: var(--accent-strong);
+}
+
+/* トースト */
+
+.toast-container {
+  position: fixed;
+  left: 50%;
+  bottom: 80px;
+  transform: translateX(-50%);
+  z-index: 50;
+  max-width: 420px;
+  width: 90vw;
+  pointer-events: none;
+}
+
+.toast {
+  background-color: #333333;
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  margin-top: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  opacity: 0.95;
+}
+
+/* アンカー（>>N） */
+
+.comment-body a.anchor-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.comment-body a.anchor-link:hover {
+  text-decoration: underline;
+}
+
+/* スマホ優先のためPCはそのまま拡大表示 */
+
+@media (min-width: 768px) {
+  .page-main {
+    padding: 10px 8px 120px;
+  }
+}

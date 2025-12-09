@@ -2,1730 +2,219 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>ラッキー傭兵団 情報掲示板</title>
+  <title>ラッキー傭兵団 情報掲示板（ld_board）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    :root {
-      --bg: #f5f5f5;
-      --surface: #ffffff;
-      --border: #d0d0d0;
-      --text-main: #222222;
-      --text-sub: #666666;
-      --accent: #3874ff;
-      --accent-soft: #e3f2fd;
-      --highlight: #d1ecf1;
-      --danger: #d32f2f;
-      --muted: #9e9e9e;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      font-size: 13px;
-      color: var(--text-main);
-      background-color: var(--bg);
-      -webkit-font-smoothing: antialiased;
-    }
-
-    a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    .app-frame {
-      max-width: 960px;
-      margin: 0 auto;
-      background-color: var(--bg);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .app-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 6px 8px;
-      border-bottom: 1px solid var(--border);
-      background-color: #ffffff;
-    }
-
-    .top-fixed {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background-color: #ffffff;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .user-pass-row {
-      padding: 4px 8px;
-      border-bottom: 1px solid var(--border);
-      background-color: #ffffff;
-    }
-
-    .app-title {
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .pill {
-      font-size: 12px;
-      padding: 4px 8px;
-      border-radius: 999px;
-      border: 1px solid var(--accent);
-      color: var(--accent);
-      cursor: pointer;
-      user-select: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      background-color: #ffffff;
-    }
-
-    .pill.active {
-      background-color: var(--accent);
-      color: #ffffff;
-    }
-
-    .user-row {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-    }
-
-    .user-row input[type="text"] {
-      flex: 1 1 auto;
-      padding: 4px 6px;
-      font-size: 12px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-    }
-
-    .user-row input.tag-input {
-      max-width: 180px;
-    }
-
-    input.tag-input:disabled {
-      background-color: #e0e0e0;
-      color: #777777;
-    }
-
-    .filter-panel {
-      border-bottom: 1px solid var(--border);
-      background-color: #fafafa;
-      padding: 4px 8px;
-      display: none;
-    }
-
-    .filter-panel.open {
-      display: block;
-    }
-
-    .filter-inner {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .filter-row {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      flex-wrap: wrap;
-    }
-
-    .filter-label {
-      width: 72px;
-      font-size: 12px;
-      color: var(--text-sub);
-    }
-
-    .filter-keyword {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-    }
-
-    .filter-keyword input[type="text"] {
-      flex: 1 1 auto;
-    }
-
-    .filter-row input[type="text"] {
-      flex: 1 1 auto;
-      padding: 4px 6px;
-      font-size: 12px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-    }
-
-    .chip-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-    }
-
-    .chip {
-      padding: 2px 6px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      font-size: 11px;
-      color: var(--text-sub);
-      background-color: #ffffff;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .chip.active {
-      border-color: var(--accent);
-      color: var(--accent);
-      background-color: var(--accent-soft);
-    }
-
-    .filter-apply {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 2px;
-    }
-
-    .filter-apply button {
-      min-width: 120px;
-      padding: 4px 8px;
-      font-size: 12px;
-      border-radius: 16px;
-      border: 1px solid var(--accent);
-      background-color: var(--accent);
-      color: #ffffff;
-      cursor: pointer;
-    }
-
-    .filter-apply button.active {
-      background-color: #ffffff;
-      color: var(--accent);
-    }
-
-    .filter-apply button:disabled {
-      background-color: #e0e0e0;
-      border-color: #c0c0c0;
-      color: #ffffff;
-      cursor: default;
-      opacity: 0.8;
-    }
-
-    .search-status {
-      font-size: 12px;
-      padding: 4px 8px;
-      border-bottom: 1px solid var(--border);
-      background-color: #ffffff;
-      color: var(--text-sub);
-    }
-
-    .app-main {
-      flex: 1 1 auto;
-      padding: 8px;
-    }
-
-    .toolbar-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
-      flex-wrap: wrap;
-      gap: 4px;
-    }
-
-    .toolbar-left,
-    .toolbar-right {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      padding: 4px 8px;
-      font-size: 12px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-      background-color: #ffffff;
-      cursor: pointer;
-    }
-
-    .btn-primary {
-      border-color: var(--accent);
-      background-color: var(--accent);
-      color: #ffffff;
-    }
-
-    .btn-secondary {
-      background-color: #f5f5f5;
-      color: var(--text-main);
-    }
-
-    .btn-secondary.small {
-      padding: 2px 6px;
-      font-size: 10px;
-    }
-
-    .btn-danger {
-      border-color: var(--danger);
-      color: #ffffff;
-      background-color: var(--danger);
-    }
-
-    .btn-link {
-      background: none;
-      border: none;
-      color: var(--accent);
-      cursor: pointer;
-      padding: 0;
-      font-size: 11px;
-    }
-
-    .btn-link:hover {
-      text-decoration: underline;
-    }
-
-    .anchor-link {
-      color: var(--accent);
-      cursor: pointer;
-    }
-
-    .anchor-link:hover {
-      text-decoration: underline;
-    }
-
-    .comment-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .comment-card {
-      background-color: var(--surface);
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      padding: 6px 8px;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-    }
-
-    .comment-card.thread-card {
-      border-left: 4px solid #4caf50;
-    }
-
-    .comment-card.single-card {
-      border-left: 1px solid var(--border);
-    }
-
-    .comment-card.highlight {
-      background-color: var(--highlight);
-    }
-
-    .meta-line {
-      font-size: 11px;
-      margin-bottom: 2px;
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 4px;
-      color: var(--text-sub);
-    }
-
-    .genre-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0 4px;
-      border-radius: 4px;
-      font-size: 10px;
-      border: 1px solid var(--border);
-      background-color: #fafafa;
-      margin-right: 4px;
-    }
-
-    .genre-badge.announce {
-      background-color: #fff3cd;
-      border-color: #ffecb5;
-      color: #8a6d3b;
-    }
-
-    .genre-badge.recruit {
-      background-color: #e3f2fd;
-      border-color: #bbdefb;
-      color: #1565c0;
-    }
-
-    .genre-badge.qa {
-      background-color: #e8f5e9;
-      border-color: #c8e6c9;
-      color: #2e7d32;
-    }
-
-    .body-line {
-      font-size: 13px;
-      white-space: pre-wrap;
-      word-break: break-word;
-      margin-bottom: 2px;
-    }
-
-    .text-actions-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 4px;
-      align-items: flex-start;
-    }
-
-    .actions-inline {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-    }
-
-    .board-layout-row {
-      font-size: 11px;
-      color: var(--text-sub);
-      margin-top: 2px;
-    }
-
-    .image-row {
-      margin-top: 2px;
-    }
-
-    .image-row img {
-      max-width: 100%;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-    }
-
-    .thread-children {
-      margin-top: 4px;
-      border-top: 1px solid #e0e0e0;
-      padding-top: 4px;
-    }
-
-    .thread-children-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 11px;
-      color: var(--text-sub);
-      margin-bottom: 2px;
-    }
-
-    .thread-child {
-      border-top: 1px dashed #e0e0e0;
-      padding-top: 3px;
-      margin-top: 3px;
-    }
-
-    .thread-child .body-line {
-      font-size: 12px;
-    }
-
-    .thread-card.has-children {
-      background: linear-gradient(to bottom, #fafafa, #ffffff);
-    }
-
-    .comment-number {
-      margin-right: 4px;
-      color: var(--text-sub);
-      font-size: 11px;
-      font-weight: 600;
-    }
-
-    .composer {
-      position: sticky;
-      bottom: 0;
-      background-color: #ffffff;
-      border-top: 1px solid var(--border);
-      padding: 4px 8px;
-      box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.03);
-      z-index: 5;
-    }
-
-    .composer-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 11px;
-      margin-bottom: 2px;
-      color: var(--text-sub);
-    }
-
-    .composer-body {
-      margin-bottom: 4px;
-    }
-
-    .composer-row {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .composer-row textarea {
-      width: 100%;
-      min-height: 64px;
-      max-height: 200px;
-      resize: vertical;
-      padding: 6px;
-      font-size: 13px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-    }
-
-    .composer-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 11px;
-      gap: 4px;
-      flex-wrap: wrap;
-    }
-
-    .composer-left {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .composer-right {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-    }
-
-    .small-input {
-      width: 80px;
-      padding: 2px 4px;
-      font-size: 11px;
-      border-radius: 4px;
-      border: 1px solid var(--border);
-    }
-
-    .radio-row {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .radio-row label {
-      font-size: 11px;
-    }
-
-    .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 16px;
-      transform: translateX(-50%);
-      max-width: 80%;
-      padding: 8px 12px;
-      font-size: 12px;
-      border-radius: 4px;
-      background-color: rgba(0, 0, 0, 0.8);
-      color: #ffffff;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease-out;
-      z-index: 1000;
-    }
-
-    .toast.show {
-      opacity: 1;
-    }
-
-    @media (max-width: 600px) {
-      .app-frame {
-        border-radius: 0;
-      }
-      .app-main {
-        padding: 4px;
-      }
-      .comment-card {
-        padding: 4px 6px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="ld_board.css" />
 </head>
 <body>
-  <div class="app-frame">
-    <div class="top-fixed">
+  <div class="page-root">
+    <!-- ヘッダー -->
+    <header class="page-header">
+      <div class="header-main">
+        <div class="header-title">
+          <div class="header-title-main">ラッキー傭兵団 情報掲示板</div>
+          <div class="header-title-sub">LuckyDefense 情報共有用板（info）</div>
+        </div>
+        <button id="filterToggleBtn" class="pill-button" type="button">
+          🔍 フィルターを開く
+        </button>
+      </div>
 
-      <header class="app-header">
-        <div class="app-title">ラッキー傭兵団 情報掲示板</div>
-        <div class="pill" id="filterToggleHeader">▼検索・フィルター設定を表示する</div>
-      </header>
-
-      <div class="user-pass-row">
-        <div class="user-row">
-          <input id="inputName" type="text" maxlength="12" placeholder="ユーザー名(任意)Max全角6文字" />
-          <input id="inputTag" type="text" maxlength="10" class="tag-input" placeholder="固有ユーザー名のパス" disabled />
+      <!-- ユーザー名／タグ -->
+      <div class="user-auth-row">
+        <div class="field inline">
+          <label for="userNameInput">ユーザー名（任意）</label>
+          <input
+            id="userNameInput"
+            type="text"
+            placeholder="例）ナイトくん"
+            autocomplete="off"
+          />
+        </div>
+        <div class="field inline small">
+          <label for="userTagInput">識別番号（2桁）</label>
+          <input
+            id="userTagInput"
+            type="text"
+            maxlength="2"
+            placeholder="00"
+            autocomplete="off"
+          />
+        </div>
+        <div class="user-status">
+          <span id="userStatusLabel">未判定</span>
         </div>
       </div>
 
-      <div class="filter-panel" id="filterPanel">
-        <div class="filter-inner">
+      <!-- フィルターパネル -->
+      <section id="filterPanel" class="filter-panel filter-panel--collapsed">
+        <div class="filter-section">
+          <div class="filter-section-title">キーワード</div>
           <div class="filter-row">
-            <div class="filter-label">キーワード</div>
-            <div class="filter-keyword">
-              <input type="text" id="keywordInput" placeholder="本文・タイトル・ユーザー名から検索" />
-              <button type="button" id="keywordClearBtn" class="btn-secondary small">クリア</button>
-            </div>
+            <input
+              id="keywordInput"
+              type="text"
+              placeholder="キーワードを入力（空なら無視）"
+              autocomplete="off"
+            />
           </div>
           <div class="filter-row">
-            <div class="filter-label">対象</div>
-            <div class="chip-row" id="targetChips">
-              <div class="chip active" data-target="body_title">本文＋タイトル</div>
-              <div class="chip" data-target="user">ユーザー名</div>
-              <div class="chip" data-target="user_and_text">ユーザー名＋本文</div>
-            </div>
-          </div>
-          <div class="filter-row">
-            <div class="filter-label">範囲</div>
-            <div class="chip-row" id="scopeChips">
-              <div class="chip active" data-scope="all">単発＋スレッド</div>
-              <div class="chip" data-scope="thread_only">スレッドのみ</div>
-            </div>
-          </div>
-          <div class="filter-row">
-            <label><input type="checkbox" id="onlyBoard" /> 盤面・画像付きコメントに限定</label>
-          </div>
-          <div class="filter-apply">
-            <button type="button" id="applyFilterBtn" disabled>フィルターを適用する</button>
+            <span class="filter-label">対象A（複数選択可）:</span>
+            <label class="check-label">
+              <input id="targetBody" type="checkbox" checked />
+              本文
+            </label>
+            <label class="check-label">
+              <input id="targetTitle" type="checkbox" checked />
+              タイトル
+            </label>
+            <label class="check-label">
+              <input id="targetUser" type="checkbox" checked />
+              ユーザー名
+            </label>
           </div>
         </div>
-      </div>
 
-      <div class="search-status" id="searchStatus">
-        <span id="searchStatusText">フィルター未適用 / 全件表示</span>
-      </div>
-    </div>
-
-    <main class="app-main">
-      <div class="toolbar-row">
-        <div class="toolbar-left">
-          <button type="button" class="btn btn-secondary" id="reloadBtn">再読み込み</button>
-          <span id="loadInfo" style="font-size:11px;color:var(--text-sub);"></span>
+        <div class="filter-section">
+          <div class="filter-section-title">対象B（ジャンル・複数選択可）</div>
+          <div class="filter-row">
+            <label class="check-label">
+              <input id="genreNormal" type="checkbox" checked />
+              通常
+            </label>
+            <label class="check-label">
+              <input id="genreQa" type="checkbox" checked />
+              質問・相談
+            </label>
+            <label class="check-label">
+              <input id="genreReport" type="checkbox" checked />
+              報告
+            </label>
+            <label class="check-label">
+              <input id="genreAnnounce" type="checkbox" checked />
+              アナウンス
+            </label>
+          </div>
         </div>
-        <div class="toolbar-right">
-          <button type="button" class="btn btn-primary" id="newCommentBtn">新規コメント</button>
-        </div>
-      </div>
 
-      <section>
-        <div id="commentList" class="comment-list"></div>
-        <div id="loadingMore" style="text-align:center;font-size:11px;color:var(--text-sub);display:none;margin:4px 0;">
-          さらに読み込み中...
+        <div class="filter-section">
+          <div class="filter-section-title">追加条件</div>
+          <div class="filter-row">
+            <label class="check-label">
+              <input id="filterSinceMyLast" type="checkbox" />
+              自身の最終書込み以降のみを表示（要登録）
+            </label>
+          </div>
+          <div class="filter-row">
+            <label class="check-label">
+              <input id="filterHasAttachment" type="checkbox" />
+              盤面・画像付きコメントに限定
+            </label>
+          </div>
+        </div>
+
+        <div class="filter-summary-row">
+          <span>現在のフィルター：</span>
+          <span id="filterSummaryText">（すべて表示中）</span>
+        </div>
+      </section>
+    </header>
+
+    <!-- メイン（コメント一覧） -->
+    <main class="page-main">
+      <section class="comment-list-section">
+        <div class="load-older-hint" id="loadOlderHint">
+          ↓ フリック／タップで古いコメントを読み込み
+        </div>
+
+        <div id="threadsContainer" class="threads-container">
+          <!-- スレッド一覧を JS で生成 -->
+        </div>
+
+        <div class="load-more-area">
+          <button id="loadMoreBtn" type="button">古いコメントを読み込む</button>
+          <span id="loadMoreStatus" class="load-more-status"></span>
         </div>
       </section>
     </main>
 
-    <section class="composer">
-      <div class="composer-header">
-        <div>
-          <span id="replyLabel">新規コメント</span>
-          <span id="genreLabel" style="margin-left:8px;">ジャンル: 通常</span>
-        </div>
-        <button type="button" class="btn-link" id="cancelReplyBtn" style="display:none;">返信をやめる</button>
+    <!-- 投稿フォーム（composer） -->
+    <section class="composer-section">
+      <div id="replyInfoRow" class="reply-info-row reply-info-row--hidden">
+        <span id="replyInfoText"></span>
+        <button id="cancelReplyBtn" type="button">返信を解除</button>
       </div>
-      <div class="composer-body">
-        <div class="composer-row">
-          <textarea id="inputBody" placeholder="コメント本文を入力"></textarea>
+
+      <div class="composer-genre-row">
+        <span class="composer-label">ジャンル:</span>
+        <label class="radio-label">
+          <input type="radio" name="genre" value="normal" checked />
+          通常
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="genre" value="qa" />
+          質問・相談
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="genre" value="report" />
+          報告
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="genre" value="announce" />
+          アナウンス
+        </label>
+      </div>
+
+      <div class="composer-body-row">
+        <textarea
+          id="commentBodyInput"
+          rows="3"
+          placeholder="コメントを入力（本文は必須です）"
+        ></textarea>
+      </div>
+
+      <div class="composer-attach-row">
+        <button id="attachBoardBtn" type="button">盤面を添付</button>
+        <button id="attachImageBtn" type="button">画像URLを添付</button>
+        <div class="composer-attach-preview">
+          <span id="attachedBoardLabel" class="attach-chip attach-chip--hidden"></span>
+          <span id="attachedImageLabel" class="attach-chip attach-chip--hidden"></span>
         </div>
       </div>
-      <div class="composer-footer">
-        <div class="composer-left">
-          <div class="radio-row">
-            <label><input type="radio" name="genre" value="normal" checked /> 通常</label>
-            <label><input type="radio" name="genre" value="qa" /> 質問</label>
-            <label><input type="radio" name="genre" value="recruit" /> 募集</label>
-            <label><input type="radio" name="genre" value="announce" /> アナウンス</label>
-          </div>
-        </div>
-        <div class="composer-right">
-          <button type="button" class="btn btn-secondary" id="attachBoardBtn">盤面を添付</button>
-          <button type="button" class="btn btn-secondary" id="attachImageBtn">画像を添付</button>
-          <button type="button" class="btn btn-primary" id="submitCommentBtn">送信</button>
-        </div>
+
+      <div class="composer-submit-row">
+        <button id="submitCommentBtn" type="button">投稿する</button>
+        <span id="composerStatus" class="composer-status"></span>
       </div>
     </section>
   </div>
 
-  <div id="toast" class="toast"></div>
-
-  <script type="module">
-    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-    const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const BOARD_KIND = "info";
-
-    const appState = {
-      allComments: [],
-      threads: [],
-      timeline: [],
-      filters: {
-        keyword: "",
-        target: "body_title",
-        scope: "all",
-        onlyBoard: false,
-      },
-      visibleThreadCount: 20,
-      isLoading: false,
-      currentName: "",
-      currentTag: "",
-      replyTarget: null,
-    };
-
-    function showToast(message) {
-      const toast = document.getElementById("toast");
-      if (!toast) return;
-      toast.textContent = message;
-      toast.classList.add("show");
-      setTimeout(() => {
-        toast.classList.remove("show");
-      }, 2000);
-    }
-
-    function saveUserToStorage(name, tag) {
-      try {
-        localStorage.setItem("ld_board_user", JSON.stringify({ name, tag }));
-      } catch (_) {}
-    }
-
-    function loadUserFromStorage() {
-      try {
-        const raw = localStorage.getItem("ld_board_user");
-        if (!raw) return { name: "", tag: "" };
-        const parsed = JSON.parse(raw);
-        return {
-          name: parsed.name || "",
-          tag: parsed.tag || "",
-        };
-      } catch (_) {
-        return { name: "", tag: "" };
-      }
-    }
-
-    function getGuestDailyId() {
-      try {
-        const today = new Date().toISOString().slice(0, 10);
-        const key = "ld_board_guest_id_" + today;
-        const existing = localStorage.getItem(key);
-        if (existing) return existing;
-        const id = String(Math.floor(Math.random() * 9000) + 1000);
-        localStorage.setItem(key, id);
-        return id;
-      } catch (_) {
-        return "0000";
-      }
-    }
-
-    function getGenreBadge(comment, options = {}) {
-      const genre = comment.genre || "normal";
-      const span = document.createElement("span");
-      span.className = "genre-badge";
-
-      if (genre === "announce") {
-        span.classList.add("announce");
-        span.textContent = "アナウンス";
-      } else if (genre === "recruit") {
-        span.classList.add("recruit");
-        span.textContent = "募集";
-      } else if (genre === "qa") {
-        span.classList.add("qa");
-        span.textContent = "質問";
-      } else {
-        span.textContent = "通常";
-      }
-      return span;
-    }
-
-    function formatUserId(comment) {
-      const name = comment.owner_name || "名無し";
-      const tag = comment.owner_tag || "";
-      const guest = comment.guest_daily_id || "";
-      if (tag) {
-        return `★${name}(${tag})`;
-      } else if (guest) {
-        return `${name}(${guest})`;
-      } else {
-        return name;
-      }
-    }
-
-    function createMetaLine(comment, options = {}) {
-      const meta = document.createElement("div");
-      meta.className = "meta-line";
-      if (options && options.commentNo != null) {
-        const numSpan = document.createElement("span");
-        numSpan.className = "comment-number";
-        numSpan.textContent = String(options.commentNo);
-        meta.appendChild(numSpan);
-        meta.dataset.commentNo = String(options.commentNo);
-      }
-
-      const badge = getGenreBadge(comment, options);
-      if (badge) meta.appendChild(badge);
-
-      const userSpan = document.createElement("span");
-      userSpan.textContent = formatUserId(comment);
-      meta.appendChild(userSpan);
-
-      const profileBtn = document.createElement("button");
-      profileBtn.className = "btn-link";
-      profileBtn.textContent = "プロフ";
-      profileBtn.addEventListener("click", () => openProfileModal(comment.owner_name, comment.owner_tag));
-      meta.appendChild(profileBtn);
-
-      const likeSpan = document.createElement("span");
-      const likeCount = options.likeCountOverride != null ? options.likeCountOverride : (comment.like_count || 0);
-      likeSpan.textContent = ` (･∀･)ｲｲ!:${likeCount}`;
-      meta.appendChild(likeSpan);
-
-      if (options.showChildCount) {
-        const countSpan = document.createElement("span");
-        countSpan.textContent = ` コメ:${options.childCount || 0}`;
-        meta.appendChild(countSpan);
-      }
-
-      return meta;
-    }
-
-    function formatRecruitRemain(expires_at) {
-      if (!expires_at) return "";
-      try {
-        const now = new Date();
-        const end = new Date(expires_at);
-        const diffMs = end.getTime() - now.getTime();
-        if (diffMs <= 0) return "";
-        const minutes = Math.ceil(diffMs / 60000);
-        return `残り${minutes}分`;
-      } catch (_) {
-        return "";
-      }
-    }
-
-    function isGuildRecruit(comment) {
-      return comment.is_recruit && comment.recruit_level === "GUILD";
-    }
-
-    function appendBoardLayoutRow(container, comment) {
-      if (!comment.board_layout_id) return;
-      const row = document.createElement("div");
-      row.className = "board-layout-row";
-      row.textContent = `盤面ID: ${comment.board_layout_id}`;
-      container.appendChild(row);
-    }
-
-    function appendImageRow(container, comment) {
-      if (!comment.image_url) return;
-      const row = document.createElement("div");
-      row.className = "image-row";
-      const img = document.createElement("img");
-      img.src = comment.image_url;
-      img.alt = "添付画像";
-      row.appendChild(img);
-      container.appendChild(row);
-    }
-
-    function createTextAndActions(comment) {
-      const row = document.createElement("div");
-      row.className = "text-actions-row";
-
-      const body = document.createElement("div");
-      body.className = "body-line";
-      body.textContent = comment.body || "";
-      decorateAnchors(body);
-      row.appendChild(body);
-
-      const actions = document.createElement("div");
-      actions.className = "actions-inline";
-
-      const replyBtn = document.createElement("button");
-      replyBtn.className = "btn-link";
-      replyBtn.textContent = "[ 返信 ]";
-      replyBtn.addEventListener("click", () => startReply(comment));
-
-      const likeBtn = document.createElement("button");
-      likeBtn.className = "btn-link";
-      likeBtn.textContent = "[ (･∀･)ｲｲ! ]";
-      likeBtn.addEventListener("click", () => incrementLike(comment.id));
-
-      const sep = document.createElement("span");
-      sep.textContent = "|";
-
-      actions.appendChild(replyBtn);
-      actions.appendChild(sep);
-      actions.appendChild(likeBtn);
-
-      row.appendChild(actions);
-
-      return { row, body };
-    }
-
-    function decorateAnchors(bodyEl) {
-      if (!bodyEl || !bodyEl.textContent) return;
-      const text = bodyEl.textContent;
-      const parts = text.split(/(>>\d{1,2})/g);
-      if (parts.length === 1) return;
-      bodyEl.textContent = "";
-      parts.forEach(part => {
-        if (!part) return;
-        const match = part.match(/^>>(\d{1,2})$/);
-        if (match) {
-          const num = parseInt(match[1], 10);
-          const span = document.createElement("span");
-          span.className = "anchor-link";
-          span.dataset.anchorNo = String(num);
-          span.textContent = part;
-          bodyEl.appendChild(span);
-        } else {
-          bodyEl.appendChild(document.createTextNode(part));
-        }
-      });
-    }
-
-    function applyLongTextClamp(containerEl, bodyEl, rowEl) {
-      if (!containerEl || !bodyEl || !rowEl) return;
-      requestAnimationFrame(() => {
-        const style = window.getComputedStyle(bodyEl);
-        const lineHeight = parseFloat(style.lineHeight || "16");
-        const maxLines = 3;
-        const maxHeight = lineHeight * maxLines;
-        if (bodyEl.scrollHeight <= maxHeight + 1) return;
-
-        bodyEl.style.maxHeight = `${maxHeight}px`;
-        bodyEl.style.overflow = "hidden";
-
-        const toggle = document.createElement("button");
-        toggle.className = "btn-link";
-        toggle.style.display = "block";
-        toggle.style.marginTop = "2px";
-        toggle.textContent = "▼長文表示(タップ)";
-        toggle.addEventListener("click", () => {
-          if (bodyEl.style.maxHeight) {
-            bodyEl.style.maxHeight = "";
-            bodyEl.style.overflow = "";
-            toggle.textContent = "▲短くたたむ";
-          } else {
-            bodyEl.style.maxHeight = `${maxHeight}px`;
-            bodyEl.style.overflow = "hidden";
-            toggle.textContent = "▼長文表示(タップ)";
-          }
-        });
-        rowEl.appendChild(toggle);
-      });
-    }
-
-    function buildDerivedState() {
-      const now = new Date();
-      const all = (appState.allComments || []).filter(c => {
-        if (c.deleted_at) return false;
-        if (c.board_kind && c.board_kind !== BOARD_KIND) return false;
-        if (c.is_recruit && c.recruit_level !== "GUILD" && c.expires_at) {
-          try {
-            const end = new Date(c.expires_at);
-            if (end <= now) return false;
-          } catch (_) {}
-        }
-        return true;
-      });
-
-      all.sort((a, b) => {
-        const aT = a.created_at || "";
-        const bT = b.created_at || "";
-        return aT.localeCompare(bT);
-      });
-
-      const parents = all.filter(c => !c.parent_comment_id);
-      const threads = parents.map(p => {
-        const children = all.filter(c => c.root_comment_id === p.id && c.id !== p.id);
-        children.sort((a, b) => {
-          const aT = a.created_at || "";
-          const bT = b.created_at || "";
-          return aT.localeCompare(bT);
-        });
-        const childCount = children.length;
-        const latestChild = childCount ? children[childCount - 1] : null;
-        const totalLikes =
-          (p.like_count || 0) +
-          children.reduce((sum, c) => sum + (c.like_count || 0), 0);
-        return { parent: p, children, childCount, latestChild, totalLikes };
-      });
-
-      threads.sort((a, b) => {
-        const aTime = (a.latestChild || a.parent).created_at || "";
-        const bTime = (b.latestChild || b.parent).created_at || "";
-        return aTime.localeCompare(bTime);
-      });
-
-      appState.timeline = all;
-      appState.threads = threads;
-    }
-
-    function commentMatchesFilters(comment) {
-      const { keyword, target, onlyBoard } = appState.filters;
-      if (onlyBoard && !comment.board_layout_id && !comment.image_url) return false;
-      if (!keyword) return true;
-      const kw = keyword.toLowerCase();
-      const body = (comment.body || "").toLowerCase();
-      const title = (comment.thread_title || "").toLowerCase();
-      const owner = (comment.owner_name || "").toLowerCase();
-
-      if (target === "body_title") {
-        return body.includes(kw) || title.includes(kw);
-      } else if (target === "user") {
-        return owner.includes(kw);
-      } else {
-        return owner.includes(kw) && (body.includes(kw) || title.includes(kw));
-      }
-    }
-
-    function threadMatchesFilters(thread) {
-      const { keyword, target, scope, onlyBoard } = appState.filters;
-      const parent = thread.parent;
-      const latest = thread.latestChild;
-      if (scope === "thread_only" && !parent.thread_title) return false;
-
-      if (onlyBoard && !parent.board_layout_id && !parent.image_url && !(latest && (latest.board_layout_id || latest.image_url))) {
-        return false;
-      }
-      if (!keyword) return true;
-
-      const kw = keyword.toLowerCase();
-      const bodyP = (parent.body || "").toLowerCase();
-      const bodyC = (latest?.body || "").toLowerCase();
-      const title = (parent.thread_title || "").toLowerCase();
-      const ownerP = (parent.owner_name || "").toLowerCase();
-      const ownerC = (latest?.owner_name || "").toLowerCase();
-
-      if (target === "body_title") {
-        return bodyP.includes(kw) || bodyC.includes(kw) || title.includes(kw);
-      } else if (target === "user") {
-        return ownerP.includes(kw) || ownerC.includes(kw);
-      } else {
-        const ownerHit = ownerP.includes(kw) || ownerC.includes(kw);
-        const textHit = bodyP.includes(kw) || bodyC.includes(kw) || title.includes(kw);
-        return ownerHit && textHit;
-      }
-    }
-
-    function describeSearchStatus() {
-      const { keyword, target, scope, onlyBoard } = appState.filters;
-      if (!keyword && !onlyBoard) {
-        return "フィルター未適用 / 全件表示";
-      }
-      const parts = [];
-      if (keyword) parts.push(`「${keyword}」`);
-
-      if (target === "body_title") {
-        parts.push("本文＋タイトル");
-      } else if (target === "user") {
-        parts.push("ユーザー名");
-      } else {
-        parts.push("ユーザー名＋本文");
-      }
-
-      if (scope === "thread_only") {
-        parts.push("スレッドのみ");
-      } else {
-        parts.push("単発＋スレッド");
-      }
-
-      if (onlyBoard) {
-        parts.push("盤面・画像付きのみ");
-      }
-
-      return parts.join(" / ");
-    }
-
-    function renderThreadCard(thread) {
-      const { parent, children, childCount, latestChild, totalLikes } = thread;
-
-      if (parent.is_recruit && parent.recruit_level !== "GUILD" && parent.expires_at) {
-        const now = new Date();
-        const end = new Date(parent.expires_at);
-        if (end <= now) {
-          const dummy = document.createElement("div");
-          dummy.style.display = "none";
-          return dummy;
-        }
-      }
-
-      const card = document.createElement("article");
-      card.className = "comment-card thread-card";
-      if (childCount > 0) {
-        card.classList.add("has-children");
-      }
-
-      if (parent.thread_title) {
-        const titleEl = document.createElement("div");
-        titleEl.style.fontSize = "13px";
-        titleEl.style.fontWeight = "600";
-        titleEl.style.color = "#8d6e63";
-        titleEl.style.marginBottom = "2px";
-        titleEl.textContent = parent.thread_title;
-        card.appendChild(titleEl);
-      }
-
-      const meta = createMetaLine(parent, {
-        isThreadRoot: true,
-        childCount,
-        showChildCount: true,
-        likeCountOverride: totalLikes,
-        commentNo: 1,
-      });
-      card.appendChild(meta);
-
-      const { row, body } = createTextAndActions(parent);
-      card.appendChild(row);
-      applyLongTextClamp(card, body, row);
-
-      appendBoardLayoutRow(card, parent);
-      appendImageRow(card, parent);
-
-      if (parent.is_recruit) {
-        const remain = formatRecruitRemain(parent.expires_at);
-        if (remain) {
-          const span = document.createElement("div");
-          span.style.fontSize = "11px";
-          span.style.color = "red";
-          span.textContent = remain;
-          card.appendChild(span);
-        }
-      }
-
-      const titleRow = document.createElement("div");
-      titleRow.style.textAlign = "right";
-      const titleBtn = document.createElement("button");
-      titleBtn.className = "btn-link";
-      titleBtn.textContent = parent.thread_title ? "タイトル編集" : "タイトル作成";
-      titleBtn.addEventListener("click", () => editThreadTitle(parent));
-      titleRow.appendChild(titleBtn);
-      card.appendChild(titleRow);
-
-      if (childCount > 0) {
-        const wrapper = document.createElement("div");
-        wrapper.className = "thread-children";
-
-        const header = document.createElement("div");
-        header.className = "thread-children-header";
-        const label = document.createElement("span");
-        label.textContent = `子コメント ${childCount}件`;
-        const toggleBtn = document.createElement("button");
-        toggleBtn.className = "btn-link";
-        toggleBtn.textContent = "▼すべての子コメントを表示";
-        header.appendChild(label);
-        header.appendChild(toggleBtn);
-        wrapper.appendChild(header);
-
-        const childrenContainer = document.createElement("div");
-        childrenContainer.style.display = "none";
-
-        children.forEach((child, index) => {
-          const childEl = document.createElement("div");
-          childEl.className = "thread-child";
-
-          const m = createMetaLine(child, { isThreadRoot: false, commentNo: index + 2 });
-          childEl.appendChild(m);
-
-          const { row: rowC, body: bodyC } = createTextAndActions(child);
-          childEl.appendChild(rowC);
-          applyLongTextClamp(childEl, bodyC, rowC);
-
-          appendBoardLayoutRow(childEl, child);
-          appendImageRow(childEl, child);
-
-          childrenContainer.appendChild(childEl);
-        });
-
-        wrapper.appendChild(childrenContainer);
-        card.appendChild(wrapper);
-
-        let expanded = false;
-        toggleBtn.addEventListener("click", () => {
-          expanded = !expanded;
-          childrenContainer.style.display = expanded ? "block" : "none";
-          toggleBtn.textContent = expanded ? "▲子コメントを折りたたむ" : "▼すべての子コメントを表示";
-        });
-      }
-
-      card.addEventListener("click", (event) => {
-        const target = event.target;
-        if (target && target.classList && target.classList.contains("anchor-link")) {
-          const no = target.dataset.anchorNo;
-          if (!no) return;
-          const dest = card.querySelector(`[data-comment-no="${no}"]`);
-          if (dest && typeof dest.scrollIntoView === "function") {
-            dest.scrollIntoView({ behavior: "smooth", block: "center" });
-          }
-        }
-      });
-
-      return card;
-    }
-
-    function renderTimelineCard(comment) {
-      if (comment.is_recruit && comment.recruit_level !== "GUILD" && comment.expires_at) {
-        const now = new Date();
-        const end = new Date(comment.expires_at);
-        if (end <= now) {
-          const dummy = document.createElement("div");
-          dummy.style.display = "none";
-          return dummy;
-        }
-      }
-
-      const card = document.createElement("article");
-      card.className = "comment-card single-card";
-
-      const meta = createMetaLine(comment, {
-        isThreadRoot: false,
-        showChildCount: false,
-      });
-      card.appendChild(meta);
-
-      const { row, body } = createTextAndActions(comment);
-      card.appendChild(row);
-      applyLongTextClamp(card, body, row);
-
-      appendBoardLayoutRow(card, comment);
-      appendImageRow(card, comment);
-
-      if (comment.is_recruit) {
-        const remain = formatRecruitRemain(comment.expires_at);
-        if (remain) {
-          const span = document.createElement("div");
-          span.style.fontSize = "11px";
-          span.style.color = "red";
-          span.textContent = remain;
-          card.appendChild(span);
-        }
-      }
-
-      return card;
-    }
-
-    function renderComments() {
-      const listEl = document.getElementById("commentList");
-      const statusEl = document.getElementById("searchStatusText");
-      if (!listEl || !statusEl) return;
-
-      listEl.innerHTML = "";
-
-      const usingThreads = appState.filters.scope !== "all" || appState.filters.keyword || appState.filters.onlyBoard;
-      const threads = appState.threads || [];
-      const timeline = appState.timeline || [];
-
-      const elements = [];
-
-      if (usingThreads) {
-        const filteredThreads = threads.filter(threadMatchesFilters);
-        const visible = filteredThreads.slice(-appState.visibleThreadCount);
-        visible.forEach(thread => {
-          const el = renderThreadCard(thread);
-          elements.push(el);
-        });
-      } else {
-        const filtered = timeline.filter(commentMatchesFilters);
-        const visible = filtered.slice(-appState.visibleThreadCount);
-        visible.forEach(comment => {
-          const el = renderTimelineCard(comment);
-          elements.push(el);
-        });
-      }
-
-      elements.forEach(el => {
-        if (el) listEl.appendChild(el);
-      });
-
-      statusEl.textContent = describeSearchStatus();
-    }
-
-    async function loadComments() {
-      if (appState.isLoading) return;
-      appState.isLoading = true;
-      const loadInfo = document.getElementById("loadInfo");
-      if (loadInfo) loadInfo.textContent = "読み込み中...";
-
-      try {
-        const { data, error } = await supabase
-          .from("ld_board_comments")
-          .select("*")
-          .eq("board_kind", BOARD_KIND)
-          .order("created_at", { ascending: true });
-
-        if (error) throw error;
-
-        appState.allComments = data || [];
-        buildDerivedState();
-        appState.visibleThreadCount = 20;
-        renderComments();
-
-        if (loadInfo) {
-          loadInfo.textContent = `読み込み件数: ${appState.allComments.length}`;
-        }
-      } catch (err) {
-        console.error(err);
-        showToast("コメントの読み込みに失敗しました");
-        if (loadInfo) loadInfo.textContent = "読み込み失敗";
-      } finally {
-        appState.isLoading = false;
-      }
-    }
-
-    function setFilterTarget(target) {
-      appState.filters.target = target;
-      renderComments();
-    }
-
-    function setFilterScope(scope) {
-      appState.filters.scope = scope;
-      renderComments();
-    }
-
-    function applyFiltersAndRender() {
-      buildDerivedState();
-      appState.visibleThreadCount = 20;
-      renderComments();
-    }
-
-    function getCurrentUser() {
-      const nameInput = document.getElementById("inputName");
-      const tagInput = document.getElementById("inputTag");
-      const name = (nameInput && nameInput.value.trim()) || "";
-      const tag = (tagInput && tagInput.value.trim()) || "";
-      return { name, tag };
-    }
-
-    function updateReplyLabel() {
-      const label = document.getElementById("replyLabel");
-      if (!label) return;
-      if (!appState.replyTarget) {
-        label.textContent = "新規コメント";
-      } else {
-        const { ownerName } = appState.replyTarget;
-        label.textContent = `返信対象: ${ownerName}`;
-      }
-    }
-
-    function updateGenreLabel() {
-      const label = document.getElementById("genreLabel");
-      if (!label) return;
-      const radios = document.querySelectorAll('input[name="genre"]');
-      let selected = "normal";
-      radios.forEach(r => {
-        if (r.checked) selected = r.value;
-      });
-      let text = "ジャンル: 通常";
-      if (selected === "qa") text = "ジャンル: 質問";
-      else if (selected === "recruit") text = "ジャンル: 募集";
-      else if (selected === "announce") text = "ジャンル: アナウンス";
-      label.textContent = text;
-    }
-
-    function setComposerOpen(open) {
-      const composer = document.querySelector(".composer");
-      if (!composer) return;
-      composer.style.display = open ? "block" : "block";
-    }
-
-    function startReply(comment) {
-      const rootId = comment.root_comment_id || comment.id;
-      let commentNo = null;
-      const all = appState.allComments || [];
-      const parent = all.find(c => c.id === rootId);
-      if (parent) {
-        if (comment.id === parent.id) {
-          commentNo = 1;
-        } else {
-          const children = all
-            .filter(c => c.root_comment_id === parent.id && c.id !== parent.id)
-            .slice()
-            .sort((a, b) => {
-              const aT = a.created_at || "";
-              const bT = b.created_at || "";
-              return aT.localeCompare(bT);
-            });
-          const idx = children.findIndex(c => c.id === comment.id);
-          if (idx >= 0) commentNo = idx + 2;
-        }
-      }
-
-      appState.replyTarget = {
-        parentId: comment.id,
-        rootId: rootId,
-        ownerName: comment.owner_name || "名無し",
-      };
-      updateReplyLabel();
-      setComposerOpen(true);
-      const bodyInput = document.getElementById("inputBody");
-      if (bodyInput) {
-        if (commentNo != null) {
-          bodyInput.value = `>>${String(commentNo).padStart(2, "0")}
-`;
-        } else {
-          bodyInput.value = "";
-        }
-        bodyInput.focus();
-        const len = bodyInput.value.length;
-        try { bodyInput.setSelectionRange(len, len); } catch (_) {}
-      }
-    }
-
-    async function incrementLike(commentId) {
-      try {
-        const target = (appState.allComments || []).find(c => c.id === commentId);
-        if (!target) return;
-        const newCount = (target.like_count || 0) + 1;
-        const { error } = await supabase
-          .from("ld_board_comments")
-          .update({ like_count: newCount })
-          .eq("id", commentId);
-        if (error) throw error;
-        target.like_count = newCount;
-        buildDerivedState();
-        applyFiltersAndRender();
-      } catch (err) {
-        console.error(err);
-        showToast("イイねの送信に失敗しました");
-      }
-    }
-
-    async function editThreadTitle(parentComment) {
-      const meName = appState.currentName;
-      const meTag = appState.currentTag;
-      const myGuestId = getGuestDailyId();
-
-      const isRegistered = !!parentComment.owner_tag;
-      let canEdit = false;
-      if (isRegistered) {
-        if (meName && meTag && meName === parentComment.owner_name && meTag === parentComment.owner_tag) {
-          canEdit = true;
-        }
-      } else {
-        if (meName && !meTag && myGuestId && myGuestId === parentComment.guest_daily_id) {
-          canEdit = true;
-        }
-      }
-
-      if (!canEdit) {
-        showToast("スレッド作成者のみタイトル編集できます");
-        return;
-      }
-
-      const currentTitle = parentComment.thread_title || "";
-      const newTitle = window.prompt("スレッドタイトルを入力してください", currentTitle);
-      if (newTitle === null) return;
-      const trimmed = newTitle.trim();
-      if (!trimmed) {
-        showToast("空のタイトルは設定できません");
-        return;
-      }
-
-      try {
-        const { error } = await supabase
-          .from("ld_board_comments")
-          .update({ thread_title: trimmed })
-          .eq("id", parentComment.id);
-
-        if (error) throw error;
-        parentComment.thread_title = trimmed;
-        buildDerivedState();
-        applyFiltersAndRender();
-        showToast("タイトルを更新しました");
-      } catch (err) {
-        console.error(err);
-        showToast("タイトルの更新に失敗しました");
-      }
-    }
-
-    async function submitComment() {
-      const bodyInput = document.getElementById("inputBody");
-      if (!bodyInput) return;
-      const body = bodyInput.value.trim();
-      if (!body) {
-        showToast("本文を入力してください");
-        return;
-      }
-
-      const { name, tag } = getCurrentUser();
-      appState.currentName = name;
-      appState.currentTag = tag;
-      saveUserToStorage(name, tag);
-
-      const radios = document.querySelectorAll('input[name="genre"]');
-      let genre = "normal";
-      radios.forEach(r => {
-        if (r.checked) genre = r.value;
-      });
-
-      const isReply = !!appState.replyTarget;
-      let parent_comment_id = null;
-      let root_comment_id = null;
-      let thread_title = null;
-
-      if (isReply) {
-        parent_comment_id = appState.replyTarget.parentId;
-        root_comment_id = appState.replyTarget.rootId;
-      } else {
-        parent_comment_id = null;
-        root_comment_id = null;
-      }
-
-      const boardLayoutId = null;
-      const imageUrl = null;
-
-      const guestId = getGuestDailyId();
-
-      const payload = {
-        board_kind: BOARD_KIND,
-        body,
-        owner_name: name || null,
-        owner_tag: tag || null,
-        guest_daily_id: guestId,
-        genre,
-        parent_comment_id,
-        root_comment_id,
-        thread_title,
-        board_layout_id: boardLayoutId,
-        image_url: imageUrl,
-      };
-
-      try {
-        const { error } = await supabase
-          .from("ld_board_comments")
-          .insert(payload);
-        if (error) throw error;
-        bodyInput.value = "";
-        appState.replyTarget = null;
-        updateReplyLabel();
-        await loadComments();
-        showToast("コメントを投稿しました");
-      } catch (err) {
-        console.error(err);
-        showToast("コメントの投稿に失敗しました");
-      }
-    }
-
-    function updateRecruitVisibility() {
-      const radios = document.querySelectorAll('input[name="genre"]');
-      let genre = "normal";
-      radios.forEach(r => {
-        if (r.checked) genre = r.value;
-      });
-      const recruitControls = document.querySelectorAll(".recruit-only");
-      recruitControls.forEach(el => {
-        el.style.display = genre === "recruit" ? "inline-flex" : "none";
-      });
-    }
-
-    function openProfileModal(name, tag) {
-      const displayName = name || "名無し";
-      const displayTag = tag || "(未登録)";
-      window.alert(`ユーザー情報\n\n名前: ${displayName}\nタグ: ${displayTag}`);
-    }
-
-    function updateTagInputState() {
-      const nameInput = document.getElementById("inputName");
-      const tagInput = document.getElementById("inputTag");
-      if (!nameInput || !tagInput) return;
-      const hasName = !!nameInput.value.trim();
-      tagInput.disabled = !hasName;
-    }
-
-    function initUI() {
-      const stored = loadUserFromStorage();
-      const inputName = document.getElementById("inputName");
-      const inputTag = document.getElementById("inputTag");
-      if (inputName) inputName.value = stored.name;
-      if (inputTag) inputTag.value = stored.tag;
-      appState.currentName = stored.name;
-      appState.currentTag = stored.tag;
-
-      const nameInput = document.getElementById("inputName");
-      if (nameInput) {
-        nameInput.addEventListener("input", () => {
-          updateTagInputState();
-        });
-      }
-
-      const bodyInput = document.getElementById("inputBody");
-      if (bodyInput) {
-        bodyInput.addEventListener("input", () => {
-          bodyInput.style.height = "auto";
-          bodyInput.style.height = bodyInput.scrollHeight + "px";
-        });
-      }
-
-      const submitBtn = document.getElementById("submitCommentBtn");
-      if (submitBtn) {
-        submitBtn.addEventListener("click", submitComment);
-      }
-
-      const newCommentBtn = document.getElementById("newCommentBtn");
-      if (newCommentBtn) {
-        newCommentBtn.addEventListener("click", () => {
-          appState.replyTarget = null;
-          updateReplyLabel();
-          setComposerOpen(true);
-          if (bodyInput) {
-            bodyInput.value = "";
-            bodyInput.focus();
-          }
-        });
-      }
-
-      const cancelReplyBtn = document.getElementById("cancelReplyBtn");
-      if (cancelReplyBtn) {
-        cancelReplyBtn.addEventListener("click", () => {
-          appState.replyTarget = null;
-          updateReplyLabel();
-          cancelReplyBtn.style.display = "none";
-        });
-      }
-
-      const reloadBtn = document.getElementById("reloadBtn");
-      if (reloadBtn) {
-        reloadBtn.addEventListener("click", () => {
-          loadComments();
-        });
-      }
-
-      const genreRadios = document.querySelectorAll('input[name="genre"]');
-      genreRadios.forEach(r => {
-        r.addEventListener("change", () => {
-          updateGenreLabel();
-          updateRecruitVisibility();
-        });
-      });
-      updateGenreLabel();
-      updateRecruitVisibility();
-
-      function updateApplyBtnState() {
-        const keywordInput = document.getElementById("keywordInput");
-        const applyBtn = document.getElementById("applyFilterBtn");
-        if (!keywordInput || !applyBtn) return;
-        const hasKeyword = !!keywordInput.value.trim();
-        applyBtn.disabled = !hasKeyword;
-        if (!hasKeyword) {
-          applyBtn.classList.remove("active");
-          applyBtn.textContent = "フィルターを適用する";
-        }
-      }
-
-      const keywordClearBtn = document.getElementById("keywordClearBtn");
-      if (keywordClearBtn) {
-        keywordClearBtn.addEventListener("click", () => {
-          const keywordInput = document.getElementById("keywordInput");
-          if (keywordInput) {
-            keywordInput.value = "";
-            updateApplyBtnState();
-          }
-        });
-      }
-
-      const keywordInputEl = document.getElementById("keywordInput");
-      if (keywordInputEl) {
-        keywordInputEl.addEventListener("input", updateApplyBtnState);
-      }
-
-      const filterPanel = document.getElementById("filterPanel");
-      const filterToggleHeader = document.getElementById("filterToggleHeader");
-      if (filterToggleHeader && filterPanel) {
-        filterToggleHeader.addEventListener("click", () => {
-          const isOpen = filterPanel.classList.toggle("open");
-          filterToggleHeader.textContent = isOpen
-            ? "▲検索・フィルター設定を閉じる"
-            : "▼検索・フィルター設定を表示する";
-          filterToggleHeader.classList.toggle("active", isOpen);
-        });
-      }
-
-      document.querySelectorAll("#targetChips .chip").forEach(chip => {
-        chip.addEventListener("click", () => {
-          document.querySelectorAll("#targetChips .chip").forEach(c => c.classList.remove("active"));
-          chip.classList.add("active");
-          setFilterTarget(chip.dataset.target);
-        });
-      });
-
-      document.querySelectorAll("#scopeChips .chip").forEach(chip => {
-        chip.addEventListener("click", () => {
-          document.querySelectorAll("#scopeChips .chip").forEach(c => c.classList.remove("active"));
-          chip.classList.add("active");
-          setFilterScope(chip.dataset.scope);
-        });
-      });
-
-      const applyBtn = document.getElementById("applyFilterBtn");
-      if (applyBtn) {
-        applyBtn.addEventListener("click", () => {
-          const keywordInput = document.getElementById("keywordInput");
-          const onlyBoardCheckbox = document.getElementById("onlyBoard");
-          const hasActive =
-            !!appState.filters.keyword ||
-            !!appState.filters.onlyBoard;
-
-          if (hasActive) {
-            appState.filters.keyword = "";
-            appState.filters.onlyBoard = false;
-            if (keywordInput) keywordInput.value = "";
-            if (onlyBoardCheckbox) onlyBoardCheckbox.checked = false;
-            applyBtn.textContent = "フィルターを適用する";
-            applyBtn.classList.remove("active");
-          } else {
-            appState.filters.keyword = keywordInput ? keywordInput.value.trim() : "";
-            appState.filters.onlyBoard = onlyBoardCheckbox ? !!onlyBoardCheckbox.checked : false;
-            applyBtn.textContent = "フィルターを解除する";
-            applyBtn.classList.add("active");
-          }
-          applyFiltersAndRender();
-        });
-      }
-
-      updateTagInputState();
-      updateApplyBtnState();
-
-      let isLoadingMore = false;
-      window.addEventListener("scroll", () => {
-        const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
-        if (scrollTop < 40) {
-          const allThreads = appState.threads || [];
-          const filteredCount = allThreads.filter(threadMatchesFilters).length;
-          if (!isLoadingMore && appState.visibleThreadCount < filteredCount) {
-            isLoadingMore = true;
-            const prevHeight = document.body.scrollHeight;
-            appState.visibleThreadCount += 20;
-            applyFiltersAndRender();
-            requestAnimationFrame(() => {
-              const newHeight = document.body.scrollHeight;
-              const diff = newHeight - prevHeight;
-              window.scrollTo(0, scrollTop + diff);
-              isLoadingMore = false;
-            });
-          }
-        }
-      });
-    }
-
-    window.addEventListener("DOMContentLoaded", async () => {
-      initUI();
-      await loadComments();
-    });
-  </script>
+  <!-- 画像表示モーダル -->
+  <div id="imageModal" class="modal hidden">
+    <div class="modal-backdrop" data-modal-close="imageModal"></div>
+    <div class="modal-content">
+      <button class="modal-close-btn" data-modal-close="imageModal">×</button>
+      <div class="modal-image-wrapper">
+        <img id="modalImage" src="" alt="画像" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 歯車メニュー用モーダル -->
+  <div id="gearModal" class="modal hidden">
+    <div class="modal-backdrop" data-modal-close="gearModal"></div>
+    <div class="modal-content modal-content--gear">
+      <button class="modal-close-btn" data-modal-close="gearModal">×</button>
+      <div class="modal-title">コメント設定</div>
+      <div id="gearModalBody" class="gear-modal-body">
+        <!-- JSで動的に中身を構築 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- トースト通知 -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script type="module" src="ld_board.js"></script>
 </body>
 </html>
