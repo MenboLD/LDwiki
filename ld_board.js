@@ -1,24 +1,25 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-/** ★ Supabase 接続設定（実プロジェクトの値に差し替えてください） */
+/** Supabase 接続設定 */
 const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /** アプリ状態 */
 const state = {
-  users: [], // ld_users（登録ユーザー）
-  autofixRules: [], // 誤字自動修正ルール
+  users: [], // ld_users
+  autofixRules: [], // 誤字修正ルール
 
-  // スレッド関連
+  // スレッド
   threads: [], // ThreadView[]
   hasMoreParents: true,
   isLoadingParents: false,
-  oldestParentCreatedAt: null, // 追加読み込み用境界
+  oldestParentCreatedAt: null,
   pageSize: 20,
 
-  // フィルタ状態
+  // フィルタ
   filters: {
     keyword: "",
     targets: { body: true, title: true, user: true },
@@ -26,7 +27,7 @@ const state = {
     sinceMyLast: false,
     hasAttachment: false,
   },
-  lastOwnCommentTime: null, // ISO 文字列 or null
+  lastOwnCommentTime: null,
 
   // 投稿フォーム
   replyState: null, // { threadId, parentId, rootId, anchorNo, ownerName }
@@ -34,13 +35,12 @@ const state = {
   draftImageUrl: null,
 
   // ローカル
-  guestId: null, // localStorage 固定ID
-  likeCache: new Set(), // "commentId" セット
+  guestId: null,
+  likeCache: new Set(),
 };
 
-/** DOM の参照 */
+/** DOM キャッシュ */
 const dom = {};
-
 function $(id) {
   return document.getElementById(id);
 }
@@ -63,13 +63,14 @@ window.addEventListener("DOMContentLoaded", async () => {
 });
 
 function cacheDom() {
-  dom.filterToggleBtn = $("filterToggleBtn");
-  dom.filterPanel = $("filterPanel");
-
+  // ユーザー
   dom.userNameInput = $("userNameInput");
   dom.userTagInput = $("userTagInput");
   dom.userStatusLabel = $("userStatusLabel");
 
+  // フィルター
+  dom.filterToggleBtn = $("filterToggleBtn");
+  dom.filterPanel = $("filterPanel");
   dom.keywordInput = $("keywordInput");
   dom.targetBody = $("targetBody");
   dom.targetTitle = $("targetTitle");
@@ -82,11 +83,16 @@ function cacheDom() {
   dom.filterHasAttachment = $("filterHasAttachment");
   dom.filterSummaryText = $("filterSummaryText");
 
+  // コメントリスト
   dom.loadOlderHint = $("loadOlderHint");
   dom.threadsContainer = $("threadsContainer");
   dom.loadMoreBtn = $("loadMoreBtn");
   dom.loadMoreStatus = $("loadMoreStatus");
 
+  // フッター（投稿）
+  dom.footerToggle = $("footerToggle");
+  dom.composerToggleLabel = $("composerToggleLabel");
+  dom.composerBody = $("composerBody");
   dom.replyInfoRow = $("replyInfoRow");
   dom.replyInfoText = $("replyInfoText");
   dom.cancelReplyBtn = $("cancelReplyBtn");
@@ -98,39 +104,39 @@ function cacheDom() {
   dom.submitCommentBtn = $("submitCommentBtn");
   dom.composerStatus = $("composerStatus");
 
+  // モーダル
   dom.imageModal = $("imageModal");
   dom.modalImage = $("modalImage");
   dom.gearModal = $("gearModal");
   dom.gearModalBody = $("gearModalBody");
+  dom.profileModal = $("profileModal");
+  dom.profileModalBody = $("profileModalBody");
+
   dom.toastContainer = $("toastContainer");
 }
 
 function setupBasicHandlers() {
-  // フィルタ開閉
+  // フィルター開閉
   dom.filterToggleBtn.addEventListener("click", () => {
-    const collapsed = dom.filterPanel.classList.toggle(
-      "filter-panel--collapsed"
-    );
-    dom.filterToggleBtn.textContent = collapsed
-      ? "🔍 フィルターを開く"
-      : "🔍 フィルターを閉じる";
+    const collapsed = dom.filterPanel.classList.toggle("filter-panel--collapsed");
+    dom.filterToggleBtn.textContent = collapsed ? "🔍 フィルターを開く" : "🔍 フィルターを閉じる";
   });
 
-  // ユーザー入力変更 → ローカル保存＆表示更新
+  // ユーザー名 / パス
   dom.userNameInput.addEventListener("input", () => {
     saveUserInputsToLocalStorage();
     updateUserStatusLabel();
   });
   dom.userTagInput.addEventListener("input", () => {
-    if (dom.userTagInput.value.length > 2) {
-      dom.userTagInput.value = dom.userTagInput.value.slice(0, 2);
+    if (dom.userTagInput.value.length > 10) {
+      dom.userTagInput.value = dom.userTagInput.value.slice(0, 10);
     }
     saveUserInputsToLocalStorage();
     updateUserStatusLabel();
   });
 
-  // フィルタ変更ハンドラ
-  const filterChangeTargets = [
+  // フィルタ変更
+  const filterElems = [
     dom.keywordInput,
     dom.targetBody,
     dom.targetTitle,
@@ -142,7 +148,7 @@ function setupBasicHandlers() {
     dom.filterSinceMyLast,
     dom.filterHasAttachment,
   ];
-  filterChangeTargets.forEach((el) => {
+  filterElems.forEach((el) => {
     el.addEventListener("input", handleFilterChange);
     el.addEventListener("change", handleFilterChange);
   });
@@ -153,6 +159,14 @@ function setupBasicHandlers() {
   });
   dom.loadMoreBtn.addEventListener("click", () => {
     loadMoreThreads();
+  });
+
+  // コメント入力ツール開閉
+  dom.footerToggle.addEventListener("click", () => {
+    const opened = dom.composerBody.classList.toggle("footer-body--open");
+    dom.composerToggleLabel.textContent = opened
+      ? "▼コメントの入力ツールを非表示(タップ)"
+      : "▲コメントの入力ツールを表示(タップ)";
   });
 
   // 返信解除
@@ -167,7 +181,7 @@ function setupBasicHandlers() {
   // 投稿
   dom.submitCommentBtn.addEventListener("click", handleSubmit);
 
-  // モーダル閉じる＆アンカーリンク（デリゲーション）
+  // モーダル閉じる & アンカーリンク
   document.addEventListener("click", (e) => {
     const closeTarget = e.target.getAttribute("data-modal-close");
     if (closeTarget) {
@@ -175,6 +189,7 @@ function setupBasicHandlers() {
       return;
     }
 
+    // >>N アンカー
     const anchor = e.target.closest("a.anchor-link");
     if (anchor) {
       e.preventDefault();
@@ -187,7 +202,7 @@ function setupBasicHandlers() {
       if (blocks.length >= no) {
         const targetBlock = blocks[no - 1];
         const rect = targetBlock.getBoundingClientRect();
-        const offset = 80; // ヘッダー分
+        const offset = 80;
         window.scrollBy({
           top: rect.top - offset,
           behavior: "smooth",
@@ -198,7 +213,7 @@ function setupBasicHandlers() {
 }
 
 /* =====================
- * localStorage 周り
+ * localStorage
  * ===================== */
 
 function loadGuestId() {
@@ -215,11 +230,10 @@ function loadLikeCache() {
   const key = "ld_board_like_cache";
   try {
     const raw = localStorage.getItem(key);
-    if (raw) {
-      const arr = JSON.parse(raw);
-      if (Array.isArray(arr)) {
-        state.likeCache = new Set(arr);
-      }
+    if (!raw) return;
+    const arr = JSON.parse(raw);
+    if (Array.isArray(arr)) {
+      state.likeCache = new Set(arr);
     }
   } catch (e) {
     console.error("like cache parse error", e);
@@ -255,28 +269,8 @@ function saveUserInputsToLocalStorage() {
 }
 
 /* =====================
- * 誤字修正ルール / ユーザー一覧
+ * ユーザー / 誤字ルール読み込み
  * ===================== */
-
-async function loadAutofixRules() {
-  try {
-    const { data, error } = await supabase
-      .from("ld_board_autofix_words")
-      .select("pattern, replacement")
-      .order("id", { ascending: true });
-
-    if (error) {
-      // テーブルがまだ無ければ無視してOK
-      console.warn("autofix load error", error.message);
-      state.autofixRules = [];
-      return;
-    }
-    state.autofixRules = data || [];
-  } catch (e) {
-    console.error("autofix fetch error", e);
-    state.autofixRules = [];
-  }
-}
 
 async function loadUsers() {
   try {
@@ -294,6 +288,25 @@ async function loadUsers() {
   } catch (e) {
     console.error("ld_users fetch error", e);
     state.users = [];
+  }
+}
+
+async function loadAutofixRules() {
+  try {
+    const { data, error } = await supabase
+      .from("ld_board_autofix_words")
+      .select("pattern, replacement")
+      .order("id", { ascending: true });
+
+    if (error) {
+      console.warn("autofix load error", error.message);
+      state.autofixRules = [];
+      return;
+    }
+    state.autofixRules = data || [];
+  } catch (e) {
+    console.error("autofix fetch error", e);
+    state.autofixRules = [];
   }
 }
 
@@ -318,7 +331,7 @@ async function loadMoreThreads() {
   dom.loadMoreStatus.textContent = "読み込み中...";
 
   try {
-    const query = supabase
+    let query = supabase
       .from("ld_board_comments")
       .select("*")
       .eq("board_kind", "info")
@@ -328,37 +341,31 @@ async function loadMoreThreads() {
       .limit(state.pageSize);
 
     if (state.oldestParentCreatedAt) {
-      query.lt("created_at", state.oldestParentCreatedAt);
+      query = query.lt("created_at", state.oldestParentCreatedAt);
     }
 
     const { data: parents, error } = await query;
-
     if (error) {
       console.error("load parents error", error);
       showToast("コメントの読み込みに失敗しました。");
       return;
     }
-
     if (!parents || parents.length === 0) {
       state.hasMoreParents = false;
       dom.loadMoreStatus.textContent = "これ以上古いコメントはありません。";
       return;
     }
 
-    // 取得した親の created_at の最小値を更新
     const minCreated = parents[parents.length - 1].created_at;
     state.oldestParentCreatedAt = minCreated;
 
-    // 親ID一覧
     const parentIds = parents.map((p) => p.id);
 
-    // 子コメント
     const { data: children, error: childErr } = await supabase
       .from("ld_board_comments")
       .select("*")
       .eq("board_kind", "info")
       .in("root_comment_id", parentIds)
-      .not("parent_comment_id", "is", null) // 親行は除外
       .is("deleted_at", null)
       .order("created_at", { ascending: true });
 
@@ -368,47 +375,50 @@ async function loadMoreThreads() {
       return;
     }
 
-    // 親＋子をスレッド単位にまとめる
     const threads = buildThreadsFromRaw(parents, children || []);
-    // 既存threadsに追加（古い順を底に積んでいく）
     state.threads = state.threads.concat(threads);
 
     applyFiltersAndRender();
   } finally {
     state.isLoadingParents = false;
     dom.loadMoreBtn.disabled = !state.hasMoreParents;
-    dom.loadMoreStatus.textContent = state.hasMoreParents ? "" : "最後まで読み込みました。";
+    if (!state.hasMoreParents) {
+      dom.loadMoreStatus.textContent = "最後まで読み込みました。";
+    } else {
+      dom.loadMoreStatus.textContent = "";
+    }
   }
 }
 
+/**
+ * parents, children から ThreadView[] を構成
+ * - parent_comment_id が null の行は子として扱わない
+ * - 親と同じ id の行を子から除外（重複防止）
+ */
 function buildThreadsFromRaw(parents, children) {
   const byRoot = new Map();
+
   children.forEach((c) => {
-    const rootId = c.root_comment_id || c.parent_comment_id || c.id;
+    if (!c.parent_comment_id) return;
+    const rootId = c.root_comment_id || c.parent_comment_id;
+    if (!rootId) return;
     if (!byRoot.has(rootId)) byRoot.set(rootId, []);
     byRoot.get(rootId).push(c);
   });
 
   const threads = parents.map((p) => {
     const rootId = p.id;
-    const childrenList = byRoot.get(rootId) || [];
-    // created_at 昇順でソート
-    childrenList.sort(
-      (a, b) => new Date(a.created_at) - new Date(b.created_at)
-    );
+    let childrenList = byRoot.get(rootId) || [];
+    childrenList = childrenList.filter((c) => c.id !== p.id);
+    childrenList.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
     const allComments = [p, ...childrenList];
     const latest = allComments.reduce((acc, c) => {
-      return !acc ||
-        new Date(c.created_at).getTime() > new Date(acc.created_at).getTime()
-        ? c
-        : acc;
+      if (!acc) return c;
+      return new Date(c.created_at) > new Date(acc.created_at) ? c : acc;
     }, null);
 
-    const totalLikes = allComments.reduce(
-      (sum, c) => sum + (c.like_count || 0),
-      0
-    );
+    const totalLikes = allComments.reduce((sum, c) => sum + (c.like_count || 0), 0);
 
     return {
       rootId,
@@ -432,18 +442,16 @@ function handleFilterChange() {
   state.filters.targets.body = dom.targetBody.checked;
   state.filters.targets.title = dom.targetTitle.checked;
   state.filters.targets.user = dom.targetUser.checked;
-
   state.filters.genres.normal = dom.genreNormal.checked;
   state.filters.genres.qa = dom.genreQa.checked;
   state.filters.genres.report = dom.genreReport.checked;
   state.filters.genres.announce = dom.genreAnnounce.checked;
-
   state.filters.sinceMyLast = dom.filterSinceMyLast.checked;
   state.filters.hasAttachment = dom.filterHasAttachment.checked;
 
   updateFilterSummary();
+
   if (state.filters.sinceMyLast) {
-    // 必要なら自分の最終書込み時間を取得してからフィルタ
     fetchLastOwnCommentTime().then(() => {
       applyFiltersAndRender();
     });
@@ -454,19 +462,18 @@ function handleFilterChange() {
 }
 
 async function fetchLastOwnCommentTime() {
-  const userInfo = getCurrentUserInfo();
-  if (!userInfo || !userInfo.isRegistered) {
+  const info = getCurrentUserInfo();
+  if (!info || !info.isRegistered) {
     state.lastOwnCommentTime = null;
     return;
   }
-
   try {
     const { data, error } = await supabase
       .from("ld_board_comments")
       .select("created_at")
       .eq("board_kind", "info")
-      .eq("owner_name", userInfo.name)
-      .eq("owner_tag", userInfo.tag)
+      .eq("owner_name", info.name)
+      .eq("owner_tag", info.tag)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(1);
@@ -489,17 +496,17 @@ async function fetchLastOwnCommentTime() {
 
 function updateFilterSummary() {
   const parts = [];
+  const keyword = state.filters.keyword;
+  const t = state.filters.targets;
 
-  // キーワード
-  if (state.filters.keyword && anyFilterTargetSelected()) {
+  if (keyword && anyFilterTargetSelected()) {
     const targets = [];
-    if (state.filters.targets.body) targets.push("本文");
-    if (state.filters.targets.title) targets.push("タイトル");
-    if (state.filters.targets.user) targets.push("ユーザー名");
-    parts.push(`"${state.filters.keyword}" in ${targets.join("・")}`);
+    if (t.body) targets.push("本文");
+    if (t.title) targets.push("タイトル");
+    if (t.user) targets.push("ユーザー名");
+    parts.push(`"${keyword}" in ${targets.join("・")}`);
   }
 
-  // ジャンル
   const g = state.filters.genres;
   const selGenres = [];
   if (g.normal) selGenres.push("通常");
@@ -517,8 +524,7 @@ function updateFilterSummary() {
     parts.push("盤面・画像付きのみ");
   }
 
-  dom.filterSummaryText.textContent =
-    parts.length > 0 ? parts.join(" / ") : "（すべて表示中）";
+  dom.filterSummaryText.textContent = parts.length > 0 ? parts.join(" / ") : "（すべて表示中）";
 }
 
 function anyFilterTargetSelected() {
@@ -527,24 +533,21 @@ function anyFilterTargetSelected() {
 }
 
 function applyFiltersAndRender() {
-  const keyword = state.filters.keyword;
-  const keywordLower = keyword.toLowerCase();
+  const keyword = state.filters.keyword.trim().toLowerCase();
   const hasKeyword = !!keyword && anyFilterTargetSelected();
 
   const genres = state.filters.genres;
   const sinceMyLast = state.filters.sinceMyLast;
   const hasAttachmentOnly = state.filters.hasAttachment;
 
-  const lastOwnTime = state.lastOwnCommentTime
-    ? new Date(state.lastOwnCommentTime).getTime()
-    : null;
+  const lastOwnTime = state.lastOwnCommentTime ? new Date(state.lastOwnCommentTime).getTime() : null;
 
-  const filteredThreads = state.threads.filter((thread) => {
+  const filtered = state.threads.filter((thread) => {
     const parent = thread.parent;
 
-    // ジャンルフィルタ
+    // ジャンル
     let genre = (parent.genre || "normal").toLowerCase();
-    if (genre === "recruit") genre = "normal"; // 募集は通常扱い
+    if (genre === "recruit") genre = "normal";
     if (
       (genre === "normal" && !genres.normal) ||
       (genre === "qa" && !genres.qa) ||
@@ -560,21 +563,18 @@ function applyFiltersAndRender() {
       if (latestTime < lastOwnTime) return false;
     }
 
-    // 添付フィルタ
+    // 添付
     if (hasAttachmentOnly) {
-      const hasAttach = thread.allComments.some((c) => {
-        return !!(c.board_layout_id || c.image_url);
-      });
+      const hasAttach = thread.allComments.some((c) => c.board_layout_id || c.image_url);
       if (!hasAttach) return false;
     }
 
-    // キーワード
     if (hasKeyword) {
       let hit = false;
 
       if (state.filters.targets.body && !hit) {
         for (const c of thread.allComments) {
-          if (c.body && c.body.toLowerCase().includes(keywordLower)) {
+          if (c.body && c.body.toLowerCase().includes(keyword)) {
             hit = true;
             break;
           }
@@ -583,12 +583,12 @@ function applyFiltersAndRender() {
 
       if (state.filters.targets.title && !hit) {
         const title = parent.thread_title || "";
-        if (title.toLowerCase().includes(keywordLower)) hit = true;
+        if (title.toLowerCase().includes(keyword)) hit = true;
       }
 
       if (state.filters.targets.user && !hit) {
         const name = parent.owner_name || "";
-        if (name.toLowerCase().includes(keywordLower)) hit = true;
+        if (name.toLowerCase().includes(keyword)) hit = true;
       }
 
       if (!hit) return false;
@@ -597,15 +597,12 @@ function applyFiltersAndRender() {
     return true;
   });
 
-  // 最新コメント時間でソート（新しい順）
-  filteredThreads.sort((a, b) => {
-    return (
-      new Date(b.latest.created_at).getTime() -
-      new Date(a.latest.created_at).getTime()
-    );
+  // 古い → 新しい（下が最新）
+  filtered.sort((a, b) => {
+    return new Date(a.latest.created_at) - new Date(b.latest.created_at);
   });
 
-  renderThreads(filteredThreads);
+  renderThreads(filtered);
 }
 
 /* =====================
@@ -620,53 +617,61 @@ function renderThreads(threads) {
   });
 }
 
-/**
- * ThreadView -> DOM
- */
 function renderThreadCard(thread) {
   const { parent, children, totalLikes } = thread;
   const card = document.createElement("article");
   card.className = "thread-card";
   card.dataset.threadId = thread.rootId;
 
-  // タイトル行（必要なら）
+  // タイトル行
   if (parent.thread_title || parent.genre) {
     const titleRow = document.createElement("div");
     titleRow.className = "thread-title-row";
 
+    const leftBox = document.createElement("div");
+    leftBox.style.display = "flex";
+    leftBox.style.alignItems = "center";
+    leftBox.style.gap = "4px";
+
     if (parent.genre && parent.genre !== "normal") {
       const badge = document.createElement("span");
       badge.className = "thread-genre-badge";
-      let label = "";
-      let genreKey = parent.genre.toLowerCase();
+      const genreKey = (parent.genre || "").toLowerCase();
       if (genreKey === "qa") {
-        label = "質問";
+        badge.textContent = "質問";
         badge.classList.add("qa");
       } else if (genreKey === "report") {
-        label = "報告";
+        badge.textContent = "報告";
         badge.classList.add("report");
       } else if (genreKey === "announce") {
-        label = "アナウンス";
+        badge.textContent = "アナウンス";
         badge.classList.add("announce");
       } else {
-        label = genreKey;
+        badge.textContent = genreKey;
       }
-      badge.textContent = label;
-      titleRow.appendChild(badge);
+      leftBox.appendChild(badge);
     }
 
     if (parent.thread_title) {
       const titleText = document.createElement("div");
       titleText.className = "thread-title-text";
       titleText.textContent = parent.thread_title;
-      titleRow.appendChild(titleText);
+      leftBox.appendChild(titleText);
     }
 
-    const likes = document.createElement("div");
-    likes.className = "thread-title-likes";
-    likes.textContent = `(・∀・)ｲｲ!!合計: ${totalLikes}`;
-    titleRow.appendChild(likes);
+    titleRow.appendChild(leftBox);
 
+    const rightBox = document.createElement("div");
+    rightBox.className = "thread-title-likes";
+
+    // 合計イイ数：タイトルがある & 1以上のときだけ
+    if (parent.thread_title && totalLikes > 0) {
+      rightBox.textContent = `(・∀・)ｲｲ!!合計: ${totalLikes}`;
+    } else {
+      rightBox.textContent = "";
+    }
+
+    titleRow.appendChild(rightBox);
     card.appendChild(titleRow);
   }
 
@@ -675,10 +680,12 @@ function renderThreadCard(thread) {
     thread,
     comment: parent,
     isParent: true,
+    localNo: 1,
+    forceNoNumber: false,
   });
   card.appendChild(parentBlock);
 
-  // 子コメントヘッダー・本体
+  // 子コメント
   const childCount = children.length;
   if (childCount > 0) {
     const childrenHeader = document.createElement("div");
@@ -687,6 +694,7 @@ function renderThreadCard(thread) {
     const countSpan = document.createElement("span");
     countSpan.className = "children-count";
     countSpan.textContent = `子コメント ${childCount}件`;
+
     const toggleSpan = document.createElement("span");
     toggleSpan.className = "children-toggle";
     toggleSpan.textContent = "▼子コメントを開く";
@@ -703,29 +711,26 @@ function renderThreadCard(thread) {
 
     function updateChildrenView() {
       childrenContainer.innerHTML = "";
-
       if (!isExpanded) {
-        // 最新の子コメントのみ表示
         const last = children[children.length - 1];
         const block = renderCommentBlock({
           thread,
           comment: last,
           isParent: false,
-          // 番号は「すべて表示」時しか出さないのでここでは null
           forceNoNumber: true,
         });
         childrenContainer.appendChild(block);
         toggleSpan.textContent = "▼子コメントを開く";
       } else {
-        // 全件表示＆番号振り
         const all = [thread.parent].concat(thread.children);
         all.forEach((c, index) => {
-          if (index === 0) return; // parent はすでに親コメントとして表示済み
+          if (index === 0) return;
           const block = renderCommentBlock({
             thread,
             comment: c,
             isParent: false,
-            localNo: index + 1, // 親が1なので子は2〜
+            localNo: index + 1,
+            forceNoNumber: false,
           });
           childrenContainer.appendChild(block);
         });
@@ -738,35 +743,39 @@ function renderThreadCard(thread) {
       updateChildrenView();
     });
 
-    // 初期状態：折りたたみ
     updateChildrenView();
   }
 
   return card;
 }
 
-function renderCommentBlock({
-  thread,
-  comment,
-  isParent,
-  localNo = null,
-  forceNoNumber = false,
-}) {
+/**
+ * コメント1件の描画
+ */
+function renderCommentBlock({ thread, comment, isParent, localNo = null, forceNoNumber = false }) {
   const block = document.createElement("div");
   block.className = "comment-block";
   block.dataset.commentId = comment.id;
 
-  // メタ行
+  // ステータス行
   const metaRow = document.createElement("div");
   metaRow.className = "comment-meta-row";
   metaRow.dataset.commentId = comment.id;
+
+  // 番号
   if (!forceNoNumber && localNo != null) {
     const noSpan = document.createElement("span");
     noSpan.className = "comment-no";
     noSpan.textContent = `${localNo}:`;
     metaRow.appendChild(noSpan);
+  } else {
+    const empty = document.createElement("span");
+    empty.className = "comment-no";
+    empty.textContent = "";
+    metaRow.appendChild(empty);
   }
 
+  // 名前
   const nameSpan = document.createElement("span");
   nameSpan.className = "comment-name";
   const profBtn = document.createElement("button");
@@ -777,7 +786,6 @@ function renderCommentBlock({
   const nameDisplay = getDisplayNameForComment(comment);
   nameSpan.textContent = nameDisplay.text;
   if (nameDisplay.className && nameDisplay.className.trim()) {
-    // DOMTokenList.add を使わず安全に結合
     nameSpan.className += " " + nameDisplay.className.trim();
   }
   if (nameDisplay.showProfile) {
@@ -788,15 +796,25 @@ function renderCommentBlock({
   }
 
   metaRow.appendChild(nameSpan);
-  if (nameDisplay.showProfile) {
-    metaRow.appendChild(profBtn);
-  }
+  metaRow.appendChild(profBtn);
 
+  // タイムスタンプ
   const tsSpan = document.createElement("span");
   tsSpan.className = "comment-timestamp";
   tsSpan.textContent = formatTimestamp(comment.created_at);
   metaRow.appendChild(tsSpan);
 
+  // 各コメントのイイ数
+  const likeSpan = document.createElement("span");
+  likeSpan.className = "comment-like-count";
+  if (comment.like_count && comment.like_count > 0) {
+    likeSpan.textContent = `(・∀・)ｲｲ!!: ${comment.like_count}`;
+  } else {
+    likeSpan.textContent = "";
+  }
+  metaRow.appendChild(likeSpan);
+
+  // 歯車
   const gearBtn = document.createElement("button");
   gearBtn.className = "comment-gear-btn";
   gearBtn.type = "button";
@@ -806,41 +824,12 @@ function renderCommentBlock({
   });
   metaRow.appendChild(gearBtn);
 
-  if (comment.like_count && comment.like_count > 0) {
-    const likeSpan = document.createElement("span");
-    likeSpan.className = "comment-like-count";
-    likeSpan.textContent = `(・∀・)ｲｲ!!: ${comment.like_count}`;
-    metaRow.appendChild(likeSpan);
-  }
-
   block.appendChild(metaRow);
 
   // 本文
   const bodyEl = document.createElement("div");
   bodyEl.className = "comment-body";
   bodyEl.innerHTML = convertAnchorsToLinks(escapeHtml(comment.body || ""));
-
-  // 長文折りたたみ（シンプルに常にトグルを付ける）
-  const toggleEl = document.createElement("div");
-  toggleEl.className = "comment-body-toggle";
-  let isCollapsed = true;
-
-  function updateBodyCollapse() {
-    if (isCollapsed) {
-      bodyEl.classList.add("collapsed");
-      toggleEl.textContent = "▼長文表示(タップ)";
-    } else {
-      bodyEl.classList.remove("collapsed");
-      toggleEl.textContent = "▲折りたたむ(タップ)";
-    }
-  }
-
-  updateBodyCollapse();
-  toggleEl.addEventListener("click", () => {
-    isCollapsed = !isCollapsed;
-    updateBodyCollapse();
-  });
-
   block.appendChild(bodyEl);
 
   // 添付
@@ -852,7 +841,7 @@ function renderCommentBlock({
       const boardBtn = document.createElement("button");
       boardBtn.className = "attachment-pill";
       boardBtn.type = "button";
-      boardBtn.textContent = `盤面を開く`;
+      boardBtn.textContent = "盤面を開く";
       boardBtn.addEventListener("click", () => {
         openBoardLayout(comment.board_layout_id);
       });
@@ -873,10 +862,17 @@ function renderCommentBlock({
     block.appendChild(attachRow);
   }
 
-  // アクション
-  const actions = document.createElement("div");
-  actions.className = "comment-actions-row";
+  // 本文フッター（折りたたみ ＋ 返信/イイ）
+  const footerRow = document.createElement("div");
+  footerRow.className = "comment-footer-row";
 
+  const toggleEl = document.createElement("div");
+  toggleEl.className = "comment-body-toggle";
+  toggleEl.textContent = "";
+  footerRow.appendChild(toggleEl);
+
+  const actions = document.createElement("div");
+  actions.className = "comment-actions";
   const replyLink = document.createElement("span");
   replyLink.className = "comment-action-link";
   replyLink.textContent = "[ 返信 ]";
@@ -891,7 +887,6 @@ function renderCommentBlock({
     }
     startReply(thread, comment, localNoForThis);
   });
-
   const likeLink = document.createElement("span");
   likeLink.className = "comment-action-link";
   likeLink.textContent = "(・∀・)ｲｲ!!";
@@ -901,15 +896,54 @@ function renderCommentBlock({
 
   actions.appendChild(replyLink);
   actions.appendChild(likeLink);
+  footerRow.appendChild(actions);
 
-  block.appendChild(toggleEl);
-  block.appendChild(actions);
+  block.appendChild(footerRow);
+
+  // 長文折りたたみ判定
+  initBodyCollapse(bodyEl, toggleEl);
 
   return block;
 }
 
+/* 本文行数を見て折りたたみの要否を決める */
+function initBodyCollapse(bodyEl, toggleEl) {
+  // 初期状態ではトグル非表示
+  toggleEl.style.display = "none";
+
+  // 測定は描画後に行う
+  requestAnimationFrame(() => {
+    const style = window.getComputedStyle(bodyEl);
+    const lineHeight = parseFloat(style.lineHeight) || 16;
+    const lines = Math.round(bodyEl.scrollHeight / lineHeight);
+
+    if (lines <= 3) {
+      // 折りたたみなし
+      bodyEl.classList.remove("collapsible", "collapsed");
+      toggleEl.style.display = "none";
+      return;
+    }
+
+    // 折りたたみあり
+    bodyEl.classList.add("collapsible", "collapsed");
+    toggleEl.style.display = "inline";
+    let isCollapsed = true;
+    toggleEl.textContent = "▼長文表示(タップ)";
+    toggleEl.addEventListener("click", () => {
+      isCollapsed = !isCollapsed;
+      if (isCollapsed) {
+        bodyEl.classList.add("collapsed");
+        toggleEl.textContent = "▼長文表示(タップ)";
+      } else {
+        bodyEl.classList.remove("collapsed");
+        toggleEl.textContent = "▲折りたたむ(タップ)";
+      }
+    });
+  });
+}
+
 /* =====================
- * 名前表示・プロフィール
+ * 名前表示 / プロフ
  * ===================== */
 
 function getDisplayNameForComment(comment) {
@@ -927,11 +961,9 @@ function getDisplayNameForComment(comment) {
 
   if (!ownerName || ownerName === "名無し") {
     base.text = `名無しの傭兵員 ${guestId}`;
-    base.className = "";
     return base;
   }
 
-  // ld_users に存在するか
   const user = state.users.find((u) => u.name === ownerName);
 
   if (ownerTag && user && user.tag === ownerTag) {
@@ -949,20 +981,44 @@ function getDisplayNameForComment(comment) {
   }
 
   base.text = `${ownerName} ${guestId}`;
-  base.className = "";
   return base;
 }
 
 function openUserProfile(name, tag) {
-  // とりあえず ld_users 編集画面を別タブで開く（クエリパラメータは将来拡張用）
-  const url = `ld_users_editor_full_v5.html?name=${encodeURIComponent(
-    name
-  )}&tag=${encodeURIComponent(tag || "")}`;
-  window.open(url, "_blank");
+  if (!name) {
+    showToast("ユーザー名が不明です");
+    return;
+  }
+
+  const body = dom.profileModalBody;
+  body.innerHTML = "";
+
+  const meta = document.createElement("div");
+  meta.className = "profile-meta";
+  meta.textContent = tag ? `★${name} / タグ: ${tag}` : `★${name}`;
+  body.appendChild(meta);
+
+  const note = document.createElement("div");
+  note.className = "profile-note";
+  note.textContent = "詳しいプロフィールはユーザーデータページで確認できます。";
+  body.appendChild(note);
+
+  const link = document.createElement("div");
+  link.className = "profile-link";
+  link.textContent = "ユーザーデータページを別タブで開く";
+  link.addEventListener("click", () => {
+    const url = `ld_users_editor_full_v5.html?name=${encodeURIComponent(
+      name
+    )}&tag=${encodeURIComponent(tag || "")}`;
+    window.open(url, "_blank");
+  });
+  body.appendChild(link);
+
+  dom.profileModal.classList.remove("hidden");
 }
 
 /* =====================
- * ユーザー入力の「現在状態」ラベル
+ * ユーザー入力の状態
  * ===================== */
 
 function getCurrentUserInfo() {
@@ -1001,7 +1057,6 @@ function getCurrentUserInfo() {
     }
   }
 
-  // 名前は存在する
   if (tag && tag === user.tag) {
     return {
       mode: "registered",
@@ -1013,7 +1068,6 @@ function getCurrentUserInfo() {
     };
   }
 
-  // 名前は存在するがタグ不一致
   return {
     mode: "imposter",
     label: `${name}（タグ不一致→騙り扱い）`,
@@ -1036,31 +1090,23 @@ function updateUserStatusLabel() {
 async function handleSubmit() {
   const info = getCurrentUserInfo();
   const bodyRaw = dom.commentBodyInput.value;
-
   if (!bodyRaw.trim()) {
     showToast("本文を入力してください。");
     return;
   }
 
-  let finalBody = bodyRaw;
+  let finalBody = applyAutofix(bodyRaw);
 
-  // 誤字自動修正
-  finalBody = applyAutofix(finalBody);
-
-  // 返信モードなら >>N を先頭に付与（入力欄には表示しない仕様）
+  // 返信なら >>N を頭に付ける
   if (state.replyState && state.replyState.anchorNo != null) {
     finalBody = `>>${state.replyState.anchorNo} ` + finalBody;
   }
 
-  // ジャンル
   const genre = getSelectedGenre();
 
-  // owner_name / owner_tag
   let ownerName = info.name;
   let ownerTag = null;
-  if (!ownerName) {
-    ownerName = "名無し";
-  }
+  if (!ownerName) ownerName = "名無し";
   if (info.mode === "registered" && info.user && info.user.tag) {
     ownerTag = info.user.tag;
   }
@@ -1074,7 +1120,7 @@ async function handleSubmit() {
     owner_tag: ownerTag,
     guest_daily_id: guestDailyId,
     body: finalBody,
-    thread_title: null, // タイトルは歯車から編集
+    thread_title: null,
     parent_comment_id: state.replyState ? state.replyState.parentId : null,
     root_comment_id: state.replyState ? state.replyState.rootId : null,
     board_layout_id: state.draftBoardLayoutId,
@@ -1088,27 +1134,20 @@ async function handleSubmit() {
   dom.composerStatus.textContent = "投稿中...";
 
   try {
-    const { error } = await supabase
-      .from("ld_board_comments")
-      .insert(payload)
-      .single();
-
+    const { error } = await supabase.from("ld_board_comments").insert(payload).single();
     if (error) {
       console.error("insert error", error);
       showToast("投稿に失敗しました。");
       return;
     }
 
-    // 騙りの場合は mis_input_count を増やす
     if (info.mode === "imposter" && info.user) {
       incrementUserMisInput(info.user);
     }
 
     showToast("投稿しました。");
     resetComposer();
-    // 最新状態を再読み込み
     await loadInitialThreads();
-    // 自分の最終書込み時間が必要かもしれないので更新
     if (state.filters.sinceMyLast) {
       await fetchLastOwnCommentTime();
       applyFiltersAndRender();
@@ -1134,7 +1173,6 @@ function applyAutofix(text) {
     if (!rule.pattern) continue;
     const pattern = rule.pattern;
     const replacement = rule.replacement || "";
-    // 単純な文字列置換（全置換）
     result = result.split(pattern).join(replacement);
   }
   return result;
@@ -1172,10 +1210,6 @@ function clearReplyState() {
   dom.submitCommentBtn.textContent = "投稿する";
 }
 
-/* =====================
- * 返信
- * ===================== */
-
 function startReply(thread, comment, localNo) {
   state.replyState = {
     threadId: thread.rootId,
@@ -1188,8 +1222,6 @@ function startReply(thread, comment, localNo) {
   const name = comment.owner_name || "名無し";
   dom.replyInfoText.textContent = `返信対象: ${name} さん（No.${localNo}）`;
   dom.submitCommentBtn.textContent = "返信する";
-
-  // 入力欄にフォーカス
   dom.commentBodyInput.focus();
 }
 
@@ -1200,7 +1232,7 @@ function startReply(thread, comment, localNo) {
 function handleAttachBoardClick() {
   const current = state.draftBoardLayoutId || "";
   const result = window.prompt(
-    "盤面IDを入力してください（将来的に盤面エディタ連携予定）",
+    "盤面IDを入力してください（将来的に盤面エディタと連携予定）",
     current
   );
   if (result === null) return;
@@ -1231,10 +1263,7 @@ function updateAttachLabels() {
   }
 
   if (state.draftImageUrl) {
-    dom.attachedImageLabel.textContent = `画像URL: ${shorten(
-      state.draftImageUrl,
-      32
-    )}`;
+    dom.attachedImageLabel.textContent = `画像URL: ${shorten(state.draftImageUrl, 32)}`;
     dom.attachedImageLabel.classList.remove("attach-chip--hidden");
   } else {
     dom.attachedImageLabel.textContent = "";
@@ -1243,22 +1272,20 @@ function updateAttachLabels() {
 }
 
 /* =====================
- * イイネ
+ * イイ!!
  * ===================== */
 
 async function handleLike(comment) {
   const id = comment.id;
   const key = String(id);
+
   if (state.likeCache.has(key)) {
     showToast("同じ端末からの二重イイネはできません。");
     return;
   }
 
   try {
-    // DBのカウントを +1
-    const { error } = await supabase.rpc("increment_like_count", {
-      comment_id: id,
-    });
+    const { error } = await supabase.rpc("increment_like_count", { comment_id: id });
     if (error) {
       console.error("like rpc error", error);
       showToast("イイネに失敗しました。");
@@ -1268,10 +1295,7 @@ async function handleLike(comment) {
     saveLikeCache();
     showToast("(・∀・)ｲｲ!! しました。");
 
-    // ローカルの comment.like_count も更新（簡易）
-    const thread = state.threads.find((t) =>
-      t.allComments.some((c) => c.id === id)
-    );
+    const thread = state.threads.find((t) => t.allComments.some((c) => c.id === id));
     if (thread) {
       const target = thread.allComments.find((c) => c.id === id);
       target.like_count = (target.like_count || 0) + 1;
@@ -1294,8 +1318,6 @@ function openImageModal(url) {
 }
 
 function openBoardLayout(boardLayoutId) {
-  // 盤面エディタのビューアモードと連携する想定
-  // 例: ld_board_editor_drag_v5.html?layout_id=xxx&mode=view
   const url = `ld_board_editor_drag_v5.html?layout_id=${encodeURIComponent(
     boardLayoutId
   )}&mode=view`;
@@ -1307,6 +1329,8 @@ function hideModal(id) {
     dom.imageModal.classList.add("hidden");
   } else if (id === "gearModal") {
     dom.gearModal.classList.add("hidden");
+  } else if (id === "profileModal") {
+    dom.profileModal.classList.add("hidden");
   }
 }
 
@@ -1314,7 +1338,7 @@ function hideModal(id) {
  * 歯車メニュー
  * ===================== */
 
-let currentGearTarget = null; // { comment, thread }
+let currentGearTarget = null;
 
 function openGearModal(comment, thread) {
   currentGearTarget = { comment, thread };
@@ -1326,53 +1350,49 @@ function renderGearModalContent(comment, thread) {
   const isParent = comment.id === thread.parent.id;
 
   const wrapper = document.createElement("div");
-  wrapper.innerHTML = "";
 
-  // タイトル作成／編集
+  // タイトル作成 / 編集（親のみ）
   if (isParent) {
-    const titleSection = document.createElement("div");
-    titleSection.className = "gear-section";
+    const sec = document.createElement("div");
+    sec.className = "gear-section";
+    const title = document.createElement("div");
+    title.className = "gear-section-title";
+    title.textContent = "スレッドタイトル";
+    sec.appendChild(title);
 
-    const titleLabel = document.createElement("div");
-    titleLabel.className = "gear-section-title";
-    titleLabel.textContent = "スレッドタイトル";
-    titleSection.appendChild(titleLabel);
-
-    const inputRow = document.createElement("div");
-    inputRow.className = "gear-row";
+    const row = document.createElement("div");
+    row.className = "gear-row";
     const input = document.createElement("input");
     input.type = "text";
     input.maxLength = 20;
-    input.value = thread.parent.thread_title || "";
     input.placeholder = "タイトル（20文字まで）";
-    inputRow.appendChild(input);
-    titleSection.appendChild(inputRow);
+    input.value = thread.parent.thread_title || "";
+    row.appendChild(input);
+    sec.appendChild(row);
 
-    const buttons = document.createElement("div");
-    buttons.className = "gear-actions";
+    const actions = document.createElement("div");
+    actions.className = "gear-actions";
     const saveBtn = document.createElement("button");
     saveBtn.className = "primary";
-    saveBtn.textContent = thread.parent.thread_title
-      ? "タイトルを更新"
-      : "タイトルを作成";
+    saveBtn.textContent = thread.parent.thread_title ? "タイトルを更新" : "タイトルを作成";
     saveBtn.addEventListener("click", async () => {
       const v = input.value.trim();
       await updateThreadTitle(thread, v);
     });
-    buttons.appendChild(saveBtn);
-    titleSection.appendChild(buttons);
+    actions.appendChild(saveBtn);
+    sec.appendChild(actions);
 
-    wrapper.appendChild(titleSection);
+    wrapper.appendChild(sec);
   }
 
   // ジャンル変更
   {
     const sec = document.createElement("div");
     sec.className = "gear-section";
-    const label = document.createElement("div");
-    label.className = "gear-section-title";
-    label.textContent = "コメントのジャンル";
-    sec.appendChild(label);
+    const title = document.createElement("div");
+    title.className = "gear-section-title";
+    title.textContent = "コメントのジャンル";
+    sec.appendChild(title);
 
     const row = document.createElement("div");
     row.className = "gear-row";
@@ -1394,8 +1414,8 @@ function renderGearModalContent(comment, thread) {
     row.appendChild(select);
     sec.appendChild(row);
 
-    const btnRow = document.createElement("div");
-    btnRow.className = "gear-actions";
+    const actions = document.createElement("div");
+    actions.className = "gear-actions";
     const btn = document.createElement("button");
     btn.className = "primary";
     btn.textContent = isParent
@@ -1404,45 +1424,41 @@ function renderGearModalContent(comment, thread) {
     btn.addEventListener("click", async () => {
       await updateCommentGenre(thread, select.value);
     });
-    btnRow.appendChild(btn);
-    sec.appendChild(btnRow);
+    actions.appendChild(btn);
+    sec.appendChild(actions);
 
     wrapper.appendChild(sec);
   }
 
-  // 非表示・完全削除
+  // 非表示 / 完全削除
   {
     const sec = document.createElement("div");
     sec.className = "gear-section";
-    const label = document.createElement("div");
-    label.className = "gear-section-title";
-    label.textContent = "削除／非表示";
-    sec.appendChild(label);
+    const title = document.createElement("div");
+    title.className = "gear-section-title";
+    title.textContent = "削除／非表示";
+    sec.appendChild(title);
 
-    const btnRow = document.createElement("div");
-    btnRow.className = "gear-actions";
+    const actions = document.createElement("div");
+    actions.className = "gear-actions";
 
     const hideBtn = document.createElement("button");
     hideBtn.className = "danger";
-    hideBtn.textContent = isParent
-      ? "スレッド（親＋子）を非表示"
-      : "このコメントを非表示";
+    hideBtn.textContent = isParent ? "スレッド（親＋子）を非表示" : "このコメントを非表示";
     hideBtn.addEventListener("click", async () => {
       await hideComment(comment, thread, false);
     });
 
-    const deleteBtn = document.createElement("button");
-    deleteBtn.className = "danger";
-    deleteBtn.textContent = isParent
-      ? "スレッド（親＋子）を完全削除"
-      : "このコメントを完全削除";
-    deleteBtn.addEventListener("click", async () => {
+    const delBtn = document.createElement("button");
+    delBtn.className = "danger";
+    delBtn.textContent = isParent ? "スレッド（親＋子）を完全削除" : "このコメントを完全削除";
+    delBtn.addEventListener("click", async () => {
       await hideComment(comment, thread, true);
     });
 
-    btnRow.appendChild(hideBtn);
-    btnRow.appendChild(deleteBtn);
-    sec.appendChild(btnRow);
+    actions.appendChild(hideBtn);
+    actions.appendChild(delBtn);
+    sec.appendChild(actions);
 
     wrapper.appendChild(sec);
   }
@@ -1451,10 +1467,10 @@ function renderGearModalContent(comment, thread) {
   {
     const sec = document.createElement("div");
     sec.className = "gear-section";
-    const label = document.createElement("div");
-    label.className = "gear-section-title";
-    label.textContent = "コメントへの追記";
-    sec.appendChild(label);
+    const title = document.createElement("div");
+    title.className = "gear-section-title";
+    title.textContent = "コメントへの追記";
+    sec.appendChild(title);
 
     const row = document.createElement("div");
     row.className = "gear-row";
@@ -1464,8 +1480,8 @@ function renderGearModalContent(comment, thread) {
     row.appendChild(textarea);
     sec.appendChild(row);
 
-    const btnRow = document.createElement("div");
-    btnRow.className = "gear-actions";
+    const actions = document.createElement("div");
+    actions.className = "gear-actions";
     const btn = document.createElement("button");
     btn.className = "primary";
     btn.textContent = "追記を追加";
@@ -1477,8 +1493,8 @@ function renderGearModalContent(comment, thread) {
       }
       await appendToComment(comment, text);
     });
-    btnRow.appendChild(btn);
-    sec.appendChild(btnRow);
+    actions.appendChild(btn);
+    sec.appendChild(actions);
 
     wrapper.appendChild(sec);
   }
@@ -1487,10 +1503,10 @@ function renderGearModalContent(comment, thread) {
   {
     const sec = document.createElement("div");
     sec.className = "gear-section";
-    const label = document.createElement("div");
-    label.className = "gear-section-title";
-    label.textContent = "攻略wikiへの推薦（将来機能）";
-    sec.appendChild(label);
+    const title = document.createElement("div");
+    title.className = "gear-section-title";
+    title.textContent = "攻略wikiへの推薦（将来機能）";
+    sec.appendChild(title);
 
     const row = document.createElement("div");
     row.className = "gear-row";
@@ -1509,16 +1525,16 @@ function renderGearModalContent(comment, thread) {
     row.appendChild(select);
     sec.appendChild(row);
 
-    const btnRow = document.createElement("div");
-    btnRow.className = "gear-actions";
+    const actions = document.createElement("div");
+    actions.className = "gear-actions";
     const btn = document.createElement("button");
     btn.className = "primary";
     btn.textContent = "選択ページへ推薦";
     btn.addEventListener("click", () => {
-      showToast("推薦機能はまだ未実装です（UIのみ先行）");
+      showToast("推薦機能はまだ未実装です（UIのみ）");
     });
-    btnRow.appendChild(btn);
-    sec.appendChild(btnRow);
+    actions.appendChild(btn);
+    sec.appendChild(actions);
 
     wrapper.appendChild(sec);
   }
@@ -1556,13 +1572,11 @@ async function updateCommentGenre(thread, newGenre) {
       .update({ genre: newGenre })
       .eq("root_comment_id", thread.rootId)
       .or(`id.eq.${thread.rootId}`);
-
     if (error) {
       console.error("updateCommentGenre error", error);
       showToast("ジャンル変更に失敗しました。");
       return;
     }
-    // ローカル反映
     thread.parent.genre = newGenre;
     thread.allComments.forEach((c) => {
       if (c.id === thread.parent.id) c.genre = newGenre;
@@ -1590,24 +1604,15 @@ async function hideComment(comment, thread, hardDelete) {
 
   try {
     if (hardDelete) {
-      // 完全削除
-      const ids = isParent
-        ? thread.allComments.map((c) => c.id)
-        : [comment.id];
-      const { error } = await supabase
-        .from("ld_board_comments")
-        .delete()
-        .in("id", ids);
+      const ids = isParent ? thread.allComments.map((c) => c.id) : [comment.id];
+      const { error } = await supabase.from("ld_board_comments").delete().in("id", ids);
       if (error) {
         console.error("delete error", error);
         showToast("削除に失敗しました。");
         return;
       }
     } else {
-      // 非表示（論理削除）
-      const ids = isParent
-        ? thread.allComments.map((c) => c.id)
-        : [comment.id];
+      const ids = isParent ? thread.allComments.map((c) => c.id) : [comment.id];
       const { error } = await supabase
         .from("ld_board_comments")
         .update({ deleted_at: new Date().toISOString() })
@@ -1668,9 +1673,7 @@ function getGuestDailyId() {
       if (obj.date === today && obj.id) {
         return obj.id;
       }
-    } catch (e) {
-      // ignore
-    }
+    } catch (e) {}
   }
   const id = ("" + Math.floor(Math.random() * 10000)).padStart(4, "0");
   localStorage.setItem(key, JSON.stringify({ date: today, id }));
@@ -1709,8 +1712,7 @@ function showToast(message) {
 }
 
 function generateRandomId(len) {
-  const chars =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let s = "";
   for (let i = 0; i < len; i++) {
     s += chars[Math.floor(Math.random() * chars.length)];
@@ -1719,14 +1721,10 @@ function generateRandomId(len) {
 }
 
 function escapeHtml(str) {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function convertAnchorsToLinks(text) {
-  // >>数字 をアンカーリンクに変換（エスケープ済みの &gt;&gt; を対象）
   return text.replace(/&gt;&gt;(\d+)/g, (m, p1) => {
     return `<a href="#comment-${p1}" class="anchor-link" data-anchor-no="${p1}">&gt;&gt;${p1}</a>`;
   });
