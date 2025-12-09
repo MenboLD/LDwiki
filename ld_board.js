@@ -167,7 +167,7 @@ function setupBasicHandlers() {
   // 投稿
   dom.submitCommentBtn.addEventListener("click", handleSubmit);
 
-  // モーダル閉じる（デリゲーション）
+  // モーダル閉じる＆アンカーリンク（デリゲーション）
   document.addEventListener("click", (e) => {
     const closeTarget = e.target.getAttribute("data-modal-close");
     if (closeTarget) {
@@ -175,7 +175,6 @@ function setupBasicHandlers() {
       return;
     }
 
-    // アンカーリンク（>>N）
     const anchor = e.target.closest("a.anchor-link");
     if (anchor) {
       e.preventDefault();
@@ -188,7 +187,7 @@ function setupBasicHandlers() {
       if (blocks.length >= no) {
         const targetBlock = blocks[no - 1];
         const rect = targetBlock.getBoundingClientRect();
-        const offset = 80; // ヘッダー分ちょい下に
+        const offset = 80; // ヘッダー分
         window.scrollBy({
           top: rect.top - offset,
           behavior: "smooth",
@@ -324,6 +323,7 @@ async function loadMoreThreads() {
       .select("*")
       .eq("board_kind", "info")
       .is("parent_comment_id", null)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(state.pageSize);
 
@@ -358,6 +358,8 @@ async function loadMoreThreads() {
       .select("*")
       .eq("board_kind", "info")
       .in("root_comment_id", parentIds)
+      .not("parent_comment_id", "is", null) // 親行は除外
+      .is("deleted_at", null)
       .order("created_at", { ascending: true });
 
     if (childErr) {
@@ -465,6 +467,7 @@ async function fetchLastOwnCommentTime() {
       .eq("board_kind", "info")
       .eq("owner_name", userInfo.name)
       .eq("owner_tag", userInfo.tag)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(1);
 
@@ -773,9 +776,9 @@ function renderCommentBlock({
 
   const nameDisplay = getDisplayNameForComment(comment);
   nameSpan.textContent = nameDisplay.text;
-  if (nameDisplay.className) {
-    // ★ 空文字だと DOMTokenList.add が例外を投げるため防御
-    nameSpan.classList.add(nameDisplay.className);
+  if (nameDisplay.className && nameDisplay.className.trim()) {
+    // DOMTokenList.add を使わず安全に結合
+    nameSpan.className += " " + nameDisplay.className.trim();
   }
   if (nameDisplay.showProfile) {
     profBtn.style.display = "inline-block";
@@ -817,7 +820,7 @@ function renderCommentBlock({
   bodyEl.className = "comment-body";
   bodyEl.innerHTML = convertAnchorsToLinks(escapeHtml(comment.body || ""));
 
-  // 長文折りたたみ（4行程度） ※常にトグル付き（シンプル運用）
+  // 長文折りたたみ（シンプルに常にトグルを付ける）
   const toggleEl = document.createElement("div");
   toggleEl.className = "comment-body-toggle";
   let isCollapsed = true;
