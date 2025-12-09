@@ -172,6 +172,28 @@ function setupBasicHandlers() {
     const closeTarget = e.target.getAttribute("data-modal-close");
     if (closeTarget) {
       hideModal(closeTarget);
+      return;
+    }
+
+    // アンカーリンク（>>N）
+    const anchor = e.target.closest("a.anchor-link");
+    if (anchor) {
+      e.preventDefault();
+      const noStr = anchor.dataset.anchorNo;
+      const no = parseInt(noStr, 10);
+      if (!no || Number.isNaN(no)) return;
+      const threadCard = anchor.closest(".thread-card");
+      if (!threadCard) return;
+      const blocks = threadCard.querySelectorAll(".comment-block");
+      if (blocks.length >= no) {
+        const targetBlock = blocks[no - 1];
+        const rect = targetBlock.getBoundingClientRect();
+        const offset = 80; // ヘッダー分ちょい下に
+        window.scrollBy({
+          top: rect.top - offset,
+          behavior: "smooth",
+        });
+      }
     }
   });
 }
@@ -693,7 +715,7 @@ function renderThreadCard(thread) {
         toggleSpan.textContent = "▼子コメントを開く";
       } else {
         // 全件表示＆番号振り
-        const all = [parent].concat(children);
+        const all = [thread.parent].concat(thread.children);
         all.forEach((c, index) => {
           if (index === 0) return; // parent はすでに親コメントとして表示済み
           const block = renderCommentBlock({
@@ -751,7 +773,10 @@ function renderCommentBlock({
 
   const nameDisplay = getDisplayNameForComment(comment);
   nameSpan.textContent = nameDisplay.text;
-  nameSpan.classList.add(nameDisplay.className);
+  if (nameDisplay.className) {
+    // ★ 空文字だと DOMTokenList.add が例外を投げるため防御
+    nameSpan.classList.add(nameDisplay.className);
+  }
   if (nameDisplay.showProfile) {
     profBtn.style.display = "inline-block";
     profBtn.addEventListener("click", () => {
@@ -790,11 +815,9 @@ function renderCommentBlock({
   // 本文
   const bodyEl = document.createElement("div");
   bodyEl.className = "comment-body";
-  bodyEl.innerHTML = convertAnchorsToLinks(
-    escapeHtml(comment.body || "")
-  );
+  bodyEl.innerHTML = convertAnchorsToLinks(escapeHtml(comment.body || ""));
 
-  // 長文折りたたみ（4行程度）
+  // 長文折りたたみ（4行程度） ※常にトグル付き（シンプル運用）
   const toggleEl = document.createElement("div");
   toggleEl.className = "comment-body-toggle";
   let isCollapsed = true;
@@ -809,8 +832,6 @@ function renderCommentBlock({
     }
   }
 
-  // 行数判定のため、一度 DOM に追加してから高さを見たいが、
-  // 簡易的に常にトグルを付ける運用にしておく
   updateBodyCollapse();
   toggleEl.addEventListener("click", () => {
     isCollapsed = !isCollapsed;
@@ -1702,7 +1723,7 @@ function escapeHtml(str) {
 }
 
 function convertAnchorsToLinks(text) {
-  // >>数字 をアンカーリンクに変換
+  // >>数字 をアンカーリンクに変換（エスケープ済みの &gt;&gt; を対象）
   return text.replace(/&gt;&gt;(\d+)/g, (m, p1) => {
     return `<a href="#comment-${p1}" class="anchor-link" data-anchor-no="${p1}">&gt;&gt;${p1}</a>`;
   });
