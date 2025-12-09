@@ -619,13 +619,13 @@ body {
   color: var(--text-sub);
 }
 
-/* モーダル共通 */
+/* ===== モーダル（名前衝突防止で ldb- プレフィックス） ===== */
 
-.hidden {
+.ldb-modal-hidden {
   display: none;
 }
 
-.modal-backdrop {
+.ldb-modal-backdrop {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.5);
@@ -635,7 +635,7 @@ body {
   z-index: 50;
 }
 
-.modal {
+.ldb-modal {
   background-color: #ffffff;
   border-radius: 8px;
   padding: 8px 8px 10px;
@@ -646,11 +646,11 @@ body {
   position: relative;
 }
 
-.modal--scroll {
+.ldb-modal--scroll {
   overflow-y: auto;
 }
 
-.modal-close-btn {
+.ldb-modal-close-btn {
   position: absolute;
   top: 4px;
   right: 6px;
@@ -660,18 +660,18 @@ body {
   cursor: pointer;
 }
 
-.modal-body {
+.ldb-modal-body {
   margin-top: 16px;
   font-size: 12px;
 }
 
-.modal-body--image {
+.ldb-modal-body--image {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.modal-body--image img {
+.ldb-modal-body--image img {
   max-width: 100%;
   max-height: 70vh;
 }
