@@ -43,13 +43,13 @@ body {
   top: 0;
   z-index: 10;
   background-color: var(--bg);
-  padding: 8px 8px 4px;
+  padding: 6px 6px 4px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .app-title {
-  margin: 0 0 6px;
-  padding: 0 4px;
+  margin: 0 0 4px;
+  padding: 0 2px;
   font-size: 16px;
 }
 
@@ -65,20 +65,22 @@ body {
 .user-input-row {
   display: flex;
   gap: 6px;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
+  flex-wrap: nowrap;
 }
 
 .user-label {
   flex: 1;
+  min-width: 0;
   font-size: 11px;
   color: var(--text-sub);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .user-label input {
-  padding: 4px 6px;
+  padding: 3px 5px;
   font-size: 12px;
   border-radius: 4px;
   border: 1px solid var(--border);
@@ -87,7 +89,6 @@ body {
 .user-status-row {
   font-size: 11px;
   color: var(--text-sub);
-  margin-top: 2px;
 }
 
 .user-status-label {
@@ -97,7 +98,7 @@ body {
 /* フィルター */
 
 .filter-toggle-wrapper {
-  margin-top: 6px;
+  margin-top: 4px;
   padding: 0 4px;
 }
 
@@ -208,7 +209,7 @@ body {
 }
 
 .threads-bottom-spacer {
-  height: 240px;
+  height: 240px; /* 最新コメントの下に余白 */
 }
 
 .load-more-row {
@@ -240,6 +241,11 @@ body {
   border: 1px solid var(--border);
   box-shadow: var(--shadow-soft);
   padding: 4px 6px 4px;
+}
+
+/* スレッドのみ左枠を青く */
+.thread-card--thread {
+  border-left: 4px solid var(--accent);
 }
 
 /* スレッドタイトル行 */
@@ -496,7 +502,7 @@ body {
 .footer-body {
   background-color: #ffffff;
   border-top: 1px solid var(--border);
-  padding: 6px 8px 8px;
+  padding: 0 8px;
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.2s ease-out, padding-top 0.2s ease-out, padding-bottom 0.2s ease-out;
@@ -619,13 +625,9 @@ body {
   color: var(--text-sub);
 }
 
-/* ===== モーダル（名前衝突防止で ldb- プレフィックス） ===== */
+/* モーダル共通（掲示板専用名前空間） */
 
-.ldb-modal-hidden {
-  display: none;
-}
-
-.ldb-modal-backdrop {
+.ld-modal-backdrop {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.5);
@@ -635,7 +637,12 @@ body {
   z-index: 50;
 }
 
-.ldb-modal {
+.ld-modal-hidden {
+  display: none;
+  pointer-events: none;
+}
+
+.ld-modal {
   background-color: #ffffff;
   border-radius: 8px;
   padding: 8px 8px 10px;
@@ -646,11 +653,11 @@ body {
   position: relative;
 }
 
-.ldb-modal--scroll {
+.ld-modal--scroll {
   overflow-y: auto;
 }
 
-.ldb-modal-close-btn {
+.ld-modal-close-btn {
   position: absolute;
   top: 4px;
   right: 6px;
@@ -660,18 +667,18 @@ body {
   cursor: pointer;
 }
 
-.ldb-modal-body {
+.ld-modal-body {
   margin-top: 16px;
   font-size: 12px;
 }
 
-.ldb-modal-body--image {
+.ld-modal-body--image {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.ldb-modal-body--image img {
+.ld-modal-body--image img {
   max-width: 100%;
   max-height: 70vh;
 }

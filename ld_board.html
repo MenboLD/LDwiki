@@ -100,10 +100,10 @@
         <!-- JS から挿入 -->
       </div>
 
-      <!-- 一番下のスペース -->
+      <!-- 一番下のスペース（最新コメントの下に空白） -->
       <div class="threads-bottom-spacer"></div>
 
-      <!-- もっと読み込むボタン＋ステータス -->
+      <!-- さらに読み込む行（予備） -->
       <div class="load-more-row">
         <button id="loadMoreBtn" type="button" class="load-more-btn">さらに古いコメントを読み込む</button>
         <div id="loadMoreStatus" class="load-more-status"></div>
@@ -161,28 +161,28 @@
     </footer>
 
     <!-- 画像モーダル -->
-    <div id="imageModal" class="ldb-modal-backdrop ldb-modal-hidden">
-      <div class="ldb-modal">
-        <button type="button" class="ldb-modal-close-btn" data-modal-close="imageModal">×</button>
-        <div class="ldb-modal-body ldb-modal-body--image">
+    <div id="imageModal" class="ld-modal-backdrop ld-modal-hidden">
+      <div class="ld-modal">
+        <button type="button" class="ld-modal-close-btn" data-modal-close="imageModal">×</button>
+        <div class="ld-modal-body ld-modal-body--image">
           <img id="modalImage" src="" alt="画像" />
         </div>
       </div>
     </div>
 
     <!-- 歯車モーダル -->
-    <div id="gearModal" class="ldb-modal-backdrop ldb-modal-hidden">
-      <div class="ldb-modal ldb-modal--scroll">
-        <button type="button" class="ldb-modal-close-btn" data-modal-close="gearModal">×</button>
-        <div id="gearModalBody" class="ldb-modal-body"></div>
+    <div id="gearModal" class="ld-modal-backdrop ld-modal-hidden">
+      <div class="ld-modal ld-modal--scroll">
+        <button type="button" class="ld-modal-close-btn" data-modal-close="gearModal">×</button>
+        <div id="gearModalBody" class="ld-modal-body"></div>
       </div>
     </div>
 
     <!-- プロフィールモーダル -->
-    <div id="profileModal" class="ldb-modal-backdrop ldb-modal-hidden">
-      <div class="ldb-modal ldb-modal--scroll">
-        <button type="button" class="ldb-modal-close-btn" data-modal-close="profileModal">×</button>
-        <div id="profileModalBody" class="ldb-modal-body"></div>
+    <div id="profileModal" class="ld-modal-backdrop ld-modal-hidden">
+      <div class="ld-modal ld-modal--scroll">
+        <button type="button" class="ld-modal-close-btn" data-modal-close="profileModal">×</button>
+        <div id="profileModalBody" class="ld-modal-body"></div>
       </div>
     </div>
 
