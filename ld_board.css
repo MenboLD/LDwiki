@@ -86,6 +86,11 @@ body {
   border: 1px solid var(--border);
 }
 
+.user-label input:disabled {
+  background-color: #eeeeee;
+  color: #bbbbbb;
+}
+
 .user-status-row {
   font-size: 11px;
   color: var(--text-sub);
@@ -105,7 +110,7 @@ body {
 .filter-toggle-btn {
   width: 100%;
   border-radius: 999px;
-  padding: 4px 8px;
+  padding: 6px 10px;
   font-size: 12px;
   border: 1px solid var(--accent);
   background-color: #ffffff;
@@ -191,36 +196,20 @@ body {
 
 .app-main {
   flex: 1;
-  padding: 4px 4px 80px;
+  padding: 4px 4px 90px;
 }
 
-.load-older-hint {
-  text-align: center;
-  font-size: 11px;
-  color: var(--text-sub);
-  margin: 4px 0;
-  cursor: pointer;
-}
-
-.threads-container {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.threads-bottom-spacer {
-  height: 240px; /* 最新コメントの下に余白 */
-}
+/* 上部の「さらに古いコメントを読み込む」 */
 
 .load-more-row {
   text-align: center;
-  margin-top: 8px;
+  margin: 4px 0 6px;
   font-size: 11px;
   color: var(--text-sub);
 }
 
 .load-more-btn {
-  padding: 4px 10px;
+  padding: 5px 14px;
   border-radius: 999px;
   border: 1px solid var(--accent);
   background: #ffffff;
@@ -229,8 +218,25 @@ body {
   cursor: pointer;
 }
 
+.load-more-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .load-more-status {
   margin-top: 2px;
+}
+
+/* スレッドコンテナ */
+
+.threads-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.threads-bottom-spacer {
+  height: 320px; /* 最新コメントの下に十分な余白 */
 }
 
 /* スレッドカード */
@@ -310,7 +316,7 @@ body {
 
 .comment-meta-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto auto;
   align-items: center;
   column-gap: 4px;
   row-gap: 2px;
@@ -464,11 +470,6 @@ body {
   font-size: 11px;
 }
 
-.children-count {
-  flex: 1;
-  color: var(--text-sub);
-}
-
 .children-toggle {
   color: var(--accent);
   cursor: pointer;
@@ -494,8 +495,8 @@ body {
   background-color: #ffffff;
   border-top: 1px solid var(--border);
   text-align: center;
-  padding: 4px 8px;
-  font-size: 11px;
+  padding: 8px 8px;
+  font-size: 12px;
   cursor: pointer;
 }
 
@@ -528,7 +529,7 @@ body {
 
 .reply-cancel-btn {
   font-size: 10px;
-  padding: 2px 8px;
+  padding: 3px 12px;
   border-radius: 999px;
   border: 1px solid var(--accent);
   color: var(--accent);
@@ -573,7 +574,7 @@ body {
 .attach-btn {
   flex: 1;
   font-size: 11px;
-  padding: 4px 6px;
+  padding: 5px 6px;
   border-radius: 999px;
   border: 1px solid var(--accent);
   background-color: #ffffff;
@@ -599,19 +600,22 @@ body {
   display: none;
 }
 
+/* 投稿ボタン行 */
+
 .composer-row--submit {
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .submit-btn {
-  padding: 4px 10px;
+  padding: 8px 20px;
   border-radius: 999px;
   border: 1px solid var(--accent);
   background-color: var(--accent);
   color: #ffffff;
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
 }
 
@@ -751,11 +755,19 @@ body {
   margin-bottom: 6px;
 }
 
-.profile-link {
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.profile-unit {
+  border: 1px solid var(--border);
+  border-radius: 4px;
   font-size: 11px;
-  color: var(--accent);
-  text-decoration: underline;
-  cursor: pointer;
+  text-align: center;
+  padding: 2px 0;
 }
 
 /* トースト */
@@ -763,7 +775,7 @@ body {
 .toast-container {
   position: fixed;
   right: 8px;
-  bottom: 60px;
+  bottom: 80px;
   display: flex;
   flex-direction: column;
   gap: 4px;

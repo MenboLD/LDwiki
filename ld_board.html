@@ -90,9 +90,12 @@
 
     <!-- コメントリスト -->
     <main class="app-main">
-      <!-- 上方向の読み込みヒント -->
-      <div class="load-older-hint" id="loadOlderHint">
-        ↓ フリックで古いコメントを読み込み
+      <!-- 上部：さらに古いコメントボタン -->
+      <div class="load-more-row" id="loadMoreRowTop">
+        <button id="loadMoreBtn" type="button" class="load-more-btn">
+          さらに古いコメントを読み込む
+        </button>
+        <div id="loadMoreStatus" class="load-more-status"></div>
       </div>
 
       <!-- スレッドカードコンテナ -->
@@ -100,14 +103,8 @@
         <!-- JS から挿入 -->
       </div>
 
-      <!-- 一番下のスペース（最新コメントの下に空白） -->
+      <!-- 一番下のスペース（最新コメントの下に余白） -->
       <div class="threads-bottom-spacer"></div>
-
-      <!-- さらに読み込む行（予備） -->
-      <div class="load-more-row">
-        <button id="loadMoreBtn" type="button" class="load-more-btn">さらに古いコメントを読み込む</button>
-        <div id="loadMoreStatus" class="load-more-status"></div>
-      </div>
     </main>
 
     <!-- フッター：コメント入力ツール -->
@@ -145,7 +142,7 @@
         <!-- 添付 -->
         <div class="composer-row composer-row--attach">
           <button id="attachBoardBtn" type="button" class="attach-btn">盤面IDを添付</button>
-          <button id="attachImageBtn" type="button" class="attach-btn">画像URLを添付</button>
+          <button id="attachImageBtn" type="button" class="attach-btn">画像を添付</button>
         </div>
         <div class="composer-row composer-row--attach-status">
           <span id="attachedBoardLabel" class="attach-chip attach-chip--hidden"></span>
@@ -157,6 +154,15 @@
           <button id="submitCommentBtn" type="button" class="submit-btn">投稿する</button>
           <span id="composerStatus" class="composer-status"></span>
         </div>
+
+        <!-- 画像ファイル入力（隠し） -->
+        <input
+          id="imageFileInput"
+          type="file"
+          accept="image/*"
+          multiple
+          style="display: none;"
+        />
       </div>
     </footer>
 
