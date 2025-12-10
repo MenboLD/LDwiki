@@ -1438,7 +1438,6 @@ function updateAttachLabels() {
     }
   }
 }
-}
 
 /* 画像圧縮＋アップロード */
 function compressAndUploadImage(file) {
