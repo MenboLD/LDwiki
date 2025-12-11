@@ -549,11 +549,7 @@ body {
 }
 
 .composer-caption {
-  color: var(--text-sub.composer-row--genre-hidden {
-  display: none;
-}
-
-);
+  color: var(--text-sub);
 }
 
 .composer-row--genre label {
@@ -601,19 +597,6 @@ body {
 }
 
 .attach-chip--hidden {
-  display: none;
-}
-
-.attach-chip-remove-btn {
-  padding: 0 4px;
-  border: none;
-  background: transparent;
-  color: var(--text-sub);
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.attach-chip-remove-btn--hidden {
   display: none;
 }
 
@@ -829,4 +812,25 @@ body {
     left: 0;
     right: 0;
   }
+}
+
+
+/* 返信中はジャンル行を隠す */
+.composer-row--genre-hidden {
+  display: none;
+}
+
+/* 添付チップの削除ボタン */
+.attach-chip-remove-btn {
+  padding: 0 4px;
+  margin-left: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.attach-chip-remove-btn--hidden {
+  display: none;
 }
