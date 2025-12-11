@@ -14,40 +14,46 @@
 
       <!-- ユーザー名 / パス -->
       <section class="user-panel">
-        <div class="user-input-row">
-          <label class="user-label">
+        <div class="user-panel-row">
+          <label class="user-input-label">
             ユーザー名
             <input
               id="userNameInput"
               type="text"
-              maxlength="16"
-              placeholder="最大 全角8文字 / 半角16文字"
-            />
-          </label>
-          <label class="user-label">
-            パス
-            <input
-              id="userTagInput"
-              type="text"
-              maxlength="10"
-              placeholder="最大 全角5文字 / 半角10文字"
+              placeholder="例）キノマル（空欄なら名無し）"
+              autocomplete="username"
             />
           </label>
         </div>
-        <div class="user-status-row">
-          <span id="userStatusLabel" class="user-status-label">名無しとして投稿</span>
+        <div class="user-panel-row user-panel-row--tag">
+          <label class="user-input-label user-input-label--tag">
+            パス（2桁）
+            <input
+              id="userTagInput"
+              type="password"
+              inputmode="numeric"
+              pattern="\d*"
+              maxlength="2"
+              placeholder="例）01"
+              autocomplete="current-password"
+            />
+          </label>
+          <div class="user-mode-info">
+            <span id="userModeLabel" class="user-mode-label"></span>
+            <button id="userModeToggleBtn" type="button" class="user-mode-toggle-btn">
+              モード切替
+            </button>
+          </div>
         </div>
       </section>
 
       <!-- フィルター開閉ボタン -->
-      <div class="filter-toggle-wrapper">
-        <button id="filterToggleBtn" type="button" class="filter-toggle-btn">
-          🔍 フィルターを開く
-        </button>
-      </div>
+      <button id="filterToggleBtn" class="filter-toggle-btn" type="button">
+        ▲フィルタを閉じる
+      </button>
 
-      <!-- フィルターパネル -->
-      <section id="filterPanel" class="filter-panel filter-panel--collapsed">
+      <!-- フィルターセクション -->
+      <section id="filterPanel" class="filter-panel">
         <div class="filter-row">
           <label class="filter-label">
             キーワード
@@ -70,53 +76,65 @@
           <label><input id="genreAnnounce" type="checkbox" checked />アナウンス</label>
         </div>
 
-        <div class="filter-row filter-row--flags">
-          <label>
-            <input id="filterSinceMyLast" type="checkbox" />
-            自身の最終書込み以降のみを表示（要登録）
+        <div class="filter-row filter-row--extra">
+          <label class="filter-checkbox">
+            <input id="sinceMyLastCheckbox" type="checkbox" />
+            自身の最終書込み以降のみ（要登録）
           </label>
-          <label>
-            <input id="filterHasAttachment" type="checkbox" />
-            盤面・画像付きコメントに限定
+          <label class="filter-checkbox">
+            <input id="hasAttachmentCheckbox" type="checkbox" />
+            盤面・画像付きコメントのみ
           </label>
         </div>
 
-        <div class="filter-summary-row">
-          <span class="filter-summary-label">現在のフィルター:</span>
-          <span id="filterSummaryText" class="filter-summary-text">（すべて表示中）</span>
+        <div class="filter-row filter-row--summary">
+          <span id="currentFilterSummary" class="filter-summary"></span>
+        </div>
+
+        <div class="filter-row filter-row--actions">
+          <button id="applyFilterBtn" type="button" class="filter-apply-btn">
+            フィルタを適用
+          </button>
+          <button id="resetFilterBtn" type="button" class="filter-reset-btn">
+            全解除
+          </button>
         </div>
       </section>
     </header>
 
-    <!-- コメントリスト -->
+    <!-- メインコンテンツ -->
     <main class="app-main">
-      <!-- 上部：さらに古いコメントボタン -->
-      <div class="load-more-row" id="loadMoreRowTop">
+      <!-- ロード状態 -->
+      <div id="initialLoading" class="initial-loading">
+        読み込み中...
+      </div>
+
+      <!-- コメント一覧 -->
+      <section id="threadContainer" class="thread-container"></section>
+
+      <!-- さらに古いコメントを読み込む -->
+      <div class="load-more-section">
         <button id="loadMoreBtn" type="button" class="load-more-btn">
-          さらに古いコメントを読み込む
+          ▲さらに古いコメントを読み込む
         </button>
         <div id="loadMoreStatus" class="load-more-status"></div>
       </div>
 
-      <!-- スレッドカードコンテナ -->
-      <div id="threadsContainer" class="threads-container">
-        <!-- JS から挿入 -->
-      </div>
-
-      <!-- 一番下のスペース（最新コメントの下に余白） -->
-      <div class="threads-bottom-spacer"></div>
+      <!-- フッターの余白（スクロールしやすくするため） -->
+      <div class="bottom-spacer"></div>
     </main>
 
-    <!-- フッター：コメント入力ツール -->
-    <footer class="footer-comment">
-      <div class="footer-toggle" id="footerToggle">
-        <span id="composerToggleLabel">▲コメントの入力ツールを表示(タップ)</span>
+    <!-- フッター：コメント入力エリア -->
+    <footer class="app-footer">
+      <div class="footer-toggle">
+        <button id="footerToggle" type="button" class="footer-toggle-btn">
+          ▼コメントの入力ツールを非表示(タップ)
+        </button>
       </div>
-
-      <div class="footer-body" id="composerBody">
+      <div id="composerBody" class="footer-body footer-body--open">
         <!-- 返信中情報 -->
         <div id="replyInfoRow" class="reply-info-row reply-info-row--hidden">
-          <span id="replyInfoText"></span>
+          <span id="replyInfoText" class="reply-info-text"></span>
           <button id="cancelReplyBtn" type="button" class="reply-cancel-btn">返信を解除</button>
         </div>
 
@@ -129,26 +147,37 @@
           <label><input type="radio" name="genre" value="announce" />アナウンス</label>
         </div>
 
-        <!-- 本文 -->
+        <!-- 本文入力 -->
         <div class="composer-row">
           <textarea
             id="commentBodyInput"
-            rows="4"
-            class="composer-textarea"
-            placeholder="コメントを入力..."
+            rows="3"
+            placeholder="コメントを入力（誹謗中傷や不適切な表現は禁止です）"
           ></textarea>
         </div>
 
-        <!-- 添付 -->
+        <!-- 添付ボタン -->
         <div class="composer-row composer-row--attach">
           <button id="attachBoardBtn" type="button" class="attach-btn">盤面IDを添付</button>
           <button id="attachImageBtn" type="button" class="attach-btn">画像を添付</button>
         </div>
         <div class="composer-row composer-row--attach-status">
           <span id="attachedBoardLabel" class="attach-chip attach-chip--hidden"></span>
-          <button id="clearBoardAttachBtn" type="button" class="attach-chip-remove-btn attach-chip-remove-btn--hidden">×</button>
+          <button
+            id="clearBoardAttachBtn"
+            type="button"
+            class="attach-chip-remove-btn attach-chip-remove-btn--hidden"
+          >
+            ×
+          </button>
           <span id="attachedImageLabel" class="attach-chip attach-chip--hidden"></span>
-          <button id="clearImageAttachBtn" type="button" class="attach-chip-remove-btn attach-chip-remove-btn--hidden">×</button>
+          <button
+            id="clearImageAttachBtn"
+            type="button"
+            class="attach-chip-remove-btn attach-chip-remove-btn--hidden"
+          >
+            ×
+          </button>
         </div>
 
         <!-- 投稿ボタン -->
@@ -171,33 +200,50 @@
     <!-- 画像モーダル -->
     <div id="imageModal" class="ld-modal-backdrop ld-modal-hidden">
       <div class="ld-modal">
-        <button type="button" class="ld-modal-close-btn" data-modal-close="imageModal">×</button>
-        <div class="ld-modal-body ld-modal-body--image">
-          <img id="modalImage" src="" alt="画像" />
+        <button type="button" class="ld-modal-close-btn" data-modal-close="image">
+          ×
+        </button>
+        <div class="ld-modal-body">
+          <img id="modalImage" src="" alt="拡大画像" class="modal-image" />
         </div>
       </div>
     </div>
 
-    <!-- 歯車モーダル -->
+    <!-- 歯車メニュー（管理系） -->
     <div id="gearModal" class="ld-modal-backdrop ld-modal-hidden">
-      <div class="ld-modal ld-modal--scroll">
-        <button type="button" class="ld-modal-close-btn" data-modal-close="gearModal">×</button>
-        <div id="gearModalBody" class="ld-modal-body"></div>
+      <div class="ld-modal ld-modal--gear">
+        <button type="button" class="ld-modal-close-btn" data-modal-close="gear">
+          ×
+        </button>
+        <div class="ld-modal-header">
+          <h2 class="ld-modal-title">コメント管理メニュー</h2>
+        </div>
+        <div id="gearModalBody" class="ld-modal-body ld-modal-body--gear">
+          <!-- JSで動的に埋める -->
+        </div>
       </div>
     </div>
 
     <!-- プロフィールモーダル -->
     <div id="profileModal" class="ld-modal-backdrop ld-modal-hidden">
-      <div class="ld-modal ld-modal--scroll">
-        <button type="button" class="ld-modal-close-btn" data-modal-close="profileModal">×</button>
-        <div id="profileModalBody" class="ld-modal-body"></div>
+      <div class="ld-modal ld-modal--profile">
+        <button type="button" class="ld-modal-close-btn" data-modal-close="profile">
+          ×
+        </button>
+        <div class="ld-modal-header">
+          <h2 id="profileModalTitle" class="ld-modal-title">プロフィール</h2>
+        </div>
+        <div id="profileModalBody" class="ld-modal-body ld-modal-body--profile">
+          <!-- JSで動的に埋める -->
+        </div>
       </div>
     </div>
 
-    <!-- トーストコンテナ -->
+    <!-- トースト -->
     <div id="toastContainer" class="toast-container"></div>
   </div>
 
-  <script type="module" src="ld_board.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="ld_board.js"></script>
 </body>
 </html>

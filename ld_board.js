@@ -1,24 +1,94 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// ld_board.js
+// ラッキー傭兵団 情報掲示板 フロントエンドロジック（Ver1 改＋返信ジャンル非表示＆添付削除ボタン）
 
-/** Supabase 接続設定 */
+/* =====================
+ * 定数 / 設定
+ * ===================== */
+
 const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
 const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzIyNjU0NzUsImV4cCI6MjA0Nzg0MTQ3NX0.GPZcFxX0ql8Qj3sNtIizmT30Y0LndgUAdLHMMIUPIPc";
 
 const BOARD_KIND = "info";
-const IMAGE_BUCKET = "ld_board_images";
 
-/** アプリ状態 */
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
+
+/* =====================
+ * ユーティリティ
+ * ===================== */
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+function formatDateTime(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${yyyy}/${mm}/${dd} ${hh}:${mi}`;
+}
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function debounce(fn, delay) {
+  let timer = null;
+  return function (...args) {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+/* トースト */
+
+const toastState = {
+  timerId: null,
+};
+
+function showToast(message, duration = 2500) {
+  const container = $("toastContainer");
+  if (!container) return;
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  toast.textContent = message;
+  container.appendChild(toast);
+  if (toastState.timerId) {
+    clearTimeout(toastState.timerId);
+  }
+  toastState.timerId = setTimeout(() => {
+    if (toast.parentNode) {
+      toast.parentNode.removeChild(toast);
+    }
+  }, duration);
+}
+
+/* =====================
+ * 状態
+ * ===================== */
+
 const state = {
-  users: [],
-  autofixRules: [],
-
+  rawComments: [],
   threads: [],
-  hasMoreParents: true,
-  isLoadingParents: false,
-  oldestParentCreatedAt: null,
+  displayedThreads: [],
+  oldestLoaded: null,
+  newestLoaded: null,
+  isInitialLoading: false,
+  isLoadingMore: false,
   pageSize: 20,
   hasDoneInitialScroll: false,
 
@@ -32,41 +102,43 @@ const state = {
   lastOwnCommentTime: null,
 
   replyState: null,
+
   draftBoardLayoutId: null,
   draftImageUrls: [],
 
-  guestId: null,
-  likeCache: new Set(),
+  userInfo: {
+    name: "",
+    tag: "",
+    mode: "guest",
+    user: null,
+  },
 };
 
-/** DOM キャッシュ */
 const dom = {};
-function $(id) {
-  return document.getElementById(id);
-}
 
 /* =====================
  * 初期化
  * ===================== */
 
-window.addEventListener("DOMContentLoaded", async function () {
+document.addEventListener("DOMContentLoaded", () => {
   cacheDom();
   setupBasicHandlers();
-  initModalsHidden();
-  loadGuestId();
-  loadLikeCache();
-  loadUserInputsFromLocalStorage();
-  updateNameTagEnabled();
-  updateUserStatusLabel();
-
-  await Promise.all([loadUsers(), loadAutofixRules()]);
-  await loadInitialThreads();
+  restoreUserInfoFromStorage();
+  initFiltersFromState();
+  updateUserModeLabel();
+  updateFilterSummary();
+  loadInitialThreads();
 });
+
+/* =====================
+ * DOM キャッシュ
+ * ===================== */
 
 function cacheDom() {
   dom.userNameInput = $("userNameInput");
   dom.userTagInput = $("userTagInput");
-  dom.userStatusLabel = $("userStatusLabel");
+  dom.userModeLabel = $("userModeLabel");
+  dom.userModeToggleBtn = $("userModeToggleBtn");
 
   dom.filterToggleBtn = $("filterToggleBtn");
   dom.filterPanel = $("filterPanel");
@@ -78,11 +150,14 @@ function cacheDom() {
   dom.genreQa = $("genreQa");
   dom.genreReport = $("genreReport");
   dom.genreAnnounce = $("genreAnnounce");
-  dom.filterSinceMyLast = $("filterSinceMyLast");
-  dom.filterHasAttachment = $("filterHasAttachment");
-  dom.filterSummaryText = $("filterSummaryText");
+  dom.sinceMyLastCheckbox = $("sinceMyLastCheckbox");
+  dom.hasAttachmentCheckbox = $("hasAttachmentCheckbox");
+  dom.currentFilterSummary = $("currentFilterSummary");
+  dom.applyFilterBtn = $("applyFilterBtn");
+  dom.resetFilterBtn = $("resetFilterBtn");
 
-  dom.threadsContainer = $("threadsContainer");
+  dom.threadContainer = $("threadContainer");
+  dom.initialLoading = $("initialLoading");
   dom.loadMoreBtn = $("loadMoreBtn");
   dom.loadMoreStatus = $("loadMoreStatus");
 
@@ -97,501 +172,364 @@ function cacheDom() {
   dom.attachBoardBtn = $("attachBoardBtn");
   dom.attachImageBtn = $("attachImageBtn");
   dom.attachedBoardLabel = $("attachedBoardLabel");
-  dom.attachedImageLabel = $("attachedImageLabel");
   dom.clearBoardAttachBtn = $("clearBoardAttachBtn");
+  dom.attachedImageLabel = $("attachedImageLabel");
   dom.clearImageAttachBtn = $("clearImageAttachBtn");
-  dom.imageFileInput = $("imageFileInput");
   dom.submitCommentBtn = $("submitCommentBtn");
   dom.composerStatus = $("composerStatus");
+  dom.imageFileInput = $("imageFileInput");
 
   dom.imageModal = $("imageModal");
   dom.modalImage = $("modalImage");
+
   dom.gearModal = $("gearModal");
   dom.gearModalBody = $("gearModalBody");
-  dom.profileModal = $("profileModal");
-  dom.profileModalBody = $("profileModalBody");
 
-  dom.toastContainer = $("toastContainer");
+  dom.profileModal = $("profileModal");
+  dom.profileModalTitle = $("profileModalTitle");
+  dom.profileModalBody = $("profileModalBody");
 }
+
+/* =====================
+ * イベントハンドラ設定
+ * ===================== */
 
 function setupBasicHandlers() {
-  dom.filterToggleBtn.addEventListener("click", function () {
-    const collapsed = dom.filterPanel.classList.toggle("filter-panel--collapsed");
-    dom.filterToggleBtn.textContent = collapsed ? "🔍 フィルターを開く" : "🔍 フィルターを閉じる";
-  });
+  if (dom.userNameInput) {
+    dom.userNameInput.addEventListener(
+      "input",
+      debounce(handleUserNameChange, 300)
+    );
+  }
+  if (dom.userTagInput) {
+    dom.userTagInput.addEventListener(
+      "input",
+      debounce(handleUserTagChange, 300)
+    );
+  }
+  if (dom.userModeToggleBtn) {
+    dom.userModeToggleBtn.addEventListener("click", toggleUserMode);
+  }
 
-  dom.userNameInput.addEventListener("input", function () {
-    updateNameTagEnabled();
-    saveUserInputsToLocalStorage();
-    updateUserStatusLabel();
-  });
-  dom.userTagInput.addEventListener("input", function () {
-    if (dom.userTagInput.value.length > 10) {
-      dom.userTagInput.value = dom.userTagInput.value.slice(0, 10);
-    }
-    saveUserInputsToLocalStorage();
-    updateUserStatusLabel();
-  });
+  if (dom.filterToggleBtn && dom.filterPanel) {
+    dom.filterToggleBtn.addEventListener("click", () => {
+      const isHidden = dom.filterPanel.style.display === "none";
+      dom.filterPanel.style.display = isHidden ? "block" : "none";
+      dom.filterToggleBtn.textContent = isHidden
+        ? "▲フィルタを閉じる"
+        : "▼フィルタを開く";
+    });
+  }
 
-  const filterElems = [
-    dom.keywordInput,
-    dom.targetBody,
-    dom.targetTitle,
-    dom.targetUser,
-    dom.genreNormal,
-    dom.genreQa,
-    dom.genreReport,
-    dom.genreAnnounce,
-    dom.filterSinceMyLast,
-    dom.filterHasAttachment,
-  ];
-  filterElems.forEach(function (el) {
-    el.addEventListener("input", handleFilterChange);
-    el.addEventListener("change", handleFilterChange);
-  });
+  if (dom.keywordInput) {
+    dom.keywordInput.addEventListener(
+      "input",
+      debounce(() => {
+        state.filters.keyword = dom.keywordInput.value.trim();
+        updateFilterSummary();
+      }, 300)
+    );
+  }
 
-  dom.loadMoreBtn.addEventListener("click", function () {
-    loadMoreThreads();
-  });
+  if (dom.targetBody) {
+    dom.targetBody.addEventListener("change", () => {
+      state.filters.targets.body = dom.targetBody.checked;
+      updateFilterSummary();
+    });
+  }
+  if (dom.targetTitle) {
+    dom.targetTitle.addEventListener("change", () => {
+      state.filters.targets.title = dom.targetTitle.checked;
+      updateFilterSummary();
+    });
+  }
+  if (dom.targetUser) {
+    dom.targetUser.addEventListener("change", () => {
+      state.filters.targets.user = dom.targetUser.checked;
+      updateFilterSummary();
+    });
+  }
 
-  dom.footerToggle.addEventListener("click", function () {
-    const opened = dom.composerBody.classList.toggle("footer-body--open");
-    dom.composerToggleLabel.textContent = opened
-      ? "▼コメントの入力ツールを非表示(タップ)"
-      : "▲コメントの入力ツールを表示(タップ)";
-  });
+  if (dom.genreNormal) {
+    dom.genreNormal.addEventListener("change", () => {
+      state.filters.genres.normal = dom.genreNormal.checked;
+      updateFilterSummary();
+    });
+  }
+  if (dom.genreQa) {
+    dom.genreQa.addEventListener("change", () => {
+      state.filters.genres.qa = dom.genreQa.checked;
+      updateFilterSummary();
+    });
+  }
+  if (dom.genreReport) {
+    dom.genreReport.addEventListener("change", () => {
+      state.filters.genres.report = dom.genreReport.checked;
+      updateFilterSummary();
+    });
+  }
+  if (dom.genreAnnounce) {
+    dom.genreAnnounce.addEventListener("change", () => {
+      state.filters.genres.announce = dom.genreAnnounce.checked;
+      updateFilterSummary();
+    });
+  }
 
-  dom.cancelReplyBtn.addEventListener("click", function () {
-    clearReplyState();
-  });
+  if (dom.sinceMyLastCheckbox) {
+    dom.sinceMyLastCheckbox.addEventListener("change", () => {
+      state.filters.sinceMyLast = dom.sinceMyLastCheckbox.checked;
+      updateFilterSummary();
+    });
+  }
+  if (dom.hasAttachmentCheckbox) {
+    dom.hasAttachmentCheckbox.addEventListener("change", () => {
+      state.filters.hasAttachment = dom.hasAttachmentCheckbox.checked;
+      updateFilterSummary();
+    });
+  }
 
-  dom.attachBoardBtn.addEventListener("click", handleAttachBoardClick);
-  dom.attachImageBtn.addEventListener("click", handleAttachImageClick);
-  dom.clearBoardAttachBtn.addEventListener("click", function () {
-    state.draftBoardLayoutId = null;
-    updateAttachLabels();
-  });
-  dom.clearImageAttachBtn.addEventListener("click", function () {
-    state.draftImageUrls = [];
-    dom.imageFileInput.value = "";
-    updateAttachLabels();
-  });
-  dom.imageFileInput.addEventListener("change", handleImageFileChange);
-
-  dom.submitCommentBtn.addEventListener("click", handleSubmit);
-
-  document.addEventListener("click", function (e) {
-    const closeTarget = e.target.getAttribute("data-modal-close");
-    if (closeTarget) {
-      hideModal(closeTarget);
-      return;
-    }
-
-    const anchor = e.target.closest("a.anchor-link");
-    if (anchor) {
-      e.preventDefault();
-      const noStr = anchor.getAttribute("data-anchor-no");
-      const no = parseInt(noStr, 10);
-      if (!no || isNaN(no)) return;
-      const threadCard = anchor.closest(".thread-card");
-      if (!threadCard) return;
-      const blocks = threadCard.querySelectorAll(".comment-block");
-      if (blocks.length >= no) {
-        const targetBlock = blocks[no - 1];
-        const rect = targetBlock.getBoundingClientRect();
-        const offset = 80;
-        window.scrollBy({
-          top: rect.top - offset,
-          behavior: "smooth",
-        });
+  if (dom.applyFilterBtn) {
+    dom.applyFilterBtn.addEventListener("click", async () => {
+      if (state.filters.sinceMyLast) {
+        await fetchLastOwnCommentTime();
+      } else {
+        state.lastOwnCommentTime = null;
       }
+      applyFiltersAndRender();
+    });
+  }
+
+  if (dom.resetFilterBtn) {
+    dom.resetFilterBtn.addEventListener("click", () => {
+      resetFilters();
+      initFiltersFromState();
+      updateFilterSummary();
+      applyFiltersAndRender();
+    });
+  }
+
+  if (dom.loadMoreBtn) {
+    dom.loadMoreBtn.addEventListener("click", () => {
+      loadMoreThreads();
+    });
+  }
+
+  if (dom.footerToggle && dom.composerBody && dom.composerToggleLabel) {
+    dom.footerToggle.addEventListener("click", () => {
+      const opened = !dom.composerBody.classList.contains("footer-body--open");
+      dom.composerBody.classList.toggle("footer-body--open", opened);
+      dom.composerToggleLabel.textContent = opened
+        ? "▼コメントの入力ツールを非表示(タップ)"
+        : "▲コメントの入力ツールを表示(タップ)";
+    });
+  }
+
+  if (dom.cancelReplyBtn) {
+    dom.cancelReplyBtn.addEventListener("click", () => {
+      clearReplyState();
+    });
+  }
+
+  if (dom.attachBoardBtn) {
+    dom.attachBoardBtn.addEventListener("click", handleAttachBoardClick);
+  }
+  if (dom.attachImageBtn) {
+    dom.attachImageBtn.addEventListener("click", handleAttachImageClick);
+  }
+  if (dom.imageFileInput) {
+    dom.imageFileInput.addEventListener("change", handleImageFileChange);
+  }
+
+  if (dom.clearBoardAttachBtn) {
+    dom.clearBoardAttachBtn.addEventListener("click", () => {
+      state.draftBoardLayoutId = null;
+      updateAttachLabels();
+    });
+  }
+
+  if (dom.clearImageAttachBtn) {
+    dom.clearImageAttachBtn.addEventListener("click", () => {
+      state.draftImageUrls = [];
+      if (dom.imageFileInput) {
+        dom.imageFileInput.value = "";
+      }
+      updateAttachLabels();
+    });
+  }
+
+  if (dom.submitCommentBtn) {
+    dom.submitCommentBtn.addEventListener("click", () => {
+      handleSubmit();
+    });
+  }
+
+  // モーダルクローズ
+  document.addEventListener("click", (e) => {
+    const target = e.target;
+    if (!(target instanceof HTMLElement)) return;
+    const closeType = target.getAttribute("data-modal-close");
+    if (closeType === "image") {
+      hideImageModal();
+    } else if (closeType === "gear") {
+      hideGearModal();
+    } else if (closeType === "profile") {
+      hideProfileModal();
     }
   });
 
-  [dom.imageModal, dom.gearModal, dom.profileModal].forEach(function (modalEl) {
-    if (!modalEl) return;
-    modalEl.addEventListener("click", function (e) {
-      if (e.target === modalEl) {
-        if (modalEl === dom.imageModal) hideModal("imageModal");
-        else if (modalEl === dom.gearModal) hideModal("gearModal");
-        else if (modalEl === dom.profileModal) hideModal("profileModal");
+  if (dom.imageModal) {
+    dom.imageModal.addEventListener("click", (e) => {
+      if (e.target === dom.imageModal) {
+        hideImageModal();
       }
     });
-  });
-}
-
-/* ===== モーダル開閉・スクロールロック ===== */
-
-let openModalCount = 0;
-
-function initModalsHidden() {
-  [dom.imageModal, dom.gearModal, dom.profileModal].forEach(function (el) {
-    if (!el) return;
-    if (!el.classList.contains("ld-modal-hidden")) {
-      el.classList.add("ld-modal-hidden");
-    }
-  });
-  document.body.style.overflow = "";
-}
-
-function showModalElement(el) {
-  if (!el) return;
-  if (el.classList.contains("ld-modal-hidden")) {
-    el.classList.remove("ld-modal-hidden");
-    openModalCount++;
   }
-  if (openModalCount > 0) {
-    document.body.style.overflow = "hidden";
+  if (dom.gearModal) {
+    dom.gearModal.addEventListener("click", (e) => {
+      if (e.target === dom.gearModal) {
+        hideGearModal();
+      }
+    });
   }
-}
-
-function hideModalElement(el) {
-  if (!el) return;
-  if (!el.classList.contains("ld-modal-hidden")) {
-    el.classList.add("ld-modal-hidden");
-    openModalCount = Math.max(0, openModalCount - 1);
-  }
-  if (openModalCount === 0) {
-    document.body.style.overflow = "";
-  }
-}
-
-function hideModal(id) {
-  if (id === "imageModal") {
-    hideModalElement(dom.imageModal);
-  } else if (id === "gearModal") {
-    hideModalElement(dom.gearModal);
-  } else if (id === "profileModal") {
-    hideModalElement(dom.profileModal);
+  if (dom.profileModal) {
+    dom.profileModal.addEventListener("click", (e) => {
+      if (e.target === dom.profileModal) {
+        hideProfileModal();
+      }
+    });
   }
 }
 
 /* =====================
- * localStorage
+ * ユーザー情報管理
  * ===================== */
 
-function loadGuestId() {
-  const key = "ld_board_guest_id";
-  let id = localStorage.getItem(key);
-  if (!id) {
-    id = generateRandomId(12);
-    localStorage.setItem(key, id);
-  }
-  state.guestId = id;
-}
-
-function loadLikeCache() {
-  const key = "ld_board_like_cache";
+function restoreUserInfoFromStorage() {
   try {
-    const raw = localStorage.getItem(key);
+    const raw = localStorage.getItem("ld_board_user_info");
     if (!raw) return;
-    const arr = JSON.parse(raw);
-    if (Array.isArray(arr)) {
-      state.likeCache = new Set(arr);
-    }
-  } catch (e) {
-    console.error("like cache parse error", e);
-  }
-}
-
-function saveLikeCache() {
-  const key = "ld_board_like_cache";
-  const arr = Array.from(state.likeCache);
-  localStorage.setItem(key, JSON.stringify(arr));
-}
-
-function loadUserInputsFromLocalStorage() {
-  const raw = localStorage.getItem("ld_board_user");
-  if (!raw) return;
-  try {
     const obj = JSON.parse(raw);
-    if (obj && typeof obj === "object") {
-      if (obj.name) dom.userNameInput.value = obj.name;
-      if (obj.tag) dom.userTagInput.value = obj.tag;
-    }
+    if (obj.name) state.userInfo.name = obj.name;
+    if (obj.tag) state.userInfo.tag = obj.tag;
+    if (obj.mode) state.userInfo.mode = obj.mode;
+    if (dom.userNameInput) dom.userNameInput.value = state.userInfo.name;
+    if (dom.userTagInput) dom.userTagInput.value = state.userInfo.tag;
   } catch (e) {
-    console.error("user local load error", e);
+    console.error("restoreUserInfo error", e);
   }
 }
 
-function saveUserInputsToLocalStorage() {
-  const payload = {
-    name: dom.userNameInput.value.trim(),
-    tag: dom.userTagInput.value.trim(),
-  };
-  localStorage.setItem("ld_board_user", JSON.stringify(payload));
-}
-
-/* =====================
- * ユーザー / 誤字ルール読み込み
- * ===================== */
-
-async function loadUsers() {
+function saveUserInfoToStorage() {
   try {
-    const result = await supabase
-      .from("ld_users")
-      .select("id, name, tag, mis_input_count, vault_level, mythic_state")
-      .order("name", { ascending: true });
-
-    if (result.error) {
-      console.error("ld_users fetch error", result.error);
-      state.users = [];
-      return;
-    }
-    state.users = result.data || [];
-  } catch (e) {
-    console.error("ld_users fetch error", e);
-    state.users = [];
-  }
-}
-
-async function loadAutofixRules() {
-  try {
-    const result = await supabase
-      .from("ld_board_autofix_words")
-      .select("pattern, replacement")
-      .order("id", { ascending: true });
-
-    if (result.error) {
-      console.warn("autofix load error", result.error.message);
-      state.autofixRules = [];
-      return;
-    }
-    state.autofixRules = result.data || [];
-  } catch (e) {
-    console.error("autofix fetch error", e);
-    state.autofixRules = [];
-  }
-}
-
-/* =====================
- * スレッド読み込み
- * ===================== */
-
-async function loadInitialThreads() {
-  state.threads = [];
-  state.hasMoreParents = true;
-  state.oldestParentCreatedAt = null;
-  state.hasDoneInitialScroll = false;
-  dom.threadsContainer.innerHTML = "";
-  dom.loadMoreStatus.textContent = "";
-  await loadMoreThreads();
-}
-
-async function loadMoreThreads() {
-  if (!state.hasMoreParents || state.isLoadingParents) return;
-
-  state.isLoadingParents = true;
-  dom.loadMoreBtn.disabled = true;
-  dom.loadMoreStatus.textContent = "読み込み中...";
-
-  const prevScrollY = window.scrollY;
-  const prevHeight = document.body.scrollHeight;
-  const hadOldest = state.oldestParentCreatedAt !== null;
-
-  try {
-    let query = supabase
-      .from("ld_board_comments")
-      .select("*")
-      .eq("board_kind", BOARD_KIND)
-      .is("parent_comment_id", null)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .limit(state.pageSize);
-
-    if (state.oldestParentCreatedAt) {
-      query = query.lt("created_at", state.oldestParentCreatedAt);
-    }
-
-    const parentsResult = await query;
-    if (parentsResult.error) {
-      console.error("load parents error", parentsResult.error);
-      showToast("コメントの読み込みに失敗しました。");
-      return;
-    }
-    const parents = parentsResult.data;
-    if (!parents || parents.length === 0) {
-      state.hasMoreParents = false;
-      dom.loadMoreStatus.textContent = "これ以上古いコメントはありません。";
-      return;
-    }
-
-    const minCreated = parents[parents.length - 1].created_at;
-    state.oldestParentCreatedAt = minCreated;
-
-    const parentIds = parents.map(function (p) {
-      return p.id;
-    });
-
-    const childrenResult = await supabase
-      .from("ld_board_comments")
-      .select("*")
-      .eq("board_kind", BOARD_KIND)
-      .in("root_comment_id", parentIds)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: true });
-
-    if (childrenResult.error) {
-      console.error("load children error", childrenResult.error);
-      showToast("子コメントの読み込みに失敗しました。");
-      return;
-    }
-
-    const children = childrenResult.data || [];
-    const threads = buildThreadsFromRaw(parents, children);
-    state.threads = state.threads.concat(threads);
-
-    applyFiltersAndRender();
-
-    // スクロール補正
-    if (!hadOldest && !state.hasDoneInitialScroll) {
-      state.hasDoneInitialScroll = true;
-      setTimeout(scrollLatestThreadToCenter, 0);
-    } else if (hadOldest) {
-      const newHeight = document.body.scrollHeight;
-      const delta = newHeight - prevHeight;
-      window.scrollTo(0, prevScrollY + delta);
-    }
-  } finally {
-    state.isLoadingParents = false;
-    dom.loadMoreBtn.disabled = !state.hasMoreParents;
-    if (!state.hasMoreParents) {
-      dom.loadMoreStatus.textContent = "最後まで読み込みました。";
-    } else {
-      dom.loadMoreStatus.textContent = "";
-    }
-  }
-}
-
-function buildThreadsFromRaw(parents, children) {
-  const byRoot = new Map();
-
-  children.forEach(function (c) {
-    if (!c.parent_comment_id) return;
-    const rootId = c.root_comment_id || c.parent_comment_id;
-    if (!rootId) return;
-    if (!byRoot.has(rootId)) byRoot.set(rootId, []);
-    byRoot.get(rootId).push(c);
-  });
-
-  const threads = parents.map(function (p) {
-    const rootId = p.id;
-    let childrenList = byRoot.get(rootId) || [];
-    childrenList = childrenList.filter(function (c) {
-      return c.id !== p.id;
-    });
-    childrenList.sort(function (a, b) {
-      return new Date(a.created_at) - new Date(b.created_at);
-    });
-
-    const allComments = [p].concat(childrenList);
-    let latest = null;
-    allComments.forEach(function (c) {
-      if (!latest || new Date(c.created_at) > new Date(latest.created_at)) {
-        latest = c;
-      }
-    });
-
-    const totalLikes = allComments.reduce(function (sum, c) {
-      return sum + (c.like_count || 0);
-    }, 0);
-
-    return {
-      rootId: rootId,
-      parent: p,
-      children: childrenList,
-      allComments: allComments,
-      latest: latest,
-      totalLikes: totalLikes,
+    const obj = {
+      name: state.userInfo.name,
+      tag: state.userInfo.tag,
+      mode: state.userInfo.mode,
     };
-  });
+    localStorage.setItem("ld_board_user_info", JSON.stringify(obj));
+  } catch (e) {
+    console.error("saveUserInfo error", e);
+  }
+}
 
-  return threads;
+function handleUserNameChange() {
+  state.userInfo.name = dom.userNameInput.value.trim();
+  saveUserInfoToStorage();
+  updateUserModeLabel();
+}
+
+function handleUserTagChange() {
+  state.userInfo.tag = dom.userTagInput.value.trim();
+  saveUserInfoToStorage();
+  updateUserModeLabel();
+}
+
+function toggleUserMode() {
+  const current = state.userInfo.mode || "guest";
+  if (current === "guest") {
+    state.userInfo.mode = "registered";
+  } else if (current === "registered") {
+    state.userInfo.mode = "imposter";
+  } else {
+    state.userInfo.mode = "guest";
+  }
+  saveUserInfoToStorage();
+  updateUserModeLabel();
+}
+
+function updateUserModeLabel() {
+  const info = getCurrentUserInfo();
+  if (!dom.userModeLabel) return;
+  if (info.mode === "registered" && info.user) {
+    dom.userModeLabel.textContent = `『${info.user.name}』として投稿`;
+  } else if (info.mode === "imposter" && info.user) {
+    dom.userModeLabel.textContent = `『${info.user.name}』への騙り投稿モード（非推奨w）`;
+  } else {
+    dom.userModeLabel.textContent = "名無しとして投稿";
+  }
+
+  if (dom.userTagInput) {
+    dom.userTagInput.disabled = info.mode !== "registered" && info.mode !== "imposter";
+  }
+}
+
+function getCurrentUserInfo() {
+  return {
+    name: state.userInfo.name.trim(),
+    tag: state.userInfo.tag.trim(),
+    mode: state.userInfo.mode || "guest",
+    user: state.userInfo.user || null,
+  };
 }
 
 /* =====================
  * フィルタ
  * ===================== */
 
-function handleFilterChange() {
-  state.filters.keyword = dom.keywordInput.value.trim();
-  state.filters.targets.body = dom.targetBody.checked;
-  state.filters.targets.title = dom.targetTitle.checked;
-  state.filters.targets.user = dom.targetUser.checked;
-  state.filters.genres.normal = dom.genreNormal.checked;
-  state.filters.genres.qa = dom.genreQa.checked;
-  state.filters.genres.report = dom.genreReport.checked;
-  state.filters.genres.announce = dom.genreAnnounce.checked;
-  state.filters.sinceMyLast = dom.filterSinceMyLast.checked;
-  state.filters.hasAttachment = dom.filterHasAttachment.checked;
-
-  updateFilterSummary();
-
-  if (state.filters.sinceMyLast) {
-    fetchLastOwnCommentTime().then(function () {
-      applyFiltersAndRender();
-    });
-  } else {
-    state.lastOwnCommentTime = null;
-    applyFiltersAndRender();
-  }
+function resetFilters() {
+  state.filters.keyword = "";
+  state.filters.targets = { body: true, title: true, user: true };
+  state.filters.genres = { normal: true, qa: true, report: true, announce: true };
+  state.filters.sinceMyLast = false;
+  state.filters.hasAttachment = false;
+  state.lastOwnCommentTime = null;
 }
 
-async function fetchLastOwnCommentTime() {
-  const info = getCurrentUserInfo();
-  if (!info || !info.isRegistered) {
-    state.lastOwnCommentTime = null;
-    return;
-  }
-  try {
-    const result = await supabase
-      .from("ld_board_comments")
-      .select("created_at")
-      .eq("board_kind", BOARD_KIND)
-      .eq("owner_name", info.name)
-      .eq("owner_tag", info.tag)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .limit(1);
-
-    if (result.error) {
-      console.error("fetchLastOwnCommentTime error", result.error);
-      state.lastOwnCommentTime = null;
-      return;
-    }
-    if (result.data && result.data.length > 0) {
-      state.lastOwnCommentTime = result.data[0].created_at;
-    } else {
-      state.lastOwnCommentTime = null;
-    }
-  } catch (e) {
-    console.error("fetchLastOwnCommentTime error", e);
-    state.lastOwnCommentTime = null;
-  }
+function initFiltersFromState() {
+  if (dom.keywordInput) dom.keywordInput.value = state.filters.keyword;
+  if (dom.targetBody) dom.targetBody.checked = state.filters.targets.body;
+  if (dom.targetTitle) dom.targetTitle.checked = state.filters.targets.title;
+  if (dom.targetUser) dom.targetUser.checked = state.filters.targets.user;
+  if (dom.genreNormal) dom.genreNormal.checked = state.filters.genres.normal;
+  if (dom.genreQa) dom.genreQa.checked = state.filters.genres.qa;
+  if (dom.genreReport) dom.genreReport.checked = state.filters.genres.report;
+  if (dom.genreAnnounce) dom.genreAnnounce.checked = state.filters.genres.announce;
+  if (dom.sinceMyLastCheckbox)
+    dom.sinceMyLastCheckbox.checked = state.filters.sinceMyLast;
+  if (dom.hasAttachmentCheckbox)
+    dom.hasAttachmentCheckbox.checked = state.filters.hasAttachment;
 }
 
 function updateFilterSummary() {
   const parts = [];
-  const keyword = state.filters.keyword.trim().toLowerCase();
-  const hasKeyword = keyword.length > 0 && anyFilterTargetSelected();
-  const t = state.filters.targets;
-
-  if (hasKeyword) {
-    const targets = [];
-    if (t.body) targets.push("本文");
-    if (t.title) targets.push("タイトル");
-    if (t.user) targets.push("ユーザー名");
-    parts.push('"' + keyword + '" in ' + targets.join("・"));
+  if (state.filters.keyword) {
+    parts.push(`「${state.filters.keyword}」`);
+  }
+  const tgts = [];
+  if (state.filters.targets.body) tgts.push("本文");
+  if (state.filters.targets.title) tgts.push("タイトル");
+  if (state.filters.targets.user) tgts.push("ユーザー名");
+  if (tgts.length > 0) {
+    parts.push(`対象: ${tgts.join("・")}`);
   }
 
-  const g = state.filters.genres;
-  const selGenres = [];
-  if (g.normal) selGenres.push("通常");
-  if (g.qa) selGenres.push("質問・相談");
-  if (g.report) selGenres.push("報告");
-  if (g.announce) selGenres.push("アナウンス");
-  if (selGenres.length !== 4) {
-    parts.push("ジャンル: " + selGenres.join("・"));
+  const gs = [];
+  if (state.filters.genres.normal) gs.push("通常");
+  if (state.filters.genres.qa) gs.push("質問");
+  if (state.filters.genres.report) gs.push("報告");
+  if (state.filters.genres.announce) gs.push("アナウンス");
+  if (gs.length > 0 && gs.length < 4) {
+    parts.push(`ジャンル: ${gs.join("・")}`);
   }
 
   if (state.filters.sinceMyLast) {
@@ -601,601 +539,997 @@ function updateFilterSummary() {
     parts.push("盤面・画像付きのみ");
   }
 
-  dom.filterSummaryText.textContent = parts.length > 0 ? parts.join(" / ") : "（すべて表示中）";
+  if (dom.currentFilterSummary) {
+    dom.currentFilterSummary.textContent =
+      parts.length > 0 ? parts.join(" / ") : "フィルタ未指定";
+  }
 }
 
-function anyFilterTargetSelected() {
-  const t = state.filters.targets;
-  return t.body || t.title || t.user;
+/* =====================
+ * データロード
+ * ===================== */
+
+async function loadInitialThreads() {
+  if (state.isInitialLoading) return;
+  state.isInitialLoading = true;
+  if (dom.initialLoading) dom.initialLoading.style.display = "block";
+  try {
+    const { data, error } = await supabaseClient
+      .from("ld_board_comments")
+      .select("*")
+      .eq("board_kind", BOARD_KIND)
+      .is("parent_comment_id", null)
+      .order("created_at", { ascending: false })
+      .limit(state.pageSize);
+    if (error) {
+      console.error("loadInitialThreads error", error);
+      showToast("コメントの取得に失敗しました。");
+      return;
+    }
+    state.rawComments = data || [];
+    state.oldestLoaded =
+      state.rawComments.length > 0
+        ? state.rawComments[state.rawComments.length - 1].created_at
+        : null;
+    state.newestLoaded =
+      state.rawComments.length > 0 ? state.rawComments[0].created_at : null;
+
+    await loadChildCommentsForParents(state.rawComments);
+
+    buildThreadsFromRaw();
+    applyFiltersAndRender();
+  } finally {
+    state.isInitialLoading = false;
+    if (dom.initialLoading) dom.initialLoading.style.display = "none";
+  }
 }
+
+async function loadMoreThreads() {
+  if (state.isLoadingMore) return;
+  if (!state.oldestLoaded) {
+    showToast("これ以上古いコメントはありません。");
+    return;
+  }
+  state.isLoadingMore = true;
+  if (dom.loadMoreStatus) dom.loadMoreStatus.textContent = "読み込み中...";
+
+  try {
+    const { data, error } = await supabaseClient
+      .from("ld_board_comments")
+      .select("*")
+      .eq("board_kind", BOARD_KIND)
+      .is("parent_comment_id", null)
+      .lt("created_at", state.oldestLoaded)
+      .order("created_at", { ascending: false })
+      .limit(state.pageSize);
+    if (error) {
+      console.error("loadMoreThreads error", error);
+      showToast("コメントの取得に失敗しました。");
+      return;
+    }
+    if (!data || data.length === 0) {
+      showToast("これ以上古いコメントはありません。");
+      if (dom.loadMoreStatus) dom.loadMoreStatus.textContent = "これ以上ありません";
+      return;
+    }
+
+    state.rawComments = state.rawComments.concat(data);
+    state.oldestLoaded =
+      state.rawComments[state.rawComments.length - 1].created_at;
+
+    await loadChildCommentsForParents(data);
+
+    buildThreadsFromRaw();
+    applyFiltersAndRender();
+  } finally {
+    state.isLoadingMore = false;
+    if (dom.loadMoreStatus) dom.loadMoreStatus.textContent = "";
+  }
+}
+
+async function loadChildCommentsForParents(parents) {
+  if (!parents || parents.length === 0) return;
+  const rootIds = parents.map((p) => p.id);
+  const { data, error } = await supabaseClient
+    .from("ld_board_comments")
+    .select("*")
+    .eq("board_kind", BOARD_KIND)
+    .in("root_comment_id", rootIds)
+    .order("created_at", { ascending: true });
+  if (error) {
+    console.error("loadChildCommentsForParents error", error);
+    showToast("子コメントの取得に失敗しました。");
+    return;
+  }
+  state.rawComments = state.rawComments.concat(data || []);
+}
+
+/* 自身の最終書込み時刻 */
+
+async function fetchLastOwnCommentTime() {
+  const info = getCurrentUserInfo();
+  if (!info.name || !info.tag) {
+    showToast("ユーザーデータベースに登録済みユーザー名＋パスを入力してください。");
+    state.lastOwnCommentTime = null;
+    return;
+  }
+  const { data: userRows, error: userError } = await supabaseClient
+    .from("ld_users")
+    .select("*")
+    .eq("name", info.name)
+    .eq("tag", info.tag)
+    .limit(1)
+    .maybeSingle();
+  if (userError) {
+    console.error("fetchLastOwnCommentTime ld_users error", userError);
+    showToast("ユーザー情報の確認に失敗しました。");
+    state.lastOwnCommentTime = null;
+    return;
+  }
+  if (!userRows) {
+    showToast("ユーザーデータベースに登録されていません。");
+    state.lastOwnCommentTime = null;
+    return;
+  }
+
+  const { data, error } = await supabaseClient
+    .from("ld_board_comments")
+    .select("created_at")
+    .eq("board_kind", BOARD_KIND)
+    .eq("owner_name", info.name)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    console.error("fetchLastOwnCommentTime comments error", error);
+    showToast("最終書込み時刻の取得に失敗しました。");
+    state.lastOwnCommentTime = null;
+    return;
+  }
+
+  state.lastOwnCommentTime = data ? data.created_at : null;
+}
+
+/* =====================
+ * スレッド構築
+ * ===================== */
+
+function buildThreadsFromRaw() {
+  const parents = state.rawComments.filter((c) => !c.parent_comment_id);
+  const children = state.rawComments.filter((c) => !!c.parent_comment_id);
+
+  const childrenByRoot = {};
+  for (const child of children) {
+    if (!child.root_comment_id) continue;
+    if (!childrenByRoot[child.root_comment_id]) {
+      childrenByRoot[child.root_comment_id] = [];
+    }
+    childrenByRoot[child.root_comment_id].push(child);
+  }
+
+  const threads = [];
+  for (const parent of parents) {
+    const rootId = parent.id;
+    const ch = childrenByRoot[rootId] || [];
+    ch.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+    const all = [parent].concat(ch);
+    let latest = parent;
+    let totalLikes = 0;
+    for (const c of all) {
+      totalLikes += c.like_count || 0;
+      if (new Date(c.created_at) > new Date(latest.created_at)) {
+        latest = c;
+      }
+    }
+
+    threads.push({
+      rootId,
+      parent,
+      children: ch,
+      allComments: all,
+      latest,
+      totalLikes,
+      showAllChildren: false,
+    });
+  }
+
+  threads.sort(
+    (a, b) => new Date(a.latest.created_at) - new Date(b.latest.created_at)
+  );
+
+  state.threads = threads;
+}
+
+/* =====================
+ * フィルタ適用 & レンダリング
+ * ===================== */
 
 function applyFiltersAndRender() {
-  const keyword = state.filters.keyword.trim().toLowerCase();
-  const hasKeyword = keyword.length > 0 && anyFilterTargetSelected();
+  let threads = state.threads.slice();
 
-  const genres = state.filters.genres;
-  const sinceMyLast = state.filters.sinceMyLast;
-  const hasAttachmentOnly = state.filters.hasAttachment;
+  const f = state.filters;
 
-  const lastOwnTime = state.lastOwnCommentTime ? new Date(state.lastOwnCommentTime).getTime() : null;
-
-  const filtered = state.threads.filter(function (thread) {
-    const parent = thread.parent;
-
-    let genre = (parent.genre || "normal").toLowerCase();
-    if (genre === "recruit") genre = "normal";
-    if (
-      (genre === "normal" && !genres.normal) ||
-      (genre === "qa" && !genres.qa) ||
-      (genre === "report" && !genres.report) ||
-      (genre === "announce" && !genres.announce)
-    ) {
-      return false;
-    }
-
-    if (sinceMyLast && lastOwnTime !== null) {
-      const latestTime = new Date(thread.latest.created_at).getTime();
-      if (latestTime < lastOwnTime) return false;
-    }
-
-    if (hasAttachmentOnly) {
-      const hasAttach = thread.allComments.some(function (c) {
-        return c.board_layout_id || c.image_url || c.image_url_left || c.image_url_right;
-      });
-      if (!hasAttach) return false;
-    }
-
-    if (hasKeyword) {
+  if (f.keyword) {
+    const kw = f.keyword.toLowerCase();
+    threads = threads.filter((t) => {
+      const parent = t.parent;
       let hit = false;
-
-      if (state.filters.targets.body && !hit) {
-        for (let i = 0; i < thread.allComments.length; i++) {
-          const c = thread.allComments[i];
-          if (c.body && c.body.toLowerCase().indexOf(keyword) !== -1) {
+      if (f.targets.title && parent.thread_title) {
+        hit = parent.thread_title.toLowerCase().includes(kw);
+      }
+      if (!hit && f.targets.body) {
+        for (const c of t.allComments) {
+          if (c.body && c.body.toLowerCase().includes(kw)) {
             hit = true;
             break;
           }
         }
       }
-
-      if (state.filters.targets.title && !hit) {
-        const title = parent.thread_title || "";
-        if (title.toLowerCase().indexOf(keyword) !== -1) hit = true;
+      if (!hit && f.targets.user) {
+        for (const c of t.allComments) {
+          if (c.owner_name && c.owner_name.toLowerCase().includes(kw)) {
+            hit = true;
+            break;
+          }
+        }
       }
+      return hit;
+    });
+  }
 
-      if (state.filters.targets.user && !hit) {
-        const name = parent.owner_name || "";
-        if (name.toLowerCase().indexOf(keyword) !== -1) hit = true;
-      }
-
-      if (!hit) return false;
-    }
-
+  threads = threads.filter((t) => {
+    const g = t.parent.genre || "normal";
+    if (g === "normal" && !f.genres.normal) return false;
+    if (g === "qa" && !f.genres.qa) return false;
+    if (g === "report" && !f.genres.report) return false;
+    if (g === "announce" && !f.genres.announce) return false;
     return true;
   });
 
-  // タイムライン：古い → 新しい（最新が一番下）
-  filtered.sort(function (a, b) {
-    return new Date(a.latest.created_at) - new Date(b.latest.created_at);
-  });
+  if (f.sinceMyLast && state.lastOwnCommentTime) {
+    const baseTime = new Date(state.lastOwnCommentTime);
+    threads = threads.filter(
+      (t) => new Date(t.latest.created_at) >= baseTime
+    );
+  }
 
-  renderThreads(filtered);
+  if (f.hasAttachment) {
+    threads = threads.filter((t) => {
+      return t.allComments.some(
+        (c) => c.board_layout_id || c.image_url_left || c.image_url_right
+      );
+    });
+  }
+
+  state.displayedThreads = threads;
+  renderThreads();
 }
 
 /* =====================
- * レンダリング
+ * スレッド描画
  * ===================== */
 
-function renderThreads(threads) {
-  dom.threadsContainer.innerHTML = "";
-  threads.forEach(function (thread) {
+function renderThreads() {
+  if (!dom.threadContainer) return;
+  dom.threadContainer.innerHTML = "";
+
+  if (state.displayedThreads.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "initial-loading";
+    empty.textContent = "条件に一致するコメントがありません。";
+    dom.threadContainer.appendChild(empty);
+    return;
+  }
+
+  for (const thread of state.displayedThreads) {
     const card = renderThreadCard(thread);
-    dom.threadsContainer.appendChild(card);
-  });
+    dom.threadContainer.appendChild(card);
+  }
 }
 
-function renderThreadCard(thread) {
-  const parent = thread.parent;
-  const children = thread.children;
-  const totalLikes = thread.totalLikes;
+/* スレッドカード */
 
+function renderThreadCard(thread) {
   const card = document.createElement("article");
   card.className = "thread-card";
-  if (children.length > 0) {
-    card.classList.add("thread-card--thread");
+
+  const headerEl = document.createElement("div");
+  headerEl.className = "thread-header";
+
+  const titleArea = document.createElement("div");
+  titleArea.className = "thread-title-area";
+
+  const parent = thread.parent;
+
+  const genre = parent.genre || "normal";
+  let genreLabel = "";
+  let genreClass = "";
+  if (genre === "qa") {
+    genreLabel = "質問・相談";
+    genreClass = "thread-genre-badge--qa";
+  } else if (genre === "report") {
+    genreLabel = "報告";
+    genreClass = "thread-genre-badge--report";
+  } else if (genre === "announce") {
+    genreLabel = "アナウンス";
+    genreClass = "thread-genre-badge--announce";
   }
-  card.dataset.threadId = thread.rootId;
 
-  if (parent.thread_title || parent.genre) {
-    const titleRow = document.createElement("div");
-    titleRow.className = "thread-title-row";
+  if (genre !== "normal") {
+    const badge = document.createElement("span");
+    badge.className = `thread-genre-badge ${genreClass}`;
+    badge.textContent = genreLabel || "通常";
+    titleArea.appendChild(badge);
+  }
 
-    const leftBox = document.createElement("div");
-    leftBox.style.display = "flex";
-    leftBox.style.alignItems = "center";
-    leftBox.style.gap = "4px";
+  if (parent.thread_title) {
+    const titleEl = document.createElement("div");
+    titleEl.className = "thread-title";
+    titleEl.textContent = parent.thread_title;
+    titleArea.appendChild(titleEl);
+  }
 
-    if (parent.genre && parent.genre !== "normal") {
-      const badge = document.createElement("span");
-      badge.className = "thread-genre-badge";
-      const genreKey = (parent.genre || "").toLowerCase();
-      if (genreKey === "qa") {
-        badge.textContent = "質問";
-        badge.classList.add("qa");
-      } else if (genreKey === "report") {
-        badge.textContent = "報告";
-        badge.classList.add("report");
-      } else if (genreKey === "announce") {
-        badge.textContent = "アナウンス";
-        badge.classList.add("announce");
-      } else {
-        badge.textContent = genreKey;
+  const metaEl = document.createElement("div");
+  metaEl.className = "thread-meta";
+  metaEl.textContent = `最終更新: ${formatDateTime(
+    thread.latest.created_at
+  )}`;
+  titleArea.appendChild(metaEl);
+
+  headerEl.appendChild(titleArea);
+
+  if (parent.thread_title && thread.totalLikes > 0) {
+    const likeSummary = document.createElement("div");
+    likeSummary.className = "thread-like-summary";
+    likeSummary.textContent = `(・∀・)ｲｲ!!合計: ${thread.totalLikes}`;
+    headerEl.appendChild(likeSummary);
+  }
+
+  card.appendChild(headerEl);
+
+  const list = document.createElement("div");
+  list.className = "comment-list";
+
+  const parentCard = renderCommentCard(thread, parent, 1, true);
+  list.appendChild(parentCard);
+
+  if (thread.children.length > 0) {
+    if (thread.showAllChildren) {
+      let localNo = 2;
+      for (const child of thread.children) {
+        const childCard = renderCommentCard(thread, child, localNo, false);
+        list.appendChild(childCard);
+        localNo++;
       }
-      leftBox.appendChild(badge);
-    }
-
-    if (parent.thread_title) {
-      const titleText = document.createElement("div");
-      titleText.className = "thread-title-text";
-      titleText.textContent = parent.thread_title;
-      leftBox.appendChild(titleText);
-    }
-
-    titleRow.appendChild(leftBox);
-
-    const rightBox = document.createElement("div");
-    rightBox.className = "thread-title-likes";
-
-    if (parent.thread_title && totalLikes > 0) {
-      rightBox.textContent = "(・∀・)ｲｲ!!合計: " + totalLikes;
     } else {
-      rightBox.textContent = "";
-    }
+      const lastChild = thread.children[thread.children.length - 1];
+      const childCard = renderCommentCard(
+        thread,
+        lastChild,
+        thread.children.length + 1,
+        false
+      );
+      list.appendChild(childCard);
 
-    titleRow.appendChild(rightBox);
-    card.appendChild(titleRow);
-  }
-
-  const parentBlock = renderCommentBlock({
-    thread: thread,
-    comment: parent,
-    isParent: true,
-    localNo: children.length > 0 ? 1 : null,
-    forceNoNumber: children.length === 0,
-  });
-  card.appendChild(parentBlock);
-
-  const childCount = children.length;
-  if (childCount > 0) {
-    const childrenHeader = document.createElement("div");
-    childrenHeader.className = "children-header-row";
-
-    const toggleSpan = document.createElement("span");
-    toggleSpan.className = "children-toggle";
-    toggleSpan.textContent = "▼子コメント(全" + childCount + "件)を開く";
-
-    childrenHeader.appendChild(toggleSpan);
-    card.appendChild(childrenHeader);
-
-    const childrenContainer = document.createElement("div");
-    childrenContainer.className = "children-container";
-    card.appendChild(childrenContainer);
-
-    let isExpanded = false;
-
-    function updateChildrenView() {
-      childrenContainer.innerHTML = "";
-      if (!isExpanded) {
-        const last = children[children.length - 1];
-        const block = renderCommentBlock({
-          thread: thread,
-          comment: last,
-          isParent: false,
-          forceNoNumber: true,
+      if (thread.children.length > 1) {
+        const toggle = document.createElement("div");
+        toggle.className = "thread-children-toggle";
+        toggle.textContent = `▼子コメント(全${thread.children.length}件)を開く`;
+        toggle.addEventListener("click", () => {
+          thread.showAllChildren = true;
+          renderThreads();
         });
-        childrenContainer.appendChild(block);
-        toggleSpan.textContent = "▼子コメント(全" + childCount + "件)を開く";
-      } else {
-        const all = [thread.parent].concat(thread.children);
-        all.forEach(function (c, index) {
-          if (index === 0) return;
-          const block = renderCommentBlock({
-            thread: thread,
-            comment: c,
-            isParent: false,
-            localNo: index + 1,
-            forceNoNumber: false,
-          });
-          childrenContainer.appendChild(block);
-        });
-        toggleSpan.textContent = "▲子コメント(全" + childCount + "件)を閉じる";
+        list.appendChild(toggle);
       }
     }
-
-    toggleSpan.addEventListener("click", function () {
-      isExpanded = !isExpanded;
-      updateChildrenView();
-    });
-
-    updateChildrenView();
   }
+
+  card.appendChild(list);
 
   return card;
 }
 
-function renderCommentBlock(options) {
-  const thread = options.thread;
-  const comment = options.comment;
-  const localNo = options.localNo;
-  const forceNoNumber = options.forceNoNumber;
+/* コメントカード */
 
-  const block = document.createElement("div");
-  block.className = "comment-block";
-  block.dataset.commentId = comment.id;
+function renderCommentCard(thread, comment, localNo, isParent) {
+  const card = document.createElement("div");
+  card.className = "comment-card " + (isParent ? "comment-card--parent" : "comment-card--child");
 
-  const metaRow = document.createElement("div");
-  metaRow.className = "comment-meta-row";
-  metaRow.dataset.commentId = comment.id;
+  const header = document.createElement("div");
+  header.className = "comment-header";
 
-  // 番号
-  const noSpan = document.createElement("span");
-  noSpan.className = "comment-no";
-  if (!forceNoNumber && localNo != null) {
-    noSpan.textContent = localNo + ":";
+  const headerLeft = document.createElement("div");
+  headerLeft.className = "comment-header-left";
+
+  const numberEl = document.createElement("span");
+  numberEl.className = "comment-number";
+  if (isParent && thread.children.length > 0) {
+    numberEl.textContent = "No.1";
+  } else if (!isParent && thread.children.length > 0) {
+    numberEl.textContent = `No.${localNo}`;
   } else {
-    noSpan.textContent = "";
+    numberEl.textContent = "";
   }
-  metaRow.appendChild(noSpan);
+  headerLeft.appendChild(numberEl);
 
-  // 名前
-  const nameSpan = document.createElement("span");
-  nameSpan.className = "comment-name";
-  const nameDisplay = getDisplayNameForComment(comment);
-  nameSpan.textContent = nameDisplay.text;
-  if (nameDisplay.className && nameDisplay.className.trim()) {
-    nameSpan.className += " " + nameDisplay.className.trim();
+  const nameEl = document.createElement("span");
+  nameEl.className = "comment-owner-name";
+
+  const nameInfo = buildDisplayNameForComment(comment);
+
+  nameEl.textContent = nameInfo.display;
+  nameEl.className +=
+    " " +
+    (nameInfo.kind === "registered"
+      ? "comment-owner-name--registered"
+      : nameInfo.kind === "imposter"
+      ? "comment-owner-name--imposter"
+      : "");
+
+  headerLeft.appendChild(nameEl);
+
+  if (nameInfo.tagSuffix) {
+    const tagEl = document.createElement("span");
+    tagEl.className = "comment-owner-tag";
+    tagEl.textContent = nameInfo.tagSuffix;
+    headerLeft.appendChild(tagEl);
   }
-  metaRow.appendChild(nameSpan);
 
-  // プロフボタン
-  const profBtn = document.createElement("button");
-  profBtn.className = "comment-prof-link";
-  profBtn.textContent = "プロフ";
-  if (nameDisplay.showProfile) {
-    profBtn.style.display = "inline-block";
-    profBtn.addEventListener("click", function () {
-      openUserProfile(nameDisplay.userName, nameDisplay.userTag);
+  header.appendChild(headerLeft);
+
+  const headerRight = document.createElement("div");
+  headerRight.className = "comment-header-right";
+
+  const timeEl = document.createElement("span");
+  timeEl.className = "comment-time";
+  timeEl.textContent = formatDateTime(comment.created_at);
+  headerRight.appendChild(timeEl);
+
+  if (nameInfo.kind === "registered" && nameInfo.user) {
+    const profileBtn = document.createElement("button");
+    profileBtn.className = "profile-btn";
+    profileBtn.type = "button";
+    profileBtn.textContent = "プロフ";
+    profileBtn.addEventListener("click", () => {
+      openProfileModal(nameInfo.user, comment);
     });
-  } else {
-    profBtn.style.display = "none";
+    headerRight.appendChild(profileBtn);
   }
-  metaRow.appendChild(profBtn);
 
-  // タイムスタンプ
-  const tsSpan = document.createElement("span");
-  tsSpan.className = "comment-timestamp";
-  tsSpan.textContent = formatTimestamp(comment.created_at);
-  metaRow.appendChild(tsSpan);
-
-  // 各コメントのイイ数
-  const likeSpan = document.createElement("span");
-  likeSpan.className = "comment-like-count";
-  if (comment.like_count && comment.like_count > 0) {
-    likeSpan.textContent = "(・∀・)ｲｲ!!: " + comment.like_count;
-  } else {
-    likeSpan.textContent = "";
-  }
-  metaRow.appendChild(likeSpan);
-
-  // 歯車
   const gearBtn = document.createElement("button");
-  gearBtn.className = "comment-gear-btn";
+  gearBtn.className = "gear-btn";
   gearBtn.type = "button";
-  gearBtn.textContent = "⚙";
-  gearBtn.addEventListener("click", function () {
-    openGearModal(comment, thread);
+  gearBtn.textContent = "歯車";
+  gearBtn.addEventListener("click", () => {
+    openGearModal(thread, comment);
   });
-  metaRow.appendChild(gearBtn);
+  headerRight.appendChild(gearBtn);
 
-  block.appendChild(metaRow);
+  header.appendChild(headerRight);
 
-  // 本文
+  card.appendChild(header);
+
   const bodyEl = document.createElement("div");
   bodyEl.className = "comment-body";
-  bodyEl.innerHTML = convertAnchorsToLinks(escapeHtml(comment.body || ""));
-  block.appendChild(bodyEl);
 
-  // 添付（盤面・画像）
-  if (comment.board_layout_id || comment.image_url || comment.image_url_left || comment.image_url_right) {
-    const attachRow = document.createElement("div");
-    attachRow.className = "comment-attachments";
+  const html = buildCommentBodyHtml(comment.body, thread);
+  bodyEl.innerHTML = html;
 
-    if (comment.board_layout_id) {
-      const boardBtn = document.createElement("button");
-      boardBtn.className = "attachment-pill";
-      boardBtn.type = "button";
-      boardBtn.textContent = "盤面を開く";
-      boardBtn.addEventListener("click", function () {
-        openBoardLayout(comment.board_layout_id);
-      });
-      attachRow.appendChild(boardBtn);
-    }
+  card.appendChild(bodyEl);
 
-    const thumbUrls = [];
-    if (comment.image_url_left) thumbUrls.push(comment.image_url_left);
-    if (comment.image_url_right) thumbUrls.push(comment.image_url_right);
-    if (thumbUrls.length === 0 && comment.image_url) thumbUrls.push(comment.image_url);
-
-    thumbUrls.slice(0, 2).forEach(function (url) {
-      const img = document.createElement("img");
-      img.className = "thumb-image";
-      img.src = url;
-      img.alt = "添付画像";
-      img.addEventListener("click", function () {
-        openImageModal(url);
-      });
-      attachRow.appendChild(img);
+  const lineCount = (comment.body || "").split(/\r?\n/).length;
+  if (lineCount > 3) {
+    bodyEl.classList.add("comment-body--collapsed");
+    const toggle = document.createElement("div");
+    toggle.className = "longtext-toggle";
+    toggle.textContent = "▼長文表示(タップ)";
+    toggle.addEventListener("click", () => {
+      const collapsed = bodyEl.classList.contains("comment-body--collapsed");
+      bodyEl.classList.toggle("comment-body--collapsed", !collapsed);
+      toggle.textContent = collapsed
+        ? "▲折りたたむ(タップ)"
+        : "▼長文表示(タップ)";
     });
-
-    block.appendChild(attachRow);
+    card.appendChild(toggle);
   }
 
-  // 本文フッター（折りたたみ＋返信/イイ）
-  const footerRow = document.createElement("div");
-  footerRow.className = "comment-footer-row";
+  const attachArea = document.createElement("div");
+  attachArea.className = "comment-attachments";
 
-  const toggleEl = document.createElement("div");
-  toggleEl.className = "comment-body-toggle";
-  toggleEl.textContent = "";
-  footerRow.appendChild(toggleEl);
+  if (comment.board_layout_id) {
+    const btn = document.createElement("button");
+    btn.className = "board-link-btn";
+    btn.type = "button";
+    btn.textContent = "盤面を開く";
+    btn.addEventListener("click", () => {
+      const url =
+        "ld_board_editor_drag_v5.html?layout_id=" +
+        encodeURIComponent(comment.board_layout_id) +
+        "&mode=view";
+      window.open(url, "_blank");
+    });
+    attachArea.appendChild(btn);
+  }
 
-  const actions = document.createElement("div");
-  actions.className = "comment-actions";
+  const leftUrl = comment.image_url_left || comment.image_url || null;
+  const rightUrl = comment.image_url_right || null;
+  if (leftUrl) {
+    const img = document.createElement("img");
+    img.src = leftUrl;
+    img.alt = "添付画像1";
+    img.className = "image-thumb";
+    img.addEventListener("click", () => {
+      showImageModal(leftUrl);
+    });
+    attachArea.appendChild(img);
+  }
+  if (rightUrl) {
+    const img2 = document.createElement("img");
+    img2.src = rightUrl;
+    img2.alt = "添付画像2";
+    img2.className = "image-thumb";
+    img2.addEventListener("click", () => {
+      showImageModal(rightUrl);
+    });
+    attachArea.appendChild(img2);
+  }
+
+  if (attachArea.children.length > 0) {
+    card.appendChild(attachArea);
+  }
+
+  const footer = document.createElement("div");
+  footer.className = "comment-footer";
+
+  const footerLeft = document.createElement("div");
+  footerLeft.className = "comment-footer-left";
+  footer.appendChild(footerLeft);
+
+  const footerRight = document.createElement("div");
+  footerRight.className = "comment-footer-right";
 
   const replyLink = document.createElement("span");
-  replyLink.className = "comment-action-link";
-  replyLink.textContent = "[ 返信 ]";
-  replyLink.addEventListener("click", function () {
-    const all = [thread.parent].concat(thread.children);
-    let localNoForThis = 1;
-    for (let i = 0; i < all.length; i++) {
-      if (all[i].id === comment.id) {
-        localNoForThis = i + 1;
-        break;
-      }
-    }
-    startReply(thread, comment, localNoForThis);
+  replyLink.className = "comment-action";
+  replyLink.textContent = "返信";
+  replyLink.addEventListener("click", () => {
+    startReply(thread, comment, localNo);
   });
+  footerRight.appendChild(replyLink);
 
   const likeLink = document.createElement("span");
-  likeLink.className = "comment-action-link";
+  likeLink.className = "comment-action";
   likeLink.textContent = "(・∀・)ｲｲ!!";
-  likeLink.addEventListener("click", function () {
-    handleLike(comment);
+  likeLink.addEventListener("click", () => {
+    handleLikeClick(thread, comment);
   });
+  footerRight.appendChild(likeLink);
 
-  actions.appendChild(replyLink);
-  actions.appendChild(likeLink);
-  footerRow.appendChild(actions);
+  if (comment.like_count && comment.like_count > 0) {
+    const likeCountEl = document.createElement("span");
+    likeCountEl.className = "comment-like-count";
+    likeCountEl.textContent = `(・∀・)ｲｲ!!: ${comment.like_count}`;
+    footerRight.appendChild(likeCountEl);
+  }
 
-  block.appendChild(footerRow);
+  footer.appendChild(footerRight);
 
-  initBodyCollapse(bodyEl, toggleEl);
+  card.appendChild(footer);
 
-  return block;
+  return card;
 }
 
-function initBodyCollapse(bodyEl, toggleEl) {
-  toggleEl.style.display = "none";
+/* 表示名 */
 
-  window.requestAnimationFrame(function () {
-    const style = window.getComputedStyle(bodyEl);
-    const lineHeight = parseFloat(style.lineHeight) || 16;
-    const lines = Math.round(bodyEl.scrollHeight / lineHeight);
+function buildDisplayNameForComment(comment) {
+  const name = comment.owner_name || "";
+  const tag = comment.owner_tag || null;
+  const guestId = comment.guest_daily_id || "";
 
-    if (lines <= 3) {
-      bodyEl.classList.remove("collapsible");
-      bodyEl.classList.remove("collapsed");
-      toggleEl.style.display = "none";
-      return;
-    }
+  const info = getCurrentUserInfo();
+  const myName = info.name;
+  const myTag = info.tag;
 
-    bodyEl.classList.add("collapsible");
-    bodyEl.classList.add("collapsed");
-    toggleEl.style.display = "inline";
-    let isCollapsed = true;
-    toggleEl.textContent = "▼長文表示(タップ)";
-    toggleEl.addEventListener("click", function () {
-      isCollapsed = !isCollapsed;
-      if (isCollapsed) {
-        bodyEl.classList.add("collapsed");
-        toggleEl.textContent = "▼長文表示(タップ)";
-      } else {
-        bodyEl.classList.remove("collapsed");
-        toggleEl.textContent = "▲折りたたむ(タップ)";
-      }
-    });
-  });
-}
-
-/* =====================
- * 名前表示 / プロフ
- * ===================== */
-
-function getDisplayNameForComment(comment) {
-  const guestId = comment.guest_daily_id || "--";
-  const ownerName = comment.owner_name || "";
-  const ownerTag = comment.owner_tag || null;
-
-  const base = {
-    text: "",
-    className: "",
-    showProfile: false,
-    userName: ownerName,
-    userTag: ownerTag,
-  };
-
-  if (!ownerName || ownerName === "名無し") {
-    base.text = "名無しの傭兵員 " + guestId;
-    return base;
-  }
-
-  const user = state.users.find(function (u) {
-    return u.name === ownerName;
-  });
-
-  if (ownerTag && user && user.tag === ownerTag) {
-    base.text = "★" + ownerName;
-    base.className = "registered";
-    base.showProfile = true;
-    return base;
-  }
-
-  if (!ownerTag && user) {
-    base.text = ownerName + "(騙りw " + guestId + ")";
-    base.className = "imposter";
-    base.showProfile = false;
-    return base;
-  }
-
-  base.text = ownerName + " " + guestId;
-  return base;
-}
-
-async function openUserProfile(name, tag) {
-  if (!name) {
-    showToast("ユーザー名が不明です");
-    return;
-  }
-
-  const body = dom.profileModalBody;
-  body.innerHTML = "";
-
-  try {
-    let query = supabase.from("ld_users").select("name, tag, vault_level, mythic_state").eq("name", name);
-    if (tag) query = query.eq("tag", tag);
-    const { data, error } = await query.maybeSingle();
-
-    if (error || !data) {
-      const text = document.createElement("div");
-      text.className = "profile-meta";
-      text.textContent = "このユーザーはまだユーザーデータベースに登録されていません。";
-      body.appendChild(text);
-      showModalElement(dom.profileModal);
-      return;
-    }
-
-    const meta = document.createElement("div");
-    meta.className = "profile-meta";
-    meta.textContent = "★" + data.name + " / 金庫Lv" + (data.vault_level || "?");
-    body.appendChild(meta);
-
-    const note = document.createElement("div");
-    note.className = "profile-note";
-    note.textContent = "所持している神話ユニット（Lv・専用👑の有無）";
-    body.appendChild(note);
-
-    const mythicState = data.mythic_state || {};
-    const ids = Object.keys(mythicState).sort(function (a, b) {
-      return Number(a) - Number(b);
-    });
-
-    if (!ids.length) {
-      const t = document.createElement("div");
-      t.className = "profile-note";
-      t.textContent = "神話ユニットの登録はまだありません。";
-      body.appendChild(t);
-    } else {
-      const grid = document.createElement("div");
-      grid.className = "profile-grid";
-      ids.forEach(function (id) {
-        const info = mythicState[id] || {};
-        const cell = document.createElement("div");
-        cell.className = "profile-unit";
-        const crown = info.treasure ? "👑" : "";
-        cell.textContent = id.slice(-2) + crown;
-        cell.title = "ID:" + id + " Lv" + (info.level || "?") + " " + (info.form || "");
-        grid.appendChild(cell);
-      });
-      body.appendChild(grid);
-    }
-
-    showModalElement(dom.profileModal);
-  } catch (e) {
-    console.error("openUserProfile error", e);
-    const text = document.createElement("div");
-    text.className = "profile-meta";
-    text.textContent = "プロフィール情報の取得に失敗しました。";
-    body.appendChild(text);
-    showModalElement(dom.profileModal);
-  }
-}
-
-/* =====================
- * ユーザー入力の状態
- * ===================== */
-
-function getCurrentUserInfo() {
-  const name = dom.userNameInput.value.trim();
-  const tag = dom.userTagInput.value.trim();
-
-  if (!name) {
+  if (!name || name === "名無し") {
     return {
-      mode: "anonymous",
-      label: "名無しとして投稿",
-      isRegistered: false,
-      name: "",
-      tag: "",
+      display: `名無しの傭兵員 ${guestId || "????"}`,
+      tagSuffix: "",
+      kind: "guest",
+      user: null,
     };
   }
 
-  const user = state.users.find(function (u) {
-    return u.name === name;
-  });
-
-  if (!user) {
+  if (myName && myTag && name === myName && tag === myTag && info.user) {
     return {
-      mode: "unregistered",
-      label: "「" + name + "」として投稿",
-      isRegistered: false,
-      name: name,
-      tag: tag,
+      display: `★${name}`,
+      tagSuffix: "",
+      kind: "registered",
+      user: info.user,
     };
   }
 
-  if (tag && tag === user.tag) {
+  if (name === myName && (!tag || tag !== myTag)) {
     return {
-      mode: "registered",
-      label: "「" + name + "」として投稿",
-      isRegistered: true,
-      name: name,
-      tag: tag,
-      user: user,
+      display: name,
+      tagSuffix: `(騙りw ${guestId || "????"})`,
+      kind: "imposter",
+      user: info.user || null,
     };
   }
 
   return {
-    mode: "imposter",
-    label: "「" + name + "」として投稿",
-    isRegistered: false,
-    name: name,
-    tag: tag,
-    user: user,
+    display: `${name}`,
+    tagSuffix: guestId ? ` ${guestId}` : "",
+    kind: "other",
+    user: null,
   };
 }
 
-function updateUserStatusLabel() {
-  const info = getCurrentUserInfo();
-  dom.userStatusLabel.textContent = info.label;
+/* 本文HTML生成 */
+
+function buildCommentBodyHtml(body, thread) {
+  if (!body) return "";
+  let escaped = escapeHtml(body);
+
+  escaped = escaped.replace(/&gt;&gt;(\d+)/g, (match, numStr) => {
+    const num = parseInt(numStr, 10);
+    if (!Number.isInteger(num) || num <= 0) return match;
+    return `<a href="#" class="comment-anchor-link" data-anchor-no="${num}">&gt;&gt;${num}</a>`;
+  });
+
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = escaped;
+
+  const links = wrapper.querySelectorAll("a.comment-anchor-link");
+  links.forEach((a) => {
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      const noStr = a.getAttribute("data-anchor-no");
+      const num = parseInt(noStr, 10);
+      if (!Number.isInteger(num)) return;
+      scrollToLocalNo(thread.rootId, num);
+    });
+  });
+
+  return wrapper.innerHTML;
 }
 
-function updateNameTagEnabled() {
-  const hasName = dom.userNameInput.value.trim().length > 0;
-  if (!hasName) {
-    dom.userTagInput.value = "";
-    dom.userTagInput.disabled = true;
-  } else {
-    dom.userTagInput.disabled = false;
+function scrollToLocalNo(rootId, localNo) {
+  const cards = dom.threadContainer.querySelectorAll(".thread-card");
+  for (const card of cards) {
+    const commentCards = card.querySelectorAll(".comment-card");
+    for (const c of commentCards) {
+      const numEl = c.querySelector(".comment-number");
+      if (!numEl) continue;
+      if (numEl.textContent === `No.${localNo}`) {
+        const rect = c.getBoundingClientRect();
+        window.scrollBy({
+          top: rect.top - 80,
+          behavior: "smooth",
+        });
+        return;
+      }
+    }
+  }
+}
+
+/* =====================
+ * モーダル
+ * ===================== */
+
+function showImageModal(url) {
+  if (!dom.imageModal || !dom.modalImage) return;
+  dom.modalImage.src = url;
+  dom.imageModal.classList.remove("ld-modal-hidden");
+}
+
+function hideImageModal() {
+  if (!dom.imageModal || !dom.modalImage) return;
+  dom.modalImage.src = "";
+  dom.imageModal.classList.add("ld-modal-hidden");
+}
+
+function openGearModal(thread, comment) {
+  if (!dom.gearModal || !dom.gearModalBody) return;
+  dom.gearModalBody.innerHTML = "";
+
+  const section1 = document.createElement("div");
+  section1.className = "gear-section";
+
+  const title1 = document.createElement("div");
+  title1.className = "gear-section-title";
+  title1.textContent = "スレッドのタイトル";
+  section1.appendChild(title1);
+
+  const fieldRow = document.createElement("div");
+  fieldRow.className = "gear-field-row";
+
+  const label = document.createElement("label");
+  label.textContent = "タイトル";
+  fieldRow.appendChild(label);
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = thread.parent.thread_title || "";
+  fieldRow.appendChild(input);
+
+  section1.appendChild(fieldRow);
+
+  const btnRow1 = document.createElement("div");
+  btnRow1.className = "gear-btn-row";
+
+  const saveTitleBtn = document.createElement("button");
+  saveTitleBtn.type = "button";
+  saveTitleBtn.className = "gear-primary-btn";
+  saveTitleBtn.textContent = "タイトル保存";
+  saveTitleBtn.addEventListener("click", async () => {
+    await updateThreadTitle(thread, input.value);
+  });
+  btnRow1.appendChild(saveTitleBtn);
+
+  section1.appendChild(btnRow1);
+
+  dom.gearModalBody.appendChild(section1);
+
+  const section2 = document.createElement("div");
+  section2.className = "gear-section";
+
+  const title2 = document.createElement("div");
+  title2.className = "gear-section-title";
+  title2.textContent = "スレッドのジャンル";
+  section2.appendChild(title2);
+
+  const rowInline = document.createElement("div");
+  rowInline.className = "gear-row-inline gear-radio-group";
+
+  const genres = [
+    { value: "normal", label: "通常" },
+    { value: "qa", label: "質問・相談" },
+    { value: "report", label: "報告" },
+    { value: "announce", label: "アナウンス" },
+  ];
+  const currentGenre = thread.parent.genre || "normal";
+
+  for (const g of genres) {
+    const lab = document.createElement("label");
+    const r = document.createElement("input");
+    r.type = "radio";
+    r.name = "gearGenre";
+    r.value = g.value;
+    if (g.value === currentGenre) {
+      r.checked = true;
+    }
+    lab.appendChild(r);
+    lab.appendChild(document.createTextNode(g.label));
+    rowInline.appendChild(lab);
+  }
+
+  section2.appendChild(rowInline);
+
+  const btnRow2 = document.createElement("div");
+  btnRow2.className = "gear-btn-row";
+
+  const saveGenreBtn = document.createElement("button");
+  saveGenreBtn.type = "button";
+  saveGenreBtn.className = "gear-primary-btn";
+  saveGenreBtn.textContent = "ジャンル保存";
+  saveGenreBtn.addEventListener("click", async () => {
+    const radios = dom.gearModalBody.querySelectorAll('input[name="gearGenre"]');
+    let selected = currentGenre;
+    for (const r of radios) {
+      if (r.checked) {
+        selected = r.value;
+        break;
+      }
+    }
+    await updateThreadGenre(thread, selected);
+  });
+  btnRow2.appendChild(saveGenreBtn);
+
+  section2.appendChild(btnRow2);
+
+  dom.gearModalBody.appendChild(section2);
+
+  const section3 = document.createElement("div");
+  section3.className = "gear-section";
+
+  const title3 = document.createElement("div");
+  title3.className = "gear-section-title";
+  title3.textContent = "コメントの非表示 / 削除";
+  section3.appendChild(title3);
+
+  const btnRow3 = document.createElement("div");
+  btnRow3.className = "gear-btn-row";
+
+  const hideBtn = document.createElement("button");
+  hideBtn.type = "button";
+  hideBtn.className = "gear-secondary-btn";
+  hideBtn.textContent = "コメントを非表示にする（未実装）";
+  hideBtn.disabled = true;
+  btnRow3.appendChild(hideBtn);
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.type = "button";
+  deleteBtn.className = "gear-danger-btn";
+  deleteBtn.textContent = "コメントを削除（未実装）";
+  deleteBtn.disabled = true;
+  btnRow3.appendChild(deleteBtn);
+
+  section3.appendChild(btnRow3);
+
+  dom.gearModalBody.appendChild(section3);
+
+  const section4 = document.createElement("div");
+  section4.className = "gear-section";
+
+  const title4 = document.createElement("div");
+  title4.className = "gear-section-title";
+  title4.textContent = "攻略wikiへの推薦（未実装）";
+  section4.appendChild(title4);
+
+  const p4 = document.createElement("div");
+  p4.textContent =
+    "このコメントを攻略wikiのネタとして推薦する機能を将来的に実装予定です。";
+  section4.appendChild(p4);
+
+  dom.gearModalBody.appendChild(section4);
+
+  dom.gearModal.classList.remove("ld-modal-hidden");
+}
+
+function hideGearModal() {
+  if (!dom.gearModal) return;
+  dom.gearModal.classList.add("ld-modal-hidden");
+}
+
+/* プロフィールモーダル */
+
+async function openProfileModal(userRow, comment) {
+  if (!dom.profileModal || !dom.profileModalBody || !dom.profileModalTitle)
+    return;
+
+  dom.profileModalTitle.textContent = `★${userRow.name} さんのプロフィール`;
+
+  dom.profileModalBody.innerHTML = "";
+
+  const summary = document.createElement("div");
+  summary.className = "profile-summary";
+
+  const line1 = document.createElement("div");
+  line1.className = "profile-summary-line";
+  line1.innerHTML = `<span class="profile-summary-label">ユーザー名:</span> ★${userRow.name} (tag: ${userRow.tag})`;
+  summary.appendChild(line1);
+
+  const line2 = document.createElement("div");
+  line2.className = "profile-summary-line";
+  const vaultLevel = userRow.vault_level || "-";
+  line2.innerHTML = `<span class="profile-summary-label">金庫Lv:</span> ${vaultLevel}`;
+  summary.appendChild(line2);
+
+  dom.profileModalBody.appendChild(summary);
+
+  const mythicDiv = document.createElement("div");
+  mythicDiv.className = "profile-mythic-grid";
+
+  try {
+    const mythicState = userRow.mythic_state || "";
+    const entries = (mythicState || "").split(",");
+    entries.forEach((entry) => {
+      const trimmed = entry.trim();
+      if (!trimmed) return;
+      const [id, crown] = trimmed.split(":");
+      const cell = document.createElement("div");
+      cell.className = "profile-mythic-cell";
+
+      const idEl = document.createElement("div");
+      idEl.className = "profile-mythic-cell-id";
+      idEl.textContent = id;
+      cell.appendChild(idEl);
+
+      const crownEl = document.createElement("div");
+      crownEl.className = "profile-mythic-cell-state";
+      crownEl.textContent = crown ? `👑x${crown}` : "なし";
+      cell.appendChild(crownEl);
+
+      mythicDiv.appendChild(cell);
+    });
+  } catch (e) {
+    console.error("parse mythic_state error", e);
+  }
+
+  dom.profileModalBody.appendChild(mythicDiv);
+
+  dom.profileModal.classList.remove("ld-modal-hidden");
+}
+
+function hideProfileModal() {
+  if (!dom.profileModal) return;
+  dom.profileModal.classList.add("ld-modal-hidden");
+}
+
+/* =====================
+ * 歯車メニューからの更新処理（タイトル・ジャンル）
+ * ===================== */
+
+async function updateThreadTitle(thread, newTitle) {
+  const parentId = thread.parent.id;
+  const { error } = await supabaseClient
+    .from("ld_board_comments")
+    .update({ thread_title: newTitle || null })
+    .eq("id", parentId)
+    .eq("board_kind", BOARD_KIND);
+  if (error) {
+    console.error("updateThreadTitle error", error);
+    showToast("タイトルの更新に失敗しました。");
+    return;
+  }
+  showToast("タイトルを更新しました。");
+
+  thread.parent.thread_title = newTitle || null;
+  buildThreadsFromRaw();
+  applyFiltersAndRender();
+}
+
+async function updateThreadGenre(thread, newGenre) {
+  const parentId = thread.parent.id;
+  const { error } = await supabaseClient
+    .from("ld_board_comments")
+    .update({ genre: newGenre || "normal" })
+    .eq("id", parentId)
+    .eq("board_kind", BOARD_KIND);
+  if (error) {
+    console.error("updateThreadGenre error", error);
+    showToast("ジャンルの更新に失敗しました。");
+    return;
+  }
+  showToast("ジャンルを更新しました。");
+
+  thread.parent.genre = newGenre || "normal";
+  buildThreadsFromRaw();
+  applyFiltersAndRender();
+}
+
+/* =====================
+ * イイネ
+ * ===================== */
+
+async function handleLikeClick(thread, comment) {
+  const cacheKey = "ld_board_like_cache";
+  let cache = {};
+  try {
+    const raw = localStorage.getItem(cacheKey);
+    if (raw) cache = JSON.parse(raw);
+  } catch (e) {
+    console.error("like cache parse error", e);
+  }
+
+  const key = String(comment.id);
+  if (cache[key]) {
+    showToast("このコメントにはすでにイイネ済みです。");
+    return;
+  }
+
+  try {
+    const { data, error } = await supabaseClient.rpc("increment_like_count", {
+      comment_id: comment.id,
+    });
+    if (error) {
+      console.error("increment_like_count error", error);
+      showToast("イイネ処理に失敗しました。");
+      return;
+    }
+
+    comment.like_count = (comment.like_count || 0) + 1;
+    thread.totalLikes = (thread.totalLikes || 0) + 1;
+
+    cache[key] = true;
+    localStorage.setItem(cacheKey, JSON.stringify(cache));
+
+    showToast("(・∀・)ｲｲ!!しました。");
+    renderThreads();
+  } catch (e) {
+    console.error("handleLikeClick exception", e);
+    showToast("イイネ処理中にエラーが発生しました。");
   }
 }
 
@@ -1217,16 +1551,28 @@ async function handleSubmit() {
     finalBody = ">>" + state.replyState.anchorNo + " " + finalBody;
   }
 
-  let genre = getSelectedGenre();
-  if (state.replyState && state.replyState.genre) {
-    genre = state.replyState.genre;
-  }
-
   let ownerName = info.name;
   let ownerTag = null;
-  if (!ownerName) ownerName = "名無し";
-  if (info.mode === "registered" && info.user && info.user.tag) {
-    ownerTag = info.user.tag;
+
+  if (info.mode === "registered") {
+    if (!info.name || !info.tag) {
+      showToast("ユーザーデータベースに登録済みユーザー名＋パスを入力してください。");
+      return;
+    }
+    const user = await fetchUserByNameAndTag(info.name, info.tag);
+    if (!user) {
+      showToast("ユーザーデータベースに登録されていません。");
+      return;
+    }
+    state.userInfo.user = user;
+    ownerName = user.name;
+    ownerTag = user.tag;
+  } else if (info.mode === "imposter") {
+    ownerName = info.name || "名無し";
+    ownerTag = null;
+  } else {
+    ownerName = info.name || "名無し";
+    ownerTag = null;
   }
 
   const guestDailyId = getGuestDailyId();
@@ -1236,7 +1582,6 @@ async function handleSubmit() {
 
   const payload = {
     board_kind: BOARD_KIND,
-    genre: genre,
     owner_name: ownerName,
     owner_tag: ownerTag,
     guest_daily_id: guestDailyId,
@@ -1253,13 +1598,19 @@ async function handleSubmit() {
     expires_at: null,
   };
 
+  if (!state.replyState) {
+    payload.genre = getSelectedGenre();
+  }
+
   dom.submitCommentBtn.disabled = true;
   dom.composerStatus.textContent = "投稿中...";
 
   try {
-    const insertResult = await supabase.from("ld_board_comments").insert(payload).single();
-    if (insertResult.error) {
-      console.error("insert error", insertResult.error);
+    const { error } = await supabaseClient
+      .from("ld_board_comments")
+      .insert(payload);
+    if (error) {
+      console.error("insert comment error", error);
       showToast("投稿に失敗しました。");
       return;
     }
@@ -1289,35 +1640,6 @@ function getSelectedGenre() {
   return "normal";
 }
 
-function applyAutofix(text) {
-  if (!text || state.autofixRules.length === 0) return text;
-  let result = text;
-  state.autofixRules.forEach(function (rule) {
-    if (!rule.pattern) return;
-    const pattern = rule.pattern;
-    const replacement = rule.replacement || "";
-    result = result.split(pattern).join(replacement);
-  });
-  return result;
-}
-
-async function incrementUserMisInput(user) {
-  const current = user.mis_input_count || 0;
-  const next = current + 1;
-  user.mis_input_count = next;
-  try {
-    const result = await supabase
-      .from("ld_users")
-      .update({ mis_input_count: next })
-      .eq("id", user.id);
-    if (result.error) {
-      console.error("update mis_input_count error", result.error);
-    }
-  } catch (e) {
-    console.error("update mis_input_count error", e);
-  }
-}
-
 function resetComposer() {
   dom.commentBodyInput.value = "";
   clearReplyState();
@@ -1325,6 +1647,10 @@ function resetComposer() {
   state.draftImageUrls = [];
   updateAttachLabels();
 }
+
+/* =====================
+ * 返信状態管理
+ * ===================== */
 
 function clearReplyState() {
   state.replyState = null;
@@ -1336,27 +1662,35 @@ function clearReplyState() {
   }
 }
 
-function startReply(thread, comment, localNo) {
-  const parentGenre =
-    thread && thread.parent && thread.parent.genre
-      ? String(thread.parent.genre).toLowerCase()
-      : "normal";
+function ensureComposerOpen() {
+  if (!dom.composerBody.classList.contains("footer-body--open")) {
+    dom.composerBody.classList.add("footer-body--open");
+    dom.composerToggleLabel.textContent =
+      "▼コメントの入力ツールを非表示(タップ)";
+  }
+}
 
+function startReply(thread, comment, localNo) {
   state.replyState = {
     threadId: thread.rootId,
     parentId: comment.id,
     rootId: thread.rootId,
     anchorNo: localNo,
     ownerName: comment.owner_name || "",
-    genre: parentGenre,
   };
+
   dom.replyInfoRow.classList.remove("reply-info-row--hidden");
   const name = comment.owner_name || "名無し";
-  dom.replyInfoText.textContent = "返信対象: " + name + " さん（No." + localNo + "）";
+  dom.replyInfoText.textContent =
+    "返信対象: " + name + " さん（No." + localNo + "）";
   dom.submitCommentBtn.textContent = "返信する";
+
+  ensureComposerOpen();
+
   if (dom.composerGenreRow) {
     dom.composerGenreRow.classList.add("composer-row--genre-hidden");
   }
+
   dom.commentBodyInput.focus();
 }
 
@@ -1372,34 +1706,33 @@ function handleAttachBoardClick() {
   );
   if (result === null) return;
   const trimmed = result.trim();
-  state.draftBoardLayoutId = trimmed || null;
+  if (!trimmed) {
+    state.draftBoardLayoutId = null;
+  } else {
+    state.draftBoardLayoutId = trimmed;
+  }
   updateAttachLabels();
 }
 
 function handleAttachImageClick() {
+  if (!dom.imageFileInput) return;
   dom.imageFileInput.click();
 }
 
 async function handleImageFileChange(e) {
   const files = Array.from(e.target.files || []);
-  if (!files.length) return;
-
-  const limited = files.slice(0, 2);
-
-  dom.composerStatus.textContent = "画像をアップロード中...";
-  state.draftImageUrls = [];
-
+  if (files.length === 0) return;
+  dom.composerStatus.textContent = "画像を処理中...";
   try {
     const urls = [];
-    for (let i = 0; i < limited.length; i++) {
-      const url = await compressAndUploadImage(limited[i]);
+    for (let i = 0; i < files.length && i < 2; i++) {
+      const url = await compressAndUploadImage(files[i]);
       urls.push(url);
     }
     state.draftImageUrls = urls;
     updateAttachLabels();
-    showToast("画像を添付しました。");
   } catch (err) {
-    console.error("img upload error", err);
+    console.error("image upload error", err);
     showToast("画像のアップロードに失敗しました。");
     state.draftImageUrls = [];
     updateAttachLabels();
@@ -1425,7 +1758,8 @@ function updateAttachLabels() {
   }
 
   if (state.draftImageUrls.length > 0) {
-    dom.attachedImageLabel.textContent = "画像添付: " + state.draftImageUrls.length + "枚";
+    dom.attachedImageLabel.textContent =
+      "画像添付: " + state.draftImageUrls.length + "枚";
     dom.attachedImageLabel.classList.remove("attach-chip--hidden");
     if (dom.clearImageAttachBtn) {
       dom.clearImageAttachBtn.classList.remove("attach-chip-remove-btn--hidden");
@@ -1440,550 +1774,167 @@ function updateAttachLabels() {
 }
 
 /* 画像圧縮＋アップロード */
+
 function compressAndUploadImage(file) {
-  const maxSize = 1024; // ピクセル
-  return new Promise(function (resolve, reject) {
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const img = new Image();
-      img.onload = async function () {
-        try {
-          let w = img.width;
-          let h = img.height;
-          if (w > h && w > maxSize) {
-            h = Math.round(h * (maxSize / w));
-            w = maxSize;
-          } else if (h >= w && h > maxSize) {
-            w = Math.round(w * (maxSize / h));
-            h = maxSize;
-          }
-          const canvas = document.createElement("canvas");
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, w, h);
-          canvas.toBlob(
-            async function (blob) {
-              try {
-                if (!blob) throw new Error("画像の圧縮に失敗しました");
-                const fileExt = "jpg";
-                const fileName =
-                  Date.now().toString() +
-                  "_" +
-                  Math.random().toString(36).slice(2) +
-                  "." +
-                  fileExt;
-                const filePath = fileName;
-                const { error } = await supabase.storage
-                  .from(IMAGE_BUCKET)
-                  .upload(filePath, blob, { contentType: "image/jpeg", upsert: false });
-                if (error) throw error;
-                const { data: publicData } = supabase.storage
-                  .from(IMAGE_BUCKET)
-                  .getPublicUrl(filePath);
-                if (!publicData || !publicData.publicUrl) {
-                  throw new Error("画像URLの取得に失敗しました");
-                }
-                resolve(publicData.publicUrl);
-              } catch (err) {
-                reject(err);
+  const MAX_SIZE = 1024;
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = async () => {
+      try {
+        let { width, height } = img;
+        const scale = Math.min(1, MAX_SIZE / Math.max(width, height));
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          async (blob) => {
+            try {
+              const ext = "jpg";
+              const fileName = `board_img_${Date.now()}_${Math.random()
+                .toString(16)
+                .slice(2)}.${ext}`;
+              const { data, error } = await supabaseClient.storage
+                .from("ld_board_images")
+                .upload(fileName, blob, {
+                  contentType: "image/jpeg",
+                });
+              if (error) {
+                console.error("supabase upload error", error);
+                reject(error);
+                return;
               }
-            },
-            "image/jpeg",
-            0.8
-          );
-        } catch (err) {
-          reject(err);
-        }
-      };
-      img.onerror = function () {
-        reject(new Error("画像の読み込みに失敗しました"));
-      };
-      img.src = e.target.result;
+
+              const {
+                data: publicUrlData,
+                error: publicUrlError,
+              } = supabaseClient.storage
+                .from("ld_board_images")
+                .getPublicUrl(data.path);
+
+              if (publicUrlError) {
+                reject(publicUrlError);
+                return;
+              }
+
+              resolve(publicUrlData.publicUrl);
+            } catch (e) {
+              reject(e);
+            } finally {
+              URL.revokeObjectURL(url);
+            }
+          },
+          "image/jpeg",
+          0.85
+        );
+      } catch (e) {
+        URL.revokeObjectURL(url);
+        reject(e);
+      }
     };
-    reader.onerror = function () {
-      reject(new Error("画像ファイルの読み込みに失敗しました"));
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("画像の読み込みに失敗しました。"));
     };
-    reader.readAsDataURL(file);
+    img.src = url;
   });
 }
 
 /* =====================
- * イイ!!
+ * オートフィックス（誤字修正）
  * ===================== */
 
-async function handleLike(comment) {
-  const id = comment.id;
-  const key = String(id);
+function applyAutofix(text) {
+  const words = state.autofixWords || [];
+  let result = text;
+  for (const w of words) {
+    if (!w.before || !w.after) continue;
+    const re = new RegExp(w.before, "g");
+    result = result.replace(re, w.after);
+  }
+  return result;
+}
 
-  if (state.likeCache.has(key)) {
-    showToast("同じ端末からの二重イイネはできません。");
+state.autofixWords = [];
+
+async function loadAutofixWords() {
+  const { data, error } = await supabaseClient
+    .from("ld_board_autofix_words")
+    .select("*");
+  if (error) {
+    console.error("loadAutofixWords error", error);
     return;
   }
-
-  try {
-    const result = await supabase.rpc("increment_like_count", { comment_id: id });
-    if (result.error) {
-      console.error("like rpc error", result.error);
-      showToast("イイネに失敗しました。");
-      return;
-    }
-    state.likeCache.add(key);
-    saveLikeCache();
-    showToast("(・∀・)ｲｲ!! しました。");
-
-    const thread = state.threads.find(function (t) {
-      return t.allComments.some(function (c) {
-        return c.id === id;
-      });
-    });
-    if (thread) {
-      const target = thread.allComments.find(function (c) {
-        return c.id === id;
-      });
-      target.like_count = (target.like_count || 0) + 1;
-      thread.totalLikes += 1;
-      applyFiltersAndRender();
-    }
-  } catch (e) {
-    console.error("like error", e);
-    showToast("イイネに失敗しました。");
-  }
+  state.autofixWords = data || [];
 }
+
+loadAutofixWords().catch((e) => console.error(e));
 
 /* =====================
- * モーダル
+ * ユーザーデータベース連携
  * ===================== */
 
-function openImageModal(url) {
-  dom.modalImage.src = url;
-  showModalElement(dom.imageModal);
-}
-
-function openBoardLayout(boardLayoutId) {
-  const url =
-    "ld_board_editor_drag_v5.html?layout_id=" +
-    encodeURIComponent(boardLayoutId) +
-    "&mode=view";
-  window.open(url, "_blank");
-}
-
-/* =====================
- * 歯車メニュー
- * ===================== */
-
-function openGearModal(comment, thread) {
-  renderGearModalContent(comment, thread);
-  showModalElement(dom.gearModal);
-}
-
-function renderGearModalContent(comment, thread) {
-  const isParent = comment.id === thread.parent.id;
-
-  const wrapper = document.createElement("div");
-
-  if (isParent) {
-    const secTitle = document.createElement("div");
-    secTitle.className = "gear-section-title";
-    secTitle.textContent = "スレッドタイトル";
-    const sec1 = document.createElement("div");
-    sec1.className = "gear-section";
-    sec1.appendChild(secTitle);
-
-    const row1 = document.createElement("div");
-    row1.className = "gear-row";
-    const input = document.createElement("input");
-    input.type = "text";
-    input.maxLength = 20;
-    input.placeholder = "タイトル（20文字まで）";
-    input.value = thread.parent.thread_title || "";
-    row1.appendChild(input);
-    sec1.appendChild(row1);
-
-    const actions1 = document.createElement("div");
-    actions1.className = "gear-actions";
-    const saveBtn = document.createElement("button");
-    saveBtn.className = "primary";
-    saveBtn.textContent = thread.parent.thread_title ? "タイトルを更新" : "タイトルを作成";
-    saveBtn.addEventListener("click", function () {
-      const v = input.value.trim();
-      updateThreadTitle(thread, v);
-    });
-    actions1.appendChild(saveBtn);
-    sec1.appendChild(actions1);
-
-    wrapper.appendChild(sec1);
+async function fetchUserByNameAndTag(name, tag) {
+  const { data, error } = await supabaseClient
+    .from("ld_users")
+    .select("*")
+    .eq("name", name)
+    .eq("tag", tag)
+    .maybeSingle();
+  if (error) {
+    console.error("fetchUserByNameAndTag error", error);
+    showToast("ユーザー情報の取得に失敗しました。");
+    return null;
   }
-
-  const sec2 = document.createElement("div");
-  sec2.className = "gear-section";
-  const title2 = document.createElement("div");
-  title2.className = "gear-section-title";
-  title2.textContent = "コメントのジャンル";
-  sec2.appendChild(title2);
-
-  const row2 = document.createElement("div");
-  row2.className = "gear-row";
-  const select = document.createElement("select");
-  const genres = [
-    { value: "normal", label: "通常" },
-    { value: "qa", label: "質問・相談" },
-    { value: "report", label: "報告" },
-    { value: "announce", label: "アナウンス" },
-  ];
-  const currentGenre = (thread.parent.genre || "normal").toLowerCase();
-  genres.forEach(function (g) {
-    const opt = document.createElement("option");
-    opt.value = g.value;
-    opt.textContent = g.label;
-    if (g.value === currentGenre) opt.selected = true;
-    select.appendChild(opt);
-  });
-  row2.appendChild(select);
-  sec2.appendChild(row2);
-
-  const actions2 = document.createElement("div");
-  actions2.className = "gear-actions";
-  const genreBtn = document.createElement("button");
-  genreBtn.className = "primary";
-  genreBtn.textContent = isParent
-    ? "スレッド全体のジャンルを変更"
-    : "このコメントの属するスレッドのジャンルを変更";
-  genreBtn.addEventListener("click", function () {
-    updateCommentGenre(thread, select.value);
-  });
-  actions2.appendChild(genreBtn);
-  sec2.appendChild(actions2);
-  wrapper.appendChild(sec2);
-
-  const sec3 = document.createElement("div");
-  sec3.className = "gear-section";
-  const title3 = document.createElement("div");
-  title3.className = "gear-section-title";
-  title3.textContent = "削除／非表示";
-  sec3.appendChild(title3);
-
-  const actions3 = document.createElement("div");
-  actions3.className = "gear-actions";
-
-  const hideBtn = document.createElement("button");
-  hideBtn.className = "danger";
-  hideBtn.textContent = isParent ? "スレッド（親＋子）を非表示" : "このコメントを非表示";
-  hideBtn.addEventListener("click", function () {
-    hideComment(comment, thread, false);
-  });
-
-  const delBtn = document.createElement("button");
-  delBtn.className = "danger";
-  delBtn.textContent = isParent ? "スレッド（親＋子）を完全削除" : "このコメントを完全削除";
-  delBtn.addEventListener("click", function () {
-    hideComment(comment, thread, true);
-  });
-
-  actions3.appendChild(hideBtn);
-  actions3.appendChild(delBtn);
-  sec3.appendChild(actions3);
-  wrapper.appendChild(sec3);
-
-  const sec4 = document.createElement("div");
-  sec4.className = "gear-section";
-  const title4 = document.createElement("div");
-  title4.className = "gear-section-title";
-  title4.textContent = "コメントへの追記";
-  sec4.appendChild(title4);
-
-  const row4 = document.createElement("div");
-  row4.className = "gear-row";
-  const textarea = document.createElement("textarea");
-  textarea.rows = 3;
-  textarea.placeholder = "追記内容を入力";
-  row4.appendChild(textarea);
-  sec4.appendChild(row4);
-
-  const actions4 = document.createElement("div");
-  actions4.className = "gear-actions";
-  const appendBtn = document.createElement("button");
-  appendBtn.className = "primary";
-  appendBtn.textContent = "追記を追加";
-  appendBtn.addEventListener("click", function () {
-    const text = textarea.value.trim();
-    if (!text) {
-      showToast("追記内容を入力してください。");
-      return;
-    }
-    appendToComment(comment, text);
-  });
-  actions4.appendChild(appendBtn);
-  sec4.appendChild(actions4);
-  wrapper.appendChild(sec4);
-
-  const sec5 = document.createElement("div");
-  sec5.className = "gear-section";
-  const title5 = document.createElement("div");
-  title5.className = "gear-section-title";
-  title5.textContent = "攻略wikiへの推薦（将来機能）";
-  sec5.appendChild(title5);
-
-  const row5 = document.createElement("div");
-  row5.className = "gear-row";
-  const select2 = document.createElement("select");
-  const dummyPages = [
-    { value: "", label: "選択してください（ダミー）" },
-    { value: "unit_tips", label: "ユニット個別ページ" },
-    { value: "strategy_general", label: "攻略の手引き（全般）" },
-  ];
-  dummyPages.forEach(function (p) {
-    const opt = document.createElement("option");
-    opt.value = p.value;
-    opt.textContent = p.label;
-    select2.appendChild(opt);
-  });
-  row5.appendChild(select2);
-  sec5.appendChild(row5);
-
-  const actions5 = document.createElement("div");
-  actions5.className = "gear-actions";
-  const recommendBtn = document.createElement("button");
-  recommendBtn.className = "primary";
-  recommendBtn.textContent = "選択ページへ推薦";
-  recommendBtn.addEventListener("click", function () {
-    showToast("推薦機能はまだ未実装です（UIのみ）");
-  });
-  actions5.appendChild(recommendBtn);
-  sec5.appendChild(actions5);
-  wrapper.appendChild(sec5);
-
-  dom.gearModalBody.innerHTML = "";
-  dom.gearModalBody.appendChild(wrapper);
+  if (!data) return null;
+  return data;
 }
 
-async function updateThreadTitle(thread, newTitle) {
-  const title = newTitle.trim().slice(0, 20);
+async function incrementUserMisInput(userRow) {
   try {
-    const result = await supabase
-      .from("ld_board_comments")
-      .update({ thread_title: title || null })
-      .eq("id", thread.parent.id);
-    if (result.error) {
-      console.error("updateThreadTitle error", result.error);
-      showToast("タイトルの更新に失敗しました。");
-      return;
-    }
-    thread.parent.thread_title = title || null;
-    showToast("タイトルを更新しました。");
-    hideModal("gearModal");
-    applyFiltersAndRender();
-  } catch (e) {
-    console.error("updateThreadTitle error", e);
-    showToast("タイトルの更新に失敗しました。");
-  }
-}
-
-async function updateCommentGenre(thread, newGenre) {
-  try {
-    const result = await supabase
-      .from("ld_board_comments")
-      .update({ genre: newGenre })
-      .eq("root_comment_id", thread.rootId)
-      .or("id.eq." + thread.rootId);
-    if (result.error) {
-      console.error("updateCommentGenre error", result.error);
-      showToast("ジャンル変更に失敗しました。");
-      return;
-    }
-    thread.parent.genre = newGenre;
-    thread.allComments.forEach(function (c) {
-      if (c.id === thread.parent.id) c.genre = newGenre;
-    });
-    showToast("ジャンルを変更しました。");
-    hideModal("gearModal");
-    applyFiltersAndRender();
-  } catch (e) {
-    console.error("updateCommentGenre error", e);
-    showToast("ジャンル変更に失敗しました。");
-  }
-}
-
-async function hideComment(comment, thread, hardDelete) {
-  const isParent = comment.id === thread.parent.id;
-  let confirmText;
-  if (hardDelete) {
-    confirmText = isParent
-      ? "このスレッド（親＋子）を完全削除します。よろしいですか？"
-      : "このコメントを完全削除します。よろしいですか？";
-  } else {
-    confirmText = isParent
-      ? "このスレッド（親＋子）を非表示にします。よろしいですか？"
-      : "このコメントを非表示にします。よろしいですか？";
-  }
-
-  if (!window.confirm(confirmText)) return;
-
-  try {
-    if (hardDelete) {
-      const idsDel = isParent
-        ? thread.allComments.map(function (c) {
-            return c.id;
-          })
-        : [comment.id];
-      const resultDel = await supabase.from("ld_board_comments").delete().in("id", idsDel);
-      if (resultDel.error) {
-        console.error("delete error", resultDel.error);
-        showToast("削除に失敗しました。");
-        return;
-      }
+    const mis = (userRow.mis_input_count || 0) + 1;
+    const { error } = await supabaseClient
+      .from("ld_users")
+      .update({ mis_input_count: mis })
+      .eq("id", userRow.id);
+    if (error) {
+      console.error("update mis_input_count error", error);
     } else {
-      const idsUpd = isParent
-        ? thread.allComments.map(function (c) {
-            return c.id;
-          })
-        : [comment.id];
-      const resultUpd = await supabase
-        .from("ld_board_comments")
-        .update({ deleted_at: new Date().toISOString() })
-        .in("id", idsUpd);
-      if (resultUpd.error) {
-        console.error("hide error", resultUpd.error);
-        showToast("非表示に失敗しました。");
-        return;
-      }
+      userRow.mis_input_count = mis;
     }
-
-    showToast(hardDelete ? "削除しました。" : "非表示にしました。");
-    hideModal("gearModal");
-    await loadInitialThreads();
   } catch (e) {
-    console.error("hideComment error", e);
-    showToast("処理に失敗しました。");
-  }
-}
-
-async function appendToComment(comment, appendText) {
-  const body = comment.body || "";
-  const timestamp = formatTimestampShort(new Date().toISOString());
-  const appendBlock = "\n\n[追記 " + timestamp + "]\n" + appendText;
-  const newBody = body + appendBlock;
-
-  try {
-    const result = await supabase
-      .from("ld_board_comments")
-      .update({ body: newBody })
-      .eq("id", comment.id);
-    if (result.error) {
-      console.error("append error", result.error);
-      showToast("追記に失敗しました。");
-      return;
-    }
-    comment.body = newBody;
-    showToast("追記しました。");
-    hideModal("gearModal");
-    applyFiltersAndRender();
-  } catch (e) {
-    console.error("append error", e);
-    showToast("追記に失敗しました。");
+    console.error("incrementUserMisInput exception", e);
   }
 }
 
 /* =====================
- * ユーティリティ
+ * ゲストID（日替わり）
  * ===================== */
 
 function getGuestDailyId() {
-  const key = "ld_board_guest_daily_id";
-  const today = new Date().toISOString().slice(0, 10);
-  const stored = localStorage.getItem(key);
-  if (stored) {
-    try {
-      const obj = JSON.parse(stored);
-      if (obj.date === today && obj.id) {
+  try {
+    const key = "ld_board_guest_id";
+    const raw = localStorage.getItem(key);
+    const today = new Date();
+    const dstr = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+    if (raw) {
+      const obj = JSON.parse(raw);
+      if (obj.date === dstr && obj.id) {
         return obj.id;
       }
-    } catch (e) {}
+    }
+    const id = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+    localStorage.setItem(key, JSON.stringify({ date: dstr, id }));
+    return id;
+  } catch (e) {
+    console.error("getGuestDailyId error", e);
+    return "????";
   }
-  let id = String(Math.floor(Math.random() * 10000));
-  while (id.length < 4) id = "0" + id;
-  localStorage.setItem(key, JSON.stringify({ date: today, id: id }));
-  return id;
-}
-
-function formatTimestamp(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  let yy = String(d.getFullYear()).slice(2);
-  let mm = String(d.getMonth() + 1);
-  if (mm.length < 2) mm = "0" + mm;
-  let dd = String(d.getDate());
-  if (dd.length < 2) dd = "0" + dd;
-  let hh = String(d.getHours());
-  if (hh.length < 2) hh = "0" + hh;
-  let mi = String(d.getMinutes());
-  if (mi.length < 2) mi = "0" + mi;
-  return yy + "/" + mm + "/" + dd + " " + hh + ":" + mi;
-}
-
-function formatTimestampShort(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  let mm = String(d.getMonth() + 1);
-  if (mm.length < 2) mm = "0" + mm;
-  let dd = String(d.getDate());
-  if (dd.length < 2) dd = "0" + dd;
-  let hh = String(d.getHours());
-  if (hh.length < 2) hh = "0" + hh;
-  let mi = String(d.getMinutes());
-  if (mi.length < 2) mi = "0" + mi;
-  return mm + "/" + dd + " " + hh + ":" + mi;
-}
-
-function showToast(message) {
-  const el = document.createElement("div");
-  el.className = "toast";
-  el.textContent = message;
-  dom.toastContainer.appendChild(el);
-  setTimeout(function () {
-    el.remove();
-  }, 2500);
-}
-
-function generateRandomId(len) {
-  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let s = "";
-  for (let i = 0; i < len; i++) {
-    s += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return s;
-}
-
-function escapeHtml(str) {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-function convertAnchorsToLinks(text) {
-  return text.replace(/&gt;&gt;(\d+)/g, function (match, p1) {
-    return (
-      '<a href="#comment-' +
-      p1 +
-      '" class="anchor-link" data-anchor-no="' +
-      p1 +
-      '">&gt;&gt;' +
-      p1 +
-      "</a>"
-    );
-  });
-}
-
-function scrollLatestThreadToCenter() {
-  const container = dom.threadsContainer;
-  if (!container) return;
-  const cards = container.querySelectorAll(".thread-card");
-  if (!cards.length) return;
-  const lastCard = cards[cards.length - 1];
-  const rect = lastCard.getBoundingClientRect();
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-  const offset =
-    rect.top + window.scrollY - viewportHeight / 2 + rect.height / 2;
-  window.scrollTo(0, offset);
 }
