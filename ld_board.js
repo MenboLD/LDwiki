@@ -89,7 +89,6 @@ function cacheDom() {
   dom.footerToggle = $("footerToggle");
   dom.composerToggleLabel = $("composerToggleLabel");
   dom.composerBody = $("composerBody");
-  dom.composerGenreRow = $("composerGenreRow");
   dom.replyInfoRow = $("replyInfoRow");
   dom.replyInfoText = $("replyInfoText");
   dom.cancelReplyBtn = $("cancelReplyBtn");
@@ -98,8 +97,6 @@ function cacheDom() {
   dom.attachImageBtn = $("attachImageBtn");
   dom.attachedBoardLabel = $("attachedBoardLabel");
   dom.attachedImageLabel = $("attachedImageLabel");
-  dom.clearBoardAttachBtn = $("clearBoardAttachBtn");
-  dom.clearImageAttachBtn = $("clearImageAttachBtn");
   dom.imageFileInput = $("imageFileInput");
   dom.submitCommentBtn = $("submitCommentBtn");
   dom.composerStatus = $("composerStatus");
@@ -167,15 +164,6 @@ function setupBasicHandlers() {
 
   dom.attachBoardBtn.addEventListener("click", handleAttachBoardClick);
   dom.attachImageBtn.addEventListener("click", handleAttachImageClick);
-  dom.clearBoardAttachBtn.addEventListener("click", function () {
-    state.draftBoardLayoutId = null;
-    updateAttachLabels();
-  });
-  dom.clearImageAttachBtn.addEventListener("click", function () {
-    state.draftImageUrls = [];
-    dom.imageFileInput.value = "";
-    updateAttachLabels();
-  });
   dom.imageFileInput.addEventListener("change", handleImageFileChange);
 
   dom.submitCommentBtn.addEventListener("click", handleSubmit);
@@ -1217,10 +1205,7 @@ async function handleSubmit() {
     finalBody = ">>" + state.replyState.anchorNo + " " + finalBody;
   }
 
-  let genre = getSelectedGenre();
-  if (state.replyState && state.replyState.genre) {
-    genre = state.replyState.genre;
-  }
+  const genre = getSelectedGenre();
 
   let ownerName = info.name;
   let ownerTag = null;
@@ -1240,7 +1225,6 @@ async function handleSubmit() {
     owner_name: ownerName,
     owner_tag: ownerTag,
     guest_daily_id: guestDailyId,
-    guest_device_id: state.guestId,
     body: finalBody,
     thread_title: null,
     parent_comment_id: state.replyState ? state.replyState.parentId : null,
@@ -1332,32 +1316,33 @@ function clearReplyState() {
   dom.replyInfoRow.classList.add("reply-info-row--hidden");
   dom.replyInfoText.textContent = "";
   dom.submitCommentBtn.textContent = "投稿する";
-  if (dom.composerGenreRow) {
-    dom.composerGenreRow.classList.remove("composer-row--genre-hidden");
+}
+
+
+function ensureComposerOpen() {
+  if (!dom.composerBody) return;
+  if (!dom.composerBody.classList.contains("footer-body--open")) {
+    dom.composerBody.classList.add("footer-body--open");
+    if (dom.composerToggleLabel) {
+      dom.composerToggleLabel.textContent =
+        "▼コメントの入力ツールを非表示(タップ)";
+    }
   }
 }
 
 function startReply(thread, comment, localNo) {
-  const parentGenre =
-    thread && thread.parent && thread.parent.genre
-      ? String(thread.parent.genre).toLowerCase()
-      : "normal";
-
   state.replyState = {
     threadId: thread.rootId,
     parentId: comment.id,
     rootId: thread.rootId,
     anchorNo: localNo,
     ownerName: comment.owner_name || "",
-    genre: parentGenre,
   };
   dom.replyInfoRow.classList.remove("reply-info-row--hidden");
   const name = comment.owner_name || "名無し";
   dom.replyInfoText.textContent = "返信対象: " + name + " さん（No." + localNo + "）";
   dom.submitCommentBtn.textContent = "返信する";
-  if (dom.composerGenreRow) {
-    dom.composerGenreRow.classList.add("composer-row--genre-hidden");
-  }
+  ensureComposerOpen();
   dom.commentBodyInput.focus();
 }
 
@@ -1414,29 +1399,17 @@ function updateAttachLabels() {
   if (state.draftBoardLayoutId) {
     dom.attachedBoardLabel.textContent = "盤面ID: " + state.draftBoardLayoutId;
     dom.attachedBoardLabel.classList.remove("attach-chip--hidden");
-    if (dom.clearBoardAttachBtn) {
-      dom.clearBoardAttachBtn.classList.remove("attach-chip-remove-btn--hidden");
-    }
   } else {
     dom.attachedBoardLabel.textContent = "";
     dom.attachedBoardLabel.classList.add("attach-chip--hidden");
-    if (dom.clearBoardAttachBtn) {
-      dom.clearBoardAttachBtn.classList.add("attach-chip-remove-btn--hidden");
-    }
   }
 
   if (state.draftImageUrls.length > 0) {
     dom.attachedImageLabel.textContent = "画像添付: " + state.draftImageUrls.length + "枚";
     dom.attachedImageLabel.classList.remove("attach-chip--hidden");
-    if (dom.clearImageAttachBtn) {
-      dom.clearImageAttachBtn.classList.remove("attach-chip-remove-btn--hidden");
-    }
   } else {
     dom.attachedImageLabel.textContent = "";
     dom.attachedImageLabel.classList.add("attach-chip--hidden");
-    if (dom.clearImageAttachBtn) {
-      dom.clearImageAttachBtn.classList.add("attach-chip-remove-btn--hidden");
-    }
   }
 }
 
@@ -1901,9 +1874,8 @@ function getGuestDailyId() {
       }
     } catch (e) {}
   }
-  // 16進6桁（000000〜ffffff）の日替わりID
-  const n = Math.floor(Math.random() * 0x1000000); // 0〜16^6-1
-  const id = n.toString(16).padStart(6, "0");
+  let id = String(Math.floor(Math.random() * 10000));
+  while (id.length < 4) id = "0" + id;
   localStorage.setItem(key, JSON.stringify({ date: today, id: id }));
   return id;
 }
