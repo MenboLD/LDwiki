@@ -121,7 +121,7 @@
         </div>
 
         <!-- ジャンル選択 -->
-        <div class="composer-row composer-row--genre">
+        <div class="composer-row composer-row--genre" id="composerGenreRow">
           <span class="composer-caption">ジャンル</span>
           <label><input type="radio" name="genre" value="normal" checked />通常</label>
           <label><input type="radio" name="genre" value="qa" />質問・相談</label>
@@ -146,7 +146,9 @@
         </div>
         <div class="composer-row composer-row--attach-status">
           <span id="attachedBoardLabel" class="attach-chip attach-chip--hidden"></span>
+          <button id="clearBoardAttachBtn" type="button" class="attach-chip-remove-btn attach-chip-remove-btn--hidden">×</button>
           <span id="attachedImageLabel" class="attach-chip attach-chip--hidden"></span>
+          <button id="clearImageAttachBtn" type="button" class="attach-chip-remove-btn attach-chip-remove-btn--hidden">×</button>
         </div>
 
         <!-- 投稿ボタン -->
