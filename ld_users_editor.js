@@ -1,16 +1,13 @@
 const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc"; // 元のv5と同じものを入れてください
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
 
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const ADMIN_SECRET = "CHANGE_THIS_SECRET"; // 合言葉。任意の文字列に変更してください。
 
     const appState = {
       mode: "home",
       currentUser: null,
       usersCount: null,
-      isAdmin: false,
     };
 
     const MYTHIC_IDS = [
@@ -27,34 +24,7 @@ const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
       "501","502","504","506","509","511","513","514","515","516","525","526","527","528"
     ]);
 
-    const ICON_BASE_PATH = "https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld-assets/unit_icons/";
-
-    let mythicNames = {};
-
-    async function loadMythicNames() {
-      try {
-        const { data, error } = await supabase
-          .from("ld_units_master")
-          .select("base_id, name_jp")
-          .in("base_id", MYTHIC_IDS.map(id => parseInt(id, 10)));
-        if (error) {
-          console.error("ld_units_master 読み込みエラー", error);
-          return;
-        }
-        data.forEach(row => {
-          const key = String(row.base_id);
-          if (!mythicNames[key]) {
-            mythicNames[key] = row.name_jp;
-          }
-        });
-      } catch (e) {
-        console.error("ld_units_master 読み込み中にエラー", e);
-      }
-    }
-
-    function getUnitName(id) {
-      return mythicNames[id] || id;
-    }
+    const ICON_BASE_PATH = "./"; // 例: "./mythic_icons/" に 501.png などを置く
 
     let multiSelectMode = false;
     let selectedUnitIds = new Set();
@@ -70,15 +40,38 @@ const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
 
     function setView(mode) {
       appState.mode = mode;
-      const homeView = document.getElementById("homeView");
-      const formView = document.getElementById("formView");
+      const home = document.getElementById("homeView");
+      const form = document.getElementById("formView");
       if (mode === "home") {
-        homeView.classList.remove("hidden");
-        formView.classList.add("hidden");
+        home.classList.remove("hidden");
+        form.classList.add("hidden");
       } else {
-        homeView.classList.add("hidden");
-        formView.classList.remove("hidden");
+        home.classList.add("hidden");
+        form.classList.remove("hidden");
       }
+    }
+
+    function lockEditingFor10Minutes() {
+      const lockUntil = Date.now() + 10 * 60 * 1000;
+      localStorage.setItem("ld_user_edit_lock_until", String(lockUntil));
+    }
+
+    function getEditLockRemainingMs() {
+      const raw = localStorage.getItem("ld_user_edit_lock_until");
+      if (!raw) return 0;
+      const lockUntil = parseInt(raw, 10);
+      const now = Date.now();
+      return Math.max(0, lockUntil - now);
+    }
+
+    function checkEditLocked() {
+      const remain = getEditLockRemainingMs();
+      if (remain > 0) {
+        const minutes = Math.ceil(remain / 60000);
+        showToast(`誤入力が続いたため、あと約${minutes}分は編集できません。`, 2500);
+        return true;
+      }
+      return false;
     }
 
     function formatStatsHeader() {
@@ -86,7 +79,7 @@ const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
       if (appState.usersCount == null) {
         el.textContent = "";
       } else {
-        el.textContent = `登録ユーザー数: ${appState.usersCount}人`;
+        el.textContent = `登録数: ${appState.usersCount}`;
       }
     }
 
@@ -94,130 +87,13 @@ const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
       const { count, error } = await supabase
         .from("ld_users")
         .select("*", { count: "exact", head: true });
-      if (error) {
-        console.error(error);
-        return;
+      if (!error) {
+        appState.usersCount = count ?? 0;
+        formatStatsHeader();
       }
-      appState.usersCount = count ?? 0;
-      formatStatsHeader();
     }
 
-    const btnGoNew = document.getElementById("btnGoNew");
-    const btnSearch = document.getElementById("btnSearch");
-    const searchNameInput = document.getElementById("searchNameInput");
-    const searchResults = document.getElementById("searchResults");
-    const btnBackHome = document.getElementById("btnBackHome");
-    const btnSaveUser = document.getElementById("btnSaveUser");
-    const formModeLabel = document.getElementById("formModeLabel");
-    const inputName = document.getElementById("inputName");
-    const inputTag = document.getElementById("inputTag");
-    const fieldTag = document.getElementById("fieldTag");
-    const selectVaultLevel = document.getElementById("selectVaultLevel");
-    const statusComments = document.getElementById("statusComments");
-    const statusMisInputs = document.getElementById("statusMisInputs");
-    const statusLikes = document.getElementById("statusLikes");
-    const btnAdmin = document.getElementById("btnAdmin");
-    const adminStatus = document.getElementById("adminStatus");
-
-    const MAX_NAME_LENGTH = 7;
-    inputName.setAttribute("maxlength", String(MAX_NAME_LENGTH));
-
-    function updateAdminStatus() {
-      adminStatus.textContent = appState.isAdmin ? "管理者モード" : "";
-    }
-
-    function renderSearchResults(list) {
-      searchResults.innerHTML = "";
-      if (!list || list.length === 0) {
-        const div = document.createElement("div");
-        div.textContent = "該当するユーザーが見つかりません。";
-        div.style.fontSize = "11px";
-        div.style.color = "var(--text-sub)";
-        searchResults.appendChild(div);
-        return;
-      }
-      list.forEach((user) => {
-        const item = document.createElement("div");
-        item.className = "search-item";
-
-        const main = document.createElement("div");
-        main.className = "search-item-main";
-
-        const nameLine = document.createElement("div");
-        nameLine.className = "search-item-name";
-        nameLine.textContent = user.name;
-
-        const subLine = document.createElement("div");
-        subLine.className = "search-item-sub";
-        subLine.textContent = `識別番号: ${user.tag} / 金庫Lv: ${user.vault_level ?? "-"}`;
-
-        main.appendChild(nameLine);
-        main.appendChild(subLine);
-
-        const right = document.createElement("div");
-        right.style.display = "flex";
-        right.style.flexDirection = "column";
-        right.style.gap = "4px";
-        right.style.alignItems = "flex-end";
-
-        const badges = document.createElement("div");
-        badges.style.display = "flex";
-        badges.style.gap = "4px";
-        badges.style.flexWrap = "wrap";
-
-        const badgeComments = document.createElement("span");
-        badgeComments.className = "badge";
-        badgeComments.textContent = `コメ: ${user.comment_count ?? 0}`;
-        badges.appendChild(badgeComments);
-
-        const badgeMis = document.createElement("span");
-        badgeMis.className = user.mis_input_count > 0 ? "badge badge-danger" : "badge";
-        badgeMis.textContent = `誤: ${user.mis_input_count ?? 0}`;
-        badges.appendChild(badgeMis);
-
-        const badgeLikes = document.createElement("span");
-        badgeLikes.className = "badge badge-accent";
-        badgeLikes.textContent = `イイね: ${user.like_count ?? 0}`;
-        badges.appendChild(badgeLikes);
-
-        right.appendChild(badges);
-
-        const btnEdit = document.createElement("button");
-        btnEdit.className = "btn-small primary";
-        btnEdit.textContent = "編集";
-
-        btnEdit.addEventListener("click", () => {
-          openTagConfirmModal(user);
-        });
-
-        right.appendChild(btnEdit);
-
-        item.appendChild(main);
-        item.appendChild(right);
-        searchResults.appendChild(item);
-      });
-    }
-
-    async function searchUsers() {
-      const keyword = searchNameInput.value.trim();
-      if (!keyword) {
-        showToast("検索するユーザー名を入力してください。");
-        return;
-      }
-      const { data, error } = await supabase
-        .from("ld_users")
-        .select("id, name, tag, vault_level, comment_count, mis_input_count, like_count")
-        .ilike("name", `%${keyword}%`)
-        .order("name", { ascending: true })
-        .limit(50);
-      if (error) {
-        console.error(error);
-        showToast("ユーザー検索に失敗しました。");
-        return;
-      }
-      renderSearchResults(data || []);
-    }
-
+    // ユニットアイコンエディタ描画
     function renderMythicGrid(mythicState) {
       const container = document.getElementById("mythicGrid");
       container.innerHTML = "";
@@ -276,35 +152,28 @@ const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
       btnLv15.textContent = "Lv15";
       btnLv15.addEventListener("click", () => applyLevelToSelection(15));
 
-      const btnTreasureOn = document.createElement("button");
-      btnTreasureOn.className = "btn-small";
-      btnTreasureOn.textContent = "👑 ON";
-      btnTreasureOn.addEventListener("click", () => applyTreasureToSelection(true));
-
-      const btnTreasureOff = document.createElement("button");
-      btnTreasureOff.className = "btn-small";
-      btnTreasureOff.textContent = "👑 OFF";
-      btnTreasureOff.addEventListener("click", () => applyTreasureToSelection(false));
-
-      const btnToggleForm = document.createElement("button");
-      btnToggleForm.className = "btn-small";
-      btnToggleForm.textContent = "神話⇄不滅";
-      btnToggleForm.addEventListener("click", () => toggleFormForSelection());
+      const btnTreasure = document.createElement("button");
+      btnTreasure.className = "btn-small";
+      btnTreasure.textContent = "専用👑切替";
+      btnTreasure.addEventListener("click", () => toggleTreasureOnSelection());
 
       row2.appendChild(btnLv6);
       row2.appendChild(btnLv12);
       row2.appendChild(btnLv15);
-      row2.appendChild(btnTreasureOn);
-      row2.appendChild(btnTreasureOff);
-      row2.appendChild(btnToggleForm);
+      row2.appendChild(btnTreasure);
+
+      const btnAwaken = document.createElement("button");
+      btnAwaken.className = "btn-small";
+      btnAwaken.textContent = "覚醒/退化";
+      btnAwaken.addEventListener("click", () => toggleFormAwakening());
+      row2.appendChild(btnAwaken);
 
       container.appendChild(row2);
 
       const grid = document.createElement("div");
       grid.className = "unit-grid";
-      container.appendChild(grid);
 
-      for (const id of MYTHIC_IDS) {
+      MYTHIC_IDS.forEach(id => {
         const item = document.createElement("div");
         item.className = "unit-item dim";
         item.dataset.id = id;
@@ -320,16 +189,11 @@ const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
         img.alt = id;
         img.src = ICON_BASE_PATH + id + ".png";
 
-        const nameLabel = document.createElement("div");
-        nameLabel.className = "unit-name";
-        nameLabel.textContent = getUnitName(id);
-
         const badge = document.createElement("div");
         badge.className = "unit-badge";
         badge.textContent = "Lv0";
 
         inner.appendChild(img);
-        inner.appendChild(nameLabel);
         inner.appendChild(badge);
         item.appendChild(inner);
         grid.appendChild(item);
@@ -342,27 +206,26 @@ const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
           item.dataset.level = String(lv);
           item.dataset.treasure = tre ? "1" : "0";
           item.dataset.form = form;
-          if (lv > 0) {
-            item.classList.remove("dim");
-          } else {
-            item.classList.add("dim");
-          }
-          updateUnitVisual(item);
         }
+        updateUnitVisual(item);
 
         item.addEventListener("click", () => {
-          if (multiSelectMode) {
-            if (selectedUnitIds.has(id)) {
-              selectedUnitIds.delete(id);
-            } else {
-              selectedUnitIds.add(id);
-            }
-            refreshUnitSelectionVisual();
-          } else {
-            selectedUnitIds = new Set([id]);
-            refreshUnitSelectionVisual();
-          }
+          onClickUnitItem(id);
         });
+      });
+
+      container.appendChild(grid);
+    }
+
+    function onClickUnitItem(id) {
+      if (!multiSelectMode) {
+        selectedUnitIds = new Set([id]);
+      } else {
+        if (selectedUnitIds.has(id)) {
+          selectedUnitIds.delete(id);
+        } else {
+          selectedUnitIds.add(id);
+        }
       }
       refreshUnitSelectionVisual();
     }
@@ -405,58 +268,90 @@ const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
     function applyLevelToSelection(level) {
       const grid = document.querySelector("#mythicGrid .unit-grid");
       if (!grid) return;
+      if (selectedUnitIds.size === 0) {
+        showToast("ユニットが選択されていません。");
+        return;
+      }
       selectedUnitIds.forEach(id => {
-        const item = grid.querySelector(`.unit-item[data-id="${id}"]`);
+        const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
         if (!item) return;
         item.dataset.level = String(level);
+        if (level === 0) {
+          item.dataset.treasure = "0";
+        }
         updateUnitVisual(item);
       });
     }
 
-    function applyTreasureToSelection(on) {
+    function toggleTreasureOnSelection() {
       const grid = document.querySelector("#mythicGrid .unit-grid");
       if (!grid) return;
+      if (selectedUnitIds.size === 0) {
+        showToast("ユニットが選択されていません。");
+        return;
+      }
       selectedUnitIds.forEach(id => {
-        if (!AWAKENABLE_IDS.has(id)) return;
-        const item = grid.querySelector(`.unit-item[data-id="${id}"]`);
+        const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
         if (!item) return;
+        const form = item.dataset.form || "mythic";
         const level = parseInt(item.dataset.level || "0", 10);
-        if (level < 12 && on) {
+        if (form === "immortal") {
+          item.dataset.treasure = "0";
+          updateUnitVisual(item);
           return;
         }
-        item.dataset.treasure = on ? "1" : "0";
+        if (level < 12) {
+          item.dataset.treasure = "0";
+          updateUnitVisual(item);
+          return;
+        }
+        const current = item.dataset.treasure === "1";
+        item.dataset.treasure = current ? "0" : "1";
         updateUnitVisual(item);
       });
     }
 
-    function toggleFormForSelection() {
+    function toggleFormAwakening() {
       const grid = document.querySelector("#mythicGrid .unit-grid");
       if (!grid) return;
+      if (selectedUnitIds.size === 0) {
+        showToast("ユニットが選択されていません。");
+        return;
+      }
       selectedUnitIds.forEach(id => {
-        const item = grid.querySelector(`.unit-item[data-id="${id}"]`);
+        if (!AWAKENABLE_IDS.has(id)) return;
+        const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
         if (!item) return;
-        const current = item.dataset.form || "mythic";
-        const next = current === "mythic" ? "immortal" : "mythic";
-        item.dataset.form = next;
+        let form = item.dataset.form || "mythic";
+        let level = parseInt(item.dataset.level || "0", 10);
+        if (form === "mythic") {
+          if (level === 0) level = 6;
+          item.dataset.form = "immortal";
+          item.dataset.level = String(level);
+          item.dataset.treasure = "0";
+        } else {
+          item.dataset.form = "mythic";
+          item.dataset.level = String(level);
+        }
         updateUnitVisual(item);
       });
     }
 
     function collectMythicStateFromUI() {
       const grid = document.querySelector("#mythicGrid .unit-grid");
-      if (!grid) return {};
-      const items = grid.querySelectorAll(".unit-item");
       const json = {};
+      if (!grid) return json;
+      const items = grid.querySelectorAll(".unit-item");
       items.forEach(item => {
         const id = item.dataset.id;
         const level = parseInt(item.dataset.level || "0", 10);
-        const treasure = item.dataset.treasure === "1";
+        const hasTreasure = item.dataset.treasure === "1";
         const form = item.dataset.form || "mythic";
-        if (level > 0 || treasure || form === "immortal") {
+        if (level > 0 || hasTreasure) {
           json[id] = {
+            form,
             level,
-            treasure,
-            form
+            treasure: form === "mythic" && hasTreasure
           };
         }
       });
@@ -471,65 +366,119 @@ const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
     const btnModalOk = document.getElementById("btnModalOk");
     let modalUser = null;
 
-    function openTagConfirmModal(user) {
+    function openTagModal(user) {
       modalUser = user;
+      modalBody.textContent = `ユーザー名: ${user.name}`;
       modalTagInput.value = "";
       modalError.style.display = "none";
+      modalError.textContent = "";
       modalBackdrop.style.display = "flex";
+      modalTagInput.focus();
     }
 
     function closeTagModal() {
       modalBackdrop.style.display = "none";
-      modalUser = null;
-    }
-
-    function getEditLockRemainingMs() {
-      const key = "ld_users_edit_lock_until";
-      const val = localStorage.getItem(key);
-      if (!val) return 0;
-      const until = parseInt(val, 10);
-      const now = Date.now();
-      if (Number.isNaN(until) || until <= now) {
-        localStorage.removeItem(key);
-        return 0;
-      }
-      return until - now;
-    }
-
-    function setEditLockMinutes(min) {
-      const key = "ld_users_edit_lock_until";
-      const now = Date.now();
-      const until = now + min * 60 * 1000;
-      localStorage.setItem(key, String(until));
-    }
-
-    function checkEditLocked() {
-      const remain = getEditLockRemainingMs();
-      if (remain > 0) {
-        const minutes = Math.ceil(remain / 60000);
-        showToast(`誤入力が続いたため、あと約${minutes}分は編集できません。`, 2500);
-        return true;
-      }
-      return false;
     }
 
     btnModalCancel.addEventListener("click", () => {
+      modalUser = null;
       closeTagModal();
     });
 
-    btnModalOk.addEventListener("click", async () => {
-      if (!modalUser) {
-        closeTagModal();
+    const searchInput = document.getElementById("searchNameInput");
+    const btnSearch = document.getElementById("btnSearch");
+    const searchResults = document.getElementById("searchResults");
+
+    async function doSearch() {
+      const term = searchInput.value.trim();
+      if (!term) {
+        searchResults.innerHTML = "";
+        showToast("ユーザー名を入力してください。");
         return;
       }
+      searchResults.innerHTML = "検索中...";
+
+      const { data, error } = await supabase
+        .from("ld_users")
+        .select("id, name, tag, comment_count, mis_input_count")
+        .ilike("name", `%${term}%`)
+        .order("name", { ascending: true });
+
+      if (error) {
+        console.error(error);
+        searchResults.innerHTML = "<div>検索中にエラーが発生しました。</div>";
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        searchResults.innerHTML = "<div>該当ユーザーはいません。</div>";
+        return;
+      }
+
+      searchResults.innerHTML = "";
+      data.forEach(user => {
+        const row = document.createElement("div");
+        row.className = "search-item";
+
+        const btnEdit = document.createElement("button");
+        btnEdit.className = "btn-small";
+        btnEdit.textContent = "編集";
+        btnEdit.addEventListener("click", () => {
+          onClickEditUser(user);
+        });
+
+        const main = document.createElement("div");
+        main.className = "search-main";
+        const nameEl = document.createElement("div");
+        nameEl.className = "search-name";
+        nameEl.textContent = user.name;
+        const meta = document.createElement("div");
+        meta.className = "search-meta";
+        meta.textContent = `タグ:${user.tag}  コメ:${user.comment_count}  誤入力:${user.mis_input_count}`;
+
+        main.appendChild(nameEl);
+        main.appendChild(meta);
+
+        row.appendChild(btnEdit);
+        row.appendChild(main);
+
+        searchResults.appendChild(row);
+      });
+    }
+
+    btnSearch.addEventListener("click", () => {
+      doSearch();
+    });
+    searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        doSearch();
+      }
+    });
+
+    async function onClickEditUser(userBasic) {
       if (checkEditLocked()) {
-        closeTagModal();
         return;
       }
+      const { data, error } = await supabase
+        .from("ld_users")
+        .select("*")
+        .eq("id", userBasic.id)
+        .single();
+
+      if (error || !data) {
+        console.error(error);
+        showToast("ユーザー情報の取得に失敗しました。");
+        return;
+      }
+      openTagModal(data);
+    }
+
+    btnModalOk.addEventListener("click", async () => {
+      if (!modalUser) return;
       const inputTagVal = modalTagInput.value.trim();
-      if (inputTagVal.length !== 2 || isNaN(parseInt(inputTagVal, 10))) {
-        modalError.textContent = "識別番号は数字2桁で入力してください。";
+      if (inputTagVal.length !== 2) {
         modalError.style.display = "block";
+        modalError.textContent = "識別番号は2桁で入力してください。";
         return;
       }
 
@@ -545,31 +494,59 @@ const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
           .from("ld_users")
           .update({ mis_input_count: newMis })
           .eq("id", modalUser.id);
-        const remainMis = newMis;
-        if (remainMis >= 3) {
-          setEditLockMinutes(10);
-          showToast("誤入力が続いたため、一時的に編集をロックしました（約10分）。", 3000);
-        } else {
-          showToast("識別番号が違います。", 2000);
-        }
-        closeTagModal();
+        modalUser.mis_input_count = newMis;
+
+        lockEditingFor10Minutes();
+        modalError.style.display = "block";
+        modalError.textContent = "識別番号が違います。10分間は編集できません。";
       }
+    });
+
+    const btnGoNew = document.getElementById("btnGoNew");
+    const btnBackHome = document.getElementById("btnBackHome");
+    const btnSaveUser = document.getElementById("btnSaveUser");
+    const formModeLabel = document.getElementById("formModeLabel");
+    const inputName = document.getElementById("inputName");
+    const inputTag = document.getElementById("inputTag");
+    const fieldTag = document.getElementById("fieldTag");
+    const selectVaultLevel = document.getElementById("selectVaultLevel");
+    const statusComments = document.getElementById("statusComments");
+    const statusMisInputs = document.getElementById("statusMisInputs");
+    const statusLikes = document.getElementById("statusLikes");
+
+    for (let lv = 1; lv <= 11; lv++) {
+      const opt = document.createElement("option");
+      opt.value = String(lv);
+      opt.textContent = String(lv);
+      selectVaultLevel.appendChild(opt);
+    }
+
+    btnGoNew.addEventListener("click", () => {
+      openNewForm();
+    });
+
+    btnBackHome.addEventListener("click", () => {
+      appState.currentUser = null;
+      setView("home");
     });
 
     function openNewForm() {
       appState.mode = "new";
       appState.currentUser = null;
+
       formModeLabel.textContent = "新規ユーザー登録";
       inputName.value = "";
       inputName.disabled = false;
       inputTag.value = "";
       inputTag.disabled = false;
-      fieldTag.style.display = "";
+      fieldTag.style.display = "block";
       selectVaultLevel.value = "1";
+
       renderMythicGrid({});
       statusComments.textContent = "コメ数: 0";
       statusMisInputs.textContent = "誤入力: 0";
       statusLikes.textContent = "イイね: 0";
+
       setView("form");
     }
 
@@ -616,10 +593,6 @@ const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
         showToast("ユーザー名を入力してください。");
         return;
       }
-      if (name.length > MAX_NAME_LENGTH) {
-        showToast(`ユーザー名は最大${MAX_NAME_LENGTH}文字までです。`);
-        return;
-      }
 
       const isNew = appState.mode === "new" || !appState.currentUser;
 
@@ -646,7 +619,7 @@ const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
           name,
           tag,
           vault_level: vaultLevel,
-          mythic_state: mythicState,
+          mythic_state: mythicState
         };
         const { error } = await supabase
           .from("ld_users")
@@ -655,13 +628,13 @@ const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
         if (error) {
           console.error(error);
           if (error.code === "23505") {
-            showToast("同じユーザー名または識別番号が既に登録されています。");
+            showToast("同じユーザー名＋番号の組がすでに存在します。");
           } else {
-            showToast("ユーザーの新規登録に失敗しました。");
+            showToast("ユーザーの登録に失敗しました。");
           }
           return;
         }
-        showToast("新規ユーザーを登録しました。");
+        showToast("ユーザーを登録しました。");
         await fetchUsersCount();
         setView("home");
       } else {
@@ -687,48 +660,11 @@ const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
       }
     }
 
-    btnGoNew.addEventListener("click", () => {
-      openNewForm();
-    });
-
-    btnBackHome.addEventListener("click", () => {
-      appState.currentUser = null;
-      setView("home");
-    });
-
-    btnAdmin.addEventListener("click", () => {
-      const input = prompt("管理者用の合言葉を入力してください");
-      if (!input) return;
-      if (input === ADMIN_SECRET) {
-        appState.isAdmin = true;
-        localStorage.setItem("ld_users_admin", "1");
-        updateAdminStatus();
-        showToast("管理者モードになりました。", 2000);
-      } else {
-        showToast("合言葉が違います。", 2000);
-      }
-    });
-
     btnSaveUser.addEventListener("click", () => {
       saveUser();
     });
 
-    btnSearch.addEventListener("click", () => {
-      searchUsers();
-    });
-
-    searchNameInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        searchUsers();
-      }
-    });
-
     (async function init() {
       setView("home");
-      if (localStorage.getItem("ld_users_admin") === "1") {
-        appState.isAdmin = true;
-      }
-      updateAdminStatus();
-      await loadMythicNames();
       await fetchUsersCount();
     })();
