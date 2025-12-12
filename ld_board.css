@@ -816,23 +816,9 @@ body {
 
 
 /* 返信中はジャンル行を非表示 */
-.composer-row--genre-hidden {
-  display: none;
-}
+.composer-row--genre-hidden{display:none;}
 
 
 /* 添付チップの削除ボタン（×） */
-.attach-chip-remove-btn {
-  padding: 0 6px;
-  margin-left: 6px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: transparent;
-  color: var(--text-sub);
-  font-size: 12px;
-  line-height: 18px;
-  cursor: pointer;
-}
-.attach-chip-remove-btn--hidden {
-  display: none;
-}
+.attach-chip-remove-btn{padding:0 6px;margin-left:6px;border:1px solid var(--border);border-radius:12px;background:transparent;color:var(--text-sub);font-size:12px;line-height:18px;cursor:pointer;}
+.attach-chip-remove-btn--hidden{display:none;}
