@@ -1225,7 +1225,6 @@ async function handleSubmit() {
     owner_name: ownerName,
     owner_tag: ownerTag,
     guest_daily_id: guestDailyId,
-    guest_device_id: state.guestId,
     body: finalBody,
     thread_title: null,
     parent_comment_id: state.replyState ? state.replyState.parentId : null,
@@ -1319,17 +1318,6 @@ function clearReplyState() {
   dom.submitCommentBtn.textContent = "投稿する";
 }
 
-function ensureComposerOpen() {
-  if (!dom.composerBody) return;
-  if (!dom.composerBody.classList.contains("footer-body--open")) {
-    dom.composerBody.classList.add("footer-body--open");
-    if (dom.composerToggleLabel) {
-      dom.composerToggleLabel.textContent =
-        "▼コメントの入力ツールを非表示(タップ)";
-    }
-  }
-}
-
 function startReply(thread, comment, localNo) {
   state.replyState = {
     threadId: thread.rootId,
@@ -1342,7 +1330,6 @@ function startReply(thread, comment, localNo) {
   const name = comment.owner_name || "名無し";
   dom.replyInfoText.textContent = "返信対象: " + name + " さん（No." + localNo + "）";
   dom.submitCommentBtn.textContent = "返信する";
-  ensureComposerOpen();
   dom.commentBodyInput.focus();
 }
 
@@ -1874,9 +1861,8 @@ function getGuestDailyId() {
       }
     } catch (e) {}
   }
-  // 16進6桁（000000〜ffffff）の日替わりID
-  const n = Math.floor(Math.random() * 0x1000000); // 0〜16^6-1
-  const id = n.toString(16).padStart(6, "0");
+  let id = String(Math.floor(Math.random() * 10000));
+  while (id.length < 4) id = "0" + id;
   localStorage.setItem(key, JSON.stringify({ date: today, id: id }));
   return id;
 }
