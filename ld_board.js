@@ -93,10 +93,13 @@ function cacheDom() {
   dom.replyInfoText = $("replyInfoText");
   dom.cancelReplyBtn = $("cancelReplyBtn");
   dom.commentBodyInput = $("commentBodyInput");
+  dom.composerGenreRow = $("composerGenreRow");
   dom.attachBoardBtn = $("attachBoardBtn");
   dom.attachImageBtn = $("attachImageBtn");
   dom.attachedBoardLabel = $("attachedBoardLabel");
   dom.attachedImageLabel = $("attachedImageLabel");
+  dom.clearBoardAttachBtn = $("clearBoardAttachBtn");
+  dom.clearImageAttachBtn = $("clearImageAttachBtn");
   dom.imageFileInput = $("imageFileInput");
   dom.submitCommentBtn = $("submitCommentBtn");
   dom.composerStatus = $("composerStatus");
@@ -112,26 +115,17 @@ function cacheDom() {
 }
 
 function setupBasicHandlers() {
-  const on = (el, ev, fn) => {
-    if (!el) {
-      console.warn("[ld_board] missing element for handler:", ev);
-      return;
-    }
-    el.addEventListener(ev, fn);
-  };
-
-
-    on(dom.filterToggleBtn, "click", function () {
+  dom.filterToggleBtn.addEventListener("click", function () {
     const collapsed = dom.filterPanel.classList.toggle("filter-panel--collapsed");
     dom.filterToggleBtn.textContent = collapsed ? "🔍 フィルターを開く" : "🔍 フィルターを閉じる";
   });
 
-    on(dom.userNameInput, "input", function () {
+  dom.userNameInput.addEventListener("input", function () {
     updateNameTagEnabled();
     saveUserInputsToLocalStorage();
     updateUserStatusLabel();
   });
-    on(dom.userTagInput, "input", function () {
+  dom.userTagInput.addEventListener("input", function () {
     if (dom.userTagInput.value.length > 10) {
       dom.userTagInput.value = dom.userTagInput.value.slice(0, 10);
     }
@@ -156,26 +150,41 @@ function setupBasicHandlers() {
     el.addEventListener("change", handleFilterChange);
   });
 
-    on(dom.loadMoreBtn, "click", function () {
+  dom.loadMoreBtn.addEventListener("click", function () {
     loadMoreThreads();
   });
 
-    on(dom.footerToggle, "click", function () {
+  dom.footerToggle.addEventListener("click", function () {
     const opened = dom.composerBody.classList.toggle("footer-body--open");
     dom.composerToggleLabel.textContent = opened
       ? "▼コメントの入力ツールを非表示(タップ)"
       : "▲コメントの入力ツールを表示(タップ)";
   });
 
-    on(dom.cancelReplyBtn, "click", function () {
+  dom.cancelReplyBtn.addEventListener("click", function () {
     clearReplyState();
   });
 
-    on(dom.attachBoardBtn, "click", handleAttachBoardClick);
-    on(dom.attachImageBtn, "click", handleAttachImageClick);
-    on(dom.imageFileInput, "change", handleImageFileChange);
+  dom.attachBoardBtn.addEventListener("click", handleAttachBoardClick);
+  dom.attachImageBtn.addEventListener("click", handleAttachImageClick);
+  dom.imageFileInput.addEventListener("change", handleImageFileChange);
 
-    on(dom.submitCommentBtn, "click", handleSubmit);
+if (dom.clearBoardAttachBtn) {
+  dom.clearBoardAttachBtn.addEventListener("click", function () {
+    state.draftBoardLayoutId = null;
+    updateAttachLabels();
+  });
+}
+
+if (dom.clearImageAttachBtn) {
+  dom.clearImageAttachBtn.addEventListener("click", function () {
+    state.draftImageUrls = [];
+    if (dom.imageFileInput) dom.imageFileInput.value = "";
+    updateAttachLabels();
+  });
+}
+
+  dom.submitCommentBtn.addEventListener("click", handleSubmit);
 
   document.addEventListener("click", function (e) {
     const closeTarget = e.target.getAttribute("data-modal-close");
@@ -1327,6 +1336,16 @@ function clearReplyState() {
   dom.submitCommentBtn.textContent = "投稿する";
 }
 
+function ensureComposerOpen() {
+  if (!dom.composerBody) return;
+  if (!dom.composerBody.classList.contains("footer-body--open")) {
+    dom.composerBody.classList.add("footer-body--open");
+    if (dom.composerToggleLabel) {
+      dom.composerToggleLabel.textContent = "▼コメントの入力ツールを非表示(タップ)";
+    }
+  }
+}
+
 function startReply(thread, comment, localNo) {
   state.replyState = {
     threadId: thread.rootId,
@@ -1339,6 +1358,7 @@ function startReply(thread, comment, localNo) {
   const name = comment.owner_name || "名無し";
   dom.replyInfoText.textContent = "返信対象: " + name + " さん（No." + localNo + "）";
   dom.submitCommentBtn.textContent = "返信する";
+  ensureComposerOpen();
   dom.commentBodyInput.focus();
 }
 
