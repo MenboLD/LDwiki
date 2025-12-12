@@ -815,12 +815,13 @@ body {
 }
 
 
-/* 返信中はジャンル行を隠す */
+/* 返信時にジャンル行を隠す */
 .composer-row--genre-hidden {
   display: none;
 }
 
-/* 添付チップの削除ボタン */
+
+/* 添付チップ削除ボタン */
 .attach-chip-remove-btn {
   padding: 0 4px;
   margin-left: 4px;
@@ -830,7 +831,6 @@ body {
   font-size: 11px;
   cursor: pointer;
 }
-
 .attach-chip-remove-btn--hidden {
   display: none;
 }

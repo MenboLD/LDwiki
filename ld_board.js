@@ -1319,6 +1319,17 @@ function clearReplyState() {
   dom.submitCommentBtn.textContent = "投稿する";
 }
 
+function ensureComposerOpen() {
+  if (!dom.composerBody) return;
+  if (!dom.composerBody.classList.contains("footer-body--open")) {
+    dom.composerBody.classList.add("footer-body--open");
+    if (dom.composerToggleLabel) {
+      dom.composerToggleLabel.textContent =
+        "▼コメントの入力ツールを非表示(タップ)";
+    }
+  }
+}
+
 function startReply(thread, comment, localNo) {
   state.replyState = {
     threadId: thread.rootId,
@@ -1331,6 +1342,7 @@ function startReply(thread, comment, localNo) {
   const name = comment.owner_name || "名無し";
   dom.replyInfoText.textContent = "返信対象: " + name + " さん（No." + localNo + "）";
   dom.submitCommentBtn.textContent = "返信する";
+  ensureComposerOpen();
   dom.commentBodyInput.focus();
 }
 
