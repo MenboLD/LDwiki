@@ -1,8 +1,24 @@
+function getSupabaseClient() {
+  // UMD build provides window.supabase
+  if (window.supabase && typeof window.supabase.createClient === "function") {
+    return window.supabase.createClient;
+  }
+  return null;
+}
+
 const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
+    const __createClient = getSupabaseClient();
+const supabase = __createClient ? __createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+function requireSupabase() {
+  if (!supabase) {
+    alert("Supabase クライアントの読み込みに失敗しました。ネットワーク/キャッシュを確認してください。\n（UIは動きますが、検索・保存はできません）");
+    return false;
+  }
+  return true;
+}
 
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 
     const appState = {
       mode: "home",
@@ -584,6 +600,8 @@ const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
     }
 
     async function saveUser() {
+  if (!requireSupabase()) return;
+
       const name = inputName.value.trim();
       let tag = inputTag.value.trim();
       const vaultLevel = parseInt(selectVaultLevel.value, 10);
