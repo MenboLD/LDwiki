@@ -89,11 +89,11 @@ function cacheDom() {
   dom.footerToggle = $("footerToggle");
   dom.composerToggleLabel = $("composerToggleLabel");
   dom.composerBody = $("composerBody");
+  dom.composerGenreRow = $("composerGenreRow");
   dom.replyInfoRow = $("replyInfoRow");
   dom.replyInfoText = $("replyInfoText");
   dom.cancelReplyBtn = $("cancelReplyBtn");
   dom.commentBodyInput = $("commentBodyInput");
-  dom.composerGenreRow = $("composerGenreRow");
   dom.attachBoardBtn = $("attachBoardBtn");
   dom.attachImageBtn = $("attachImageBtn");
   dom.attachedBoardLabel = $("attachedBoardLabel");
@@ -168,6 +168,22 @@ function setupBasicHandlers() {
   dom.attachBoardBtn.addEventListener("click", handleAttachBoardClick);
   dom.attachImageBtn.addEventListener("click", handleAttachImageClick);
   dom.imageFileInput.addEventListener("change", handleImageFileChange);
+
+if (dom.clearBoardAttachBtn) {
+  dom.clearBoardAttachBtn.addEventListener("click", function () {
+    state.draftBoardLayoutId = null;
+    updateAttachLabels();
+  });
+}
+if (dom.clearImageAttachBtn) {
+  dom.clearImageAttachBtn.addEventListener("click", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    state.draftImageUrls = [];
+    if (dom.imageFileInput) dom.imageFileInput.value = "";
+    updateAttachLabels();
+  });
+}
 
   dom.submitCommentBtn.addEventListener("click", handleSubmit);
 
@@ -1322,6 +1338,18 @@ function clearReplyState() {
   if (dom.composerGenreRow) dom.composerGenreRow.classList.remove("composer-row--genre-hidden");
 }
 
+function ensureComposerOpen() {
+  if (!dom.composerBody) return;
+  const opened = dom.composerBody.classList.contains("footer-body--open");
+  if (!opened) {
+    dom.composerBody.classList.add("footer-body--open");
+    if (dom.composerToggleLabel) {
+      dom.composerToggleLabel.textContent =
+        "▼コメントの入力ツールを非表示(タップ)";
+    }
+  }
+}
+
 function startReply(thread, comment, localNo) {
   state.replyState = {
     threadId: thread.rootId,
@@ -1334,7 +1362,7 @@ function startReply(thread, comment, localNo) {
   const name = comment.owner_name || "名無し";
   dom.replyInfoText.textContent = "返信対象: " + name + " さん（No." + localNo + "）";
   dom.submitCommentBtn.textContent = "返信する";
-  if (dom.composerGenreRow) dom.composerGenreRow.classList.add("composer-row--genre-hidden");
+  ensureComposerOpen();
   dom.commentBodyInput.focus();
 }
 
@@ -1388,26 +1416,20 @@ async function handleImageFileChange(e) {
 }
 
 function updateAttachLabels() {
-  // 盤面ID（未実装だが表示は維持）
   if (state.draftBoardLayoutId) {
     dom.attachedBoardLabel.textContent = "盤面ID: " + state.draftBoardLayoutId;
     dom.attachedBoardLabel.classList.remove("attach-chip--hidden");
-    if (dom.clearBoardAttachBtn) dom.clearBoardAttachBtn.classList.remove("attach-chip-remove-btn--hidden");
   } else {
     dom.attachedBoardLabel.textContent = "";
     dom.attachedBoardLabel.classList.add("attach-chip--hidden");
-    if (dom.clearBoardAttachBtn) dom.clearBoardAttachBtn.classList.add("attach-chip-remove-btn--hidden");
   }
 
-  // 画像添付
   if (state.draftImageUrls.length > 0) {
     dom.attachedImageLabel.textContent = "画像添付: " + state.draftImageUrls.length + "枚";
     dom.attachedImageLabel.classList.remove("attach-chip--hidden");
-    if (dom.clearImageAttachBtn) dom.clearImageAttachBtn.classList.remove("attach-chip-remove-btn--hidden");
   } else {
     dom.attachedImageLabel.textContent = "";
     dom.attachedImageLabel.classList.add("attach-chip--hidden");
-    if (dom.clearImageAttachBtn) dom.clearImageAttachBtn.classList.add("attach-chip-remove-btn--hidden");
   }
 }
 
