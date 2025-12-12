@@ -833,3 +833,19 @@ body {
   cursor: pointer;
 }
 .attach-chip-remove-btn--hidden{ display:none; }
+
+/* 添付チップ削除（×）を押しやすく */
+.attach-chip-remove-btn{
+  width:32px;
+  height:32px;
+  border-radius:16px;
+  border:1px solid var(--border);
+  background:#fff;
+  color:var(--text-sub);
+  font-size:18px;
+  line-height:30px;
+  padding:0;
+  margin-left:8px;
+  cursor:pointer;
+}
+.attach-chip-remove-btn--hidden{display:none;}

@@ -1336,6 +1336,7 @@ function clearReplyState() {
   dom.replyInfoText.textContent = "";
   dom.submitCommentBtn.textContent = "投稿する";
   if (dom.composerGenreRow) dom.composerGenreRow.classList.remove("composer-row--genre-hidden");
+  if (dom.composerGenreRow) dom.composerGenreRow.classList.remove("composer-row--genre-hidden");
 }
 
 function ensureComposerOpen() {
@@ -1363,7 +1364,8 @@ function startReply(thread, comment, localNo) {
   dom.replyInfoText.textContent = "返信対象: " + name + " さん（No." + localNo + "）";
   dom.submitCommentBtn.textContent = "返信する";
   ensureComposerOpen();
-  dom.commentBodyInput.focus();
+  if (dom.composerGenreRow) dom.composerGenreRow.classList.add("composer-row--genre-hidden");
+  ensureComposerOpen();
 }
 
 /* =====================
@@ -1416,20 +1418,26 @@ async function handleImageFileChange(e) {
 }
 
 function updateAttachLabels() {
+  // 盤面ID（未実装でも表示制御だけ整える）
   if (state.draftBoardLayoutId) {
     dom.attachedBoardLabel.textContent = "盤面ID: " + state.draftBoardLayoutId;
     dom.attachedBoardLabel.classList.remove("attach-chip--hidden");
+    if (dom.clearBoardAttachBtn) dom.clearBoardAttachBtn.classList.remove("attach-chip-remove-btn--hidden");
   } else {
     dom.attachedBoardLabel.textContent = "";
     dom.attachedBoardLabel.classList.add("attach-chip--hidden");
+    if (dom.clearBoardAttachBtn) dom.clearBoardAttachBtn.classList.add("attach-chip-remove-btn--hidden");
   }
 
-  if (state.draftImageUrls.length > 0) {
+  // 画像添付
+  if (state.draftImageUrls && state.draftImageUrls.length > 0) {
     dom.attachedImageLabel.textContent = "画像添付: " + state.draftImageUrls.length + "枚";
     dom.attachedImageLabel.classList.remove("attach-chip--hidden");
+    if (dom.clearImageAttachBtn) dom.clearImageAttachBtn.classList.remove("attach-chip-remove-btn--hidden");
   } else {
     dom.attachedImageLabel.textContent = "";
     dom.attachedImageLabel.classList.add("attach-chip--hidden");
+    if (dom.clearImageAttachBtn) dom.clearImageAttachBtn.classList.add("attach-chip-remove-btn--hidden");
   }
 }
 
