@@ -41,8 +41,6 @@ function setImgSrcWithFallback(imgEl, code) {
     }
   };
 }
-  };
-}
 function getSupabaseCreateClient() {
   // UMD build provides window.supabase
   if (window.supabase && typeof window.supabase.createClient === "function") {
