@@ -1,3 +1,35 @@
+
+const ICON_PATH_CANDIDATES_PREFIXES = [
+  "./",                 // same dir
+  "./assets/",
+  "./assets/icons/",
+  "./icons/",
+  "./img/",
+  "./images/",
+];
+
+function buildIconCandidates(filenameOrCode) {
+  const name = String(filenameOrCode || "");
+  const file = name.endsWith(".png") ? name : (name + ".png");
+  return ICON_PATH_CANDIDATES_PREFIXES.map((p) => p + file);
+}
+
+function setImgSrcWithFallback(imgEl, filenameOrCode) {
+  const candidates = buildIconCandidates(filenameOrCode);
+  let i = 0;
+  imgEl.src = candidates[i];
+  imgEl.onerror = function () {
+    i += 1;
+    if (i < candidates.length) {
+      imgEl.src = candidates[i];
+    } else {
+      imgEl.onerror = null;
+      imgEl.src = "";
+      imgEl.alt = "no image";
+      imgEl.style.opacity = "0.35";
+    }
+  };
+}
 function getSupabaseCreateClient() {
   // UMD build provides window.supabase
   if (window.supabase && typeof window.supabase.createClient === "function") {
@@ -13,6 +45,49 @@ const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
 const supabase = __createClient ? __createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 
+
+
+const BOARD_COMMENTS_TABLE = "ld_board_comments";
+
+/**
+ * 一覧表示用の統計を掲示板から補正して返す
+ * comment_count: owner_name一致 & owner_tag一致（登録名★相当）
+ * mis_input_total: ld_users.mis_input_count + owner_name一致 & owner_tag不一致（騙り相当）
+ */
+async function computeBoardStatsForUser(user) {
+  const fallback = {
+    comment_count: user.comment_count ?? 0,
+    mis_input_total: user.mis_input_count ?? 0,
+  };
+  if (!supabase) return fallback;
+
+  try {
+    const { count: okCount, error: e1 } = await supabase
+      .from(BOARD_COMMENTS_TABLE)
+      .select("id", { count: "exact", head: true })
+      .eq("owner_name", user.name)
+      .eq("owner_tag", user.tag);
+
+    if (e1) return fallback;
+
+    const { count: fakeCount, error: e2 } = await supabase
+      .from(BOARD_COMMENTS_TABLE)
+      .select("id", { count: "exact", head: true })
+      .eq("owner_name", user.name)
+      .neq("owner_tag", user.tag);
+
+    if (e2) {
+      return { comment_count: okCount ?? fallback.comment_count, mis_input_total: fallback.mis_input_total };
+    }
+
+    return {
+      comment_count: okCount ?? fallback.comment_count,
+      mis_input_total: (fallback.mis_input_total ?? 0) + (fakeCount ?? 0),
+    };
+  } catch (e) {
+    return fallback;
+  }
+}
 function requireSupabase() {
   if (!supabase) {
     alert("Supabase クライアントの読み込みに失敗しました。\nネットワーク/キャッシュ、またはCDNブロックを確認してください。\n（UIは動きますが、検索・保存はできません）");
@@ -203,7 +278,7 @@ function requireSupabase() {
         const img = document.createElement("img");
         img.className = "unit-img";
         img.alt = id;
-        img.src = ICON_BASE_PATH + id + ".png";
+        setImgSrcWithFallback(img, unit.icon_filename || unit.icon_big_filename || unit.unit_code);
 
         const badge = document.createElement("div");
         badge.className = "unit-badge";
@@ -450,7 +525,7 @@ function requireSupabase() {
         nameEl.textContent = user.name;
         const meta = document.createElement("div");
         meta.className = "search-meta";
-        meta.textContent = `タグ:${user.tag}  コメ:${user.comment_count}  誤入力:${user.mis_input_count}`;
+        meta.textContent = `${user.tag}  コメ:${user.comment_count}  誤入力:${user.mis_input_count}`;
 
         main.appendChild(nameEl);
         main.appendChild(meta);
