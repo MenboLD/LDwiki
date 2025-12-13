@@ -1,19 +1,14 @@
-
-
+// ===== ユーザーデータ編集ページ：ユニット画像（GitHub Pages /images を参照） =====
 /**
- * ユーザーデータ編集ページのユニット画像URL
  * - 末尾は必ず *_big.png
  * - 615 の a/b 特例は本ページでは使わない（615_big.png を採用）
- * - code は "526" / "615" / "615_a" / "615b" 等が来てもOK
+ * - code は "526" / "615" / "615_a" / "615b" 等が来てもOK（先頭3桁のみ採用）
  */
 function getUserEditorIconUrl(code) {
   const raw = String(code || "").trim();
   if (!raw) return "";
-
-  // 先頭の3桁だけ採用（615_a / 615b 等は 615 になる）
   const m = raw.match(/^(\d{3})/);
   const base3 = m ? m[1] : raw;
-
   return `https://menbold.github.io/LDwiki/images/${base3}_big.png`;
 }
 
@@ -27,11 +22,8 @@ function setImgSrcWithFallback(imgEl, code) {
     imgEl.style.opacity = "0.35";
   };
 }
+// ===== /ユニット画像 =====
 
-
-
-  };
-}
 function getSupabaseCreateClient() {
   // UMD build provides window.supabase
   if (window.supabase && typeof window.supabase.createClient === "function") {
