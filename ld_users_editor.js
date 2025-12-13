@@ -4,28 +4,6 @@
  * - 615 の a/b 特例は本ページでは使わない（615_big.png を採用）
  * - code は "526" / "615" / "615_a" / "615b" 等が来てもOK（先頭3桁のみ採用）
  */
-function getUserEditorIconUrl(code) {
-  const raw = String(code || "").trim();
-  if (!raw) return "";
-
-  // 先頭の3桁だけ採用（615_a / 615b 等は 615 になる）
-  const m = raw.match(/^(\d{3})/);
-  const base3 = m ? m[1] : raw;
-
-  // Supabase Storage public: ld-assets/unit_icons/{code}_big.png
-  return `${SUPABASE_URL}/storage/v1/object/public/ld-assets/unit_icons/${base3}_big.png`;
-}
-
-function setImgSrcWithFallback(imgEl, code) {
-  const url = getUserEditorIconUrl(code);
-  imgEl.src = url;
-  imgEl.onerror = function () {
-    imgEl.onerror = null;
-    imgEl.src = "";
-    imgEl.alt = "no image";
-    imgEl.style.opacity = "0.35";
-  };
-}
 // ===== /ユニット画像 =====
 
 function getSupabaseCreateClient() {
@@ -37,6 +15,71 @@ function getSupabaseCreateClient() {
 }
 
 const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
+
+/**
+ * Supabase Storage public: ld-assets/unit_icons/<filename>
+ * filename is like "528_big.png" or "615_b_big.png"
+ */
+function getUserEditorIconUrlFromFilename(filename) {
+  const file = String(filename || "").trim();
+  if (!file) return "";
+  return `${SUPABASE_URL}/storage/v1/object/public/ld-assets/unit_icons/${file}`;
+}
+
+function setImgSrcWithFallback(imgEl, filename) {
+  const url = getUserEditorIconUrlFromFilename(filename);
+  imgEl.src = url;
+  imgEl.onerror = function () {
+    imgEl.onerror = null;
+    imgEl.src = "";
+    imgEl.alt = "no image";
+    imgEl.style.opacity = "0.35";
+  };
+}
+
+let UNIT_ICON_BIG_BY_CODE = {};            // "526" -> "526_big.png"
+let IMMORTAL_ICON_BIG_BY_MYTHIC = {};      // "515" -> "615_big.png"
+let HAS_IMMORTAL_BY_MYTHIC = {};           // "515" -> true
+
+async function loadUnitMasterMaps() {
+  if (!supabase) return;
+  try {
+    const { data, error } = await supabase
+      .from("ld_units_master")
+      .select("unit_code, icon_big_filename, paired_mythic_code");
+
+    if (error || !Array.isArray(data)) return;
+
+    const iconByCode = {};
+    const immortalByMythic = {};
+    const hasImm = {};
+
+    for (const row of data) {
+      const code = row.unit_code != null ? String(row.unit_code) : "";
+      const icon = row.icon_big_filename != null ? String(row.icon_big_filename) : "";
+      if (code && icon) iconByCode[code] = icon;
+
+      const paired = row.paired_mythic_code != null ? String(row.paired_mythic_code) : "";
+      if (paired && icon) {
+        immortalByMythic[paired] = icon;
+        hasImm[paired] = true;
+      }
+    }
+
+    UNIT_ICON_BIG_BY_CODE = iconByCode;
+    IMMORTAL_ICON_BIG_BY_MYTHIC = immortalByMythic;
+    HAS_IMMORTAL_BY_MYTHIC = hasImm;
+  } catch (e) {}
+}
+
+function getIconFilenameForUnit(mythicCode, form) {
+  const c = String(mythicCode || "");
+  if (form === "immortal") {
+    return IMMORTAL_ICON_BIG_BY_MYTHIC[c] || `${c}_big.png`;
+  }
+  return UNIT_ICON_BIG_BY_CODE[c] || `${c}_big.png`;
+}
+
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
 
     const __createClient = getSupabaseCreateClient();
@@ -185,7 +228,9 @@ function requireSupabase() {
     // ユニットアイコンエディタ描画
     function renderMythicGrid(mythicState) {
       const container = document.getElementById("mythicGrid");
-      container.innerHTML = "";
+      
+      refreshAllUnitVisuals();
+container.innerHTML = "";
 
       const state = mythicState || {};
       selectedUnitIds = new Set();
@@ -276,7 +321,7 @@ function requireSupabase() {
         const img = document.createElement("img");
         img.className = "unit-img";
         img.alt = id;
-        setImgSrcWithFallback(img, id);
+        setImgSrcWithFallback(img, `${id}_big.png`);
 
         const badge = document.createElement("div");
         badge.className = "unit-badge";
@@ -301,7 +346,8 @@ function requireSupabase() {
         item.addEventListener("click", () => {
           onClickUnitItem(id);
         });
-      });
+              attachDoubleTapHandler(item);
+});
 
       container.appendChild(grid);
     }
@@ -333,14 +379,90 @@ function requireSupabase() {
       });
     }
 
-    function updateUnitVisual(item) {
+    function getUnitStateIndexFromDataset(item) {
+  const form = item.dataset.form || "mythic";
+  const level = parseInt(item.dataset.level || "0", 10);
+  if (level <= 0) return 1;
+  if (form === "immortal") {
+    if (level >= 15) return 7;
+    if (level >= 12) return 6;
+    return 5;
+  }
+  if (level >= 15) return 4;
+  if (level >= 12) return 3;
+  return 2;
+}
+
+function getMaxStateIndexForUnit(item) {
+  const id = String(item.dataset.id || "");
+  return HAS_IMMORTAL_BY_MYTHIC[id] ? 7 : 4;
+}
+
+function applyUnitStateIndexToDataset(item, idx) {
+  const i = Number(idx) || 1;
+  if (i <= 1) {
+    item.dataset.form = "mythic";
+    item.dataset.level = "0";
+    item.dataset.treasure = "0";
+    return;
+  }
+  if (i === 2) { item.dataset.form = "mythic"; item.dataset.level = "6"; return; }
+  if (i === 3) { item.dataset.form = "mythic"; item.dataset.level = "12"; return; }
+  if (i === 4) { item.dataset.form = "mythic"; item.dataset.level = "15"; return; }
+  if (i === 5) { item.dataset.form = "immortal"; item.dataset.level = "6"; return; }
+  if (i === 6) { item.dataset.form = "immortal"; item.dataset.level = "12"; return; }
+  item.dataset.form = "immortal"; item.dataset.level = "15";
+}
+
+function updateUnitImgForState(item) {
+  const id = item.dataset.id;
+  const idx = getUnitStateIndexFromDataset(item);
+  const form = idx >= 5 ? "immortal" : "mythic";
+  const filename = getIconFilenameForUnit(id, form);
+  const img = item.querySelector(".unit-img");
+  if (!img) return;
+  setImgSrcWithFallback(img, filename);
+}
+
+function cycleUnitState(item) {
+  const cur = getUnitStateIndexFromDataset(item);
+  const max = getMaxStateIndexForUnit(item);
+  const next = (cur >= max) ? 1 : (cur + 1);
+  applyUnitStateIndexToDataset(item, next);
+  updateUnitVisual(item);
+}
+
+function attachDoubleTapHandler(item) {
+  let lastTapAt = 0;
+  item.addEventListener("dblclick", (e) => {
+    e.preventDefault();
+    cycleUnitState(item);
+  });
+  item.addEventListener("touchend", (e) => {
+    const now = Date.now();
+    if (now - lastTapAt < 320) {
+      e.preventDefault();
+      cycleUnitState(item);
+      lastTapAt = 0;
+    } else {
+      lastTapAt = now;
+    }
+  }, { passive: false });
+}
+
+function updateUnitVisual(item) {
       const level = parseInt(item.dataset.level || "0", 10);
       const hasTreasure = item.dataset.treasure === "1";
       const form = item.dataset.form || "mythic";
       const badge = item.querySelector(".unit-badge");
+      const idx = getUnitStateIndexFromDataset(item);
+      item.classList.remove("state-1","state-2","state-3","state-4","state-5","state-6","state-7");
+      item.classList.add(`state-${idx}`);
+      updateUnitImgForState(item);
+
       if (!badge) return;
 
-      if (level <= 0) {
+      if (idx === 1) {
         item.classList.add("dim");
         badge.textContent = "Lv0";
       } else {
@@ -756,6 +878,8 @@ main.appendChild(nameEl);
     });
 
     (async function init() {
+      await loadUnitMasterMaps();
+
       setView("home");
       await fetchUsersCount();
     })();
@@ -765,4 +889,9 @@ main.appendChild(nameEl);
 function sb() {
   if (!requireSupabase()) throw new Error("Supabase not ready");
   return supabase;
+}
+
+
+function refreshAllUnitVisuals(){
+  document.querySelectorAll('#mythicGrid .unit-item').forEach(updateUnitVisual);
 }

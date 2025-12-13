@@ -295,3 +295,14 @@
 
 
 .version-stamp{font-size:12px;color:var(--text-sub);font-weight:400;margin-left:8px;}
+
+
+/* unit state colors (double tap cycle) */
+.unit-item.state-1{background:#e0e0e0 !important;}
+.unit-item.state-2{background:#e6f2ff !important;}
+.unit-item.state-3{background:#cfe6ff !important;}
+.unit-item.state-4{background:#a9d1ff !important;}
+.unit-item.state-5{background:#ffe6e6 !important;}
+.unit-item.state-6{background:#ffcccc !important;}
+.unit-item.state-7{background:#ffaaaa !important;}
+.unit-item.state-1 .unit-img{filter: sepia(1) saturate(0.5) !important;opacity:0.55 !important;}
