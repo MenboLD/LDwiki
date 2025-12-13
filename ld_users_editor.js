@@ -278,7 +278,7 @@ function requireSupabase() {
         const img = document.createElement("img");
         img.className = "unit-img";
         img.alt = id;
-        setImgSrcWithFallback(img, unit.icon_filename || unit.icon_big_filename || unit.unit_code);
+        setImgSrcWithFallback(img, id);
 
         const badge = document.createElement("div");
         badge.className = "unit-badge";
@@ -525,9 +525,11 @@ function requireSupabase() {
         nameEl.textContent = user.name;
         const meta = document.createElement("div");
         meta.className = "search-meta";
-        meta.textContent = `${user.tag}  コメ:${user.comment_count}  誤入力:${user.mis_input_count}`;
-
-        main.appendChild(nameEl);
+        meta.textContent = `コメ:${user.comment_count ?? 0}  誤入力:${user.mis_input_count ?? 0}`;
+        computeBoardStatsForUser(user).then((st) => {
+          meta.textContent = `コメ:${st.comment_count}  誤入力:${st.mis_input_total}`;
+        });
+main.appendChild(nameEl);
         main.appendChild(meta);
 
         row.appendChild(btnEdit);
