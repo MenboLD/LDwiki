@@ -7,9 +7,13 @@
 function getUserEditorIconUrl(code) {
   const raw = String(code || "").trim();
   if (!raw) return "";
+
+  // 先頭の3桁だけ採用（615_a / 615b 等は 615 になる）
   const m = raw.match(/^(\d{3})/);
   const base3 = m ? m[1] : raw;
-  return `https://menbold.github.io/LDwiki/images/${base3}_big.png`;
+
+  // Supabase Storage public: ld-assets/unit_icons/{code}_big.png
+  return `${SUPABASE_URL}/storage/v1/object/public/ld-assets/unit_icons/${base3}_big.png`;
 }
 
 function setImgSrcWithFallback(imgEl, code) {
