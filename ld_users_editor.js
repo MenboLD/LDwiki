@@ -1,65 +1,35 @@
 
-const UNIT_ICON_BUCKET = "ld-assets";
-const UNIT_ICON_DIR = "unit_icons";
-
+\
 /**
- * unit_code / base_id から、Supabase Storage 上の *_big.png を解決する。
- * 例: "102" -> "102_big.png"
- *     "615_b" -> "615_b_big.png"
- *     "615b" -> "615_b_big.png"
+ * ユニット画像URL（ユーザーデータページ用）
+ * - 500番台/600番台を想定
+ * - 末尾は必ず *_big.png
+ * - 615 の a/b 特例は本ページでは使わない（615_big.png を採用）
+ *
+ * 例: 526 -> https://menbold.github.io/LDwiki/images/526_big.png
  */
-function getBigIconFilename(code) {
+function getUserEditorIconUrl(code) {
   const raw = String(code || "").trim();
   if (!raw) return "";
-  if (raw.endsWith("_big.png")) return raw;
-  if (raw.endsWith(".png")) return raw.replace(/\.png$/i, "_big.png");
-  const m = raw.match(/^(\d{3})([a-z])$/i);
-  const normalized = m ? `${m[1]}_${m[2].toLowerCase()}` : raw;
-  return `${normalized}_big.png`;
+
+  // "615_a" / "615_b" / "615a" / "615b" などが来ても 615 として扱う
+  const m = raw.match(/^(\d{3})/);
+  const base3 = m ? m[1] : raw;
+
+  return `https://menbold.github.io/LDwiki/images/${base3}_big.png`;
 }
 
-function getUnitIconPublicUrl(filename) {
-  if (!filename) return "";
-  try {
-    const baseUrl = (typeof SUPABASE_URL !== "undefined" && SUPABASE_URL) ? SUPABASE_URL : "";
-    if (!baseUrl) return "";
-    const encoded = encodeURIComponent(`${UNIT_ICON_DIR}/${filename}`).replace(/%2F/g, "/");
-    return `${baseUrl}/storage/v1/object/public/${UNIT_ICON_BUCKET}/${encoded}`;
-  } catch (e) {
-    return "";
-  }
-}
-
-/**
- * まず Supabase Storage の公開URLを試し、ダメならローカル候補も順に試す。
- */
-const ICON_PATH_CANDIDATES_PREFIXES = [
-  "./",
-  "./assets/",
-  "./assets/icons/",
-  "./icons/",
-  "./img/",
-  "./images/",
-];
-
-function buildIconCandidates(filenameOrCode) {
-  const filename = getBigIconFilename(filenameOrCode);
-  const supa = getUnitIconPublicUrl(filename);
-  const list = [];
-  if (supa) list.push(supa);
-  ICON_PATH_CANDIDATES_PREFIXES.forEach((p) => list.push(p + filename));
-  return list;
-}
-
-function setImgSrcWithFallback(imgEl, filenameOrCode) {
-  const candidates = buildIconCandidates(filenameOrCode);
-  let i = 0;
-  if (!candidates.length) {
+function setImgSrcWithFallback(imgEl, code) {
+  const url = getUserEditorIconUrl(code);
+  imgEl.src = url;
+  imgEl.onerror = function () {
+    // 画像が無い場合は薄くして「画像なし」扱い
+    imgEl.onerror = null;
     imgEl.src = "";
     imgEl.alt = "no image";
     imgEl.style.opacity = "0.35";
-    return;
-  }
+  };
+}
   imgEl.src = candidates[i];
   imgEl.onerror = function () {
     i += 1;
