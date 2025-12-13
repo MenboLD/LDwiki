@@ -1,16 +1,16 @@
+
+
 /**
- * ユニット画像URL（ユーザーデータページ用）
- * - 500番台/600番台を想定
+ * ユーザーデータ編集ページのユニット画像URL
  * - 末尾は必ず *_big.png
  * - 615 の a/b 特例は本ページでは使わない（615_big.png を採用）
- *
- * 例: 526 -> https://menbold.github.io/LDwiki/images/526_big.png
+ * - code は "526" / "615" / "615_a" / "615b" 等が来てもOK
  */
 function getUserEditorIconUrl(code) {
   const raw = String(code || "").trim();
   if (!raw) return "";
 
-  // "615_a" / "615_b" / "615a" / "615b" などが来ても 615 として扱う
+  // 先頭の3桁だけ採用（615_a / 615b 等は 615 になる）
   const m = raw.match(/^(\d{3})/);
   const base3 = m ? m[1] : raw;
 
@@ -21,24 +21,15 @@ function setImgSrcWithFallback(imgEl, code) {
   const url = getUserEditorIconUrl(code);
   imgEl.src = url;
   imgEl.onerror = function () {
-    // 画像が無い場合は薄くして「画像なし」扱い
     imgEl.onerror = null;
     imgEl.src = "";
     imgEl.alt = "no image";
     imgEl.style.opacity = "0.35";
   };
 }
-  imgEl.src = candidates[i];
-  imgEl.onerror = function () {
-    i += 1;
-    if (i < candidates.length) {
-      imgEl.src = candidates[i];
-    } else {
-      imgEl.onerror = null;
-      imgEl.src = "";
-      imgEl.alt = "no image";
-      imgEl.style.opacity = "0.35";
-    }
+
+
+
   };
 }
 function getSupabaseCreateClient() {

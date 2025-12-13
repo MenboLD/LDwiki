@@ -294,4 +294,4 @@
     }
 
 
-.version-stamp{font-size:12px;color:#666;font-weight:400;margin-left:6px;}
+.version-stamp{font-size:12px;color:var(--text-sub);font-weight:400;margin-left:8px;}
