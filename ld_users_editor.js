@@ -343,10 +343,26 @@ container.innerHTML = "";
         }
         updateUnitVisual(item);
 
-        item.addEventListener("click", () => {
-          onClickUnitItem(id);
-        });
-              attachDoubleTapHandler(item);
+        let lastTouchAt = 0;
+         item.addEventListener("pointerup", (e) => {
+           if (e.pointerType === "touch") {
+             lastTouchAt = Date.now();
+             e.preventDefault();
+             if (multiSelectMode) {
+               onClickUnitItem(id);
+             } else {
+               cycleUnitState(item);
+             }
+           }
+         });
+         item.addEventListener("click", (e) => {
+           if (Date.now() - lastTouchAt < 450) return; // touch後のclickを無視
+           if (multiSelectMode) {
+             onClickUnitItem(id);
+           } else {
+             cycleUnitState(item);
+           }
+         });
 });
 
       container.appendChild(grid);
@@ -432,23 +448,6 @@ function cycleUnitState(item) {
   updateUnitVisual(item);
 }
 
-function attachDoubleTapHandler(item) {
-  let lastTapAt = 0;
-  item.addEventListener("dblclick", (e) => {
-    e.preventDefault();
-    cycleUnitState(item);
-  });
-  item.addEventListener("touchend", (e) => {
-    const now = Date.now();
-    if (now - lastTapAt < 320) {
-      e.preventDefault();
-      cycleUnitState(item);
-      lastTapAt = 0;
-    } else {
-      lastTapAt = now;
-    }
-  }, { passive: false });
-}
 
 function updateUnitVisual(item) {
       const level = parseInt(item.dataset.level || "0", 10);
@@ -562,7 +561,7 @@ function updateUnitVisual(item) {
           json[id] = {
             form,
             level,
-            treasure: form === "mythic" && hasTreasure
+            treasure: hasTreasure
           };
         }
       });
