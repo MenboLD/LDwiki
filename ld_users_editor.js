@@ -232,25 +232,295 @@ function requireSupabase() {
     }
 
     // ユニットアイコンエディタ描画
-    
+    // 状態（1〜7）:
+    // 1: Lv0（未所持）
+    // 2: 神話Lv6
+    // 3: 神話Lv12
+    // 4: 神話Lv15
+    // 5: 不滅Lv6
+    // 6: 不滅Lv12
+    // 7: 不滅Lv15
 
-function attachTapCycleHandler(item, id) {
-  // 未選択タップ: 選択のみ / 選択済みタップ: 状態を1段階進める
-  // スマホで2段階進む原因（touch→click二重発火）を避けるため、clickは使わず pointerup のみを採用する。
-  item.addEventListener("pointerup", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const isSelected = item.classList.contains("selected");
-    if (!isSelected) {
-      selectOnlyUnitItem(id);
-      return;
+    function normalizeUnitId(id) {
+      return String(id || "").trim().replace(/\.0+$/, "");
     }
-    cycleUnitState(item);
-  }, { passive: false });
-}
 
-function renderMythicGrid(mythicState) {
+    function hasImmortalForMythic(id) {
+      const key = normalizeUnitId(id);
+      return !!HAS_IMMORTAL_BY_MYTHIC[key] || (typeof AWAKENABLE_IDS !== "undefined" && AWAKENABLE_IDS.has(key));
+    }
+
+    function getMythicIconFilename(id) {
+      const key = normalizeUnitId(id);
+      return UNIT_ICON_BIG_BY_CODE[key] || `${key}_big.png`;
+    }
+
+    function getImmortalIconFilenameByMythic(id) {
+      const key = normalizeUnitId(id);
+      const mapped = IMMORTAL_ICON_BIG_BY_MYTHIC[key];
+      if (mapped) return mapped;
+
+      // フォールバック: 514 -> 614_big.png のように +100 を試す
+      const n = Number(key);
+      if (Number.isFinite(n)) return `${n + 100}_big.png`;
+      return "";
+    }
+
+    function getIconFilenameForUnit(id, form) {
+      const key = normalizeUnitId(id);
+      if (form === "immortal") return getImmortalIconFilenameByMythic(key);
+      return getMythicIconFilename(key);
+    }
+
+    function getUnitStateIndex(item) {
+      const form = item.dataset.form === "immortal" ? "immortal" : "mythic";
+      const level = parseInt(item.dataset.level || "0", 10) || 0;
+
+      if (level <= 0) return 1;
+
+      if (form === "immortal") {
+        if (level >= 15) return 7;
+        if (level >= 12) return 6;
+        return 5; // 6以上想定
+      }
+
+      if (level >= 15) return 4;
+      if (level >= 12) return 3;
+      return 2; // 6以上想定
+    }
+
+    function getMaxStateIndexById(id) {
+      return hasImmortalForMythic(id) ? 7 : 4;
+    }
+
+    function enforceTreasureConsistency(item) {
+      const idx = getUnitStateIndex(item);
+      if (idx < 3) item.dataset.treasure = "0";
+      if (item.dataset.treasure !== "1") item.dataset.treasure = "0";
+    }
+
+    function applyStateIndex(item, idx) {
+      const i = Number(idx) || 1;
+
+      if (i <= 1) {
+        item.dataset.form = "mythic";
+        item.dataset.level = "0";
+        item.dataset.treasure = "0";
+        return;
+      }
+
+      if (i === 2) { item.dataset.form = "mythic"; item.dataset.level = "6"; return; }
+      if (i === 3) { item.dataset.form = "mythic"; item.dataset.level = "12"; return; }
+      if (i === 4) { item.dataset.form = "mythic"; item.dataset.level = "15"; return; }
+
+      // 5〜7 は不滅（覚醒がある場合のみ到達させる）
+      item.dataset.form = "immortal";
+      if (i === 5) { item.dataset.level = "6"; return; }
+      if (i === 6) { item.dataset.level = "12"; return; }
+      item.dataset.level = "15";
+    }
+
+    function updateUnitVisual(item) {
+      enforceTreasureConsistency(item);
+
+      const id = normalizeUnitId(item.dataset.id);
+      const form = item.dataset.form === "immortal" ? "immortal" : "mythic";
+      const level = parseInt(item.dataset.level || "0", 10) || 0;
+      const treasure = item.dataset.treasure === "1";
+      const idx = getUnitStateIndex(item);
+
+      // state classes
+      item.classList.remove("state-1","state-2","state-3","state-4","state-5","state-6","state-7");
+      item.classList.add(`state-${idx}`);
+
+      // dim
+      if (idx === 1) item.classList.add("dim");
+      else item.classList.remove("dim");
+
+      // img
+      const img = item.querySelector(".unit-img");
+      if (img) {
+        const filename = getIconFilenameForUnit(id, form);
+        setImgSrcWithFallback(img, filename);
+        img.style.opacity = "";
+      }
+
+      // badge
+      const badge = item.querySelector(".unit-badge");
+      if (!badge) return;
+
+      if (idx === 1) {
+        badge.textContent = "Lv0";
+        return;
+      }
+
+      const prefix = (form === "immortal") ? "不滅" : "Lv";
+      let txt = `${prefix}${level}`;
+      if (treasure && idx >= 3) txt += " 👑";
+      badge.textContent = txt;
+    }
+
+    function refreshUnitSelectionVisual() {
+      const grid = document.querySelector("#mythicGrid .unit-grid");
+      if (!grid) return;
+      grid.querySelectorAll(".unit-item").forEach((item) => {
+        const id = normalizeUnitId(item.dataset.id);
+        item.classList.toggle("selected", selectedUnitIds.has(id));
+      });
+    }
+
+    function selectOnlyUnitItem(id) {
+      const key = normalizeUnitId(id);
+      selectedUnitIds = new Set([key]);
+      refreshUnitSelectionVisual();
+    }
+
+    function toggleSelectUnitItem(id) {
+      const key = normalizeUnitId(id);
+      if (selectedUnitIds.has(key)) selectedUnitIds.delete(key);
+      else selectedUnitIds.add(key);
+      refreshUnitSelectionVisual();
+    }
+
+    function cycleStateOneStep(item) {
+      const id = normalizeUnitId(item.dataset.id);
+      const cur = getUnitStateIndex(item);
+      const max = getMaxStateIndexById(id);
+      const next = (cur >= max) ? 1 : (cur + 1);
+      applyStateIndex(item, next);
+      updateUnitVisual(item);
+    }
+
+    function attachTapCycleHandler(item) {
+      // 二重発火（touch→click）対策として click を使わず pointerup のみで処理する
+      item.addEventListener("pointerup", (e) => {
+        if (e.pointerType === "touch") {
+          e.preventDefault();
+        }
+        e.stopPropagation();
+
+        const id = normalizeUnitId(item.dataset.id);
+        const isSelected = item.classList.contains("selected");
+
+        if (multiSelectMode) {
+          // 複数選択: 選択のON/OFFのみ
+          toggleSelectUnitItem(id);
+          return;
+        }
+
+        // 単一選択:
+        // 未選択タップ -> 選択のみ / 選択済みタップ -> 1段階進行
+        if (!isSelected) {
+          selectOnlyUnitItem(id);
+          return;
+        }
+        cycleStateOneStep(item);
+      }, { passive: false });
+    }
+
+    function applyLevelToSelection(level) {
+      const grid = document.querySelector("#mythicGrid .unit-grid");
+      if (!grid) return;
+      if (selectedUnitIds.size === 0) {
+        showToast("ユニットが選択されていません。");
+        return;
+      }
+
+      selectedUnitIds.forEach((id) => {
+        const item = grid.querySelector(`.unit-item[data-id="${id}"]`);
+        if (!item) return;
+
+        const lv = Number(level) || 0;
+
+        if (lv <= 0) {
+          item.dataset.form = "mythic";
+          item.dataset.level = "0";
+          item.dataset.treasure = "0";
+          updateUnitVisual(item);
+          return;
+        }
+
+        // form は維持（不滅状態のままLv変更も可能）
+        // ただし不滅が存在しないIDで form=immortal になっていたら矯正
+        if (item.dataset.form === "immortal" && !hasImmortalForMythic(id)) {
+          item.dataset.form = "mythic";
+        }
+
+        item.dataset.level = String(lv);
+        updateUnitVisual(item);
+      });
+    }
+
+    function toggleTreasureOnSelection() {
+      const grid = document.querySelector("#mythicGrid .unit-grid");
+      if (!grid) return;
+      if (selectedUnitIds.size === 0) {
+        showToast("ユニットが選択されていません。");
+        return;
+      }
+
+      selectedUnitIds.forEach((id) => {
+        const item = grid.querySelector(`.unit-item[data-id="${id}"]`);
+        if (!item) return;
+
+        const idx = getUnitStateIndex(item);
+        if (idx < 3) {
+          // 不整合はOFFに矯正
+          item.dataset.treasure = "0";
+          updateUnitVisual(item);
+          return;
+        }
+
+        item.dataset.treasure = (item.dataset.treasure === "1") ? "0" : "1";
+        updateUnitVisual(item);
+      });
+    }
+
+    function toggleFormAwakening() {
+      const grid = document.querySelector("#mythicGrid .unit-grid");
+      if (!grid) return;
+      if (selectedUnitIds.size === 0) {
+        showToast("ユニットが選択されていません。");
+        return;
+      }
+
+      let warnedLv = false;
+      let warnedNoImm = false;
+
+      selectedUnitIds.forEach((id) => {
+        const item = grid.querySelector(`.unit-item[data-id="${id}"]`);
+        if (!item) return;
+
+        const form = item.dataset.form === "immortal" ? "immortal" : "mythic";
+        const level = parseInt(item.dataset.level || "0", 10) || 0;
+
+        if (form === "mythic") {
+          // 神話Lv15 -> 不滅Lv6（Lv15未満は警告して無変更）
+          if (level < 15) {
+            warnedLv = true;
+            return;
+          }
+          if (!hasImmortalForMythic(id)) {
+            warnedNoImm = true;
+            return;
+          }
+          item.dataset.form = "immortal";
+          item.dataset.level = "6";
+          updateUnitVisual(item);
+          return;
+        }
+
+        // 退化: 不滅 -> 神話Lv15
+        item.dataset.form = "mythic";
+        item.dataset.level = "15";
+        updateUnitVisual(item);
+      });
+
+      if (warnedLv) showToast("覚醒は神話Lv15でのみ可能です。");
+      else if (warnedNoImm) showToast("この神話ユニットは不滅への覚醒がありません。");
+    }
+
+    function renderMythicGrid(mythicState) {
       const container = document.getElementById("mythicGrid");
       container.innerHTML = "";
 
@@ -265,7 +535,7 @@ function renderMythicGrid(mythicState) {
       btnAll.className = "btn-small";
       btnAll.textContent = "全選択";
       btnAll.addEventListener("click", () => {
-        selectedUnitIds = new Set(MYTHIC_IDS);
+        selectedUnitIds = new Set(MYTHIC_IDS.map(normalizeUnitId));
         refreshUnitSelectionVisual();
       });
 
@@ -283,6 +553,12 @@ function renderMythicGrid(mythicState) {
       btnMulti.addEventListener("click", () => {
         multiSelectMode = !multiSelectMode;
         btnMulti.textContent = multiSelectMode ? "複数選択:ON" : "複数選択:OFF";
+        if (!multiSelectMode && selectedUnitIds.size > 1) {
+          // 単一モードに戻るときは先頭1つだけ残す
+          const first = selectedUnitIds.values().next().value;
+          selectedUnitIds = first ? new Set([first]) : new Set();
+          refreshUnitSelectionVisual();
+        }
       });
 
       row1.appendChild(btnAll);
@@ -313,23 +589,23 @@ function renderMythicGrid(mythicState) {
       btnTreasure.textContent = "専用👑切替";
       btnTreasure.addEventListener("click", () => toggleTreasureOnSelection());
 
-      row2.appendChild(btnLv6);
-      row2.appendChild(btnLv12);
-      row2.appendChild(btnLv15);
-      row2.appendChild(btnTreasure);
-
       const btnAwaken = document.createElement("button");
       btnAwaken.className = "btn-small";
       btnAwaken.textContent = "覚醒/退化";
       btnAwaken.addEventListener("click", () => toggleFormAwakening());
-      row2.appendChild(btnAwaken);
 
+      row2.appendChild(btnLv6);
+      row2.appendChild(btnLv12);
+      row2.appendChild(btnLv15);
+      row2.appendChild(btnTreasure);
+      row2.appendChild(btnAwaken);
       container.appendChild(row2);
 
       const grid = document.createElement("div");
       grid.className = "unit-grid";
 
-      MYTHIC_IDS.forEach(id => {
+      MYTHIC_IDS.forEach((rawId) => {
+        const id = normalizeUnitId(rawId);
         const item = document.createElement("div");
         item.className = "unit-item dim";
         item.dataset.id = id;
@@ -343,7 +619,6 @@ function renderMythicGrid(mythicState) {
         const img = document.createElement("img");
         img.className = "unit-img";
         img.alt = id;
-        setImgSrcWithFallback(img, id);
 
         const badge = document.createElement("div");
         badge.className = "unit-badge";
@@ -356,245 +631,43 @@ function renderMythicGrid(mythicState) {
 
         const info = state[id];
         if (info) {
-          const lv = typeof info.level === "number" ? info.level : 0;
-          const tre = info.treasure === true;
-          const form = info.form === "immortal" ? "immortal" : "mythic";
+          const lv = typeof info.level === "number" ? info.level : parseInt(info.level || "0", 10) || 0;
+          const tre = info.treasure === true || info.treasure === "1";
+          const form = (info.form === "immortal") ? "immortal" : "mythic";
           item.dataset.level = String(lv);
           item.dataset.treasure = tre ? "1" : "0";
           item.dataset.form = form;
         }
+
         updateUnitVisual(item);
-return;
-          }
-          const isSel = item.classList.contains("selected");
-          if (!isSel) {
-            selectedUnitIds = new Set([id]);
-            container.querySelectorAll(".unit-item").forEach((el) => el.classList.toggle("selected", el.dataset.id === String(id)));
-            updateUnitActionButtons();
-            return;
-          }
-          cycleStateOneStep(item);
-        });
-        item.addEventListener("pointerup", (e) => {
-          if (e.pointerType === "touch") {
-            e.preventDefault();
-            item.click();
-          }
-        }, { passive: false });
+        attachTapCycleHandler(item);
       });
 
       container.appendChild(grid);
-    }
-
-    function onClickUnitItem(id) {
-      if (!multiSelectMode) {
-        selectedUnitIds = new Set([id]);
-      } else {
-        if (selectedUnitIds.has(id)) {
-          selectedUnitIds.delete(id);
-        } else {
-          selectedUnitIds.add(id);
-        }
-      }
       refreshUnitSelectionVisual();
     }
 
-    function refreshUnitSelectionVisual() {
-      const grid = document.querySelector("#mythicGrid .unit-grid");
-      if (!grid) return;
-      const items = grid.querySelectorAll(".unit-item");
-      items.forEach(item => {
-        const id = item.dataset.id;
-        if (selectedUnitIds.has(id)) {
-          item.classList.add("selected");
-        } else {
-          item.classList.remove("selected");
-        }
-      });
-    }
-
-    function getUnitStateIndex(item) {
-  const form = item.dataset.form || "mythic";
-  const level = parseInt(item.dataset.level || "0", 10);
-  if (level <= 0) return 1;
-  if (form === "immortal") {
-    if (level >= 15) return 7;
-    if (level >= 12) return 6;
-    return 5;
-  }
-  if (level >= 15) return 4;
-  if (level >= 12) return 3;
-  return 2;
-}
-
-function getMaxStateIndex(item) {
-  const id = String(item.dataset.id || "").replace(/\.0+$/,"");
-  return HAS_IMMORTAL_BY_MYTHIC[id] ? 7 : 4;
-}
-
-function applyStateIndex(item, idx) {
-  const i = Number(idx) || 1;
-  if (i <= 1) {
-    item.dataset.form = "mythic";
-    item.dataset.level = "0";
-    item.dataset.treasure = "0";
-    return;
-  }
-  if (i === 2) { item.dataset.form = "mythic"; item.dataset.level = "6"; return; }
-  if (i === 3) { item.dataset.form = "mythic"; item.dataset.level = "12"; return; }
-  if (i === 4) { item.dataset.form = "mythic"; item.dataset.level = "15"; return; }
-  if (i === 5) { item.dataset.form = "immortal";
-          if (parseInt(item.dataset.level||"0",10) < 6) item.dataset.level = "6"; item.dataset.level = "6"; return; }
-  if (i === 6) { item.dataset.form = "immortal";
-          if (parseInt(item.dataset.level||"0",10) < 6) item.dataset.level = "6"; item.dataset.level = "12"; return; }
-  item.dataset.form = "immortal";
-          if (parseInt(item.dataset.level||"0",10) < 6) item.dataset.level = "6"; item.dataset.level = "15";
-}
-
-function cycleStateOneStep(item) {
-  const cur = getUnitStateIndex(item);
-  const max = getMaxStateIndex(item);
-  const next = (cur >= max) ? 1 : (cur + 1);
-  applyStateIndex(item, next);
-  updateUnitVisual(item);
-}
-
-function updateUnitImgForState(item) {
-  const id = String(item.dataset.id || "").trim().replace(/\.0+$/,"");
-  const idx = getUnitStateIndexFromDataset(item);
-  const form = idx >= 5 ? "immortal" : "mythic";
-  const filename = getIconFilenameForUnit(id, form);
-  const img = item.querySelector(".unit-img");
-  if (!img) return;
-  setImgSrcWithFallback(img, filename);
-}
-
-function updateUnitVisual(item) {
-      const id = String(item.dataset.id || "").replace(/\.0+$/,"");
-      const level = parseInt(item.dataset.level || "0", 10);
-      const hasTreasure = item.dataset.treasure === "1";
-      const img = item.querySelector(".unit-img");
-      const badge = item.querySelector(".unit-badge");
-      const idx = getUnitStateIndexFromDataset(item);
-      item.classList.remove("state-1","state-2","state-3","state-4","state-5","state-6","state-7");
-      item.classList.add(`state-${idx}`);
-      updateUnitImgForState(item);
-
-      if (!badge) return;
-
-      const idx = getUnitStateIndex(item);
-      item.classList.remove("state-1","state-2","state-3","state-4","state-5","state-6","state-7");
-      item.classList.add(`state-${idx}`);
-
-      const filename = (idx >= 5) ? getImmortalIconFilenameByMythic(id) : getBigIconFilenameByCode(id);
-      if (img) setImgSrcWithFallback(img, filename);
-
-      if (idx === 1) {
-        item.classList.add("dim");
-        badge.textContent = "Lv0";
-      } else {
-        item.classList.remove("dim");
-        const label = idx >= 5 ? "不滅" : "Lv";
-        let txt = `${label}${level}`;
-        if (idx >= 3 && hasTreasure) txt += " 👑";
-        badge.textContent = txt;
-      }
-    }
-
-function applyLevelToSelection(level) {
-      const grid = document.querySelector("#mythicGrid .unit-grid");
-      if (!grid) return;
-      if (selectedUnitIds.size === 0) {
-        showToast("ユニットが選択されていません。");
-        return;
-      }
-      selectedUnitIds.forEach(id => {
-        const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
-        if (!item) return;
-        item.dataset.level = String(level);
-        if (level === 0) {
-          item.dataset.treasure = "0";
-        }
-        updateUnitVisual(item);
-      });
-    }
-
-function toggleTreasureOnSelection() {
-      const grid = document.querySelector("#mythicGrid .unit-grid");
-      if (!grid) return;
-      if (selectedUnitIds.size === 0) {
-        showToast("ユニットが選択されていません。");
-        return;
-      }
-      selectedUnitIds.forEach(id => {
-        const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
-        if (!item) return;
-        const form = item.dataset.form || "mythic";
-        const level = parseInt(item.dataset.level || "0", 10);
-        if (form === "immortal") {
-          item.dataset.treasure = "0";
-          updateUnitVisual(item);
-          return;
-        }
-        if (level < 12) {
-          item.dataset.treasure = "0";
-          updateUnitVisual(item);
-          return;
-        }
-        const current = item.dataset.treasure === "1";
-        item.dataset.treasure = current ? "0" : "1";
-        updateUnitVisual(item);
-      });
-    }
-
-function toggleFormAwakening() {
-      const grid = document.querySelector("#mythicGrid .unit-grid");
-      if (!grid) return;
-      if (selectedUnitIds.size === 0) {
-        showToast("ユニットが選択されていません。");
-        return;
-      }
-      selectedUnitIds.forEach(id => {
-        if (!AWAKENABLE_IDS.has(id)) return;
-        const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
-        if (!item) return;
-        let form = item.dataset.form || "mythic";
-        let level = parseInt(item.dataset.level || "0", 10);
-        if (form === "mythic") {
-          if (level === 0) level = 6;
-          item.dataset.form = "immortal";
-          if (parseInt(item.dataset.level||"0",10) < 6) item.dataset.level = "6";
-          item.dataset.level = String(level);
-          item.dataset.treasure = "0";
-        } else {
-          item.dataset.form = "mythic";
-          item.dataset.level = String(level);
-        }
-        updateUnitVisual(item);
-      });
-    }
-
-function collectMythicStateFromUI() {
+    function collectMythicStateFromUI() {
       const grid = document.querySelector("#mythicGrid .unit-grid");
       const json = {};
       if (!grid) return json;
-      const items = grid.querySelectorAll(".unit-item");
-      items.forEach(item => {
-        const id = item.dataset.id;
-        const level = parseInt(item.dataset.level || "0", 10);
-        const hasTreasure = item.dataset.treasure === "1";
-        const form = item.dataset.form || "mythic";
-        if (level > 0 || hasTreasure) {
-          json[id] = {
-            form,
-            level,
-            treasure: form === "mythic" && hasTreasure
-          };
+
+      grid.querySelectorAll(".unit-item").forEach((item) => {
+        const id = normalizeUnitId(item.dataset.id);
+        const level = parseInt(item.dataset.level || "0", 10) || 0;
+        const form = item.dataset.form === "immortal" ? "immortal" : "mythic";
+        const idx = getUnitStateIndex(item);
+
+        // 不整合はOFFに矯正
+        const treasure = (idx >= 3) && (item.dataset.treasure === "1");
+
+        if (level > 0 || treasure) {
+          json[id] = { form, level, treasure };
         }
       });
+
       return json;
     }
-
     const modalBackdrop = document.getElementById("modalBackdrop");
     const modalBody = document.getElementById("modalBody");
     const modalError = document.getElementById("modalError");
