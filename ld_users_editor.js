@@ -4,6 +4,30 @@
  * - 615 の a/b 特例は本ページでは使わない（615_big.png を採用）
  * - code は "526" / "615" / "615_a" / "615b" 等が来てもOK（先頭3桁のみ採用）
  */
+function getUserEditorIconUrl(code) {
+  const raw = String(code || "").trim();
+  if (!raw) return "";
+
+  // 先頭の3桁だけ採用（615_a / 615b 等は 615 になる）
+  const m = raw.match(/^(\d{3})/);
+  const base3 = m ? m[1] : raw;
+
+  // Supabase Storage public: ld-assets/unit_icons/{code}_big.png
+  return `${SUPABASE_URL}/storage/v1/object/public/ld-assets/unit_icons/${base3}_big.png`;
+}
+
+function setImgSrcWithFallback(imgEl, filename) {
+  const file = String(filename || "").trim();
+  if (!file) { imgEl.src = ""; return; }
+  const url = `${SUPABASE_URL}/storage/v1/object/public/ld-assets/unit_icons/${file}`;
+  imgEl.src = url;
+  imgEl.onerror = function () {
+    imgEl.onerror = null;
+    imgEl.src = "";
+    imgEl.alt = "no image";
+    imgEl.style.opacity = "0.35";
+  };
+}
 // ===== /ユニット画像 =====
 
 function getSupabaseCreateClient() {
@@ -16,30 +40,9 @@ function getSupabaseCreateClient() {
 
 const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
 
-/**
- * Supabase Storage public: ld-assets/unit_icons/<filename>
- * filename is like "528_big.png" or "615_b_big.png"
- */
-function getUserEditorIconUrlFromFilename(filename) {
-  const file = String(filename || "").trim();
-  if (!file) return "";
-  return `${SUPABASE_URL}/storage/v1/object/public/ld-assets/unit_icons/${file}`;
-}
-
-function setImgSrcWithFallback(imgEl, filename) {
-  const url = getUserEditorIconUrlFromFilename(filename);
-  imgEl.src = url;
-  imgEl.onerror = function () {
-    imgEl.onerror = null;
-    imgEl.src = "";
-    imgEl.alt = "no image";
-    imgEl.style.opacity = "0.35";
-  };
-}
-
-let UNIT_ICON_BIG_BY_CODE = {};            // "526" -> "526_big.png"
-let IMMORTAL_ICON_BIG_BY_MYTHIC = {};      // "515" -> "615_big.png"
-let HAS_IMMORTAL_BY_MYTHIC = {};           // "515" -> true
+let UNIT_ICON_BIG_BY_CODE = {};            // "528" -> "528_big.png"
+let IMMORTAL_ICON_BIG_BY_MYTHIC = {};      // "514" -> "614_big.png"
+let HAS_IMMORTAL_BY_MYTHIC = {};           // "514" -> true
 
 async function loadUnitMasterMaps() {
   if (!supabase) return;
@@ -55,15 +58,15 @@ async function loadUnitMasterMaps() {
     const hasImm = {};
 
     for (const row of data) {
-      const code = row.unit_code != null ? String(row.unit_code) : "";
-      const icon = row.icon_big_filename != null ? String(row.icon_big_filename) : "";
+      const code = row.unit_code != null ? String(row.unit_code).trim() : "";
+      const icon = row.icon_big_filename != null ? String(row.icon_big_filename).trim() : "";
       if (code && icon) iconByCode[code] = icon;
 
-      const paired = row.paired_mythic_code != null ? String(row.paired_mythic_code).trim() : "";
+      const pairedRaw = row.paired_mythic_code != null ? String(row.paired_mythic_code).trim() : "";
+      const paired = pairedRaw.replace(/\.0+$/,"");
       if (paired && icon) {
-        const pairedKey = paired.replace(/\.0+$/,'');
-        immortalByMythic[pairedKey] = icon;
-        hasImm[pairedKey] = true;
+        immortalByMythic[paired] = icon;
+        hasImm[paired] = true;
       }
     }
 
@@ -73,12 +76,14 @@ async function loadUnitMasterMaps() {
   } catch (e) {}
 }
 
-function getIconFilenameForUnit(mythicCode, form) {
-  const c = String(mythicCode || "");
-  if (form === "immortal") {
-    return IMMORTAL_ICON_BIG_BY_MYTHIC[c] || `${c}_big.png`;
-  }
+function getBigIconFilenameByCode(code) {
+  const c = String(code || "").trim().replace(/\.0+$/,"");
   return UNIT_ICON_BIG_BY_CODE[c] || `${c}_big.png`;
+}
+
+function getImmortalIconFilenameByMythic(mythicCode) {
+  const m = String(mythicCode || "").trim().replace(/\.0+$/,"");
+  return IMMORTAL_ICON_BIG_BY_MYTHIC[m] || `${m}_big.png`;
 }
 
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
@@ -227,62 +232,9 @@ function requireSupabase() {
     }
 
     // ユニットアイコンエディタ描画
-    function selectOnlyUnitItem(id) {
-  // 既存の選択ロジックに寄せる：全解除→指定だけ選択
-  try {
-    selectedUnitIds.clear?.();
-  } catch (e) {}
-  // fallback: if selectedUnitIds is array
-  if (Array.isArray(selectedUnitIds)) selectedUnitIds.length = 0;
-  // add
-  if (selectedUnitIds.add) selectedUnitIds.add(id);
-  else if (Array.isArray(selectedUnitIds)) selectedUnitIds.push(id);
-  // UI反映
-  document.querySelectorAll("#mythicGrid .unit-item").forEach((el) => {
-    el.classList.toggle("selected", el.dataset.id === String(id));
-  });
-  updateUnitActionButtons?.();
-}
-
-function attachTapCycleHandler(item, id) {
-  // iOS/Android: tapで2段階進むのを避けるため click は抑制し、pointer/touch を主に使う
-  let lastTouchAt = 0;
-
-  const handleActivate = (e) => {
-    // まず選択状態を維持/付与する：未選択なら選択、選択済みなら状態を1段階進める
-    const isSelected = item.classList.contains("selected");
-    if (!isSelected) {
-      // 選択だけ（状態は変えない）
-      selectOnlyUnitItem(id);
-      return;
-    }
-    // 選択済みなら状態を進める
-    cycleUnitState(item);
-  };
-
-  item.addEventListener("pointerup", (e) => {
-    if (e.pointerType === "touch") {
-      lastTouchAt = Date.now();
-      e.preventDefault();
-      handleActivate(e);
-    }
-  }, { passive: false });
-
-  item.addEventListener("click", (e) => {
-    // touch直後のclick（二重発火）を無視
-    if (Date.now() - lastTouchAt < 700) {
-      e.preventDefault();
-      return;
-    }
-    handleActivate(e);
-  });
-}
-
-function renderMythicGrid(mythicState) {
+    function renderMythicGrid(mythicState) {
       const container = document.getElementById("mythicGrid");
-      
-      refreshAllUnitVisuals();
-container.innerHTML = "";
+      container.innerHTML = "";
 
       const state = mythicState || {};
       selectedUnitIds = new Set();
@@ -373,7 +325,7 @@ container.innerHTML = "";
         const img = document.createElement("img");
         img.className = "unit-img";
         img.alt = id;
-        setImgSrcWithFallback(img, `${id}_big.png`);
+        setImgSrcWithFallback(img, id);
 
         const badge = document.createElement("div");
         badge.className = "unit-badge";
@@ -395,27 +347,28 @@ container.innerHTML = "";
         }
         updateUnitVisual(item);
 
-        let lastTouchAt = 0;
-         item.addEventListener("pointerup", (e) => {
-           if (e.pointerType === "touch") {
-             lastTouchAt = Date.now();
-             e.preventDefault();
-             if (multiSelectMode) {
-               onClickUnitItem(id);
-             } else {
-               cycleUnitState(item);
-             }
-           }
-         });
-         item.addEventListener("click", (e) => {
-           if (Date.now() - lastTouchAt < 450) return; // touch後のclickを無視
-           if (multiSelectMode) {
-             onClickUnitItem(id);
-           } else {
-             cycleUnitState(item);
-           }
-         });
-});
+        item.addEventListener("click", (e) => {
+          // 単体操作を優先：未選択なら選択のみ、選択済みなら1段階進める
+          if (multiSelectMode) {
+            onClickUnitItem(id);
+            return;
+          }
+          const isSel = item.classList.contains("selected");
+          if (!isSel) {
+            selectedUnitIds = new Set([id]);
+            container.querySelectorAll(".unit-item").forEach((el) => el.classList.toggle("selected", el.dataset.id === String(id)));
+            updateUnitActionButtons();
+            return;
+          }
+          cycleStateOneStep(item);
+        });
+        item.addEventListener("pointerup", (e) => {
+          if (e.pointerType === "touch") {
+            e.preventDefault();
+            item.click();
+          }
+        }, { passive: false });
+      });
 
       container.appendChild(grid);
     }
@@ -447,7 +400,7 @@ container.innerHTML = "";
       });
     }
 
-    function getUnitStateIndexFromDataset(item) {
+    function getUnitStateIndex(item) {
   const form = item.dataset.form || "mythic";
   const level = parseInt(item.dataset.level || "0", 10);
   if (level <= 0) return 1;
@@ -461,12 +414,12 @@ container.innerHTML = "";
   return 2;
 }
 
-function getMaxStateIndexForUnit(item) {
+function getMaxStateIndex(item) {
   const id = String(item.dataset.id || "").replace(/\.0+$/,"");
   return HAS_IMMORTAL_BY_MYTHIC[id] ? 7 : 4;
 }
 
-function applyUnitStateIndexToDataset(item, idx) {
+function applyStateIndex(item, idx) {
   const i = Number(idx) || 1;
   if (i <= 1) {
     item.dataset.form = "mythic";
@@ -474,62 +427,51 @@ function applyUnitStateIndexToDataset(item, idx) {
     item.dataset.treasure = "0";
     return;
   }
-  if (i === 2) { item.dataset.form = "mythic"; item.dataset.level = "6"; 
-          updateUnitVisual(item);
-return; }
+  if (i === 2) { item.dataset.form = "mythic"; item.dataset.level = "6"; return; }
   if (i === 3) { item.dataset.form = "mythic"; item.dataset.level = "12"; return; }
   if (i === 4) { item.dataset.form = "mythic"; item.dataset.level = "15"; return; }
   if (i === 5) { item.dataset.form = "immortal";
-          item.dataset.level = "6"; 
-          updateUnitVisual(item);
-item.dataset.level = "6"; 
-          updateUnitVisual(item);
-return; }
+          if (parseInt(item.dataset.level||"0",10) < 6) item.dataset.level = "6"; item.dataset.level = "6"; return; }
   if (i === 6) { item.dataset.form = "immortal";
-          item.dataset.level = "6"; 
-          updateUnitVisual(item);
-item.dataset.level = "12"; return; }
+          if (parseInt(item.dataset.level||"0",10) < 6) item.dataset.level = "6"; item.dataset.level = "12"; return; }
   item.dataset.form = "immortal";
-          item.dataset.level = "6"; 
-          updateUnitVisual(item);
-item.dataset.level = "15";
+          if (parseInt(item.dataset.level||"0",10) < 6) item.dataset.level = "6"; item.dataset.level = "15";
 }
 
-function updateUnitImgForState(item) {
-  const id = item.dataset.id;
-  const idx = getUnitStateIndexFromDataset(item);
-  const form = idx >= 5 ? "immortal" : "mythic";
-  const filename = getIconFilenameForUnit(id, form);
-  const img = item.querySelector(".unit-img");
-  if (!img) return;
-  setImgSrcWithFallback(img, filename);
-}
-
-function cycleUnitState(item) {
-  const cur = getUnitStateIndexFromDataset(item);
-  const max = getMaxStateIndexForUnit(item);
+function cycleStateOneStep(item) {
+  const cur = getUnitStateIndex(item);
+  const max = getMaxStateIndex(item);
   const next = (cur >= max) ? 1 : (cur + 1);
-  applyUnitStateIndexToDataset(item, next);
+  applyStateIndex(item, next);
   updateUnitVisual(item);
 }
 
-
 function updateUnitVisual(item) {
+      const id = String(item.dataset.id || "").replace(/\.0+$/,"");
       const level = parseInt(item.dataset.level || "0", 10);
       const hasTreasure = item.dataset.treasure === "1";
-      const form = item.dataset.form || "mythic";
+      const img = item.querySelector(".unit-img");
       const badge = item.querySelector(".unit-badge");
-      const idx = getUnitStateIndexFromDataset(item);
+      if (!badge) return;
+
+      const idx = getUnitStateIndex(item);
       item.classList.remove("state-1","state-2","state-3","state-4","state-5","state-6","state-7");
       item.classList.add(`state-${idx}`);
-      updateUnitImgForState(item);
 
-      if (!badge) return;
+      const filename = (idx >= 5) ? getImmortalIconFilenameByMythic(id) : getBigIconFilenameByCode(id);
+      if (img) setImgSrcWithFallback(img, filename);
 
       if (idx === 1) {
         item.classList.add("dim");
         badge.textContent = "Lv0";
       } else {
+        item.classList.remove("dim");
+        const label = idx >= 5 ? "不滅" : "Lv";
+        let txt = `${label}${level}`;
+        if (idx >= 3 && hasTreasure) txt += " 👑";
+        badge.textContent = txt;
+      }
+} else {
         item.classList.remove("dim");
         let label = form === "immortal" ? "不滅" : "Lv";
         let txt = label + level;
@@ -538,7 +480,6 @@ function updateUnitVisual(item) {
         }
         badge.textContent = txt;
       }
-    }
 
     function applyLevelToSelection(level) {
       const grid = document.querySelector("#mythicGrid .unit-grid");
@@ -602,10 +543,8 @@ function updateUnitVisual(item) {
         if (form === "mythic") {
           if (level === 0) level = 6;
           item.dataset.form = "immortal";
-          item.dataset.level = "6";
-          
-          updateUnitVisual(item);
-item.dataset.level = String(level);
+          if (parseInt(item.dataset.level||"0",10) < 6) item.dataset.level = "6";
+          item.dataset.level = String(level);
           item.dataset.treasure = "0";
         } else {
           item.dataset.form = "mythic";
@@ -629,7 +568,7 @@ item.dataset.level = String(level);
           json[id] = {
             form,
             level,
-            treasure: hasTreasure
+            treasure: form === "mythic" && hasTreasure
           };
         }
       });
@@ -946,7 +885,6 @@ main.appendChild(nameEl);
 
     (async function init() {
       await loadUnitMasterMaps();
-
       setView("home");
       await fetchUsersCount();
     })();
@@ -956,9 +894,4 @@ main.appendChild(nameEl);
 function sb() {
   if (!requireSupabase()) throw new Error("Supabase not ready");
   return supabase;
-}
-
-
-function refreshAllUnitVisuals(){
-  document.querySelectorAll('#mythicGrid .unit-item').forEach(updateUnitVisual);
 }
