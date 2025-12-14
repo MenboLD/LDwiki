@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DPS計算ツール - ラッキー傭兵団</title>
+  <style>
+    :root { --bg:#0b0f14; --card:#121a23; --txt:#e8f0ff; --mut:#9fb3c8; --line:#223244; }
+    body{ margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; background:var(--bg); color:var(--txt); }
+    .wrap{ max-width:980px; margin:0 auto; padding:18px; }
+    h1{ font-size:20px; margin:0 0 10px; }
+    .note{ color:var(--mut); font-size:12px; line-height:1.5; }
+    .grid{ display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media(min-width:860px){ .grid{ grid-template-columns: 1fr 1fr; } }
+    .card{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
+    .card h2{ font-size:14px; margin:0 0 10px; color:#cfe3ff; }
+    .row{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .row3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; }
+    label{ display:block; font-size:12px; color:var(--mut); margin:0 0 6px; }
+    input, select{ width:100%; padding:10px 10px; border-radius:10px; border:1px solid var(--line); background:#0e141c; color:var(--txt); }
+    input[type="checkbox"]{ width:auto; transform: scale(1.1); }
+    .chk{ display:flex; align-items:center; gap:8px; color:var(--mut); font-size:12px; margin-top:8px; }
+    .btns{ display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+    button{ padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:#152131; color:var(--txt); cursor:pointer; }
+    button:hover{ filter:brightness(1.07); }
+    .out{ font-size:28px; font-weight:700; letter-spacing:0.2px; }
+    .subout{ color:var(--mut); font-size:12px; margin-top:6px; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px; color:#cfe3ff; white-space:pre-wrap; }
+    .hr{ height:1px; background:var(--line); margin:12px 0; }
+    .hide{ display:none; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>DPS計算ツール（ラッキー傭兵団）</h1>
+  <div class="note">
+    ・1秒=40フレーム。マナ/クールは <b>40Fごとに加算</b>。<br>
+    ・究極中に加算が止まるユニットがあるため、チェックで切替可能にしています（デフォルトON）。<br>
+    ・小数は出力時に <b>小数第6位で四捨五入</b>。
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>入力：基本ステータス</h2>
+      <div class="row">
+        <div>
+          <label>攻撃力</label>
+          <input id="atk" type="number" step="0.000001" value="1500">
+        </div>
+        <div>
+          <label>攻撃速度</label>
+          <input id="aspd" type="number" step="0.000001" value="2.4">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>最大マナ値 / 最大クールタイム秒</label>
+          <input id="gaugeMax" type="number" step="0.000001" value="100">
+        </div>
+        <div id="manaPerSecBox">
+          <label>秒間回復マナ値（時間マナ）</label>
+          <input id="manaPerSec" type="number" step="0.000001" value="1">
+        </div>
+      </div>
+      <div class="note">
+        ※基本攻撃1回につきマナ+1は固定（仕様どおり）。<br>
+        ※クールタイプは「1秒あたりクール+1秒」で固定（40Fごと+1秒）。
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>入力：究極</h2>
+      <div class="row">
+        <div>
+          <label>究極タイプ</label>
+          <select id="ultType">
+            <option value="none">無し</option>
+            <option value="mana" selected>マナ</option>
+            <option value="cool">クールタイム</option>
+          </select>
+        </div>
+        <div>
+          <label>究極のリセットタイミング</label>
+          <select id="ultReset">
+            <option value="end" selected>終了時に0</option>
+            <option value="start">開始時に0</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>究極ダメージ倍率（例：1500% → 15）</label>
+          <input id="ultMul" type="number" step="0.000001" value="15">
+        </div>
+        <div>
+          <label>究極モーション（フレーム数）</label>
+          <input id="ultF" type="number" step="0.000001" value="44">
+        </div>
+      </div>
+      <div class="chk">
+        <input id="ultStopsGauge" type="checkbox" checked>
+        <span>究極モーション中はマナ/クールの加算が停止する</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>入力：スキルA</h2>
+      <div class="row3">
+        <div>
+          <label>倍率（例：600% → 6）</label>
+          <input id="aMul" type="number" step="0.000001" value="6">
+        </div>
+        <div>
+          <label>確率（例：10% → 0.10）</label>
+          <input id="aP" type="number" step="0.000001" value="0.10">
+        </div>
+        <div>
+          <label>モーション（フレーム数）</label>
+          <input id="aF" type="number" step="0.000001" value="32">
+        </div>
+      </div>
+      <div class="note">※スキルAが無い場合は「確率=0」にしてください。</div>
+    </div>
+
+    <div class="card">
+      <h2>入力：スキルB</h2>
+      <div class="row">
+        <div>
+          <label>スキルBの形式</label>
+          <select id="bType">
+            <option value="none" selected>無し</option>
+            <option value="prob">倍率＋確率タイプ</option>
+            <option value="count">基本攻撃の規定回数Nタイプ</option>
+          </select>
+        </div>
+        <div>
+          <label>モーション（フレーム数）</label>
+          <input id="bF" type="number" step="0.000001" value="40">
+        </div>
+      </div>
+
+      <div class="row3">
+        <div>
+          <label>倍率（例：1500% → 15）</label>
+          <input id="bMul" type="number" step="0.000001" value="15">
+        </div>
+        <div id="bPBox">
+          <label>確率（倍率＋確率タイプ時）</label>
+          <input id="bP" type="number" step="0.000001" value="0.12">
+        </div>
+        <div id="bNBox" class="hide">
+          <label>規定回数N（Nタイプ時）</label>
+          <input id="bN" type="number" step="0.000001" value="15">
+        </div>
+      </div>
+
+      <div class="note">
+        ・倍率＋確率タイプ：チェックBで A/B/基本 の確率抽選（基本=1-pA-pB）。<br>
+        ・Nタイプ：まずA抽選→外れ行動で「基本N回達成ならB」。
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px;">
+    <h2>結果</h2>
+    <div class="out" id="dpsOut">-</div>
+    <div class="subout" id="dpsSub">-</div>
+    <div class="btns">
+      <button id="calcBtn">計算する</button>
+      <button id="saveBtn">入力を保存</button>
+      <button id="loadBtn">保存を読み込み</button>
+      <button id="resetBtn">初期化</button>
+    </div>
+    <div class="hr"></div>
+    <div class="mono" id="detailOut"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const F = 40;
+
+  const $ = id => document.getElementById(id);
+  const r6 = x => (isFinite(x) ? Math.round(x * 1e6) / 1e6 : NaN);
+  const clamp01 = x => Math.max(0, Math.min(1, x));
+
+  function syncVisibility() {
+    const ultType = $("ultType").value;
+    $("manaPerSecBox").classList.toggle("hide", ultType !== "mana");
+
+    const bType = $("bType").value;
+    $("bPBox").classList.toggle("hide", bType !== "prob");
+    $("bNBox").classList.toggle("hide", bType !== "count");
+  }
+
+  function getVal() {
+    syncVisibility();
+
+    const atk = +$("atk").value;
+    const aspd = +$("aspd").value;
+    const gaugeMax = +$("gaugeMax").value;
+
+    const manaPerSec = +$("manaPerSec").value; // マナタイプ時のみ意味がある
+
+    const ultType = $("ultType").value; // none/mana/cool
+    const ultMul = +$("ultMul").value;
+    const ultF = +$("ultF").value;
+    const ultReset = $("ultReset").value; // start/end
+    const ultStopsGauge = $("ultStopsGauge").checked;
+
+    const aMul = +$("aMul").value;
+    const aP = +$("aP").value;
+    const aF = +$("aF").value;
+
+    const bType = $("bType").value;
+    const bMul = +$("bMul").value;
+    const bF = +$("bF").value;
+    const bP = +$("bP").value;
+    const bN = +$("bN").value;
+
+    return {
+      atk, aspd, gaugeMax,
+      manaPerSec,
+      ultType, ultMul, ultF, ultReset, ultStopsGauge,
+      aMul, aP, aF,
+      bType, bMul, bF, bP, bN
+    };
+  }
+
+  // 非究極：平均DPSと「基本攻撃回数/フレーム」を返す
+  function calcNonUlt(v) {
+    const T0 = F / v.aspd; // 基本攻撃フレーム数
+
+    // スキルが無い場合は確率0で扱う（入力ルール）
+    const pA = clamp01(v.aP);
+    const mA = v.aMul;
+    const fA = v.aF;
+
+    // B
+    if (v.bType === "count") {
+      const N = v.bN;
+      const mB = v.bMul;
+      const fB = v.bF;
+
+      if (!(N > 0)) return { err: "スキルB（Nタイプ）の規定回数Nが0以下です" };
+      if (pA >= 1) return { err: "スキルA確率が1以上です（Nタイプは未定義）" };
+
+      // スキルA期待回数 = (N+1)pA/(1-pA)
+      const EA = (N + 1) * pA / (1 - pA);
+
+      // 期待総フレーム（B1回単位）
+      const expFrames = T0 * N + fA * EA + fB;
+
+      // 期待総ダメ（B1回単位） ※基本倍率=1
+      const expDamage = v.atk * (N * 1 + mA * EA + mB);
+
+      const nonUltDPS = expDamage / (expFrames / F);
+
+      // 基本回数/フレーム（B1回単位で基本は必ずN回）
+      const basicPerFrame = N / expFrames;
+
+      return { mode:"countB", T0, pA, EA, expFrames, expDamage, nonUltDPS, basicPerFrame };
+    }
+
+    // Bが確率 or なし
+    const pB = (v.bType === "prob") ? clamp01(v.bP) : 0;
+    const mB = (v.bType === "prob") ? v.bMul : 0;
+    const fB = (v.bType === "prob") ? v.bF : 0;
+
+    const p0 = clamp01(1 - pA - pB);
+
+    const avgFrames = T0 * p0 + fA * pA + fB * pB;
+    const avgMul = 1 * p0 + mA * pA + mB * pB;
+
+    const nonUltDPS = (v.atk * avgMul) / (avgFrames / F);
+    const basicPerFrame = p0 / avgFrames;
+
+    return { mode:"prob", T0, pA, pB, p0, avgFrames, avgMul, nonUltDPS, basicPerFrame };
+  }
+
+  function calcTotal(v) {
+    const nu = calcNonUlt(v);
+    if (nu.err) return { err: nu.err };
+
+    if (v.ultType === "none") {
+      return { dps: nu.nonUltDPS, detail: { ...nu, cycleFrames:NaN, cycleDamage:NaN, framesNonUltToReady:NaN } };
+    }
+
+    const ultDamage = v.atk * v.ultMul;
+
+    // 周期合成
+    if (v.ultType === "mana") {
+      // 時間マナ：秒間回復マナ値 → 1フレームあたり
+      const timeManaPerFrame_nonUlt = v.manaPerSec / F;
+
+      // 基本攻撃マナ：基本1回で+1（固定）
+      const basicManaPerFrame_nonUlt = nu.basicPerFrame * 1;
+
+      const manaPerFrame_nonUlt = timeManaPerFrame_nonUlt + basicManaPerFrame_nonUlt;
+
+      let framesNonUltToReady, cycleFrames, cycleDamage;
+
+      if (v.ultReset === "end") {
+        framesNonUltToReady = v.gaugeMax / manaPerFrame_nonUlt;
+        cycleFrames = framesNonUltToReady + v.ultF;
+        cycleDamage = nu.nonUltDPS * (framesNonUltToReady / F) + ultDamage;
+      } else {
+        // 開始時リセット：究極中に進むか（時間マナのみが進む想定）
+        const timeManaPerFrame_ult = (v.ultStopsGauge ? 0 : (v.manaPerSec / F));
+        const manaGainDuringUlt = timeManaPerFrame_ult * v.ultF;
+
+        const remain = Math.max(0, v.gaugeMax - manaGainDuringUlt);
+        framesNonUltToReady = remain / manaPerFrame_nonUlt;
+
+        cycleFrames = v.ultF + framesNonUltToReady;
+        cycleDamage = ultDamage + nu.nonUltDPS * (framesNonUltToReady / F);
+      }
+
+      const dps = cycleDamage / (cycleFrames / F);
+      return {
+        dps,
+        detail: {
+          ...nu,
+          timeManaPerFrame_nonUlt,
+          basicManaPerFrame_nonUlt,
+          manaPerFrame_nonUlt,
+          framesNonUltToReady,
+          cycleFrames,
+          cycleDamage
+        }
+      };
+    }
+
+    if (v.ultType === "cool") {
+      // クールは「40Fごとに1秒」固定 → 1フレームあたり 1/40 秒
+      const coolPerFrame_nonUlt = 1 / F;
+
+      let framesNonUltToReady, cycleFrames, cycleDamage;
+
+      if (v.ultReset === "end") {
+        framesNonUltToReady = v.gaugeMax / coolPerFrame_nonUlt; // = gaugeMax*40
+        cycleFrames = framesNonUltToReady + v.ultF;
+        cycleDamage = nu.nonUltDPS * (framesNonUltToReady / F) + ultDamage;
+      } else {
+        const coolPerFrame_ult = (v.ultStopsGauge ? 0 : (1 / F));
+        const coolGainDuringUlt = coolPerFrame_ult * v.ultF;
+
+        const remain = Math.max(0, v.gaugeMax - coolGainDuringUlt);
+        framesNonUltToReady = remain / coolPerFrame_nonUlt;
+
+        cycleFrames = v.ultF + framesNonUltToReady;
+        cycleDamage = ultDamage + nu.nonUltDPS * (framesNonUltToReady / F);
+      }
+
+      const dps = cycleDamage / (cycleFrames / F);
+      return {
+        dps,
+        detail: {
+          ...nu,
+          coolPerFrame_nonUlt,
+          framesNonUltToReady,
+          cycleFrames,
+          cycleDamage
+        }
+      };
+    }
+
+    return { err: "未知の究極タイプです" };
+  }
+
+  function fmt(k, v) {
+    if (typeof v !== "number") return `${k}: ${String(v)}`;
+    return `${k}: ${r6(v)}`;
+  }
+
+  function render() {
+    const v = getVal();
+    const res = calcTotal(v);
+
+    if (res.err) {
+      $("dpsOut").textContent = "計算エラー";
+      $("dpsSub").textContent = res.err;
+      $("detailOut").textContent = "";
+      return;
+    }
+
+    const dps = r6(res.dps);
+    $("dpsOut").textContent = `${dps}`;
+    $("dpsSub").textContent = `（DPS / 小数第6位で四捨五入）`;
+
+    const d = res.detail;
+    const lines = [];
+
+    lines.push("=== 非究極（基本/スキル） ===");
+    lines.push(fmt("基本攻撃のフレーム数 (=40/攻撃速度)", d.T0));
+    if (d.mode === "prob") {
+      lines.push(fmt("スキルA確率", d.pA));
+      lines.push(fmt("スキルB確率", d.pB));
+      lines.push(fmt("基本確率 (=1-pA-pB)", d.p0));
+      lines.push(fmt("平均行動フレーム数", d.avgFrames));
+      lines.push(fmt("平均ダメ倍率（基本=1）", d.avgMul));
+    } else {
+      lines.push(fmt("スキルA確率", d.pA));
+      lines.push(fmt("スキルA期待回数 ((N+1)p/(1-p))", d.EA));
+      lines.push(fmt("期待総フレーム数（B1回単位）", d.expFrames));
+    }
+    lines.push(fmt("非究極DPS", d.nonUltDPS));
+    lines.push(fmt("非究極：基本攻撃回数/フレーム", d.basicPerFrame));
+    lines.push(fmt("非究極：基本攻撃回数/秒", d.basicPerFrame * F));
+
+    lines.push("\n=== 究極（周期合成） ===");
+    lines.push(fmt("周期：非究極フレーム数", d.framesNonUltToReady));
+    lines.push(fmt("周期総フレーム数", d.cycleFrames));
+    lines.push(fmt("周期総ダメージ", d.cycleDamage));
+    lines.push(fmt("最終DPS", res.dps));
+
+    if ($("ultType").value === "mana") {
+      lines.push("\n--- マナ内訳（非究極中） ---");
+      lines.push(fmt("時間マナ/フレーム (=秒間回復マナ/40)", d.timeManaPerFrame_nonUlt));
+      lines.push(fmt("基本マナ/フレーム (=基本回数/フレーム×1)", d.basicManaPerFrame_nonUlt));
+      lines.push(fmt("合計マナ/フレーム", d.manaPerFrame_nonUlt));
+    }
+    if ($("ultType").value === "cool") {
+      lines.push("\n--- クール内訳（非究極中） ---");
+      lines.push(fmt("クール/フレーム (=1/40)", d.coolPerFrame_nonUlt));
+    }
+
+    $("detailOut").textContent = lines.join("\n");
+  }
+
+  function save() {
+    const v = {};
+    document.querySelectorAll("input,select").forEach(el => {
+      if (!el.id) return;
+      if (el.type === "checkbox") v[el.id] = el.checked;
+      else v[el.id] = el.value;
+    });
+    localStorage.setItem("LD_DPS_TOOL_V2", JSON.stringify(v));
+    alert("保存しました");
+  }
+
+  function load() {
+    const raw = localStorage.getItem("LD_DPS_TOOL_V2");
+    if (!raw) return alert("保存データがありません");
+    const v = JSON.parse(raw);
+    for (const [k,val] of Object.entries(v)) {
+      const el = $(k);
+      if (!el) continue;
+      if (el.type === "checkbox") el.checked = !!val;
+      else el.value = val;
+    }
+    render();
+    alert("読み込みました");
+  }
+
+  function resetAll() {
+    localStorage.removeItem("LD_DPS_TOOL_V2");
+    location.reload();
+  }
+
+  $("calcBtn").addEventListener("click", render);
+  $("saveBtn").addEventListener("click", save);
+  $("loadBtn").addEventListener("click", load);
+  $("resetBtn").addEventListener("click", resetAll);
+
+  document.querySelectorAll("input,select").forEach(el => el.addEventListener("change", render));
+  $("ultType").addEventListener("change", syncVisibility);
+  $("bType").addEventListener("change", syncVisibility);
+
+  syncVisibility();
+  render();
+})();
+</script>
+</body>
+</html>
