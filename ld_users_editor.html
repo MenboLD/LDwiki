@@ -4,17 +4,32 @@
   <meta charset="UTF-8" />
   <title>ユーザーデータベース編集（ld_users）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="./ld_users_editor.css?v=202512141230_fix1" />
+    <link rel="stylesheet" href="./ld_users_editor.css?v=202512141400" />
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
   <div class="app">
     <header class="app-header">
-      <div>
-        <div class="app-title">ユーザーデータベース</div>
-        <div class="app-subtitle">v1.0.2_202512141230</div>
-      </div>
+      <h1 class="app-title">ユーザーデータベース</h1>
+      <div class="app-subtitle">v1.0.3_202512141400</div>
+
+      <section class="user-panel">
+        <div class="user-input-row user-input-row--one-line">
+          <label class="user-label">
+            ユーザー名
+            <input id="userNameInput" type="text" maxlength="16" placeholder="最大 全角8文字 / 半角16文字" />
+          </label>
+          <label class="user-label">
+            パス
+            <input id="userTagInput" type="text" maxlength="10" placeholder="最大 全角5文字 / 半角10文字" />
+          </label>
+          <button id="userActionBtn" type="button" class="user-action-btn" disabled>新規登録</button>
+        </div>
+        <div class="user-status-row">
+          <span id="userStatusLabel" class="user-status-label">ユーザー名を入力してください</span>
+        </div>
+      </section>
       <div id="headerStats" class="app-subtitle"></div>
     </header>
 
@@ -88,7 +103,7 @@
     <div id="toast" class="toast"></div>
   </div>
 
-    <script type="module" src="./ld_users_editor.js?v=202512141230_fix1"></script>
+    <script type="module" src="./ld_users_editor.js?v=202512141400"></script>
 
 </body>
 </html>
