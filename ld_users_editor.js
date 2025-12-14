@@ -1,52 +1,45 @@
 
-
-// ===== v1.0.3: auth UI (board-like) =====
+// ===== v1.0.3 (UI refresh) header auth helpers =====
 const authState = {
-  userCache: new Map(), // name -> user record
+  userCache: new Map(),
   nameCheckTimer: null,
-  lastCheckedName: "",
   lockKeyPrefix: "ld_users_editor_lock:",
 };
 
-function charWidth(ch) {
+function _charWidth(ch){
   const code = ch.codePointAt(0) || 0;
-  if (code >= 0x20 && code <= 0x7E) return 1; // ASCII
-  if (code >= 0xFF61 && code <= 0xFF9F) return 1; // halfwidth kana
+  if (code >= 0x20 && code <= 0x7E) return 1;       // ASCII
+  if (code >= 0xFF61 && code <= 0xFF9F) return 1;   // halfwidth kana
   return 2;
 }
-
-function visualWidth(str) {
+function visualWidth(str){
   let w = 0;
-  for (const ch of (str || "")) w += charWidth(ch);
+  for (const ch of (str || "")) w += _charWidth(ch);
   return w;
 }
-
-function isValidNameTag(name, tag) {
+function isValidNameTag(name, tag){
   const n = (name || "").trim();
   const t = (tag || "").trim();
   if (!n || !t) return false;
   return visualWidth(n) <= 16 && visualWidth(t) <= 10;
 }
-
-function getLockUntil(name) {
+function getLockUntil(name){
   const n = (name || "").trim();
   if (!n) return 0;
   const raw = localStorage.getItem(authState.lockKeyPrefix + n);
   const until = raw ? Number(raw) : 0;
   return Number.isFinite(until) ? until : 0;
 }
-
-function setLock(name, minutes = 3) {
+function setLockMinutes(name, minutes=3){
   const n = (name || "").trim();
   if (!n) return;
-  const until = Date.now() + minutes * 60 * 1000;
-  localStorage.setItem(authState.lockKeyPrefix + n, String(until));
+  localStorage.setItem(authState.lockKeyPrefix + n, String(Date.now() + minutes*60*1000));
 }
-
-function lockRemainingMs(name) {
+function lockRemainingMs(name){
   const until = getLockUntil(name);
   return Math.max(0, until - Date.now());
 }
+
 
 // ===== ユーザーデータ編集ページ：ユニット画像（GitHub Pages /images を参照） =====
 /**
@@ -133,7 +126,15 @@ function getBigIconFilenameByCode(code) {
 
 function getImmortalIconFilenameByMythic(mythicCode) {
   const m = String(mythicCode || "").trim().replace(/\.0+$/,"");
-  return IMMORTAL_ICON_BIG_BY_MYTHIC[m] || `${m}_big.png`;
+  // 1) unit_master の paired_mythic_code 由来のマップがあれば最優先
+  if (IMMORTAL_ICON_BIG_BY_MYTHIC[m]) return IMMORTAL_ICON_BIG_BY_MYTHIC[m];
+
+  // 2) 取れない場合は +100 フォールバック（例: 515 -> 615_big.png）
+  const n = parseInt(m, 10);
+  if (Number.isFinite(n)) return `${n + 100}_big.png`;
+
+  // 3) どうしても数値化できない場合だけ原状維持
+  return `${m}_big.png`;
 }
 
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
@@ -300,172 +301,46 @@ function attachTapCycleHandler(item, id) {
   }, { passive: false });
 }
 
-function renderMythicGrid(mythicState) {
-      const container = document.getElementById("mythicGrid");
-      container.innerHTML = "";
+// =====================
+// 神話/不滅ユニットUI
+//  state index:
+//   1: Lv0(未所持)
+//   2: 神話Lv6
+//   3: 神話Lv12
+//   4: 神話Lv15
+//   5: 不滅Lv6
+//   6: 不滅Lv12
+//   7: 不滅Lv15
+// =====================
 
-      const state = mythicState || {};
-      selectedUnitIds = new Set();
-      multiSelectMode = false;
+function normalizeUnitId(id) {
+  return String(id || "").trim().replace(/\.0+$/, "");
+}
 
-      const row1 = document.createElement("div");
-      row1.className = "unit-controls-row";
+function isAwakenableMythic(id) {
+  const key = normalizeUnitId(id);
+  return !!(HAS_IMMORTAL_BY_MYTHIC[key] || AWAKENABLE_IDS.has(key));
+}
 
-      const btnAll = document.createElement("button");
-      btnAll.className = "btn-small";
-      btnAll.textContent = "全選択";
-      btnAll.addEventListener("click", () => {
-        selectedUnitIds = new Set(MYTHIC_IDS);
-        refreshUnitSelectionVisual();
-      });
-
-      const btnClear = document.createElement("button");
-      btnClear.className = "btn-small";
-      btnClear.textContent = "選択解除";
-      btnClear.addEventListener("click", () => {
-        selectedUnitIds = new Set();
-        refreshUnitSelectionVisual();
-      });
-
-      const btnMulti = document.createElement("button");
-      btnMulti.className = "btn-small";
-      btnMulti.textContent = "複数選択:OFF";
-      btnMulti.addEventListener("click", () => {
-        multiSelectMode = !multiSelectMode;
-        btnMulti.textContent = multiSelectMode ? "複数選択:ON" : "複数選択:OFF";
-      });
-
-      row1.appendChild(btnAll);
-      row1.appendChild(btnClear);
-      row1.appendChild(btnMulti);
-      container.appendChild(row1);
-
-      const row2 = document.createElement("div");
-      row2.className = "unit-controls-row";
-
-      const btnLv6 = document.createElement("button");
-      btnLv6.className = "btn-small";
-      btnLv6.textContent = "Lv6";
-      btnLv6.addEventListener("click", () => applyLevelToSelection(6));
-
-      const btnLv12 = document.createElement("button");
-      btnLv12.className = "btn-small";
-      btnLv12.textContent = "Lv12";
-      btnLv12.addEventListener("click", () => applyLevelToSelection(12));
-
-      const btnLv15 = document.createElement("button");
-      btnLv15.className = "btn-small";
-      btnLv15.textContent = "Lv15";
-      btnLv15.addEventListener("click", () => applyLevelToSelection(15));
-
-      const btnTreasure = document.createElement("button");
-      btnTreasure.className = "btn-small";
-      btnTreasure.textContent = "専用👑切替";
-      btnTreasure.addEventListener("click", () => toggleTreasureOnSelection());
-
-      row2.appendChild(btnLv6);
-      row2.appendChild(btnLv12);
-      row2.appendChild(btnLv15);
-      row2.appendChild(btnTreasure);
-
-      const btnAwaken = document.createElement("button");
-      btnAwaken.className = "btn-small";
-      btnAwaken.textContent = "覚醒/退化";
-      btnAwaken.addEventListener("click", () => toggleFormAwakening());
-      row2.appendChild(btnAwaken);
-
-      container.appendChild(row2);
-
-      const grid = document.createElement("div");
-      grid.className = "unit-grid";
-
-      MYTHIC_IDS.forEach(id => {
-        const item = document.createElement("div");
-        item.className = "unit-item dim";
-        item.dataset.id = id;
-        item.dataset.level = "0";
-        item.dataset.treasure = "0";
-        item.dataset.form = "mythic";
-
-        const inner = document.createElement("div");
-        inner.className = "unit-inner";
-
-        const img = document.createElement("img");
-        img.className = "unit-img";
-        img.alt = id;
-        setImgSrcWithFallback(img, id);
-
-        const badge = document.createElement("div");
-        badge.className = "unit-badge";
-        badge.textContent = "Lv0";
-
-        inner.appendChild(img);
-        inner.appendChild(badge);
-        item.appendChild(inner);
-        grid.appendChild(item);
-
-        const info = state[id];
-        if (info) {
-          const lv = typeof info.level === "number" ? info.level : 0;
-          const tre = info.treasure === true;
-          const form = info.form === "immortal" ? "immortal" : "mythic";
-          item.dataset.level = String(lv);
-          item.dataset.treasure = tre ? "1" : "0";
-          item.dataset.form = form;
-        }
-        updateUnitVisual(item);
-
-        // v1.0.3: unit tap handler (single-step, no touch/click double fire)
-        attachTapCycleHandler(item, id);
-      });
-
-      container.appendChild(grid);
-    }
-
-    function onClickUnitItem(id) {
-      if (!multiSelectMode) {
-        selectedUnitIds = new Set([id]);
-      } else {
-        if (selectedUnitIds.has(id)) {
-          selectedUnitIds.delete(id);
-        } else {
-          selectedUnitIds.add(id);
-        }
-      }
-      refreshUnitSelectionVisual();
-    }
-
-    function refreshUnitSelectionVisual() {
-      const grid = document.querySelector("#mythicGrid .unit-grid");
-      if (!grid) return;
-      const items = grid.querySelectorAll(".unit-item");
-      items.forEach(item => {
-        const id = item.dataset.id;
-        if (selectedUnitIds.has(id)) {
-          item.classList.add("selected");
-        } else {
-          item.classList.remove("selected");
-        }
-      });
-    }
-
-    function getUnitStateIndex(item) {
-  const form = item.dataset.form || "mythic";
+function getUnitStateIndex(item) {
+  const form = item.dataset.form === "immortal" ? "immortal" : "mythic";
   const level = parseInt(item.dataset.level || "0", 10);
-  if (level <= 0) return 1;
+  if (!Number.isFinite(level) || level <= 0) return 1;
+
   if (form === "immortal") {
     if (level >= 15) return 7;
     if (level >= 12) return 6;
     return 5;
   }
+
   if (level >= 15) return 4;
   if (level >= 12) return 3;
   return 2;
 }
 
 function getMaxStateIndex(item) {
-  const id = String(item.dataset.id || "").replace(/\.0+$/,"");
-  return HAS_IMMORTAL_BY_MYTHIC[id] ? 7 : 4;
+  const id = normalizeUnitId(item.dataset.id);
+  return isAwakenableMythic(id) ? 7 : 4;
 }
 
 function applyStateIndex(item, idx) {
@@ -476,15 +351,16 @@ function applyStateIndex(item, idx) {
     item.dataset.treasure = "0";
     return;
   }
-  if (i === 2) { item.dataset.form = "mythic"; item.dataset.level = "6"; return; }
-  if (i === 3) { item.dataset.form = "mythic"; item.dataset.level = "12"; return; }
-  if (i === 4) { item.dataset.form = "mythic"; item.dataset.level = "15"; return; }
-  if (i === 5) { item.dataset.form = "immortal";
-          if (parseInt(item.dataset.level||"0",10) < 6) item.dataset.level = "6"; item.dataset.level = "6"; return; }
-  if (i === 6) { item.dataset.form = "immortal";
-          if (parseInt(item.dataset.level||"0",10) < 6) item.dataset.level = "6"; item.dataset.level = "12"; return; }
-  item.dataset.form = "immortal";
-          if (parseInt(item.dataset.level||"0",10) < 6) item.dataset.level = "6"; item.dataset.level = "15";
+
+  if (i === 2) { item.dataset.form = "mythic"; item.dataset.level = "6"; }
+  else if (i === 3) { item.dataset.form = "mythic"; item.dataset.level = "12"; }
+  else if (i === 4) { item.dataset.form = "mythic"; item.dataset.level = "15"; }
+  else if (i === 5) { item.dataset.form = "immortal"; item.dataset.level = "6"; }
+  else if (i === 6) { item.dataset.form = "immortal"; item.dataset.level = "12"; }
+  else { item.dataset.form = "immortal"; item.dataset.level = "15"; }
+
+  // 👑は状態3〜7のみ許可。状態1〜2に落ちた場合は自動でOFF。
+  if (i < 3) item.dataset.treasure = "0";
 }
 
 function cycleStateOneStep(item) {
@@ -495,134 +371,303 @@ function cycleStateOneStep(item) {
   updateUnitVisual(item);
 }
 
-function updateUnitImgForState(item) {
-  const id = String(item.dataset.id || "").trim().replace(/\.0+$/,"");
-  const idx = getUnitStateIndexFromDataset(item);
-  const form = idx >= 5 ? "immortal" : "mythic";
-  const filename = getIconFilenameForUnit(id, form);
-  const img = item.querySelector(".unit-img");
-  if (!img) return;
-  setImgSrcWithFallback(img, filename);
+function selectOnlyUnitItem(id) {
+  selectedUnitIds = new Set([normalizeUnitId(id)]);
+  refreshUnitSelectionVisual();
+}
+
+function toggleSelectUnitItem(id) {
+  const key = normalizeUnitId(id);
+  if (selectedUnitIds.has(key)) selectedUnitIds.delete(key);
+  else selectedUnitIds.add(key);
+  refreshUnitSelectionVisual();
+}
+
+function refreshUnitSelectionVisual() {
+  const grid = document.querySelector("#mythicGrid .unit-grid");
+  if (!grid) return;
+  grid.querySelectorAll(".unit-item").forEach((item) => {
+    const id = normalizeUnitId(item.dataset.id);
+    item.classList.toggle("selected", selectedUnitIds.has(id));
+  });
 }
 
 function updateUnitVisual(item) {
-      const id = String(item.dataset.id || "").replace(/\.0+$/,"");
-      const level = parseInt(item.dataset.level || "0", 10);
-      const hasTreasure = item.dataset.treasure === "1";
-      const img = item.querySelector(".unit-img");
-      const badge = item.querySelector(".unit-badge");
-      const idx = getUnitStateIndexFromDataset(item);
-      item.classList.remove("state-1","state-2","state-3","state-4","state-5","state-6","state-7");
-      item.classList.add(`state-${idx}`);
-      updateUnitImgForState(item);
+  const id = normalizeUnitId(item.dataset.id);
+  const level = parseInt(item.dataset.level || "0", 10) || 0;
 
-      if (!badge) return;
+  // idx算出 + 👑矯正
+  const idx = getUnitStateIndex(item);
+  if (idx < 3 && item.dataset.treasure === "1") item.dataset.treasure = "0";
+  const hasTreasure = item.dataset.treasure === "1";
 
-      if (idx === 1) {
-        item.classList.add("dim");
-        badge.textContent = "Lv0";
-      } else {
-        item.classList.remove("dim");
-        const label = idx >= 5 ? "不滅" : "Lv";
-        let txt = `${label}${level}`;
-        if (idx >= 3 && hasTreasure) txt += " 👑";
-        badge.textContent = txt;
-      }
+  // state class
+  item.classList.remove("state-1", "state-2", "state-3", "state-4", "state-5", "state-6", "state-7");
+  item.classList.add(`state-${idx}`);
+
+  // image
+  const img = item.querySelector(".unit-img");
+  if (img) {
+    const filename = (idx >= 5) ? getImmortalIconFilenameByMythic(id) : getBigIconFilenameByCode(id);
+    setImgSrcWithFallback(img, filename);
+  }
+
+  // badge
+  const badge = item.querySelector(".unit-badge");
+  if (badge) {
+    if (idx === 1) {
+      item.classList.add("dim");
+      badge.textContent = "Lv0";
+    } else {
+      item.classList.remove("dim");
+      const head = (idx >= 5) ? "不滅" : "Lv";
+      let txt = `${head}${level}`;
+      if (idx >= 3 && hasTreasure) txt += " 👑";
+      badge.textContent = txt;
     }
+  }
+}
 
 function applyLevelToSelection(level) {
-      const grid = document.querySelector("#mythicGrid .unit-grid");
-      if (!grid) return;
-      if (selectedUnitIds.size === 0) {
-        showToast("ユニットが選択されていません。");
-        return;
-      }
-      selectedUnitIds.forEach(id => {
-        const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
-        if (!item) return;
-        item.dataset.level = String(level);
-        if (level === 0) {
-          item.dataset.treasure = "0";
-        }
-        updateUnitVisual(item);
-      });
+  const grid = document.querySelector("#mythicGrid .unit-grid");
+  if (!grid) return;
+  if (selectedUnitIds.size === 0) {
+    showToast("ユニットが選択されていません。");
+    return;
+  }
+
+  const lv = parseInt(String(level), 10);
+  if (![0, 6, 12, 15].includes(lv)) return;
+
+  selectedUnitIds.forEach((id) => {
+    const item = grid.querySelector(`.unit-item[data-id="${CSS.escape(id)}"]`);
+    if (!item) return;
+    if (lv === 0) {
+      item.dataset.form = "mythic";
+      item.dataset.level = "0";
+      item.dataset.treasure = "0";
+    } else {
+      item.dataset.level = String(lv);
+      // formは維持（神話/不滅）
     }
+    updateUnitVisual(item);
+  });
+}
 
 function toggleTreasureOnSelection() {
-      const grid = document.querySelector("#mythicGrid .unit-grid");
-      if (!grid) return;
-      if (selectedUnitIds.size === 0) {
-        showToast("ユニットが選択されていません。");
-        return;
-      }
-      selectedUnitIds.forEach(id => {
-        const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
-        if (!item) return;
-        const form = item.dataset.form || "mythic";
-        const level = parseInt(item.dataset.level || "0", 10);
-        if (form === "immortal") {
-          item.dataset.treasure = "0";
-          updateUnitVisual(item);
-          return;
-        }
-        if (level < 12) {
-          item.dataset.treasure = "0";
-          updateUnitVisual(item);
-          return;
-        }
-        const current = item.dataset.treasure === "1";
-        item.dataset.treasure = current ? "0" : "1";
-        updateUnitVisual(item);
-      });
+  const grid = document.querySelector("#mythicGrid .unit-grid");
+  if (!grid) return;
+  if (selectedUnitIds.size === 0) {
+    showToast("ユニットが選択されていません。");
+    return;
+  }
+
+  selectedUnitIds.forEach((id) => {
+    const item = grid.querySelector(`.unit-item[data-id="${CSS.escape(id)}"]`);
+    if (!item) return;
+    const idx = getUnitStateIndex(item);
+    if (idx < 3) {
+      item.dataset.treasure = "0";
+      updateUnitVisual(item);
+      return;
     }
+    item.dataset.treasure = (item.dataset.treasure === "1") ? "0" : "1";
+    updateUnitVisual(item);
+  });
+}
 
 function toggleFormAwakening() {
-      const grid = document.querySelector("#mythicGrid .unit-grid");
-      if (!grid) return;
-      if (selectedUnitIds.size === 0) {
-        showToast("ユニットが選択されていません。");
+  const grid = document.querySelector("#mythicGrid .unit-grid");
+  if (!grid) return;
+  if (selectedUnitIds.size === 0) {
+    showToast("ユニットが選択されていません。");
+    return;
+  }
+
+  selectedUnitIds.forEach((id) => {
+    const item = grid.querySelector(`.unit-item[data-id="${CSS.escape(id)}"]`);
+    if (!item) return;
+    if (!isAwakenableMythic(id)) return;
+
+    const form = item.dataset.form === "immortal" ? "immortal" : "mythic";
+    const level = parseInt(item.dataset.level || "0", 10) || 0;
+
+    if (form === "mythic") {
+      // 神話Lv15のみ覚醒可能
+      if (level !== 15) {
+        showToast("覚醒は神話Lv15でのみ可能です。", 2200);
         return;
       }
-      selectedUnitIds.forEach(id => {
-        if (!AWAKENABLE_IDS.has(id)) return;
-        const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
-        if (!item) return;
-        let form = item.dataset.form || "mythic";
-        let level = parseInt(item.dataset.level || "0", 10);
-        if (form === "mythic") {
-          if (level === 0) level = 6;
-          item.dataset.form = "immortal";
-          if (parseInt(item.dataset.level||"0",10) < 6) item.dataset.level = "6";
-          item.dataset.level = String(level);
-          item.dataset.treasure = "0";
-        } else {
-          item.dataset.form = "mythic";
-          item.dataset.level = String(level);
-        }
-        updateUnitVisual(item);
-      });
+      item.dataset.form = "immortal";
+      item.dataset.level = "6"; // 神話Lv15 → 不滅Lv6
+    } else {
+      // 退化は 不滅 → 神話Lv15
+      item.dataset.form = "mythic";
+      item.dataset.level = "15";
     }
 
-function collectMythicStateFromUI() {
-      const grid = document.querySelector("#mythicGrid .unit-grid");
-      const json = {};
-      if (!grid) return json;
-      const items = grid.querySelectorAll(".unit-item");
-      items.forEach(item => {
-        const id = item.dataset.id;
-        const level = parseInt(item.dataset.level || "0", 10);
-        const hasTreasure = item.dataset.treasure === "1";
-        const form = item.dataset.form || "mythic";
-        if (level > 0 || hasTreasure) {
-          json[id] = {
-            form,
-            level,
-            treasure: form === "mythic" && hasTreasure
-          };
-        }
-      });
-      return json;
+    updateUnitVisual(item);
+  });
+}
+
+function renderMythicGrid(mythicState) {
+  const container = document.getElementById("mythicGrid");
+  container.innerHTML = "";
+
+  const state = mythicState && typeof mythicState === "object" ? mythicState : {};
+  selectedUnitIds = new Set();
+  multiSelectMode = false;
+
+  const row1 = document.createElement("div");
+  row1.className = "unit-controls-row";
+
+  const btnAll = document.createElement("button");
+  btnAll.className = "btn-small";
+  btnAll.textContent = "全選択";
+  btnAll.addEventListener("click", () => {
+    selectedUnitIds = new Set(MYTHIC_IDS.map(normalizeUnitId));
+    refreshUnitSelectionVisual();
+  });
+
+  const btnClear = document.createElement("button");
+  btnClear.className = "btn-small";
+  btnClear.textContent = "選択解除";
+  btnClear.addEventListener("click", () => {
+    selectedUnitIds = new Set();
+    refreshUnitSelectionVisual();
+  });
+
+  const btnMulti = document.createElement("button");
+  btnMulti.className = "btn-small";
+  btnMulti.textContent = "複数選択:OFF";
+  btnMulti.addEventListener("click", () => {
+    multiSelectMode = !multiSelectMode;
+    btnMulti.textContent = multiSelectMode ? "複数選択:ON" : "複数選択:OFF";
+  });
+
+  row1.appendChild(btnAll);
+  row1.appendChild(btnClear);
+  row1.appendChild(btnMulti);
+  container.appendChild(row1);
+
+  const row2 = document.createElement("div");
+  row2.className = "unit-controls-row";
+
+  const btnLv6 = document.createElement("button");
+  btnLv6.className = "btn-small";
+  btnLv6.textContent = "Lv6";
+  btnLv6.addEventListener("click", () => applyLevelToSelection(6));
+
+  const btnLv12 = document.createElement("button");
+  btnLv12.className = "btn-small";
+  btnLv12.textContent = "Lv12";
+  btnLv12.addEventListener("click", () => applyLevelToSelection(12));
+
+  const btnLv15 = document.createElement("button");
+  btnLv15.className = "btn-small";
+  btnLv15.textContent = "Lv15";
+  btnLv15.addEventListener("click", () => applyLevelToSelection(15));
+
+  const btnTreasure = document.createElement("button");
+  btnTreasure.className = "btn-small";
+  btnTreasure.textContent = "専用👑切替";
+  btnTreasure.addEventListener("click", () => toggleTreasureOnSelection());
+
+  const btnAwaken = document.createElement("button");
+  btnAwaken.className = "btn-small";
+  btnAwaken.textContent = "覚醒/退化";
+  btnAwaken.addEventListener("click", () => toggleFormAwakening());
+
+  row2.appendChild(btnLv6);
+  row2.appendChild(btnLv12);
+  row2.appendChild(btnLv15);
+  row2.appendChild(btnTreasure);
+  row2.appendChild(btnAwaken);
+  container.appendChild(row2);
+
+  const grid = document.createElement("div");
+  grid.className = "unit-grid";
+
+  MYTHIC_IDS.forEach((rawId) => {
+    const id = normalizeUnitId(rawId);
+
+    const item = document.createElement("div");
+    item.className = "unit-item dim";
+    item.dataset.id = id;
+    item.dataset.level = "0";
+    item.dataset.treasure = "0";
+    item.dataset.form = "mythic";
+
+    const inner = document.createElement("div");
+    inner.className = "unit-inner";
+
+    const img = document.createElement("img");
+    img.className = "unit-img";
+    img.alt = id;
+    setImgSrcWithFallback(img, getBigIconFilenameByCode(id));
+
+    const badge = document.createElement("div");
+    badge.className = "unit-badge";
+    badge.textContent = "Lv0";
+
+    inner.appendChild(img);
+    inner.appendChild(badge);
+    item.appendChild(inner);
+    grid.appendChild(item);
+
+    const info = state[id];
+    if (info && typeof info === "object") {
+      const lv = Number.isFinite(info.level) ? info.level : 0;
+      const form = info.form === "immortal" ? "immortal" : "mythic";
+      const tre = info.treasure === true;
+      item.dataset.form = form;
+      item.dataset.level = String(lv);
+      item.dataset.treasure = tre ? "1" : "0";
     }
+
+    updateUnitVisual(item);
+
+    // pointerup のみで処理（click 不使用）
+    item.addEventListener("pointerup", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (multiSelectMode) {
+        toggleSelectUnitItem(id);
+        return;
+      }
+
+      const isSelected = item.classList.contains("selected");
+      if (!isSelected) {
+        selectOnlyUnitItem(id);
+        return;
+      }
+
+      cycleStateOneStep(item);
+    }, { passive: false });
+  });
+
+  container.appendChild(grid);
+}
+
+function collectMythicStateFromUI() {
+  const grid = document.querySelector("#mythicGrid .unit-grid");
+  const json = {};
+  if (!grid) return json;
+
+  grid.querySelectorAll(".unit-item").forEach((item) => {
+    const id = normalizeUnitId(item.dataset.id);
+    const form = item.dataset.form === "immortal" ? "immortal" : "mythic";
+    const level = parseInt(item.dataset.level || "0", 10) || 0;
+    const treasure = item.dataset.treasure === "1";
+
+    if (level > 0 || treasure) {
+      json[id] = { form, level, treasure };
+    }
+  });
+
+  return json;
+}
 
     const modalBackdrop = document.getElementById("modalBackdrop");
     const modalBody = document.getElementById("modalBody");
@@ -638,24 +683,23 @@ function openTagModal(user) {
       modalTagInput.value = "";
       modalError.style.display = "none";
       modalError.textContent = "";
-      modalBackdrop.style.display = "flex";
+      if (modalBackdrop) modalBackdrop.style.display = "flex";
       modalTagInput.focus();
     }
 
 function closeTagModal() {
-      modalBackdrop.style.display = "none";
+      if (modalBackdrop) modalBackdrop.style.display = "none";
     }
 
-    btnModalCancel.addEventListener("click", () => {
+    if (btnModalCancel) btnModalCancel.addEventListener("click", () => {
       modalUser = null;
       closeTagModal();
-    });
+});
 
     const searchInput = document.getElementById("searchNameInput");
     const btnSearch = document.getElementById("btnSearch");
-    const searchResults = document.getElementById("searchResults");
+const searchResults = document.getElementById("searchResults");
 
-    if (searchInput && btnSearch && searchResults) {
     async function doSearch() {
       const term = searchInput.value.trim();
       if (!term) {
@@ -715,7 +759,7 @@ main.appendChild(nameEl);
       });
     }
 
-    btnSearch.addEventListener("click", () => {
+    if (btnSearch) btnSearch.addEventListener("click", () => {
       doSearch();
     });
     searchInput.addEventListener("keydown", (e) => {
@@ -723,7 +767,7 @@ main.appendChild(nameEl);
         doSearch();
       }
     });
-    }
+
     async function onClickEditUser(userBasic) {
       if (checkEditLocked()) {
         return;
@@ -742,10 +786,10 @@ main.appendChild(nameEl);
       openTagModal(data);
     }
 
-    btnModalOk.addEventListener("click", async () => {
+    if (btnModalOk) btnModalOk.addEventListener("click", async () => {
       if (!modalUser) return;
       const inputTagVal = modalTagInput.value.trim();
-      if (inputTagVal.length !== 2) {
+if (inputTagVal.length !== 2) {
         modalError.style.display = "block";
         modalError.textContent = "識別番号は2桁で入力してください。";
         return;
@@ -765,14 +809,14 @@ main.appendChild(nameEl);
           .eq("id", modalUser.id);
         modalUser.mis_input_count = newMis;
 
-        lockEditingFor10Minutes();
+        setLockMinutes(modalUser.name, 3);
         modalError.style.display = "block";
-        modalError.textContent = "識別番号が違います。10分間は編集できません。";
+        modalError.textContent = "認証に失敗しました。一定時間ロック中です。";
       }
     });
 
     const btnGoNew = document.getElementById("btnGoNew");
-    const btnBackHome = document.getElementById("btnBackHome");
+const btnBackHome = document.getElementById("btnBackHome");
     const btnSaveUser = document.getElementById("btnSaveUser");
     const formModeLabel = document.getElementById("formModeLabel");
     const inputName = document.getElementById("inputName");
@@ -790,25 +834,24 @@ main.appendChild(nameEl);
       selectVaultLevel.appendChild(opt);
     }
 
-    btnGoNew.addEventListener("click", () => {
-      openNewForm();
-    });
-
-    btnBackHome.addEventListener("click", () => {
+    if (btnGoNew) { btnGoNew.addEventListener("click", () => { openNewForm(); }); }
+btnBackHome.addEventListener("click", () => {
       appState.currentUser = null;
       setView("home");
     });
 
-function openNewForm() {
+function openNewForm(prefillName = "", prefillTag = "") {
       appState.mode = "new";
       appState.currentUser = null;
 
       formModeLabel.textContent = "新規ユーザー登録";
-      inputName.value = "";
-      inputName.disabled = false;
-      inputTag.value = "";
-      inputTag.disabled = false;
-      fieldTag.style.display = "block";
+      inputName.value = prefillName || "";
+      inputName.disabled = true;
+
+      inputTag.value = prefillTag || "";
+      inputTag.disabled = true;
+      fieldTag.style.display = "none";
+
       selectVaultLevel.value = "1";
 
       renderMythicGrid({});
@@ -866,12 +909,8 @@ function openEditForm(user) {
       const isNew = appState.mode === "new" || !appState.currentUser;
 
       if (isNew) {
-        if (tag.length !== 2) {
-          showToast("識別番号は2桁で入力してください。");
-          return;
-        }
-        if (isNaN(parseInt(tag, 10))) {
-          showToast("識別番号は数字2桁で入力してください。");
+        if (!isValidNameTag(name, tag)) {
+          showToast("ユーザー名/パスの文字数が条件を満たしていません。");
           return;
         }
       } else {
@@ -933,8 +972,128 @@ function openEditForm(user) {
       saveUser();
     });
 
-    (async function init() {
+    
+/* =========================
+ * v1.0.3 Header Auth UI
+ * ========================= */
+function setupHeaderAuthUI(){
+  const nameEl = document.getElementById("userNameInput");
+  const tagEl  = document.getElementById("userTagInput");
+  const btn    = document.getElementById("userActionBtn");
+  const statusEl = document.getElementById("userStatusLabel");
+
+  if (!nameEl || !tagEl || !btn || !statusEl) return;
+
+  function fmtRemain(ms){
+    const sec = Math.ceil(ms/1000);
+    const m = Math.floor(sec/60);
+    const s = sec%60;
+    return `${m}分${String(s).padStart(2,"0")}秒`;
+  }
+
+  async function lookupByName(name){
+    const n = (name||"").trim();
+    if (!n) return null;
+    if (authState.userCache.has(n)) return authState.userCache.get(n);
+    const { data, error } = await supabase
+      .from("ld_users")
+      .select("id,name,tag,mis_input_count,comment_count,like_count,vault_level,mythic_state")
+      .eq("name", n)
+      .maybeSingle();
+    if (error) { console.error(error); return null; }
+    if (data) authState.userCache.set(n, data);
+    return data || null;
+  }
+
+  function setBtn(label, disabled){
+    btn.textContent = label;
+    btn.disabled = disabled;
+  }
+
+  async function refresh(){
+    const name = nameEl.value.trim();
+    const tag  = tagEl.value.trim();
+
+    const locked = lockRemainingMs(name);
+    if (locked > 0){
+      setBtn("編集", true);
+      statusEl.textContent = `一定時間ロック中（残り ${fmtRemain(locked)}）`;
+      return;
+    }
+
+    if (!name){
+      setBtn("新規登録", true);
+      statusEl.textContent = "ユーザー名を入力してください";
+      return;
+    }
+
+    // debounce name lookup
+    if (authState.nameCheckTimer) clearTimeout(authState.nameCheckTimer);
+    authState.nameCheckTimer = setTimeout(async () => {
+      const nowName = nameEl.value.trim();
+      if (!nowName) return;
+
+      const user = await lookupByName(nowName);
+      const registered = !!user;
+
+      if (registered){
+        statusEl.textContent = "登録済みユーザーです（編集できます）";
+        setBtn("編集", !isValidNameTag(nowName, tagEl.value));
+      } else {
+        statusEl.textContent = "未登録ユーザーです（新規登録できます）";
+        setBtn("新規登録", !isValidNameTag(nowName, tagEl.value));
+      }
+    }, 250);
+  }
+
+  nameEl.addEventListener("input", refresh);
+  tagEl.addEventListener("input", refresh);
+
+  btn.addEventListener("click", async () => {
+    const name = nameEl.value.trim();
+    const tag  = tagEl.value.trim();
+    if (!isValidNameTag(name, tag)) return;
+
+    const locked = lockRemainingMs(name);
+    if (locked > 0){
+      showToast(`一定時間ロック中です（残り ${fmtRemain(locked)}）`, 2200);
+      refresh();
+      return;
+    }
+
+    const user = await lookupByName(name);
+    if (!user){
+      // new registration flow
+      openNewForm(name, tag);
+      return;
+    }
+
+    // edit flow: authenticate on click only
+    if (user.tag === tag){
+      openEditForm(user);
+      return;
+    }
+
+    // auth failed: increment mis_input_count, lock 3 min, generic message
+    const newMis = (user.mis_input_count || 0) + 1;
+    try{
+      await supabase.from("ld_users").update({ mis_input_count: newMis }).eq("id", user.id);
+      user.mis_input_count = newMis;
+      authState.userCache.set(name, user);
+    }catch(e){
+      console.error(e);
+    }
+    setLockMinutes(name, 3);
+    showToast("認証に失敗しました。一定時間ロック中です。", 2500);
+    refresh();
+  });
+
+  refresh();
+}
+
+(async function init() {
       await loadUnitMasterMaps();
+      setupHeaderAuthUI();
       setView("home");
       await fetchUsersCount();
     })();
@@ -950,254 +1109,3 @@ function sb() {
 function updateSelectedUnitVisuals(){
   document.querySelectorAll('#mythicGrid .unit-item.selected').forEach(updateUnitVisual);
 }
-
-
-/* =========================
- * v1.0.3 Header Auth UI
- * ========================= */
-
-function setupHeaderAuthUI() {
-  const nameEl = document.getElementById("userNameInput");
-  const tagEl = document.getElementById("userTagInput");
-  const actionBtn = document.getElementById("userActionBtn");
-  const statusEl = document.getElementById("userStatusLabel");
-  const guideBtn = document.getElementById("guideActionBtn");
-
-  // hide legacy search UI if still present
-  const legacySearch = document.getElementById("btnSearch");
-  if (legacySearch) {
-    const searchView = document.getElementById("searchView");
-    if (searchView) searchView.style.display = "none";
-  }
-
-  function setButtonsDisabled(disabled) {
-    if (actionBtn) actionBtn.disabled = disabled;
-    if (guideBtn) guideBtn.disabled = disabled;
-  }
-
-  function setButtonLabel(label) {
-    if (actionBtn) actionBtn.textContent = label;
-    if (guideBtn) guideBtn.textContent = label === "編集" ? "編集を開始" : "新規登録を開始";
-  }
-
-  function currentName() {
-    return (nameEl?.value || "").trim();
-  }
-  function currentTag() {
-    return (tagEl?.value || "").trim();
-  }
-
-  function updateTagEnabled() {
-    if (!tagEl) return;
-    const hasName = currentName().length > 0;
-    if (!hasName) {
-      tagEl.value = "";
-      tagEl.disabled = true;
-    } else {
-      tagEl.disabled = false;
-    }
-  }
-
-  async function lookupByName(name) {
-    if (!name) return null;
-    if (authState.userCache.has(name)) return authState.userCache.get(name);
-
-    const { data, error } = await supabase
-      .from("ld_users")
-      .select("id, name, tag, mis_input_count, vault_level, mythic_state")
-      .eq("name", name)
-      .maybeSingle();
-
-    if (error) {
-      console.error("user lookup error", error);
-      return null;
-    }
-    if (data) authState.userCache.set(name, data);
-    return data || null;
-  }
-
-  function formatLockText(ms) {
-    const sec = Math.ceil(ms / 1000);
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return m + "分" + String(s).padStart(2, "0") + "秒";
-  }
-
-  async function refreshUi() {
-    updateTagEnabled();
-
-    const name = currentName();
-    const tag = currentTag();
-
-    const lockedMs = lockRemainingMs(name);
-    if (lockedMs > 0) {
-      setButtonsDisabled(true);
-      setButtonLabel("編集");
-      if (statusEl) statusEl.textContent = "一定時間ロック中（残り " + formatLockText(lockedMs) + "）";
-      return;
-    }
-
-    if (!name) {
-      setButtonsDisabled(true);
-      setButtonLabel("新規登録");
-      if (statusEl) statusEl.textContent = "ユーザー名を入力してください";
-      return;
-    }
-
-    // debounce lookup
-    if (authState.nameCheckTimer) clearTimeout(authState.nameCheckTimer);
-    authState.nameCheckTimer = setTimeout(async () => {
-      const nowName = currentName();
-      if (!nowName) return;
-
-      const user = await lookupByName(nowName);
-      const isRegistered = !!user;
-
-      setButtonLabel(isRegistered ? "編集" : "新規登録");
-
-      const valid = isValidNameTag(nowName, currentTag());
-      setButtonsDisabled(!valid);
-
-      if (statusEl) {
-        statusEl.textContent = isRegistered
-          ? "登録済みユーザーです（編集できます）"
-          : "未登録ユーザーです（新規登録できます）";
-      }
-    }, 300);
-  }
-
-  async function handleAction() {
-    const name = currentName();
-    const tag = currentTag();
-
-    const lockedMs = lockRemainingMs(name);
-    if (lockedMs > 0) {
-      showToast("一定時間ロック中です。");
-      refreshUi();
-      return;
-    }
-
-    if (!isValidNameTag(name, tag)) {
-      showToast("ユーザー名／パスの入力を確認してください。");
-      refreshUi();
-      return;
-    }
-
-    const user = await lookupByName(name);
-
-    // Unregistered => go new
-    if (!user) {
-      // reuse existing flow: show form in new mode
-      if (typeof startNewUserFlow === "function") {
-        startNewUserFlow(name, tag);
-      } else {
-        // fallback: click legacy new button if exists
-        const btn = document.getElementById("btnGoNew");
-        if (btn) btn.click();
-      }
-      return;
-    }
-
-    // Registered => authenticate only on click (no leaking while typing)
-    if (String(user.tag || "") === String(tag)) {
-      if (typeof startEditUserFlow === "function") {
-        startEditUserFlow(user, tag);
-      } else {
-        // fallback: open legacy edit via search result
-        if (typeof openEditByUser === "function") {
-          openEditByUser(user);
-        } else {
-          showToast("編集画面の初期化に失敗しました。");
-        }
-      }
-      return;
-    }
-
-    // Auth failed: increment mis_input_count, lock 3 minutes, show generic toast
-    try {
-      const next = (user.mis_input_count || 0) + 1;
-      user.mis_input_count = next;
-      authState.userCache.set(name, user);
-      await supabase.from("ld_users").update({ mis_input_count: next }).eq("id", user.id);
-    } catch (e) {
-      console.error("mis_input_count update error", e);
-    }
-    setLock(name, 3);
-    showToast("認証に失敗しました。一定時間ロックします。");
-    refreshUi();
-  }
-
-  if (nameEl) nameEl.addEventListener("input", refreshUi);
-  if (tagEl) tagEl.addEventListener("input", refreshUi);
-  if (actionBtn) actionBtn.addEventListener("click", handleAction);
-  if (guideBtn) guideBtn.addEventListener("click", handleAction);
-
-  // restore last inputs (optional)
-  try {
-    const raw = localStorage.getItem("ld_users_editor_user");
-    if (raw) {
-      const obj = JSON.parse(raw);
-      if (obj?.name && nameEl) nameEl.value = obj.name;
-      if (obj?.tag && tagEl) tagEl.value = obj.tag;
-    }
-  } catch {}
-
-  // persist inputs
-  function saveInputs() {
-    try {
-      localStorage.setItem(
-        "ld_users_editor_user",
-        JSON.stringify({ name: currentName(), tag: currentTag() })
-      );
-    } catch {}
-  }
-  if (nameEl) nameEl.addEventListener("input", saveInputs);
-  if (tagEl) tagEl.addEventListener("input", saveInputs);
-
-  // tick lock countdown if needed
-  setInterval(() => {
-    const name = currentName();
-    if (!name) return;
-    const ms = lockRemainingMs(name);
-    if (ms > 0) {
-      if (statusEl) statusEl.textContent = "一定時間ロック中（残り " + formatLockText(ms) + "）";
-      setButtonsDisabled(true);
-    } else {
-      // unlock
-      refreshUi();
-    }
-  }, 1000);
-
-  refreshUi();
-}
-
-// Hooks expected by v1.0.3; implemented by adapting existing legacy functions where possible.
-function startNewUserFlow(name, tag) {
-  // Show form view in "new" mode; keep original behavior as much as possible.
-  const btn = document.getElementById("btnGoNew");
-  if (btn) btn.click();
-  const inputName = document.getElementById("inputName");
-  const inputTag = document.getElementById("inputTag");
-  if (inputName) inputName.value = name;
-  if (inputTag) inputTag.value = tag;
-}
-
-function startEditUserFlow(user, tag) {
-  // Prefer existing openEditor function patterns if present.
-  if (typeof openEditByUser === "function") {
-    openEditByUser(user);
-    const inputTag = document.getElementById("inputTag");
-    if (inputTag) inputTag.value = tag;
-    return;
-  }
-  // fallback: fill and show
-  const inputName = document.getElementById("inputName");
-  const inputTag = document.getElementById("inputTag");
-  if (inputName) inputName.value = user.name || "";
-  if (inputTag) inputTag.value = tag || "";
-  const formView = document.getElementById("formView");
-  const guideView = document.getElementById("guideView");
-  if (guideView) guideView.classList.add("hidden");
-  if (formView) formView.classList.remove("hidden");
-}
-
