@@ -471,15 +471,6 @@ function updateUnitVisual(item) {
         if (idx >= 3 && hasTreasure) txt += " 👑";
         badge.textContent = txt;
       }
-} else {
-        item.classList.remove("dim");
-        let label = form === "immortal" ? "不滅" : "Lv";
-        let txt = label + level;
-        if (form === "mythic" && hasTreasure) {
-          txt += " 👑";
-        }
-        badge.textContent = txt;
-      }
 
     function applyLevelToSelection(level) {
       const grid = document.querySelector("#mythicGrid .unit-grid");
