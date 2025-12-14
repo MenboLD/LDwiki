@@ -232,7 +232,25 @@ function requireSupabase() {
     }
 
     // ユニットアイコンエディタ描画
-    function renderMythicGrid(mythicState) {
+    
+
+function attachTapCycleHandler(item, id) {
+  // 未選択タップ: 選択のみ / 選択済みタップ: 状態を1段階進める
+  // スマホで2段階進む原因（touch→click二重発火）を避けるため、clickは使わず pointerup のみを採用する。
+  item.addEventListener("pointerup", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const isSelected = item.classList.contains("selected");
+    if (!isSelected) {
+      selectOnlyUnitItem(id);
+      return;
+    }
+    cycleUnitState(item);
+  }, { passive: false });
+}
+
+function renderMythicGrid(mythicState) {
       const container = document.getElementById("mythicGrid");
       container.innerHTML = "";
 
@@ -346,12 +364,7 @@ function requireSupabase() {
           item.dataset.form = form;
         }
         updateUnitVisual(item);
-
-        item.addEventListener("click", (e) => {
-          // 単体操作を優先：未選択なら選択のみ、選択済みなら1段階進める
-          if (multiSelectMode) {
-            onClickUnitItem(id);
-            return;
+return;
           }
           const isSel = item.classList.contains("selected");
           if (!isSel) {
@@ -446,12 +459,27 @@ function cycleStateOneStep(item) {
   updateUnitVisual(item);
 }
 
+function updateUnitImgForState(item) {
+  const id = String(item.dataset.id || "").trim().replace(/\.0+$/,"");
+  const idx = getUnitStateIndexFromDataset(item);
+  const form = idx >= 5 ? "immortal" : "mythic";
+  const filename = getIconFilenameForUnit(id, form);
+  const img = item.querySelector(".unit-img");
+  if (!img) return;
+  setImgSrcWithFallback(img, filename);
+}
+
 function updateUnitVisual(item) {
       const id = String(item.dataset.id || "").replace(/\.0+$/,"");
       const level = parseInt(item.dataset.level || "0", 10);
       const hasTreasure = item.dataset.treasure === "1";
       const img = item.querySelector(".unit-img");
       const badge = item.querySelector(".unit-badge");
+      const idx = getUnitStateIndexFromDataset(item);
+      item.classList.remove("state-1","state-2","state-3","state-4","state-5","state-6","state-7");
+      item.classList.add(`state-${idx}`);
+      updateUnitImgForState(item);
+
       if (!badge) return;
 
       const idx = getUnitStateIndex(item);
@@ -886,4 +914,9 @@ function openEditForm(user) {
 function sb() {
   if (!requireSupabase()) throw new Error("Supabase not ready");
   return supabase;
+}
+
+
+function updateSelectedUnitVisuals(){
+  document.querySelectorAll('#mythicGrid .unit-item.selected').forEach(updateUnitVisual);
 }
