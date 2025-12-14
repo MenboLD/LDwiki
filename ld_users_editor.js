@@ -471,8 +471,9 @@ function updateUnitVisual(item) {
         if (idx >= 3 && hasTreasure) txt += " 👑";
         badge.textContent = txt;
       }
+    }
 
-    function applyLevelToSelection(level) {
+function applyLevelToSelection(level) {
       const grid = document.querySelector("#mythicGrid .unit-grid");
       if (!grid) return;
       if (selectedUnitIds.size === 0) {
@@ -490,7 +491,7 @@ function updateUnitVisual(item) {
       });
     }
 
-    function toggleTreasureOnSelection() {
+function toggleTreasureOnSelection() {
       const grid = document.querySelector("#mythicGrid .unit-grid");
       if (!grid) return;
       if (selectedUnitIds.size === 0) {
@@ -518,7 +519,7 @@ function updateUnitVisual(item) {
       });
     }
 
-    function toggleFormAwakening() {
+function toggleFormAwakening() {
       const grid = document.querySelector("#mythicGrid .unit-grid");
       if (!grid) return;
       if (selectedUnitIds.size === 0) {
@@ -545,7 +546,7 @@ function updateUnitVisual(item) {
       });
     }
 
-    function collectMythicStateFromUI() {
+function collectMythicStateFromUI() {
       const grid = document.querySelector("#mythicGrid .unit-grid");
       const json = {};
       if (!grid) return json;
@@ -574,7 +575,7 @@ function updateUnitVisual(item) {
     const btnModalOk = document.getElementById("btnModalOk");
     let modalUser = null;
 
-    function openTagModal(user) {
+function openTagModal(user) {
       modalUser = user;
       modalBody.textContent = `ユーザー名: ${user.name}`;
       modalTagInput.value = "";
@@ -584,7 +585,7 @@ function updateUnitVisual(item) {
       modalTagInput.focus();
     }
 
-    function closeTagModal() {
+function closeTagModal() {
       modalBackdrop.style.display = "none";
     }
 
@@ -740,7 +741,7 @@ main.appendChild(nameEl);
       setView("home");
     });
 
-    function openNewForm() {
+function openNewForm() {
       appState.mode = "new";
       appState.currentUser = null;
 
@@ -760,7 +761,7 @@ main.appendChild(nameEl);
       setView("form");
     }
 
-    function openEditForm(user) {
+function openEditForm(user) {
       if (!user) {
         showToast("内部エラー: 編集対象ユーザーが不明です。");
         return;
