@@ -59,10 +59,11 @@ async function loadUnitMasterMaps() {
       const icon = row.icon_big_filename != null ? String(row.icon_big_filename) : "";
       if (code && icon) iconByCode[code] = icon;
 
-      const paired = row.paired_mythic_code != null ? String(row.paired_mythic_code) : "";
+      const paired = row.paired_mythic_code != null ? String(row.paired_mythic_code).trim() : "";
       if (paired && icon) {
-        immortalByMythic[paired] = icon;
-        hasImm[paired] = true;
+        const pairedKey = paired.replace(/\.0+$/,'');
+        immortalByMythic[pairedKey] = icon;
+        hasImm[pairedKey] = true;
       }
     }
 
@@ -226,7 +227,58 @@ function requireSupabase() {
     }
 
     // ユニットアイコンエディタ描画
-    function renderMythicGrid(mythicState) {
+    function selectOnlyUnitItem(id) {
+  // 既存の選択ロジックに寄せる：全解除→指定だけ選択
+  try {
+    selectedUnitIds.clear?.();
+  } catch (e) {}
+  // fallback: if selectedUnitIds is array
+  if (Array.isArray(selectedUnitIds)) selectedUnitIds.length = 0;
+  // add
+  if (selectedUnitIds.add) selectedUnitIds.add(id);
+  else if (Array.isArray(selectedUnitIds)) selectedUnitIds.push(id);
+  // UI反映
+  document.querySelectorAll("#mythicGrid .unit-item").forEach((el) => {
+    el.classList.toggle("selected", el.dataset.id === String(id));
+  });
+  updateUnitActionButtons?.();
+}
+
+function attachTapCycleHandler(item, id) {
+  // iOS/Android: tapで2段階進むのを避けるため click は抑制し、pointer/touch を主に使う
+  let lastTouchAt = 0;
+
+  const handleActivate = (e) => {
+    // まず選択状態を維持/付与する：未選択なら選択、選択済みなら状態を1段階進める
+    const isSelected = item.classList.contains("selected");
+    if (!isSelected) {
+      // 選択だけ（状態は変えない）
+      selectOnlyUnitItem(id);
+      return;
+    }
+    // 選択済みなら状態を進める
+    cycleUnitState(item);
+  };
+
+  item.addEventListener("pointerup", (e) => {
+    if (e.pointerType === "touch") {
+      lastTouchAt = Date.now();
+      e.preventDefault();
+      handleActivate(e);
+    }
+  }, { passive: false });
+
+  item.addEventListener("click", (e) => {
+    // touch直後のclick（二重発火）を無視
+    if (Date.now() - lastTouchAt < 700) {
+      e.preventDefault();
+      return;
+    }
+    handleActivate(e);
+  });
+}
+
+function renderMythicGrid(mythicState) {
       const container = document.getElementById("mythicGrid");
       
       refreshAllUnitVisuals();
@@ -410,7 +462,7 @@ container.innerHTML = "";
 }
 
 function getMaxStateIndexForUnit(item) {
-  const id = String(item.dataset.id || "");
+  const id = String(item.dataset.id || "").replace(/\.0+$/,"");
   return HAS_IMMORTAL_BY_MYTHIC[id] ? 7 : 4;
 }
 
@@ -422,12 +474,25 @@ function applyUnitStateIndexToDataset(item, idx) {
     item.dataset.treasure = "0";
     return;
   }
-  if (i === 2) { item.dataset.form = "mythic"; item.dataset.level = "6"; return; }
+  if (i === 2) { item.dataset.form = "mythic"; item.dataset.level = "6"; 
+          updateUnitVisual(item);
+return; }
   if (i === 3) { item.dataset.form = "mythic"; item.dataset.level = "12"; return; }
   if (i === 4) { item.dataset.form = "mythic"; item.dataset.level = "15"; return; }
-  if (i === 5) { item.dataset.form = "immortal"; item.dataset.level = "6"; return; }
-  if (i === 6) { item.dataset.form = "immortal"; item.dataset.level = "12"; return; }
-  item.dataset.form = "immortal"; item.dataset.level = "15";
+  if (i === 5) { item.dataset.form = "immortal";
+          item.dataset.level = "6"; 
+          updateUnitVisual(item);
+item.dataset.level = "6"; 
+          updateUnitVisual(item);
+return; }
+  if (i === 6) { item.dataset.form = "immortal";
+          item.dataset.level = "6"; 
+          updateUnitVisual(item);
+item.dataset.level = "12"; return; }
+  item.dataset.form = "immortal";
+          item.dataset.level = "6"; 
+          updateUnitVisual(item);
+item.dataset.level = "15";
 }
 
 function updateUnitImgForState(item) {
@@ -537,7 +602,10 @@ function updateUnitVisual(item) {
         if (form === "mythic") {
           if (level === 0) level = 6;
           item.dataset.form = "immortal";
-          item.dataset.level = String(level);
+          item.dataset.level = "6";
+          
+          updateUnitVisual(item);
+item.dataset.level = String(level);
           item.dataset.treasure = "0";
         } else {
           item.dataset.form = "mythic";
