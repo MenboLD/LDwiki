@@ -701,7 +701,8 @@ function closeTagModal() {
 const searchResults = document.getElementById("searchResults");
 
     async function doSearch() {
-      const term = searchInput.value.trim();
+  if (!searchInput) return;
+const term = searchInput.value.trim();
       if (!term) {
         searchResults.innerHTML = "";
         showToast("ユーザー名を入力してください。");
@@ -762,7 +763,7 @@ main.appendChild(nameEl);
     if (btnSearch) btnSearch.addEventListener("click", () => {
       doSearch();
     });
-    searchInput.addEventListener("keydown", (e) => {
+    if (searchInput) searchInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         doSearch();
       }
