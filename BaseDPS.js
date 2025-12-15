@@ -18,14 +18,13 @@
   }
 
   function syncEnvDerivedUI() {
-    const diff = $("envDiff") ? $("envDiff").value : "normal";
-    const base = DIFF_DEF[diff] ?? 148;
-    const defNum = $("envDefNum");
-    if (defNum) defNum.textContent = String(base);
+    const diff = $("envDiff") ? $("envDiff").value : "god";
+    const base = DIFF_DEF[diff] ?? 175;
 
-    const red = readInt($("defReduce") ? $("defReduce").value : "0");
+    const red = readInt($("defReduce") ? $("defReduce").value : "250");
     const realDef = red - base;
     const mul = computePhysMul(realDef);
+
     const out = $("physMulOut");
     if (out) out.value = (isFinite(mul) ? mul.toFixed(2) : "1.00");
   }
@@ -856,8 +855,8 @@ function setBar(fillId, valId, pct) {
     lines.push(`究極/秒: ${r6(ex.ultPerSec)}`);
 
     lines.push("\n=== 環境（物理補正） ===");
-    lines.push(`難易度/80w防御力: ${$("envDiff").value} / 80w防御力=${$("envDefNum").textContent}`);
-    lines.push(`防御力減少値: ${readInt($("defReduce").value)} / 実防御力=${readInt($("defReduce").value) - (DIFF_DEF[$("envDiff").value] ?? 148)}`);
+    lines.push(`難易度: ${$("envDiff").value}（80w防御力は難易度に応じて内部適用）`);
+    lines.push(`防御力減少値: ${readInt($("defReduce").value)} / 実防御力=${readInt($("defReduce").value) - (DIFF_DEF[$("envDiff").value] ?? 175)}`);
     lines.push(`物理補正倍率（小数第2位まで）: ${$("physMulOut").value}`);
 
     lines.push("\n=== ダメージ内訳（DPS成分）と割合（合計=100%） ===");
@@ -959,8 +958,9 @@ function setBar(fillId, valId, pct) {
     $("aspd").value = "2.40";
     $("gaugeMax").value = "100";
     $("manaRegenPct").value = "100%";
-    $("envDiff").value = "normal";
-    $("defReduce").value = "0";
+    $("envDiff").value = "god";
+    $("defReduce").value = "250";
+    syncEnvDerivedUI();
 
     $("ultType").value = "mana";
     $("ultReset").value = "end";

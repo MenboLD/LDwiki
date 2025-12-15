@@ -39,25 +39,23 @@
                 <option value="normal">ノーマル</option>
                 <option value="hard">ハード</option>
                 <option value="hell">地獄</option>
-                <option value="god">神</option>
+                <option value="god" selected>神</option>
                 <option value="prime">太初</option>
-              </select>
-              <span class="envDefNum" id="envDefNum">148</span>
-            </div>
+              </select></div>
           </div>
 
           <div class="inp" style="grid-column:3;">
-            <input id="defReduce" type="text" inputmode="numeric" autocomplete="off" placeholder="0">
+            <input id="defReduce" type="text" inputmode="numeric" autocomplete="off" placeholder="0" value="250">
           </div>
 
           <div class="inp" style="grid-column:4;">
-            <input id="physMulOut" type="text" inputmode="decimal" autocomplete="off" readonly>
+            <input id="physMulOut" type="text" inputmode="decimal" autocomplete="off" readonly value="1.00">
           </div>
         </div>
 
         <div class="hint">
           ・Regeマナ/1s：最大4桁%（小数1桁まで可）。「100%」= 時間マナ1.0/秒。マナタイプ以外は未使用表示。<br>
-          ・難易度/80w防御力：ノーマル148 / ハード158 / 地獄158 / 神175 / 太初175<br>
+          ・難易度/80w防御力：ノーマル148 / ハード158 / 地獄158 / 神175 / 太初175（表示はしないが内部で使用）<br>
           ・実防御力 = 防御力減少値 − 80w防御力<br>
           ・物理補正倍率 = 1*(1+(SIGN(実防御力)*(1-50/(3*ABS(実防御力)+50)))) を小数第3位四捨五入（=小数第2位まで）
         </div>
