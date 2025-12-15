@@ -177,6 +177,41 @@
     $("resetBtn").addEventListener("click", resetAll);
   }
 
+  // ---------- 物理/魔法・単体/複数 トグル（seg） ----------
+  function applySegActive(segEl, value) {
+    const btns = Array.from(segEl.querySelectorAll("button[data-val]"));
+    btns.forEach(b => b.classList.toggle("active", b.dataset.val === value));
+  }
+
+  function setupSegments() {
+    document.querySelectorAll(".seg[data-for]").forEach(seg => {
+      const key = seg.dataset.for;
+      const hidden = $(key);
+      if (!hidden) return;
+
+      // 初期反映
+      applySegActive(seg, hidden.value);
+
+      seg.querySelectorAll("button[data-val]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          hidden.value = btn.dataset.val;
+          applySegActive(seg, hidden.value);
+          validateAndRender();
+        });
+      });
+    });
+  }
+
+  function syncSegmentsFromHidden() {
+    document.querySelectorAll(".seg[data-for]").forEach(seg => {
+      const key = seg.dataset.for;
+      const hidden = $(key);
+      if (!hidden) return;
+      applySegActive(seg, hidden.value);
+    });
+  }
+
+
   function normalizeAll() {
     $("atk").value = toAtkDisplay($("atk").value);
     $("aspd").value = toAspdDisplay($("aspd").value);
@@ -194,6 +229,7 @@
     $("bF").value = toIntDisplay($("bF").value, 4);
 
     syncSkillBMode();
+    syncSegmentsFromHidden();
     if ($("bType").value === "prob") $("bThird").value = toProbPctDisplay($("bThird").value);
     if ($("bType").value === "count") $("bThird").value = String(readInt($("bThird").value));
   }
@@ -224,7 +260,17 @@
     if (bType === "prob") bP = readNumber($("bThird").value) / 100;
     if (bType === "count") bN = readInt($("bThird").value);
 
-    return { atk, aspd, gaugeMax, manaPerSec, ultType, ultReset, ultMul, ultF, ultStopsGauge, aMul, aP, aF, bType, bMul, bF, bP, bN };
+    const basicAttr = $("basicAttr").value;
+    const basicTarget = $("basicTarget").value;
+    const aAttr = $("aAttr").value;
+    const aTarget = $("aTarget").value;
+    const bAttr = $("bAttr").value;
+    const bTarget = $("bTarget").value;
+    const uAttr = $("ultAttr").value;
+    const uTarget = $("ultTarget").value;
+
+    return { atk, aspd, gaugeMax, manaPerSec, ultType, ultReset, ultMul, ultF, ultStopsGauge, aMul, aP, aF, bType, bMul, bF, bP, bN,
+      basicAttr, basicTarget, aAttr, aTarget, bAttr, bTarget, uAttr, uTarget };
   }
 
   function clearErrAll() {
@@ -476,7 +522,119 @@
     return { minTick, maxTick, lo: Math.min(dps1, dps2), hi: Math.max(dps1, dps2), perTick };
   }
 
-  function setBar(fillId, valId, pct) {
+  
+  function calcTypeBreakdown(v, ex) {
+    const sum = ex.checkTotalDPS;
+    const pct = (x) => (sum > 0 ? (100 * x / sum) : 0);
+
+    const phys = (v.basicAttr === "phys" ? ex.basicDPS : 0)
+               + (v.aAttr === "phys" ? ex.aDPS : 0)
+               + (v.bAttr === "phys" ? ex.bDPS : 0)
+               + (v.uAttr === "phys" ? ex.ultDPS : 0);
+
+    const magic = (v.basicAttr === "magic" ? ex.basicDPS : 0)
+                + (v.aAttr === "magic" ? ex.aDPS : 0)
+                + (v.bAttr === "magic" ? ex.bDPS : 0)
+                + (v.uAttr === "magic" ? ex.ultDPS : 0);
+
+    const single = (v.basicTarget === "single" ? ex.basicDPS : 0)
+                 + (v.aTarget === "single" ? ex.aDPS : 0)
+                 + (v.bTarget === "single" ? ex.bDPS : 0)
+                 + (v.uTarget === "single" ? ex.ultDPS : 0);
+
+    const multi = (v.basicTarget === "multi" ? ex.basicDPS : 0)
+                + (v.aTarget === "multi" ? ex.aDPS : 0)
+                + (v.bTarget === "multi" ? ex.bDPS : 0)
+                + (v.uTarget === "multi" ? ex.ultDPS : 0);
+
+    return { phys, magic, single, multi,
+      physPct: pct(phys), magicPct: pct(magic),
+      singlePct: pct(single), multiPct: pct(multi)
+    };
+  }
+
+  function buildFormulaText(v, res) {
+    const d = res.detail;
+    const lines = [];
+    lines.push("=== 使用式（四則演算レベル） ===");
+    lines.push("■ 基本攻撃");
+    lines.push("基本攻撃モーションF = 40 / 攻撃速度");
+    lines.push("基本攻撃ダメージ = 攻撃力 × 100%");
+    lines.push("");
+
+    lines.push("■ スキル抽選（究極が未発動の行動1回ごと）");
+    if (d.mode === "prob") {
+      lines.push("スキルA確率 = スキルA確率(%) / 100");
+      lines.push("スキルB確率 = スキルB確率(%) / 100（タイプ=確率のとき）");
+      lines.push("基本攻撃確率 = 1 − スキルA確率 − スキルB確率");
+      lines.push("平均行動F = 基本攻撃確率×基本攻撃モーションF + スキルA確率×スキルA_F数 + スキルB確率×スキルB_F数");
+      lines.push("平均倍率 = 基本攻撃確率×100% + スキルA確率×スキルA倍率 + スキルB確率×スキルB倍率");
+      lines.push("非究極DPS = 攻撃力 × 平均倍率 / (平均行動F / 40)");
+    } else {
+      lines.push("（スキルBタイプ=規定回数）");
+      lines.push("p = スキルA確率(%) / 100");
+      lines.push("スキルA回数期待 EA = (規定回数 + 1) × p / (1 − p)");
+      lines.push("非究極周期F = 基本攻撃モーションF×規定回数 + スキルA_F数×EA + スキルB_F数");
+      lines.push("非究極周期ダメージ = 攻撃力 × (規定回数×100% + EA×スキルA倍率 + 1×スキルB倍率)");
+      lines.push("非究極DPS = 非究極周期ダメージ / (非究極周期F / 40)");
+    }
+    lines.push("");
+
+    if (v.ultType === "none") {
+      lines.push("■ 究極：無し");
+      return lines.join("\n");
+    }
+
+    lines.push("■ 究極");
+    if (v.ultType === "mana") {
+      lines.push("時間マナ/フレーム(非究極中) = (Regeマナ/1s / 100) / 40");
+      lines.push("基本攻撃マナ/フレーム(非究極中) = （基本攻撃回数/フレーム）×1");
+      lines.push("マナ増加/フレーム(非究極中) = 時間マナ/フレーム + 基本攻撃マナ/フレーム");
+      if (v.ultReset === "end") {
+        lines.push("究極到達までの非究極F = Maxマナ / マナ増加/フレーム(非究極中)");
+        lines.push("周期F = 究極到達F + 究極F数");
+        lines.push("周期ダメージ = 非究極DPS×(究極到達F/40) + 攻撃力×究極倍率");
+        lines.push("DPS = 周期ダメージ / (周期F/40)");
+      } else {
+        lines.push("（リセット=開始時）");
+        if (v.ultStopsGauge) {
+          lines.push("究極中はマナ加算停止 → 究極中マナ増加=0");
+        } else {
+          lines.push("究極中マナ増加（平均近似） = (Regeマナ/1s / 100) × (究極F数/40)");
+          lines.push("※グローバル40F境界の厳密では、究極中tick数が floor(究極F/40) または ceil(究極F/40) になり得る（±1tick）");
+        }
+        lines.push("残マナ = max(0, Maxマナ − 究極中マナ増加)");
+        lines.push("残マナ到達F(非究極) = 残マナ / マナ増加/フレーム(非究極中)");
+        lines.push("周期F = 究極F数 + 残マナ到達F");
+        lines.push("周期ダメージ = 攻撃力×究極倍率 + 非究極DPS×(残マナ到達F/40)");
+        lines.push("DPS = 周期ダメージ / (周期F/40)");
+      }
+    } else {
+      lines.push("クール/フレーム(非究極中) = 1/40");
+      if (v.ultReset === "end") {
+        lines.push("究極到達までの非究極F = MaxCT(秒) / (1/40) = MaxCT×40");
+        lines.push("周期F = 究極到達F + 究極F数");
+        lines.push("周期ダメージ = 非究極DPS×(究極到達F/40) + 攻撃力×究極倍率");
+        lines.push("DPS = 周期ダメージ / (周期F/40)");
+      } else {
+        lines.push("（リセット=開始時）");
+        if (v.ultStopsGauge) {
+          lines.push("究極中はCT進行停止 → 究極中CT増加=0");
+        } else {
+          lines.push("究極中CT増加（平均近似） = 究極F数/40");
+          lines.push("※グローバル40F境界の厳密では、究極中tick数が floor(究極F/40) または ceil(究極F/40) になり得る（±1tick）");
+        }
+        lines.push("残CT = max(0, MaxCT − 究極中CT増加)");
+        lines.push("残CT到達F(非究極) = 残CT / (1/40)");
+        lines.push("周期F = 究極F数 + 残CT到達F");
+        lines.push("周期ダメージ = 攻撃力×究極倍率 + 非究極DPS×(残CT到達F/40)");
+        lines.push("DPS = 周期ダメージ / (周期F/40)");
+      }
+    }
+    return lines.join("\n");
+  }
+
+function setBar(fillId, valId, pct) {
     const p = Math.max(0, Math.min(100, pct));
     $(fillId).style.width = `${p}%`;
     $(valId).textContent = `${r6(p)}%`;
@@ -485,6 +643,7 @@
   function render() {
     syncUltType();
     syncSkillBMode();
+    syncSegmentsFromHidden();
 
     const v = getValInternal();
     const res = calcTotal(v);
@@ -506,12 +665,25 @@
       setBar("barBasic","valBasic",0);
       setBar("barA","valA",0);
       setBar("barB","valB",0);
+      $("boundaryOut").textContent = "究極中tick数: - / DPSレンジ: -";
       setBar("barU","valU",0);
       return;
     }
 
     $("dpsOut").textContent = `${r6(res.dps)}`;
     $("dpsSub").textContent = "（小数第6位まで = 第7位四捨五入）";
+    // 40F境界ズレ（上限）の可視化：究極中tick数(min/max)と、それに基づくDPSレンジ
+    const brTop = calcBoundaryRange(v, res);
+    if (brTop) {
+      const minTick = brTop.minTick;
+      const maxTick = brTop.maxTick;
+      const lo = r6(brTop.lo);
+      const hi = r6(brTop.hi);
+      $("boundaryOut").textContent = `究極中tick数: ${minTick}〜${maxTick} / DPSレンジ: ${lo}〜${hi}`;
+    } else {
+      $("boundaryOut").textContent = "究極中tick数: - / DPSレンジ: -";
+    }
+
 
     const ex = calcRatesAndShares(v, res);
 
@@ -535,6 +707,15 @@
     lines.push(`スキルB DPS成分: ${r6(ex.bDPS)} / スキルB割合(%): ${r6(ex.bPct)}`);
     lines.push(`究極DPS成分: ${r6(ex.ultDPS)} / 究極割合(%): ${r6(ex.ultPct)}`);
 
+    const tb = calcTypeBreakdown(v, ex);
+    lines.push("\n=== 属性内訳（物理/魔法） ===");
+    lines.push(`物理DPS: ${r6(tb.phys)} / 物理割合(%): ${r6(tb.physPct)}`);
+    lines.push(`魔法DPS: ${r6(tb.magic)} / 魔法割合(%): ${r6(tb.magicPct)}`);
+
+    lines.push("\n=== 特性内訳（単体/複数） ===");
+    lines.push(`単体DPS: ${r6(tb.single)} / 単体割合(%): ${r6(tb.singlePct)}`);
+    lines.push(`複数DPS: ${r6(tb.multi)} / 複数割合(%): ${r6(tb.multiPct)}`);
+
     const br = calcBoundaryRange(v, res);
     if (br) {
       lines.push("\n=== 境界(40F)による厳密レンジ（開始位相で±1tickの差） ===");
@@ -552,6 +733,7 @@
   function validateAndRender() {
     syncUltType();
     syncSkillBMode();
+    syncSegmentsFromHidden();
 
     const errs = validateInputs();
     if (errs.length) {
@@ -561,6 +743,7 @@
       setBar("barBasic","valBasic",0);
       setBar("barA","valA",0);
       setBar("barB","valB",0);
+      $("boundaryOut").textContent = "究極中tick数: - / DPSレンジ: -";
       setBar("barU","valU",0);
       return;
     }
@@ -591,6 +774,7 @@
     normalizeAll();
     syncUltType();
     syncSkillBMode();
+    syncSegmentsFromHidden();
     validateAndRender();
     alert("読み込みました");
   }
@@ -627,5 +811,6 @@
   seedDefaults();
   normalizeAll();
   initBindings();
+  setupSegments();
   validateAndRender();
 })();

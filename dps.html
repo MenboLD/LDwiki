@@ -17,7 +17,22 @@
 
   <div class="grid">
     <div class="card">
+      <div class="headRow">
       <h2>入力：基本</h2>
+      <div class="headToggles">
+        <div class="seg" data-for="basicAttr">
+          <button type="button" data-val="phys">物理</button>
+          <button type="button" data-val="magic">魔法</button>
+        </div>
+        <div class="seg" data-for="basicTarget">
+          <button type="button" data-val="single">単体</button>
+          <button type="button" data-val="multi">複数</button>
+        </div>
+      </div>
+    </div>
+    <input type="hidden" id="basicAttr" value="phys">
+    <input type="hidden" id="basicTarget" value="single">
+
 
       <div class="tworow cols4" id="basicGrid">
         <div class="lbl" style="grid-column:1;">攻撃力</div>
@@ -48,7 +63,22 @@
     </div>
 
     <div class="card">
+      <div class="headRow">
       <h2>入力：究極</h2>
+      <div class="headToggles">
+        <div class="seg" data-for="ultAttr">
+          <button type="button" data-val="phys">物理</button>
+          <button type="button" data-val="magic">魔法</button>
+        </div>
+        <div class="seg" data-for="ultTarget">
+          <button type="button" data-val="single">単体</button>
+          <button type="button" data-val="multi">複数</button>
+        </div>
+      </div>
+    </div>
+    <input type="hidden" id="ultAttr" value="magic">
+    <input type="hidden" id="ultTarget" value="multi">
+
 
       <div class="tworow cols4">
         <div class="lbl" style="grid-column:1;">タイプ</div>
@@ -84,7 +114,22 @@
     </div>
 
     <div class="card">
+      <div class="headRow">
       <h2>入力：スキルA</h2>
+      <div class="headToggles">
+        <div class="seg" data-for="aAttr">
+          <button type="button" data-val="phys">物理</button>
+          <button type="button" data-val="magic">魔法</button>
+        </div>
+        <div class="seg" data-for="aTarget">
+          <button type="button" data-val="single">単体</button>
+          <button type="button" data-val="multi">複数</button>
+        </div>
+      </div>
+    </div>
+    <input type="hidden" id="aAttr" value="magic">
+    <input type="hidden" id="aTarget" value="single">
+
 
       <div class="tworow cols3">
         <div class="lbl" style="grid-column:1;">倍率</div>
@@ -110,7 +155,22 @@
     </div>
 
     <div class="card">
+      <div class="headRow">
       <h2>入力：スキルB</h2>
+      <div class="headToggles">
+        <div class="seg" data-for="bAttr">
+          <button type="button" data-val="phys">物理</button>
+          <button type="button" data-val="magic">魔法</button>
+        </div>
+        <div class="seg" data-for="bTarget">
+          <button type="button" data-val="single">単体</button>
+          <button type="button" data-val="multi">複数</button>
+        </div>
+      </div>
+    </div>
+    <input type="hidden" id="bAttr" value="magic">
+    <input type="hidden" id="bTarget" value="multi">
+
 
       <div class="tworow cols4" id="skillBGrid">
         <div class="lbl" style="grid-column:1;">タイプ</div>
@@ -150,6 +210,12 @@
     <h2>結果</h2>
     <div class="out" id="dpsOut">-</div>
     <div class="subout" id="dpsSub">-</div>
+    <div class="rangeBox" id="boundaryBox">
+      <div class="rangeTitle">40F境界ズレ（上限）</div>
+      <div class="rangeText" id="boundaryOut">-</div>
+      <div class="rangeHint" id="boundaryHint">究極：リセット=開始時 かつ「究極中にゲージが進む」場合に、究極中tick数が floor(Ｆ数/40) または ceil(Ｆ数/40) になり得ます（±1tick）。</div>
+    </div>
+
 
     <div class="bars" id="barsBox">
       <div class="barRow">

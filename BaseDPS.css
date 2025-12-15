@@ -14,7 +14,52 @@ h1{ font-size:20px; margin:0 0 10px; }
 @media(min-width:860px){ .grid{ grid-template-columns: 1fr 1fr; } }
 
 .card{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; }
-.card h2{ font-size:14px; margin:0 0 8px; color:#cfe3ff; }
+.card h2{ font-size:13px; margin:0; color:#cfe3ff; }
+
+/* 見出し行（入力：＊＊ + トグル2種を1行に収める） */
+.headRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin:0 0 8px;
+  flex-wrap:nowrap;
+}
+.headRow h2{
+  margin:0;
+  font-size:13px;
+  white-space:nowrap;
+  flex:0 0 auto;
+}
+.headToggles{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:6px;
+  flex:1 1 auto;
+  min-width:0;
+}
+.seg{
+  display:inline-flex;
+  border:1px solid var(--line);
+  border-radius:999px;
+  overflow:hidden;
+  background:#0e141c;
+  flex:0 0 auto;
+}
+.seg button{
+  border:0;
+  background:transparent;
+  color:var(--mut);
+  font-size:11px;
+  padding:6px 8px;
+  line-height:1;
+  cursor:pointer;
+}
+.seg button.active{
+  background:#1e3a5a;
+  color:var(--txt);
+}
 
 /* 2行グリッド（1行目ラベル、2行目入力） */
 .tworow{ display:grid; gap:8px 10px; align-items:end; }
@@ -67,3 +112,29 @@ button:hover{ filter:brightness(1.07); }
 .errField{ border-color:#ff4d4d !important; background:#2a0f14 !important; }
 .dimLbl{ color: var(--mut2) !important; }
 .errLbl{ color:#ff8a8a !important; }
+
+
+/* 40F境界ズレ表示（結果欄） */
+.rangeBox{
+  margin-top:10px;
+  padding:10px;
+  border:1px dashed var(--line);
+  border-radius:12px;
+  background:#0e141c;
+}
+.rangeTitle{
+  font-size:12px;
+  color:var(--mut);
+  margin-bottom:6px;
+}
+.rangeText{
+  font-size:14px;
+  font-variant-numeric: tabular-nums;
+  color:#cfe3ff;
+}
+.rangeHint{
+  margin-top:6px;
+  font-size:11px;
+  color:var(--mut2);
+  line-height:1.35;
+}
