@@ -1,189 +1,614 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>DPS計算ツール - ラッキー傭兵団</title>
-  <link rel="stylesheet" href="styles.css">
-  <script defer src="app.js"></script>
+  <meta charset="utf-8">
+  <title>ラッキー傭兵団 攻略 wiki</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #0c1016;
+      --bg-elevated: #161b22;
+      --accent: #3fbfff;
+      --accent-soft: rgba(63, 191, 255, 0.18);
+      --text-main: #f5f7ff;
+      --text-sub: #a9b4c8;
+      --border-soft: #252b36;
+      --danger: #ff6584;
+      --radius-card: 12px;
+      --shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.4);
+      --transition-fast: 0.22s ease-out;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #20283a 0, #05070a 55%);
+      color: var(--text-main);
+      min-height: 100vh;
+    }
+
+    /* レイアウト全体 */
+    .page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px 16px 32px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+      padding-top: 16px;
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      margin: 0 0 4px;
+      letter-spacing: 0.04em;
+    }
+
+    header p.subtitle {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--accent);
+      opacity: 0.9;
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .category-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .category-card {
+      background: rgba(10, 12, 18, 0.85);
+      border-radius: var(--radius-card);
+      border: 1px solid var(--border-soft);
+      padding: 12px 14px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .category-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(63,191,255,0.18), transparent 55%);
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+      pointer-events: none;
+    }
+
+    .category-card:hover::before {
+      opacity: 1;
+    }
+
+    .category-title {
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .category-title span.icon {
+      font-size: 1.15rem;
+    }
+
+    .category-desc {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      line-height: 1.4;
+    }
+
+    .category-arrow {
+      margin-left: auto;
+      font-size: 0.9rem;
+      color: var(--accent);
+    }
+
+    /* 下部セクション */
+    .section {
+      margin-top: 8px;
+      padding: 12px 14px;
+      border-radius: var(--radius-card);
+      border: 1px solid var(--border-soft);
+      background: rgba(6, 8, 12, 0.9);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .section h2 {
+      font-size: 0.95rem;
+      margin: 0 0 8px;
+      border-bottom: 1px solid var(--border-soft);
+      padding-bottom: 4px;
+    }
+
+    .section ul {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-sub);
+    }
+
+    .section li + li {
+      margin-top: 4px;
+    }
+
+    .muted {
+      color: var(--text-sub);
+      font-size: 0.78rem;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* 左側ドロワーメニュー関連 */
+
+    /* 40x150 px 全体がタップ領域 */
+    .drawer-handle-wrapper {
+      position: fixed;
+      left: 0;
+      top: 50%;
+      width: 40px;
+      height: 150px;
+      transform: translateY(-50%);
+      z-index: 1000;
+      /* 透明だけどタップ可能 */
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      pointer-events: auto;
+    }
+
+    /* 中央 7〜8mm × 30mm 相当の可視ピル部分 */
+    .drawer-handle-visible {
+      position: relative;
+      width: 28px;        /* 7〜8mm 相当の目安 */
+      height: 110px;      /* 30mm弱の目安 */
+      margin-left: 0;
+      margin-right: auto;
+      border-radius: 999px;
+      background: radial-gradient(circle at center, var(--accent) 0, #297aa8 40%, rgba(25,35,50,0.9) 100%);
+      box-shadow: 0 0 10px rgba(63,191,255,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .drawer-handle-button {
+      all: unset;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      color: #f7fbff;
+      font-size: 1.1rem;
+      text-align: center;
+      user-select: none;
+    }
+
+    /* ドロワー本体 */
+    .drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: min(280px, 80vw);
+      max-width: 320px;
+      background: linear-gradient(135deg, #05070c, #151927);
+      border-right: 1px solid var(--border-soft);
+      box-shadow: 0 0 30px rgba(0,0,0,0.7);
+      transform: translateX(-100%);
+      transition: transform var(--transition-fast);
+      z-index: 1100;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      padding: 16px 14px 10px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .drawer-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 0 0 2px;
+    }
+
+    .drawer-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      margin: 0;
+    }
+
+    .drawer-close-row {
+      display: flex;
+      justify-content: flex-end;
+      padding: 8px 12px 0;
+      font-size: 0.85rem;
+    }
+
+    .drawer-close-button {
+      all: unset;
+      cursor: pointer;
+      color: var(--accent);
+      font-size: 0.8rem;
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    .drawer-close-button:hover {
+      background: var(--accent-soft);
+    }
+
+    .drawer-body {
+      padding: 8px 8px 12px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .drawer-nav {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+      font-size: 0.85rem;
+    }
+
+    .drawer-nav-item {
+      margin: 2px 0;
+    }
+
+    .drawer-link {
+      display: block;
+      padding: 6px 8px;
+      border-radius: 8px;
+      color: var(--text-main);
+      text-decoration: none;
+    }
+
+    .drawer-link:hover {
+      background: var(--accent-soft);
+    }
+
+    .drawer-group-separator {
+      height: 10px;
+    }
+
+    .drawer-section-label {
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      margin: 6px 0 2px;
+      padding: 0 8px;
+    }
+
+    .drawer-footer {
+      padding: 10px 12px 12px;
+      border-top: 1px solid var(--border-soft);
+      font-size: 0.75rem;
+      color: var(--text-sub);
+    }
+
+    /* メニュー開閉時のオーバーレイ */
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition-fast);
+      z-index: 1050;
+    }
+
+    .drawer-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* 少し広い画面用 */
+    @media (min-width: 768px) {
+      header h1 {
+        font-size: 1.6rem;
+      }
+      .category-card {
+        padding: 14px 16px;
+      }
+    }
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>DPS計算ツール（ラッキー傭兵団）</h1>
-  <div class="note">
-    ・1秒=40フレーム。マナ/CTは <b>40Fのグローバル境界</b>で加算。<br>
-    ・出力の小数は <b>小数第6位まで</b>（=第7位四捨五入）。内部計算の丸め規則は変更していません。
-  </div>
-
-  <div class="grid">
-    <div class="card">
-      <h2>入力：基本</h2>
-
-      <div class="tworow cols4" id="basicGrid">
-        <div class="lbl" style="grid-column:1;">攻撃力</div>
-        <div class="lbl" style="grid-column:2;">攻撃速度</div>
-        <div class="lbl" style="grid-column:3;">Maxマナ(CT)</div>
-        <div class="lbl" id="regenLbl" style="grid-column:4;">Regeマナ/1s</div>
-
-        <div class="inp" style="grid-column:1;">
-          <input id="atk" type="text" inputmode="numeric" autocomplete="off" placeholder="1500">
-        </div>
-        <div class="inp" style="grid-column:2;">
-          <input id="aspd" type="text" inputmode="decimal" autocomplete="off" placeholder="2.40">
-        </div>
-        <div class="inp" style="grid-column:3;">
-          <input id="gaugeMax" type="text" inputmode="numeric" autocomplete="off" placeholder="100">
-        </div>
-        <div class="inp" style="grid-column:4;" id="regenGroup">
-          <input id="manaRegenPct" type="text" inputmode="numeric" autocomplete="off" placeholder="100%">
-        </div>
-      </div>
-
-      <div class="hint">
-        ・攻撃力：整数（最大6桁）、4桁以上はカンマ表示。<br>
-        ・攻撃速度：小数第2位まで表示、0より大きく最大 8.00。<br>
-        ・Maxマナ(CT)：整数（最大3桁）。<br>
-        ・Regeマナ/1s：最大4桁%（小数1桁まで可）。「100%」= 時間マナ1.0/秒。マナタイプ以外は未使用表示。
-      </div>
+  <!-- 左側ドロワーメニュー -->
+  <nav class="drawer" id="drawer" aria-label="サイトメニュー">
+    <div class="drawer-header">
+      <p class="drawer-title">ラッキー傭兵団 攻略 wiki</p>
+      <p class="drawer-subtitle">(試験運用・作成中)</p>
     </div>
-
-    <div class="card">
-      <h2>入力：究極</h2>
-
-      <div class="tworow cols4">
-        <div class="lbl" style="grid-column:1;">タイプ</div>
-        <div class="lbl" style="grid-column:2;">リセット</div>
-        <div class="lbl" style="grid-column:3;">倍率</div>
-        <div class="lbl" style="grid-column:4;">Ｆ数</div>
-
-        <div class="inp" style="grid-column:1;">
-          <select id="ultType">
-            <option value="none">無し</option>
-            <option value="mana" selected>マナ</option>
-            <option value="cool">クール</option>
-          </select>
-        </div>
-        <div class="inp" style="grid-column:2;">
-          <select id="ultReset">
-            <option value="end" selected>終了時</option>
-            <option value="start">開始時</option>
-          </select>
-        </div>
-        <div class="inp" style="grid-column:3;">
-          <input id="ultMulPct" type="text" inputmode="numeric" autocomplete="off" placeholder="1500%">
-        </div>
-        <div class="inp" style="grid-column:4;">
-          <input id="ultF" type="text" inputmode="numeric" autocomplete="off" placeholder="44">
-        </div>
-      </div>
-
-      <div class="chk">
-        <input id="ultStopsGauge" type="checkbox" checked>
-        <span>究極モーション中はマナ/CTの加算が停止する</span>
-      </div>
+    <div class="drawer-close-row">
+      <button class="drawer-close-button" type="button" id="drawerCloseBtn">閉じる ◀</button>
     </div>
+    <div class="drawer-body">
+      <ul class="drawer-nav">
+        <!-- 上段：メイン導線 -->
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">トップページ</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">情報掲示板</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">ユーザーデータベース</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">攻略の手引き</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">ユニットDB</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">データツール</a>
+        </li>
 
-    <div class="card">
-      <h2>入力：スキルA</h2>
+        <!-- スペース -->
+        <li class="drawer-group-separator"></li>
 
-      <div class="tworow cols3">
-        <div class="lbl" style="grid-column:1;">倍率</div>
-        <div class="lbl" style="grid-column:2;">確率</div>
-        <div class="lbl" style="grid-column:3;">Ｆ数</div>
+        <!-- 中段：サイト情報系 -->
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">サイトについて</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">利用ルール</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">更新履歴</a>
+        </li>
 
-        <div class="inp" style="grid-column:1;">
-          <input id="aMulPct" type="text" inputmode="numeric" autocomplete="off" placeholder="600%">
-        </div>
-        <div class="inp" style="grid-column:2;">
-          <input id="aPPct" type="text" inputmode="decimal" autocomplete="off" placeholder="10.0%">
-        </div>
-        <div class="inp" style="grid-column:3;">
-          <input id="aF" type="text" inputmode="numeric" autocomplete="off" placeholder="32">
-        </div>
-      </div>
+        <!-- スペース -->
+        <li class="drawer-group-separator"></li>
 
-      <div class="hint">
-        ・倍率：最大6桁%（小数1桁まで可）。<br>
-        ・確率：最大90.0%（小数第1位まで）。<br>
-        ・Ｆ数：最大4桁整数。
-      </div>
+        <!-- 下段：編集者向け -->
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">編集者ログイン / ログアウト</a>
+        </li>
+      </ul>
     </div>
+    <div class="drawer-footer">
+      編集メニューや子ツリー（攻略・ユニットDB・データツール）は、後日ここから展開予定。
+    </div>
+  </nav>
 
-    <div class="card">
-      <h2>入力：スキルB</h2>
+  <div class="drawer-overlay" id="drawerOverlay"></div>
 
-      <div class="tworow cols4" id="skillBGrid">
-        <div class="lbl" style="grid-column:1;">タイプ</div>
-        <div class="lbl" style="grid-column:2;">倍率</div>
-        <div class="lbl" style="grid-column:3;" id="bThirdLbl">確率</div>
-        <div class="lbl" style="grid-column:4;">Ｆ数</div>
-
-        <div class="inp" style="grid-column:1;">
-          <select id="bType">
-            <option value="none" selected>無し</option>
-            <option value="prob">確率</option>
-            <option value="count">規定回数</option>
-          </select>
-        </div>
-        <div class="inp" style="grid-column:2;">
-          <input id="bMulPct" type="text" inputmode="numeric" autocomplete="off" placeholder="1500%">
-        </div>
-        <div class="inp" style="grid-column:3;">
-          <input id="bThird" type="text" inputmode="decimal" autocomplete="off" placeholder="12.0%">
-        </div>
-        <div class="inp" style="grid-column:4;">
-          <input id="bF" type="text" inputmode="numeric" autocomplete="off" placeholder="40">
-        </div>
-      </div>
-
-      <div class="hint">
-        ・タイプ：無し / 確率 / 規定回数。<br>
-        ・倍率：最大6桁%（小数1桁まで可）。<br>
-        ・確率（タイプ=確率）：最大90.0%（小数第1位まで）。<br>
-        ・規定回数（タイプ=規定回数）：2桁整数（1〜99）。<br>
-        ・Ｆ数：最大4桁整数。
-      </div>
+  <!-- 左端の縦長ピルボタン（40x150 / 真ん中だけ可視） -->
+  <div class="drawer-handle-wrapper" id="drawerHandleWrapper">
+    <div class="drawer-handle-visible">
+      <button class="drawer-handle-button" id="drawerHandleBtn" aria-label="メニューを開閉">
+        ▶
+      </button>
     </div>
   </div>
 
-  <div class="card" style="margin-top:12px;">
-    <h2>結果</h2>
-    <div class="out" id="dpsOut">-</div>
-    <div class="subout" id="dpsSub">-</div>
+  <!-- ページ本体 -->
+  <div class="page">
+    <header>
+      <h1>ラッキー傭兵団 攻略 wiki</h1>
+      <p class="subtitle">(試験運用・作成中)</p>
+    </header>
 
-    <div class="bars" id="barsBox">
-      <div class="barRow">
-        <div class="barLabel">基本攻撃</div>
-        <div class="barTrack"><div class="barFill" id="barBasic"></div></div>
-        <div class="barValue" id="valBasic">-</div>
-      </div>
-      <div class="barRow">
-        <div class="barLabel">スキルA</div>
-        <div class="barTrack"><div class="barFill" id="barA"></div></div>
-        <div class="barValue" id="valA">-</div>
-      </div>
-      <div class="barRow">
-        <div class="barLabel">スキルB</div>
-        <div class="barTrack"><div class="barFill" id="barB"></div></div>
-        <div class="barValue" id="valB">-</div>
-      </div>
-      <div class="barRow">
-        <div class="barLabel">究極</div>
-        <div class="barTrack"><div class="barFill" id="barU"></div></div>
-        <div class="barValue" id="valU">-</div>
-      </div>
-    </div>
+    <main>
+      <section class="category-list" aria-label="主要カテゴリ">
+        <article class="category-card" data-link="#">
+          <div class="category-title">
+            <span class="icon">🏠</span>
+            <span>トップページ</span>
+            <span class="category-arrow">›</span>
+          </div>
+          <p class="category-desc">
+            サイト全体の案内・新着情報への入口です。（このページ）
+          </p>
+        </article>
 
-    <div class="btns">
-      <button id="calcBtn">計算する</button>
-      <button id="saveBtn">入力を保存</button>
-      <button id="loadBtn">保存を読み込み</button>
-      <button id="resetBtn">初期化</button>
-    </div>
+        <article class="category-card" data-link="#">
+          <div class="category-title">
+            <span class="icon">📡</span>
+            <span>情報掲示板</span>
+            <span class="category-arrow">›</span>
+          </div>
+          <p class="category-desc">
+            検証結果やアップデート情報などを共有し、議論するための掲示板です。
+          </p>
+        </article>
 
-    <div class="hr"></div>
-    <div class="mono" id="detailOut"></div>
+        <article class="category-card" data-link="#">
+          <div class="category-title">
+            <span class="icon">👤</span>
+            <span>ユーザーデータベース</span>
+            <span class="category-arrow">›</span>
+          </div>
+          <p class="category-desc">
+            自分の金庫・育成状況を登録し、質問や議論時の前提情報として参照できる予定のページです。
+          </p>
+        </article>
+
+        <article class="category-card" data-link="#">
+          <div class="category-title">
+            <span class="icon">📖</span>
+            <span>攻略の手引き</span>
+            <span class="category-arrow">›</span>
+          </div>
+          <p class="category-desc">
+            ゲームシステムの基本や育成指針などをまとめた解説ページ群です。
+          </p>
+        </article>
+
+        <article class="category-card" data-link="#">
+          <div class="category-title">
+            <span class="icon">📚</span>
+            <span>ユニットDB</span>
+            <span class="category-arrow">›</span>
+          </div>
+          <p class="category-desc">
+            各ユニットのステータスやスキル、運用例を整理するデータベースです。
+          </p>
+        </article>
+
+        <article class="category-card" data-link="#">
+          <div class="category-title">
+            <span class="icon">🧮</span>
+            <span>データツール</span>
+            <span class="category-arrow">›</span>
+          </div>
+          <p class="category-desc">
+            DPS計算や月間リソース期待値など、各種シミュレーターや計算ツールをまとめたページです。
+          </p>
+        </article>
+      </section>
+
+      <!-- 下部セクション -->
+      <section class="section" aria-label="最近の更新">
+        <h2>最近の更新</h2>
+        <ul>
+          <li>2025-12-03: トップページのモックアップ作成</li>
+          <li>（ここに、ユニットDBやツールの更新情報などを追記予定）</li>
+        </ul>
+      </section>
+
+      <section class="section" aria-label="お知らせ">
+        <h2>お知らせ</h2>
+        <p class="muted">
+          現在は試験運用中です。内容・構成・URLなどは予告なく変更される可能性があります。
+        </p>
+      </section>
+
+      <section class="section" aria-label="利用規約・ルール">
+        <h2>利用ルール・方針</h2>
+        <p class="muted">
+          利用ルール・編集方針などの詳細ページへのリンクを、後日ここに配置予定です。<br>
+          荒らし対策やコメント方針、編集権限についても明文化していきます。
+        </p>
+      </section>
+    </main>
   </div>
-</div>
+
+  <script>
+    const drawer = document.getElementById('drawer');
+    const drawerOverlay = document.getElementById('drawerOverlay');
+    const drawerHandleBtn = document.getElementById('drawerHandleBtn');
+    const drawerHandleWrapper = document.getElementById('drawerHandleWrapper');
+    const drawerCloseBtn = document.getElementById('drawerCloseBtn');
+
+    function openDrawer() {
+      drawer.classList.add('open');
+      drawerOverlay.classList.add('visible');
+      drawerHandleBtn.textContent = '◀';
+    }
+
+    function closeDrawer() {
+      drawer.classList.remove('open');
+      drawerOverlay.classList.remove('visible');
+      drawerHandleBtn.textContent = '▶';
+    }
+
+    function toggleDrawer() {
+      if (drawer.classList.contains('open')) {
+        closeDrawer();
+      } else {
+        openDrawer();
+      }
+    }
+
+    drawerHandleWrapper.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDrawer();
+    });
+
+    drawerCloseBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeDrawer();
+    });
+
+    drawerOverlay.addEventListener('click', () => {
+      closeDrawer();
+    });
+
+    // カテゴリカードクリックで data-link に遷移（今は #）
+    document.querySelectorAll('.category-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const link = card.getAttribute('data-link') || '#';
+        window.location.href = link;
+      });
+    });
+
+    // シンプルなスワイプ検出（モバイル用）
+    let touchStartX = null;
+    let touchStartY = null;
+
+    function onTouchStart(e) {
+      const touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+    }
+
+    function onTouchEnd(e) {
+      if (touchStartX === null || touchStartY === null) return;
+      const touch = e.changedTouches[0];
+      const dx = touch.clientX - touchStartX;
+      const dy = touch.clientY - touchStartY;
+
+      const absDx = Math.abs(dx);
+      const absDy = Math.abs(dy);
+
+      // 横方向のスワイプが明確なときだけ処理
+      if (absDx > 40 && absDx > absDy) {
+        if (!drawer.classList.contains('open')) {
+          // 画面左端付近から右へのスワイプで開く
+          if (touchStartX < 24 && dx > 0) {
+            openDrawer();
+          }
+        } else {
+          // ドロワーが開いているときは左スワイプで閉じる
+          if (dx < 0) {
+            closeDrawer();
+          }
+        }
+      }
+
+      touchStartX = null;
+      touchStartY = null;
+    }
+
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
+  </script>
 </body>
 </html>
