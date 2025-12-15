@@ -675,6 +675,7 @@ function setBar(fillId, valId, pct) {
       setBar("barB","valB",0);
       $("boundaryOut").textContent = "究極中tick数: - / DPSレンジ: -";
       setBar("barU","valU",0);
+      $("formulaOut").textContent = "-";
       return;
     }
 
@@ -736,7 +737,9 @@ function setBar(fillId, valId, pct) {
     lines.push(`表示DPS（周期合成）: ${r6(res.dps)}`);
 
     $("detailOut").textContent = lines.join("\n");
-  }
+  
+    $("formulaOut").textContent = buildFormulaText(v, res);
+}
 
   function validateAndRender() {
     syncUltType();
@@ -754,71 +757,3 @@ function setBar(fillId, valId, pct) {
       $("boundaryOut").textContent = "究極中tick数: - / DPSレンジ: -";
       setBar("barU","valU",0);
       return;
-    }
-    render();
-  }
-
-  function save() {
-    const v = {};
-    document.querySelectorAll("input,select").forEach(el => {
-      if (!el.id) return;
-      if (el.type === "checkbox") v[el.id] = el.checked;
-      else v[el.id] = el.value;
-    });
-    localStorage.setItem("LD_DPS_TOOL_V5_ZIP", JSON.stringify(v));
-    alert("保存しました");
-  }
-
-  function load() {
-    const raw = localStorage.getItem("LD_DPS_TOOL_V5_ZIP");
-    if (!raw) return alert("保存データがありません");
-    const v = JSON.parse(raw);
-    for (const [k,val] of Object.entries(v)) {
-      const el = $(k);
-      if (!el) continue;
-      if (el.type === "checkbox") el.checked = !!val;
-      else el.value = val;
-    }
-    normalizeAll();
-    syncUltType();
-    syncSkillBMode();
-    syncSegmentsFromHidden();
-    validateAndRender();
-    alert("読み込みました");
-  }
-
-  function resetAll() {
-    localStorage.removeItem("LD_DPS_TOOL_V5_ZIP");
-    location.reload();
-  }
-
-  function seedDefaults() {
-    $("atk").value = "1500";
-    $("aspd").value = "2.40";
-    $("gaugeMax").value = "100";
-    $("manaRegenPct").value = "100%";
-
-    $("ultType").value = "mana";
-    $("ultReset").value = "end";
-    $("ultMulPct").value = "1500%";
-    $("ultF").value = "44";
-    $("ultStopsGauge").checked = true;
-
-    $("aMulPct").value = "600%";
-    $("aPPct").value = "10.0%";
-    $("aF").value = "32";
-
-    $("bType").value = "none";
-    $("bMulPct").value = "1500%";
-    $("bThird").value = "0.0%";
-    $("bF").value = "40";
-  }
-
-  syncUltType();
-  syncSkillBMode();
-  seedDefaults();
-  normalizeAll();
-  initBindings();
-  setupSegments();
-  validateAndRender();
-})();
