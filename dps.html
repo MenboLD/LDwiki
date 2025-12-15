@@ -17,9 +17,9 @@
   </div>
 
   <div class="grid">
-    <div class="card">
-      <div class="headRow">
-      <h2>入力：基本</h2>
+    <div class="card accordionCard open">
+      <div class="headRow accHeader" data-acc="basic">
+      <h2 class="accTitle"><span class="accIcon" aria-hidden="true">▼</span>入力：基本</h2>
       <div class="headToggles">
         <div class="seg" data-for="basicAttr">
           <button type="button" data-val="phys">物理</button>
@@ -34,6 +34,7 @@
     <input type="hidden" id="basicAttr" value="phys">
     <input type="hidden" id="basicTarget" value="single">
 
+      <div class="cardBody" id="accBody_basic">
 
       <div class="tworow cols4" id="basicGrid">
         <div class="lbl" style="grid-column:1;">攻撃力</div>
@@ -60,12 +61,13 @@
         ・攻撃速度：小数第2位まで表示、0より大きく最大 8.00。<br>
         ・Maxマナ(CT)：整数（最大3桁）。<br>
         ・Regeマナ/1s：最大4桁%（小数1桁まで可）。「100%」= 時間マナ1.0/秒。マナタイプ以外は未使用表示。
-      </div>
+      </div>      </div>
+
     </div>
 
-    <div class="card">
-      <div class="headRow">
-      <h2>入力：究極</h2>
+    <div class="card accordionCard open">
+      <div class="headRow accHeader" data-acc="ult">
+      <h2 class="accTitle"><span class="accIcon" aria-hidden="true">▼</span>入力：究極</h2>
       <div class="headToggles">
         <div class="seg" data-for="ultAttr">
           <button type="button" data-val="phys">物理</button>
@@ -80,6 +82,7 @@
     <input type="hidden" id="ultAttr" value="magic">
     <input type="hidden" id="ultTarget" value="multi">
 
+      <div class="cardBody" id="accBody_ult">
 
       <div class="tworow cols4">
         <div class="lbl" style="grid-column:1;">タイプ</div>
@@ -111,12 +114,13 @@
       <div class="chk">
         <input id="ultStopsGauge" type="checkbox" checked>
         <span>究極モーション中はマナ/CTの加算が停止する</span>
-      </div>
+      </div>      </div>
+
     </div>
 
-    <div class="card">
-      <div class="headRow">
-      <h2>入力：スキルA</h2>
+    <div class="card accordionCard open">
+      <div class="headRow accHeader" data-acc="a">
+      <h2 class="accTitle"><span class="accIcon" aria-hidden="true">▼</span>入力：スキルA</h2>
       <div class="headToggles">
         <div class="seg" data-for="aAttr">
           <button type="button" data-val="phys">物理</button>
@@ -131,6 +135,7 @@
     <input type="hidden" id="aAttr" value="magic">
     <input type="hidden" id="aTarget" value="single">
 
+      <div class="cardBody" id="accBody_a">
 
       <div class="tworow cols3">
         <div class="lbl" style="grid-column:1;">倍率</div>
@@ -152,12 +157,13 @@
         ・倍率：最大6桁%（小数1桁まで可）。<br>
         ・確率：最大90.0%（小数第1位まで）。<br>
         ・Ｆ数：最大4桁整数。
-      </div>
+      </div>      </div>
+
     </div>
 
-    <div class="card">
-      <div class="headRow">
-      <h2>入力：スキルB</h2>
+    <div class="card accordionCard open">
+      <div class="headRow accHeader" data-acc="b">
+      <h2 class="accTitle"><span class="accIcon" aria-hidden="true">▼</span>入力：スキルB</h2>
       <div class="headToggles">
         <div class="seg" data-for="bAttr">
           <button type="button" data-val="phys">物理</button>
@@ -172,6 +178,7 @@
     <input type="hidden" id="bAttr" value="magic">
     <input type="hidden" id="bTarget" value="multi">
 
+      <div class="cardBody" id="accBody_b">
 
       <div class="tworow cols4" id="skillBGrid">
         <div class="lbl" style="grid-column:1;">タイプ</div>
@@ -239,7 +246,33 @@
         <div class="barTrack"><div class="barFill" id="barU"></div></div>
         <div class="barValue" id="valU">-</div>
       </div>
-    </div>
+    
+      <div class="barDivider"></div>
+      <div class="barGroupTitle">属性（物理 / 魔法）</div>
+      <div class="barRow">
+        <div class="barLabel">物理</div>
+        <div class="barTrack"><div class="barFill" id="barPhys"></div></div>
+        <div class="barValue" id="valPhys">-</div>
+      </div>
+      <div class="barRow">
+        <div class="barLabel">魔法</div>
+        <div class="barTrack"><div class="barFill" id="barMagic"></div></div>
+        <div class="barValue" id="valMagic">-</div>
+      </div>
+
+      <div class="barDivider"></div>
+      <div class="barGroupTitle">特性（単体 / 複数）</div>
+      <div class="barRow">
+        <div class="barLabel">単体</div>
+        <div class="barTrack"><div class="barFill" id="barSingle"></div></div>
+        <div class="barValue" id="valSingle">-</div>
+      </div>
+      <div class="barRow">
+        <div class="barLabel">複数</div>
+        <div class="barTrack"><div class="barFill" id="barMulti"></div></div>
+        <div class="barValue" id="valMulti">-</div>
+      </div>
+</div>
 
     <div class="btns">
       <button id="calcBtn">計算する</button>

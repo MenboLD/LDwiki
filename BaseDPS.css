@@ -145,3 +145,53 @@ button:hover{ filter:brightness(1.07); }
   color:var(--mut);
   margin:2px 0 8px;
 }
+
+
+/* 横棒：見やすい明色（なるべく全部違う色） */
+#barBasic{ background:#4FB6FF; }   /* sky */
+#barA{ background:#66FF7A; }       /* green */
+#barB{ background:#FFD84F; }       /* yellow */
+#barU{ background:#FF4FD8; }       /* pink */
+#barPhys{ background:#FF8A4F; }    /* orange */
+#barMagic{ background:#A84FFF; }   /* purple */
+#barSingle{ background:#4FFFF0; }  /* cyan */
+#barMulti{ background:#FF4F6E; }   /* red */
+
+.barDivider{
+  height:1px;
+  background:var(--line);
+  opacity:.7;
+  margin:8px 0;
+}
+.barGroupTitle{
+  font-size:12px;
+  color:var(--mut);
+  margin:2px 0 6px;
+}
+
+
+/* アコーディオン（入力カード） */
+.accordionCard .accHeader{
+  cursor:pointer;
+  user-select:none;
+}
+.accordionCard .accIcon{
+  display:inline-block;
+  margin-right:6px;
+  transform:rotate(0deg);
+  transition:transform 120ms ease-out;
+}
+.accordionCard.open .accIcon{
+  transform:rotate(180deg); /* ▼を回転させて▲に見せる */
+}
+.accordionCard .cardBody{
+  display:block;
+}
+.accordionCard:not(.open) .cardBody{
+  display:none;
+}
+
+/* ヘッダー行でトグルが折り返さないように、さらに詰める */
+.headRow{ gap:6px; }
+.headToggles{ gap:4px; }
+.seg button{ padding:6px 7px; font-size:11px; }

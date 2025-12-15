@@ -209,7 +209,7 @@
       applySegActive(seg, hidden.value);
 
       seg.querySelectorAll("button[data-val]").forEach(btn => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", (e) => { e.stopPropagation();
           hidden.value = btn.dataset.val;
           applySegActive(seg, hidden.value);
           validateAndRender();
@@ -224,6 +224,27 @@
       const hidden = $(key);
       if (!hidden) return;
       applySegActive(seg, hidden.value);
+    });
+  }
+
+  // ---------- アコーディオン（入力カード） ----------
+  function setupAccordions() {
+    document.querySelectorAll(".accHeader[data-acc]").forEach(h => {
+      const key = h.dataset.acc;
+      const card = h.closest(".accordionCard");
+      const body = document.getElementById(`accBody_${key}`);
+      if (!card || !body) return;
+
+      // 初期状態：openクラスがあれば開く
+      body.style.display = card.classList.contains("open") ? "block" : "none";
+
+      h.addEventListener("click", (e) => {
+        // トグル操作中はアコーディオンを開閉しない
+        if (e.target && e.target.closest && e.target.closest(".seg")) return;
+
+        card.classList.toggle("open");
+        body.style.display = card.classList.contains("open") ? "block" : "none";
+      });
     });
   }
 
@@ -684,6 +705,11 @@ function setBar(fillId, valId, pct) {
       $("boundaryOut").textContent = "究極中tick数: - / DPSレンジ: -";
       $("formulaOut").textContent = "-";
       setBar("barU","valU",0);
+
+      setBar("barPhys","valPhys",0);
+      setBar("barMagic","valMagic",0);
+      setBar("barSingle","valSingle",0);
+      setBar("barMulti","valMulti",0);
       return;
     }
 
@@ -709,6 +735,11 @@ function setBar(fillId, valId, pct) {
     setBar("barA","valA", ex.aPct);
     setBar("barB","valB", ex.bPct);
     setBar("barU","valU", ex.ultPct);
+    // 物理/魔法・単体/複数（割合）
+    setBar("barPhys","valPhys", tb.physPct);
+    setBar("barMagic","valMagic", tb.magicPct);
+    setBar("barSingle","valSingle", tb.singlePct);
+    setBar("barMulti","valMulti", tb.multiPct);
 
     const lines = [];
     lines.push("=== 行動レート（回/秒）※究極時間込み平均 ===");
@@ -765,6 +796,10 @@ function setBar(fillId, valId, pct) {
       $("boundaryOut").textContent = "究極中tick数: - / DPSレンジ: -";
       $("formulaOut").textContent = "-";
       setBar("barU","valU",0);
+      setBar("barPhys","valPhys",0);
+      setBar("barMagic","valMagic",0);
+      setBar("barSingle","valSingle",0);
+      setBar("barMulti","valMulti",0);
       return;
     }
     render();
@@ -832,5 +867,6 @@ function setBar(fillId, valId, pct) {
   normalizeAll();
   initBindings();
   setupSegments();
+  setupAccordions();
   validateAndRender();
 })();
