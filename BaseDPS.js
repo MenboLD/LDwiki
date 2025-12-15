@@ -1,5 +1,35 @@
 (() => {
   const F = 40;
+  const DIFF_DEF = {
+    normal: 148,
+    hard: 158,
+    hell: 158,
+    god: 175,
+    prime: 175,
+  };
+
+  function round2(x) { return Math.round(x * 100) / 100; }
+
+  function computePhysMul(realDef) {
+    const s = Math.sign(realDef);
+    const a = Math.abs(realDef);
+    const raw = 1 * (1 + (s * (1 - 50 / (3 * a + 50))));
+    return round2(raw);
+  }
+
+  function syncEnvDerivedUI() {
+    const diff = $("envDiff") ? $("envDiff").value : "normal";
+    const base = DIFF_DEF[diff] ?? 148;
+    const defNum = $("envDefNum");
+    if (defNum) defNum.textContent = String(base);
+
+    const red = readInt($("defReduce") ? $("defReduce").value : "0");
+    const realDef = red - base;
+    const mul = computePhysMul(realDef);
+    const out = $("physMulOut");
+    if (out) out.value = (isFinite(mul) ? mul.toFixed(2) : "1.00");
+  }
+
   const $ = (id) => document.getElementById(id);
   const r6 = (x) => (isFinite(x) ? Math.round(x * 1e6) / 1e6 : NaN);
 
@@ -190,6 +220,8 @@
     $("bThird").addEventListener("change", commitBThird);
 
     $("ultType").addEventListener("change", () => { syncUltType(); validateAndRender(); });
+    $("envDiff").addEventListener("change", () => { syncEnvDerivedUI(); validateAndRender(); });
+    $("defReduce").addEventListener("input", () => { syncEnvDerivedUI(); validateAndRender(); });
     $("ultReset").addEventListener("change", validateAndRender);
     $("ultStopsGauge").addEventListener("change", validateAndRender);
     $("bType").addEventListener("change", () => { syncSkillBMode(); validateAndRender(); });
@@ -261,6 +293,8 @@
     $("aspd").value = toAspdDisplay($("aspd").value);
     $("gaugeMax").value = toIntDisplay($("gaugeMax").value, 3);
     $("manaRegenPct").value = toPctDisplay($("manaRegenPct").value, 1, 4);
+    $("defReduce").value = toIntDisplay($("defReduce").value, 3);
+    syncEnvDerivedUI();
 
     $("ultMulPct").value = toPctDisplay($("ultMulPct").value, 1, 6);
     $("ultF").value = toIntDisplay($("ultF").value, 4);
@@ -274,6 +308,7 @@
 
     syncSkillBMode();
     syncSegmentsFromHidden();
+    syncEnvDerivedUI();
     if ($("bType").value === "prob") $("bThird").value = toProbPctDisplay($("bThird").value);
     if ($("bType").value === "count") $("bThird").value = String(readInt($("bThird").value));
   }
@@ -285,6 +320,12 @@
 
     const regenPct = readNumber($("manaRegenPct").value);
     const manaPerSec = regenPct / 100;
+
+    const envDiff = $("envDiff").value;
+    const baseDef = DIFF_DEF[envDiff] ?? 148;
+    const defReduce = readInt($("defReduce").value);
+    const realDef = defReduce - baseDef;
+    const physMul = computePhysMul(realDef);
 
     const ultType = $("ultType").value;
     const ultReset = $("ultReset").value;
@@ -313,12 +354,12 @@
     const uAttr = $("ultAttr").value;
     const uTarget = $("ultTarget").value;
 
-    return { atk, aspd, gaugeMax, manaPerSec, ultType, ultReset, ultMul, ultF, ultStopsGauge, aMul, aP, aF, bType, bMul, bF, bP, bN,
+    return { atk, aspd, gaugeMax, manaPerSec, envDiff, baseDef, defReduce, realDef, physMul, ultType, ultReset, ultMul, ultF, ultStopsGauge, aMul, aP, aF, bType, bMul, bF, bP, bN,
       basicAttr, basicTarget, aAttr, aTarget, bAttr, bTarget, uAttr, uTarget };
   }
 
   function clearErrAll() {
-    const ids = ["atk","aspd","gaugeMax","manaRegenPct","ultMulPct","ultF","aMulPct","aPPct","aF","bMulPct","bThird","bF"];
+    const ids = ["atk","aspd","gaugeMax","manaRegenPct","defReduce","ultMulPct","ultF","aMulPct","aPPct","aF","bMulPct","bThird","bF"];
     ids.forEach(id => setErr($(id), false));
     setLblErr($("regenLbl"), false);
   }
@@ -335,6 +376,9 @@
 
     const gaugeMax = readInt($("gaugeMax").value);
     if (gaugeMax <= 0) { setErr($("gaugeMax"), true); errors.push("Maxマナ(CT)は1以上"); }
+
+    const defReduce = readInt($("defReduce").value);
+    if (defReduce < 0 || defReduce > 999) { setErr($("defReduce"), true); errors.push("防御力減少値は0〜999"); }
 
     const ultType = $("ultType").value;
     if (ultType !== "none") {
@@ -419,7 +463,10 @@
       return { dps: nu.nonUltDPS, detail: { ...nu, cycleFrames: NaN, cycleDamage: NaN, framesNonUltToReady: NaN } };
     }
 
-    const ultDamage = v.atk * v.ultMul;
+    const pm = (isFinite(v.physMul) ? v.physMul : 1);
+    const ultDamage = v.atk * v.ultMul * (v.uAttr === "phys" ? pm : 1);
+    const split = calcNonUltDpsSplit(v, d);
+    const nonUltDPS_adj = split.phys * pm + split.magic;
 
     if (v.ultType === "mana") {
       const timeManaPerFrame_nonUlt = v.manaPerSec / F; // 期待値（平均）
@@ -510,13 +557,19 @@
     const mA = v.aMul;
     const mB = (v.bType === "none") ? 0 : v.bMul;
 
-    const basicDPS = basicPerSec * v.atk * 1;
-    const aDPS = aPerSec * v.atk * mA;
-    const bDPS = bPerSec * v.atk * mB;
-    const ultDPS = ultPerSec * v.atk * (hasUlt ? v.ultMul : 0);
+    const basicDPS0 = basicPerSec * v.atk * 1;
+    const aDPS0 = aPerSec * v.atk * mA;
+    const bDPS0 = bPerSec * v.atk * mB;
+    const ultDPS0 = ultPerSec * v.atk * (hasUlt ? v.ultMul : 0);
+
+    const pm = (isFinite(v.physMul) ? v.physMul : 1);
+    const basicDPS = basicDPS0 * (v.basicAttr === "phys" ? pm : 1);
+    const aDPS = aDPS0 * (v.aAttr === "phys" ? pm : 1);
+    const bDPS = bDPS0 * (v.bAttr === "phys" ? pm : 1);
+    const ultDPS = ultDPS0 * (v.uAttr === "phys" ? pm : 1);
 
     const sum = basicDPS + aDPS + bDPS + ultDPS;
-    const pct = (x) => (sum > 0 ? (100 * x / sum) : 0);
+const pct = (x) => (sum > 0 ? (100 * x / sum) : 0);
 
     return {
       nonUltFrac,
@@ -527,7 +580,47 @@
     };
   }
 
-  function calcBoundaryRange(v, res) {
+  
+  function calcNonUltDpsSplit(v, d) {
+    // Expected non-ultimate DPS split by attribute (physical / magic), based on current skill mode.
+    const mA = v.aMul;
+    const mB = (v.bType === "none") ? 0 : v.bMul;
+
+    if (d.mode === "prob") {
+      const denom = (d.avgFrames / 40);
+      const physW = (v.basicAttr === "phys" ? d.p0 * 1 : 0)
+                  + (v.aAttr === "phys" ? d.pA * mA : 0)
+                  + (v.bAttr === "phys" ? d.pB * mB : 0);
+      const magW  = (v.basicAttr === "magic" ? d.p0 * 1 : 0)
+                  + (v.aAttr === "magic" ? d.pA * mA : 0)
+                  + (v.bAttr === "magic" ? d.pB * mB : 0);
+      return {
+        phys: v.atk * physW / denom,
+        magic: v.atk * magW / denom,
+      };
+    } else {
+      const N = v.bN;
+      const pA = v.aP;
+      const fA = v.aF;
+      const fB = v.bF;
+      const T0 = d.T0;
+      const EA = (N + 1) * pA / (1 - pA);
+      const expFrames = T0 * N + fA * EA + fB;
+      const denom = expFrames / 40;
+
+      const physW = (v.basicAttr === "phys" ? N * 1 : 0)
+                  + (v.aAttr === "phys" ? EA * mA : 0)
+                  + (v.bAttr === "phys" ? 1 * mB : 0);
+      const magW  = (v.basicAttr === "magic" ? N * 1 : 0)
+                  + (v.aAttr === "magic" ? EA * mA : 0)
+                  + (v.bAttr === "magic" ? 1 * mB : 0);
+      return {
+        phys: v.atk * physW / denom,
+        magic: v.atk * magW / denom,
+      };
+    }
+  }
+function calcBoundaryRange(v, res) {
     if (v.ultType === "none") return null;
     if (v.ultReset !== "start") return null;
     if (v.ultStopsGauge) return null;
@@ -555,7 +648,7 @@
       }
 
       const cycleFrames = v.ultF + framesNonUltToReady;
-      const cycleDamage = ultDamage + d.nonUltDPS * (framesNonUltToReady / 40);
+      const cycleDamage = ultDamage + nonUltDPS_adj * (framesNonUltToReady / 40);
       return cycleDamage / (cycleFrames / 40);
     }
 
@@ -622,6 +715,14 @@
       lines.push("非究極周期ダメージ = 攻撃力 × (規定回数×100% + EA×スキルA倍率 + 1×スキルB倍率)");
       lines.push("非究極DPS = 非究極周期ダメージ / (非究極周期F / 40)");
     }
+    lines.push("■ 環境（物理補正）");
+    lines.push("80w防御力 = 難易度に対応する値（ノーマル148 / ハード158 / 地獄158 / 神175 / 太初175）");
+    lines.push("実防御力 = 防御力減少値 − 80w防御力");
+    lines.push("物理補正倍率(raw) = 1*(1+(SIGN(実防御力)*(1-50/(3*ABS(実防御力)+50))))");
+    lines.push("物理補正倍率 = 上式を小数第3位四捨五入（=小数第2位まで）");
+    lines.push("物理属性に属するDPS成分は 物理補正倍率 を乗算（基本/スキルA/スキルB/究極の属性トグルに従う）");
+    lines.push("最終DPS = 物理DPS成分(合計)×物理補正倍率 + 魔法DPS成分(合計)");
+    lines.push("");
     lines.push("");
 
     if (v.ultType === "none") {
@@ -688,6 +789,7 @@ function setBar(fillId, valId, pct) {
     syncUltType();
     syncSkillBMode();
     syncSegmentsFromHidden();
+    syncEnvDerivedUI();
 
     const v = getValInternal();
     const res = calcTotal(v);
@@ -737,6 +839,7 @@ function setBar(fillId, valId, pct) {
 
 
     const ex = calcRatesAndShares(v, res);
+    $("dpsOut").textContent = `${r6(ex.checkTotalDPS)}`;
 
     setBar("barBasic","valBasic", ex.basicPct);
     setBar("barA","valA", ex.aPct);
@@ -751,6 +854,11 @@ function setBar(fillId, valId, pct) {
     lines.push(`スキルA/秒: ${r6(ex.aPerSec)}`);
     lines.push(`スキルB/秒: ${r6(ex.bPerSec)}`);
     lines.push(`究極/秒: ${r6(ex.ultPerSec)}`);
+
+    lines.push("\n=== 環境（物理補正） ===");
+    lines.push(`難易度/80w防御力: ${$("envDiff").value} / 80w防御力=${$("envDefNum").textContent}`);
+    lines.push(`防御力減少値: ${readInt($("defReduce").value)} / 実防御力=${readInt($("defReduce").value) - (DIFF_DEF[$("envDiff").value] ?? 148)}`);
+    lines.push(`物理補正倍率（小数第2位まで）: ${$("physMulOut").value}`);
 
     lines.push("\n=== ダメージ内訳（DPS成分）と割合（合計=100%） ===");
     lines.push(`基本DPS成分: ${r6(ex.basicDPS)} / 基本割合(%): ${r6(ex.basicPct)}`);
@@ -851,6 +959,8 @@ function setBar(fillId, valId, pct) {
     $("aspd").value = "2.40";
     $("gaugeMax").value = "100";
     $("manaRegenPct").value = "100%";
+    $("envDiff").value = "normal";
+    $("defReduce").value = "0";
 
     $("ultType").value = "mana";
     $("ultReset").value = "end";

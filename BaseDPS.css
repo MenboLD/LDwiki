@@ -195,3 +195,33 @@ button:hover{ filter:brightness(1.07); }
 .headRow{ gap:6px; }
 .headToggles{ gap:4px; }
 .seg button{ padding:6px 7px; font-size:11px; }
+
+
+/* 入力：環境（難易度セレクトを細めに + 防御値表示） */
+.envDiffWrap{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.envDiffSelect{
+  font-size:12px;
+  padding:7px 8px;
+  border-radius:10px;
+  border:1px solid var(--line);
+  background:var(--panel2);
+  color:var(--text);
+  width:112px; /* iPhone SEでも1行に収まりやすい */
+}
+.envDefNum{
+  font-variant-numeric: tabular-nums;
+  color:var(--text);
+  padding:0 6px;
+  border-radius:8px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.10);
+  min-width:38px;
+  text-align:right;
+}
+#physMulOut{
+  opacity:.92;
+}
