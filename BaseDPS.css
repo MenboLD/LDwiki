@@ -139,7 +139,7 @@ button:hover{ filter:brightness(1.07); }
   line-height:1.35;
 }
 
-/* 算出式セクション（ページ最下部） */
+/* 算出式セクション */
 .formulaTitle{
   font-size:12px;
   color:var(--mut);
