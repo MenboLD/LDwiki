@@ -20,13 +20,20 @@
   function setLblDim(el, on) { if (el) el.classList.toggle("dimLbl", !!on); }
 
   function sanitizeNumDot(raw) {
-    let s = String(raw ?? "");
-    s = s.replace(/,/g, "");
-    s = s.replace(/%/g, "");
-    s = s.replace(/[^\d.]/g, "");
-    const d = s.indexOf(".");
-    if (d >= 0) s = s.slice(0, d + 1) + s.slice(d + 1).replace(/\./g, "");
-    return s;
+    // Allow digits + decimal separators.
+    // If '.' exists, commas are treated as thousands separators and removed.
+    // If no '.', commas are treated as decimal separators (locale) and converted to '.'
+    let s = String(raw ?? "").replace(/%/g, "");
+    s = s.replace(/[^0-9.,]/g, "");
+    if (s.includes(".")) {
+      s = s.replace(/,/g, "");
+    } else {
+      s = s.replace(/,/g, ".");
+    }
+    // keep only the first '.'
+    const parts = s.split(".");
+    if (parts.length <= 1) return s;
+    return parts[0] + "." + parts.slice(1).join("");
   }
 
   function trimDecimals(raw, maxDec) {
