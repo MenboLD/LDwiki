@@ -21,22 +21,24 @@
 
   function trimDecimals(raw, maxDec) {
     const s = sanitizeNumDot(raw);
-    if (maxDec <= 0) return (s.split(".")[0] || "0");
+    if (!s) return "";
+    if (maxDec <= 0) return (s.split(".")[0] || "");
     const [a, b = ""] = s.split(".");
-    if (!b) return (a || "0");
-    return `${a || "0"}.${b.slice(0, maxDec)}`;
+    if (!b) return (a || "");
+    return `${a || ""}.${b.slice(0, maxDec)}`;
   }
 
   function trimIntDigits(raw, maxDigits) {
     let s = String(raw ?? "").replace(/,/g, "").replace(/%/g, "");
     s = s.replace(/[^\d]/g, "");
-    if (!s) s = "0";
+    if (!s) return "";
     s = s.slice(0, maxDigits);
     return s;
   }
 
   function toPctDisplay(raw, maxDec, maxIntDigits) {
     let t = trimDecimals(raw, maxDec);
+    if (!t) return "";
     let [a, b = ""] = t.split(".");
     a = (a || "0").slice(0, maxIntDigits);
     a = String(parseInt(a, 10) || 0);
@@ -46,9 +48,12 @@
     }
     return b ? `${a}.${b}%` : `${a}%`;
   }
+    return b ? `${a}.${b}%` : `${a}%`;
+  }
 
   function toProbPctDisplay(raw) {
     const t = trimDecimals(raw, 1);
+    if (!t) return "";
     const x = parseFloat(t);
     const v = isFinite(x) ? x : 0;
     return `${v.toFixed(1)}%`;
@@ -56,6 +61,7 @@
 
   function toAspdDisplay(raw) {
     const t = trimDecimals(raw, 2);
+    if (!t) return "";
     const x = parseFloat(t);
     const v = isFinite(x) ? x : 0;
     return v.toFixed(2);
@@ -63,12 +69,14 @@
 
   function toAtkDisplay(raw) {
     const s = trimIntDigits(raw, 6);
+    if (!s) return "";
     const n = parseInt(s, 10) || 0;
     return addComma(n);
   }
 
   function toIntDisplay(raw, maxDigits) {
     const s = trimIntDigits(raw, maxDigits);
+    if (!s) return "";
     return String(parseInt(s, 10) || 0);
   }
 
@@ -116,7 +124,7 @@
       third.disabled = false;
       thirdWrap.classList.remove("disabledGroup");
       third.setAttribute("inputmode", "decimal");
-      if (!third.value) third.value = "0.0%";
+      // 空入力はそのまま許可
     } else {
       lbl.textContent = "規定回数";
       third.disabled = false;
