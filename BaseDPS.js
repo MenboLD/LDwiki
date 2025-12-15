@@ -459,12 +459,16 @@
     if (nu.err) return { err: nu.err };
 
     if (v.ultType === "none") {
-      return { dps: nu.nonUltDPS, detail: { ...nu, cycleFrames: NaN, cycleDamage: NaN, framesNonUltToReady: NaN } };
+      const pm = (isFinite(v.physMul) ? v.physMul : 1);
+      const split = calcNonUltDpsSplit(v, nu);
+      const nonUltDPS_adj0 = split.phys * pm + split.magic;
+      return { dps: nonUltDPS_adj0, detail: { ...nu, nonUltDPS_adj: nonUltDPS_adj0, cycleFrames: NaN, cycleDamage: NaN, framesNonUltToReady: NaN } };
     }
+
 
     const pm = (isFinite(v.physMul) ? v.physMul : 1);
     const ultDamage = v.atk * v.ultMul * (v.uAttr === "phys" ? pm : 1);
-    const split = calcNonUltDpsSplit(v, d);
+    const split = calcNonUltDpsSplit(v, nu);
     const nonUltDPS_adj = split.phys * pm + split.magic;
 
     if (v.ultType === "mana") {
@@ -481,7 +485,7 @@
       if (v.ultReset === "end") {
         framesNonUltToReady = v.gaugeMax / manaPerFrame_nonUlt;
         cycleFrames = framesNonUltToReady + v.ultF;
-        cycleDamage = nu.nonUltDPS * (framesNonUltToReady / F) + ultDamage;
+        cycleDamage = nonUltDPS_adj * (framesNonUltToReady / F) + ultDamage;
       } else {
         const timeManaPerFrame_ult = (v.ultStopsGauge ? 0 : (v.manaPerSec / F));
         const manaGainDuringUlt = timeManaPerFrame_ult * v.ultF;
@@ -490,7 +494,7 @@
         framesNonUltToReady = remain / manaPerFrame_nonUlt;
 
         cycleFrames = v.ultF + framesNonUltToReady;
-        cycleDamage = ultDamage + nu.nonUltDPS * (framesNonUltToReady / F);
+        cycleDamage = ultDamage + nonUltDPS_adj * (framesNonUltToReady / F);
       }
 
       const dps = cycleDamage / (cycleFrames / F);
@@ -505,7 +509,7 @@
       if (v.ultReset === "end") {
         framesNonUltToReady = v.gaugeMax / coolPerFrame_nonUlt;
         cycleFrames = framesNonUltToReady + v.ultF;
-        cycleDamage = nu.nonUltDPS * (framesNonUltToReady / F) + ultDamage;
+        cycleDamage = nonUltDPS_adj * (framesNonUltToReady / F) + ultDamage;
       } else {
         const coolPerFrame_ult = (v.ultStopsGauge ? 0 : (1 / F));
         const coolGainDuringUlt = coolPerFrame_ult * v.ultF;
@@ -514,7 +518,7 @@
         framesNonUltToReady = remain / coolPerFrame_nonUlt;
 
         cycleFrames = v.ultF + framesNonUltToReady;
-        cycleDamage = ultDamage + nu.nonUltDPS * (framesNonUltToReady / F);
+        cycleDamage = ultDamage + nonUltDPS_adj * (framesNonUltToReady / F);
       }
 
       const dps = cycleDamage / (cycleFrames / F);
