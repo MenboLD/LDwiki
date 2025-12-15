@@ -735,11 +735,6 @@ function setBar(fillId, valId, pct) {
     setBar("barA","valA", ex.aPct);
     setBar("barB","valB", ex.bPct);
     setBar("barU","valU", ex.ultPct);
-    // 物理/魔法・単体/複数（割合）
-    setBar("barPhys","valPhys", tb.physPct);
-    setBar("barMagic","valMagic", tb.magicPct);
-    setBar("barSingle","valSingle", tb.singlePct);
-    setBar("barMulti","valMulti", tb.multiPct);
 
     const lines = [];
     lines.push("=== 行動レート（回/秒）※究極時間込み平均 ===");
@@ -757,6 +752,11 @@ function setBar(fillId, valId, pct) {
     lines.push(`究極DPS成分: ${r6(ex.ultDPS)} / 究極割合(%): ${r6(ex.ultPct)}`);
 
     const tb = calcTypeBreakdown(v, ex);
+    // 物理/魔法・単体/複数（割合）※既存4種バーの直下に追加した表示
+    setBar("barPhys","valPhys", tb.physPct);
+    setBar("barMagic","valMagic", tb.magicPct);
+    setBar("barSingle","valSingle", tb.singlePct);
+    setBar("barMulti","valMulti", tb.multiPct);
     lines.push("\n=== 属性内訳（物理/魔法） ===");
     lines.push(`物理DPS: ${r6(tb.phys)} / 物理割合(%): ${r6(tb.physPct)}`);
     lines.push(`魔法DPS: ${r6(tb.magic)} / 魔法割合(%): ${r6(tb.magicPct)}`);
