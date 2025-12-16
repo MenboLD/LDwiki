@@ -4,350 +4,38 @@
   <meta charset="utf-8">
   <title>ラッキー傭兵団 攻略 wiki</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    :root {
-      --bg: #0c1016;
-      --bg-elevated: #161b22;
-      --accent: #3fbfff;
-      --accent-soft: rgba(63, 191, 255, 0.18);
-      --text-main: #f5f7ff;
-      --text-sub: #a9b4c8;
-      --border-soft: #252b36;
-      --danger: #ff6584;
-      --radius-card: 12px;
-      --shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.4);
-      --transition-fast: 0.22s ease-out;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #20283a 0, #05070a 55%);
-      color: var(--text-main);
-      min-height: 100vh;
-    }
-
-    /* レイアウト全体 */
-    .page {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 16px 16px 32px;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 24px;
-      padding-top: 16px;
-    }
-
-    header h1 {
-      font-size: 1.4rem;
-      margin: 0 0 4px;
-      letter-spacing: 0.04em;
-    }
-
-    header p.subtitle {
-      margin: 0;
-      font-size: 0.85rem;
-      color: var(--accent);
-      opacity: 0.9;
-    }
-
-    main {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .category-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .category-card {
-      background: rgba(10, 12, 18, 0.85);
-      border-radius: var(--radius-card);
-      border: 1px solid var(--border-soft);
-      padding: 12px 14px;
-      box-shadow: var(--shadow-soft);
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .category-card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(63,191,255,0.18), transparent 55%);
-      opacity: 0;
-      transition: opacity var(--transition-fast);
-      pointer-events: none;
-    }
-
-    .category-card:hover::before {
-      opacity: 1;
-    }
-
-    .category-title {
-      font-size: 1rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .category-title span.icon {
-      font-size: 1.15rem;
-    }
-
-    .category-desc {
-      font-size: 0.8rem;
-      color: var(--text-sub);
-      line-height: 1.4;
-    }
-
-    .category-arrow {
-      margin-left: auto;
-      font-size: 0.9rem;
-      color: var(--accent);
-    }
-
-    /* 下部セクション */
-    .section {
-      margin-top: 8px;
-      padding: 12px 14px;
-      border-radius: var(--radius-card);
-      border: 1px solid var(--border-soft);
-      background: rgba(6, 8, 12, 0.9);
-      box-shadow: var(--shadow-soft);
-    }
-
-    .section h2 {
-      font-size: 0.95rem;
-      margin: 0 0 8px;
-      border-bottom: 1px solid var(--border-soft);
-      padding-bottom: 4px;
-    }
-
-    .section ul {
-      list-style: none;
-      padding-left: 0;
-      margin: 0;
-      font-size: 0.8rem;
-      color: var(--text-sub);
-    }
-
-    .section li + li {
-      margin-top: 4px;
-    }
-
-    .muted {
-      color: var(--text-sub);
-      font-size: 0.78rem;
-    }
-
-    a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    /* 左側ドロワーメニュー関連 */
-
-    /* 40x150 px 全体がタップ領域 */
-    .drawer-handle-wrapper {
-      position: fixed;
-      left: 0;
-      top: 50%;
-      width: 40px;
-      height: 150px;
-      transform: translateY(-50%);
-      z-index: 1000;
-      /* 透明だけどタップ可能 */
-      background: transparent;
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      pointer-events: auto;
-    }
-
-    /* 中央 7〜8mm × 30mm 相当の可視ピル部分 */
-    .drawer-handle-visible {
-      position: relative;
-      width: 28px;        /* 7〜8mm 相当の目安 */
-      height: 110px;      /* 30mm弱の目安 */
-      margin-left: 0;
-      margin-right: auto;
-      border-radius: 999px;
-      background: radial-gradient(circle at center, var(--accent) 0, #297aa8 40%, rgba(25,35,50,0.9) 100%);
-      box-shadow: 0 0 10px rgba(63,191,255,0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-
-    .drawer-handle-button {
-      all: unset;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 100%;
-      cursor: pointer;
-      color: #f7fbff;
-      font-size: 1.1rem;
-      text-align: center;
-      user-select: none;
-    }
-
-    /* ドロワー本体 */
-    .drawer {
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 100vh;
-      width: min(280px, 80vw);
-      max-width: 320px;
-      background: linear-gradient(135deg, #05070c, #151927);
-      border-right: 1px solid var(--border-soft);
-      box-shadow: 0 0 30px rgba(0,0,0,0.7);
-      transform: translateX(-100%);
-      transition: transform var(--transition-fast);
-      z-index: 1100;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .drawer.open {
-      transform: translateX(0);
-    }
-
-    .drawer-header {
-      padding: 16px 14px 10px;
-      border-bottom: 1px solid var(--border-soft);
-    }
-
-    .drawer-title {
-      font-size: 0.95rem;
-      font-weight: 600;
-      margin: 0 0 2px;
-    }
-
-    .drawer-subtitle {
-      font-size: 0.75rem;
-      color: var(--text-sub);
-      margin: 0;
-    }
-
-    .drawer-close-row {
-      display: flex;
-      justify-content: flex-end;
-      padding: 8px 12px 0;
-      font-size: 0.85rem;
-    }
-
-    .drawer-close-button {
-      all: unset;
-      cursor: pointer;
-      color: var(--accent);
-      font-size: 0.8rem;
-      padding: 2px 6px;
-      border-radius: 8px;
-    }
-
-    .drawer-close-button:hover {
-      background: var(--accent-soft);
-    }
-
-    .drawer-body {
-      padding: 8px 8px 12px;
-      overflow-y: auto;
-      flex: 1;
-    }
-
-    .drawer-nav {
-      list-style: none;
-      padding-left: 0;
-      margin: 0;
-      font-size: 0.85rem;
-    }
-
-    .drawer-nav-item {
-      margin: 2px 0;
-    }
-
-    .drawer-link {
-      display: block;
-      padding: 6px 8px;
-      border-radius: 8px;
-      color: var(--text-main);
-      text-decoration: none;
-    }
-
-    .drawer-link:hover {
-      background: var(--accent-soft);
-    }
-
-    .drawer-group-separator {
-      height: 10px;
-    }
-
-    .drawer-section-label {
-      font-size: 0.75rem;
-      color: var(--text-sub);
-      margin: 6px 0 2px;
-      padding: 0 8px;
-    }
-
-    .drawer-footer {
-      padding: 10px 12px 12px;
-      border-top: 1px solid var(--border-soft);
-      font-size: 0.75rem;
-      color: var(--text-sub);
-    }
-
-    /* メニュー開閉時のオーバーレイ */
-    .drawer-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.45);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity var(--transition-fast);
-      z-index: 1050;
-    }
-
-    .drawer-overlay.visible {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    /* 少し広い画面用 */
-    @media (min-width: 768px) {
-      header h1 {
-        font-size: 1.6rem;
-      }
-      .category-card {
-        padding: 14px 16px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="index.css">
 </head>
 <body>
+  <!-- 上部固定ヘッダー -->
+  <div class="topbar" role="banner">
+    <div class="topbar-row topbar-row--primary">
+      <div class="topbar-title">ラッキー傭兵団 攻略 wiki</div>
+      <div class="topbar-page" id="topbarPageName">トップ</div>
+      <button class="topbar-menu-btn" id="topbarMenuBtn" type="button" aria-label="メニューを開閉">☰</button>
+    </div>
+
+    <div class="topbar-row topbar-row--auth" aria-label="ログイン操作">
+      <div class="topbar-auth-label" id="topbarAuthLabel">未ログイン：</div>
+
+      <label class="topbar-auth-field" aria-label="ユーザー名">
+        <input id="authUserName" type="text" inputmode="text" autocomplete="username" placeholder="ユーザー名" />
+      </label>
+
+      <label class="topbar-auth-field" aria-label="パス">
+        <input id="authPass" type="password" autocomplete="current-password" placeholder="" />
+        <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
+      </label>
+
+      <button class="topbar-auth-btn" id="authLoginBtn" type="button">ログイン</button>
+
+      <div class="topbar-auth-state" id="authStateWrap">
+        <span class="topbar-auth-state-text" id="authStateText">ログイン中: -</span>
+        <button class="topbar-auth-logout" id="authLogoutBtn" type="button">ログアウト</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 左側ドロワーメニュー -->
   <nav class="drawer" id="drawer" aria-label="サイトメニュー">
     <div class="drawer-header">
@@ -408,17 +96,7 @@
   </nav>
 
   <div class="drawer-overlay" id="drawerOverlay"></div>
-
-  <!-- 左端の縦長ピルボタン（40x150 / 真ん中だけ可視） -->
-  <div class="drawer-handle-wrapper" id="drawerHandleWrapper">
-    <div class="drawer-handle-visible">
-      <button class="drawer-handle-button" id="drawerHandleBtn" aria-label="メニューを開閉">
-        ▶
-      </button>
-    </div>
-  </div>
-
-  <!-- ページ本体 -->
+<!-- ページ本体 -->
   <div class="page">
     <header>
       <h1>ラッキー傭兵団 攻略 wiki</h1>
@@ -520,95 +198,6 @@
     </main>
   </div>
 
-  <script>
-    const drawer = document.getElementById('drawer');
-    const drawerOverlay = document.getElementById('drawerOverlay');
-    const drawerHandleBtn = document.getElementById('drawerHandleBtn');
-    const drawerHandleWrapper = document.getElementById('drawerHandleWrapper');
-    const drawerCloseBtn = document.getElementById('drawerCloseBtn');
-
-    function openDrawer() {
-      drawer.classList.add('open');
-      drawerOverlay.classList.add('visible');
-      drawerHandleBtn.textContent = '◀';
-    }
-
-    function closeDrawer() {
-      drawer.classList.remove('open');
-      drawerOverlay.classList.remove('visible');
-      drawerHandleBtn.textContent = '▶';
-    }
-
-    function toggleDrawer() {
-      if (drawer.classList.contains('open')) {
-        closeDrawer();
-      } else {
-        openDrawer();
-      }
-    }
-
-    drawerHandleWrapper.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleDrawer();
-    });
-
-    drawerCloseBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeDrawer();
-    });
-
-    drawerOverlay.addEventListener('click', () => {
-      closeDrawer();
-    });
-
-    // カテゴリカードクリックで data-link に遷移（今は #）
-    document.querySelectorAll('.category-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const link = card.getAttribute('data-link') || '#';
-        window.location.href = link;
-      });
-    });
-
-    // シンプルなスワイプ検出（モバイル用）
-    let touchStartX = null;
-    let touchStartY = null;
-
-    function onTouchStart(e) {
-      const touch = e.touches[0];
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
-    }
-
-    function onTouchEnd(e) {
-      if (touchStartX === null || touchStartY === null) return;
-      const touch = e.changedTouches[0];
-      const dx = touch.clientX - touchStartX;
-      const dy = touch.clientY - touchStartY;
-
-      const absDx = Math.abs(dx);
-      const absDy = Math.abs(dy);
-
-      // 横方向のスワイプが明確なときだけ処理
-      if (absDx > 40 && absDx > absDy) {
-        if (!drawer.classList.contains('open')) {
-          // 画面左端付近から右へのスワイプで開く
-          if (touchStartX < 24 && dx > 0) {
-            openDrawer();
-          }
-        } else {
-          // ドロワーが開いているときは左スワイプで閉じる
-          if (dx < 0) {
-            closeDrawer();
-          }
-        }
-      }
-
-      touchStartX = null;
-      touchStartY = null;
-    }
-
-    document.addEventListener('touchstart', onTouchStart, { passive: true });
-    document.addEventListener('touchend', onTouchEnd, { passive: true });
-  </script>
+  <script src="index.js"></script>
 </body>
 </html>
