@@ -26,8 +26,6 @@ const drawer = document.getElementById('drawer');
       e.stopPropagation();
       toggleDrawer();
     });
-      toggleDrawer();
-    });
 
     drawerCloseBtn.addEventListener('click', (e) => {
       e.preventDefault();
