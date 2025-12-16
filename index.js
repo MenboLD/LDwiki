@@ -138,6 +138,7 @@ function setReadonlyLoggedIn(on){
   }
 }
 function setLoggedInUI(username){
+  elAuthForm.classList.add('is-logged-in');
   elStateWrap.style.display = 'inline-flex';
   elStateWrap.dataset.loggedIn = '1';
   elStateText.textContent = `ログイン中: ${username}`;
@@ -145,6 +146,7 @@ function setLoggedInUI(username){
   elLoginBtn.disabled = true;
 }
 function setLoggedOutUI(){
+  elAuthForm.classList.remove('is-logged-in');
   elStateWrap.style.display = 'none';
   elStateWrap.dataset.loggedIn = '0';
   setReadonlyLoggedIn(false);

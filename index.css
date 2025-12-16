@@ -530,3 +530,16 @@
   .topbar-page{ display:none; }
   .topbar-title{ max-width: 70%; }
 }
+
+
+
+/* ログイン中は入力欄と「未ログイン：」を非表示（ログイン中表示＋ログアウトのみ） */
+.topbar-row--auth.is-logged-in .topbar-auth-label,
+.topbar-row--auth.is-logged-in .topbar-auth-field,
+.topbar-row--auth.is-logged-in .topbar-auth-btn{
+  display: none !important;
+}
+
+.topbar-row--auth.is-logged-in .topbar-auth-state{
+  display: inline-flex !important;
+}
