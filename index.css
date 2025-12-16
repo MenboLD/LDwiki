@@ -392,6 +392,10 @@
 .topbar{
   height: auto;
   padding: 8px 10px 8px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .topbar-row{
