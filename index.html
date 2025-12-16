@@ -15,7 +15,7 @@
       <button class="topbar-menu-btn" id="topbarMenuBtn" type="button" aria-label="メニューを開閉">☰</button>
     </div>
 
-    <div class="topbar-row topbar-row--auth" aria-label="ログイン操作">
+    <form class="topbar-row topbar-row--auth" id="authForm" aria-label="ログイン操作" autocomplete="on">
       <div class="topbar-auth-label" id="topbarAuthLabel">未ログイン：</div>
 
       <label class="topbar-auth-field" aria-label="ユーザー名">
@@ -32,7 +32,7 @@
       <div class="topbar-auth-state" id="authStateWrap">
         <span class="topbar-auth-state-text" id="authStateText">ログイン中: -</span>
         <button class="topbar-auth-logout" id="authLogoutBtn" type="button">ログアウト</button>
-      </div>
+      </form>
     </div>
   </div>
 

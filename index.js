@@ -98,6 +98,7 @@ const AUTH_LS_KEY = 'ld_auth_v1';
 const AUTH_LOCK_KEY = (u) => `ld_auth_lock_v1:${u || ''}`;
 
 const elPageName = document.getElementById('topbarPageName');
+const elAuthForm = document.getElementById('authForm');
 const elUser = document.getElementById('authUserName');
 const elPass = document.getElementById('authPass');
 const elGhost = document.getElementById('authGhost');
@@ -217,6 +218,15 @@ function updateAuthControls(){
   setLoggedOutUI();
   updateAuthControls();
 })();
+
+
+// Enterキーでログイン（form submit）
+elAuthForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if(!elLoginBtn.disabled){
+    elLoginBtn.click();
+  }
+});
 
 elUser.addEventListener('input', () => {
   updateAuthControls();
