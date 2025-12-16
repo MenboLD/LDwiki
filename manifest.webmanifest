@@ -1,0 +1,15 @@
+{
+  "name": "ラッキー傭兵団 攻略 wiki",
+  "short_name": "LDwiki",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#06080c",
+  "theme_color": "#06080c",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

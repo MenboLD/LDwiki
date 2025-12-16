@@ -98,6 +98,11 @@ const AUTH_LS_KEY = 'ld_auth_v1';
 const AUTH_LOCK_KEY = (u) => `ld_auth_lock_v1:${u || ''}`;
 
 const elPageName = document.getElementById('topbarPageName');
+const PAGE_NAME = (document.body && document.body.dataset && document.body.dataset.pageName) ? document.body.dataset.pageName : 'トップ';
+function setPageNameText(text){
+  elPageName.textContent = text;
+}
+setPageNameText(`> ${PAGE_NAME}`);
 const elAuthForm = document.getElementById('authForm');
 const elUser = document.getElementById('authUserName');
 const elPass = document.getElementById('authPass');
@@ -153,7 +158,7 @@ function setLoggedOutUI(){
 }
 function showMiniStatus(msg){
   elPageName.textContent = msg;
-  setTimeout(()=>{ elPageName.textContent = 'トップ'; }, 2200);
+  setTimeout(()=>{ setPageNameText(`> ${PAGE_NAME}`); }, 2200);
 }
 
 function updateAuthControls(){
