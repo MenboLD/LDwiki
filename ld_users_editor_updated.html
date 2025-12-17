@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>ユーザーデータベース編集（ld_users）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="./ld_users_editor_updated.css?v=202512171800" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <div class="app-root">
+    <header class="app-header">
+      <h1 class="app-title">ユーザーデータベース</h1>
+      <div class="app-subtitle">v1.0.3_202512141600</div>
+
+      <section class="user-panel">
+        <div class="user-input-row user-input-row--one-line">
+          <label class="user-label">
+            ユーザー名
+            <input id="userNameInput" type="text" maxlength="16" placeholder="最大 全角8文字 / 半角16文字" autocomplete="off" />
+          </label>
+          <label class="user-label">
+            パス
+            <input id="userTagInput" type="text" maxlength="10" placeholder="最大 全角5文字 / 半角10文字" autocomplete="off" />
+          </label>
+          <button id="userActionBtn" type="button" class="user-action-btn" disabled>続ける</button>
+        </div>
+        <div class="user-status-row">
+          <span id="userStatusLabel" class="user-status-label">ユーザー名を入力してください</span>
+          <span id="headerStats" class="user-status-label" style="float:right;"></span>
+        </div>
+      </section>
+    </header>
+
+    <main class="app-main">
+      <!-- 初期画面（説明/規約/使い方） -->
+      <section id="homeView" class="card">
+        <div class="card-title">はじめに</div>
+        <div class="home-note">
+          <div>・上の「ユーザー名」「パス」を入力してください</div>
+          <div>・入力後に「続ける」を押してください（登録済みなら編集／未登録なら登録へ進みます）</div>
+        </div>
+        <div class="card-title" style="margin-top:8px;">目的</div>
+        <div class="home-note">あなたの金庫レベルや神話/不滅の育成状態を登録し、掲示板などで参照できるようにします。</div>
+        <div class="card-title" style="margin-top:8px;">注意</div>
+        <div class="home-note">・ユーザー名は変更できません。<br>・パスは第三者に共有しないでください。</div>
+      </section>
+
+      <!-- 編集画面 -->
+      <section id="formView" class="card hidden">
+        <div id="formModeLabel" class="mode-label"></div>
+
+        <div class="field field--name">
+          <label for="inputName">ユーザー名</label>
+          <input id="inputName" type="text" autocomplete="off" disabled />
+        </div>
+
+        <div class="field" id="fieldTag">
+          <label for="inputTag">パス</label>
+          <input id="inputTag" type="text" maxlength="10" placeholder="最大 全角5文字 / 半角10文字" autocomplete="off" disabled />
+        </div>
+
+        <div class="field">
+          <label for="selectVaultLevel">金庫レベル（1〜11）</label>
+          <select id="selectVaultLevel"></select>
+        </div>
+
+        <div class="field">
+          <button id="unitAccordionToggle" type="button" class="accordion-toggle">▼神話・不滅ユニットの育成状態</button>
+          <div id="unitAccordionBody" class="accordion-body">
+            <div id="mythicGrid"></div>
+          </div>
+        </div>
+
+        <div class="status-row">
+          <span id="statusComments">コメ数: -</span>
+          <span id="statusMisInputs">誤入力: -</span>
+          <span id="statusLikes">イイね: -</span>
+        </div>
+
+        <div class="btn-row">
+          <button id="btnBackHome" class="btn-secondary">戻る</button>
+          <button id="btnSaveUser" class="btn-primary">保存</button>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script type="module" src="./ld_users_editor_updated.js?v=202512171800"></script>
+</body>
+</html>
