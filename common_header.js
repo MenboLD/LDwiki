@@ -145,6 +145,7 @@
   }
 
   function injectHeader(){
+    if(document.getElementById("ldCommonHeader")) return;
     if(document.getElementById("ldCommonTopbar")) return;
 
     document.documentElement.classList.add("ld-common-header-enabled");
@@ -228,6 +229,7 @@
   }
 
   function setupDrawer(){
+    if(document.getElementById("drawer") && document.getElementById("drawerOverlay")) return;
     const drawer = $("drawer");
     const overlay = $("drawerOverlay");
     const btn = $("topbarMenuBtn");
