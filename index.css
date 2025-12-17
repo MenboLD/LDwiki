@@ -30,7 +30,9 @@
       max-width: 960px;
       margin: 0 auto;
       padding: 16px 16px 32px;
-    }
+    
+  padding-top: calc(var(--ld-topbar-h, 110px) + 16px);
+}
 
     header {
       text-align: center;
@@ -522,7 +524,7 @@
 
 /* 上部固定ヘッダー分の余白（2段） */
 .page{
-  padding-top: 110px;
+  padding-top: calc(var(--ld-topbar-h, 110px) + 16px);
 }
 
 /* 極端に狭い幅（iPhone SE等）ではページ名を省略して入力欄優先 */
