@@ -3,7 +3,7 @@
 const authState = {
   userCache: new Map(),
   nameCheckTimer: null,
-  lockKeyPrefix: "ld_users_editor_lock:",
+  lockKeyPrefix: "ld_users_lock:",
 };
 
 function _charWidth(ch){
@@ -193,89 +193,11 @@ function requireSupabase() {
   }
   return true;
 }
-
-/* =========================
- * RPC Auth helpers (name + pass)
- * ld_users table is NOT directly accessible from client.
- * ========================= */
-function _unwrapOne(data){
-  if (Array.isArray(data)) return data[0] ?? null;
-  return data ?? null;
-}
-
-function _normalizeUntilMs(v){
-  if (v == null) return 0;
-  if (typeof v === "number" && Number.isFinite(v)) {
-    return v < 2e12 ? Math.floor(v * 1000) : Math.floor(v);
-  }
-  const t = Date.parse(String(v));
-  return Number.isFinite(t) ? t : 0;
-}
-
-async function rpcTry(fn, variants){
-  if (!requireSupabase()) return { data: null, error: new Error("Supabase not ready") };
-  let last = null;
-  for (const args of variants){
-    const { data, error } = await supabase.rpc(fn, args);
-    if (!error) return { data, error: null };
-    last = error;
-  }
-  return { data: null, error: last };
-}
-
-async function rpcLogin(username, pass){
-  const variants = [
-    { p_username: username, p_pass: pass },
-    { username: username, pass: pass },
-  ];
-  const { data, error } = await rpcTry("ld_login", variants);
-  if (error) return { ok:false, kind:"rpc_error", error };
-  const row = _unwrapOne(data);
-  if (!row) return { ok:false, kind:"empty" };
-
-  if (row.ok === true || row.success === true) {
-    const user = row.user || row.data || row.profile || row;
-    return { ok:true, user };
-  }
-  const kind = row.reason || row.code || row.status || "auth_failed";
-  const lockedUntilMs = _normalizeUntilMs(row.locked_until || row.lockedUntil);
-  return { ok:false, kind, lockedUntilMs };
-}
-
-async function rpcRegister(username, pass, vaultLevel, mythicState){
-  const variants = [
-    { p_username: username, p_pass: pass, p_vault_level: vaultLevel, p_mythic_state: mythicState },
-    { username: username, pass: pass, vault_level: vaultLevel, mythic_state: mythicState },
-  ];
-  const { data, error } = await rpcTry("ld_register_user", variants);
-  if (error) return { ok:false, kind:"rpc_error", error };
-  const row = _unwrapOne(data);
-  if (!row) return { ok:false, kind:"empty" };
-  if (row.ok === true || row.success === true) return { ok:true, user: row.user || null };
-  return { ok:false, kind: row.reason || row.code || "register_failed" };
-}
-
-async function rpcSaveUserdata(username, pass, vaultLevel, mythicState){
-  const variants = [
-    { p_username: username, p_pass: pass, p_vault_level: vaultLevel, p_mythic_state: mythicState },
-    { username: username, pass: pass, vault_level: vaultLevel, mythic_state: mythicState },
-  ];
-  const { data, error } = await rpcTry("ld_save_userdata", variants);
-  if (error) return { ok:false, kind:"rpc_error", error };
-  const row = _unwrapOne(data);
-  if (!row) return { ok:false, kind:"empty" };
-  if (row.ok === true || row.success === true) return { ok:true, user: row.user || null };
-  const kind = row.reason || row.code || "save_failed";
-  const lockedUntilMs = _normalizeUntilMs(row.locked_until || row.lockedUntil);
-  return { ok:false, kind, lockedUntilMs };
-}
-
     const appState = {
-  mode: "home",
-  currentUser: null,
-  usersCount: null,
-  auth: { username: "", pass: "" },
-};
+      mode: "home",
+      currentUser: null,
+      usersCount: null,
+    };
 
     const MYTHIC_IDS = [
       "501","502","503","504","505",
@@ -351,11 +273,10 @@ async function rpcSaveUserdata(username, pass, vaultLevel, mythicState){
     }
 
     async function fetchUsersCount() {
-  // ld_users is RPC-only (direct select/count is forbidden)
+  // ld_users は RPC 専用化したため direct count は不可。ここでは非表示。
   appState.usersCount = null;
   formatStatsHeader();
 }
-    }
 
     // ユニットアイコンエディタ描画
     
@@ -753,8 +674,14 @@ function collectMythicStateFromUI() {
     let modalUser = null;
 
 function openTagModal(user) {
-  showToast("この機能は停止中です。上部のユーザー名＋パスからログインしてください。");
-}
+      modalUser = user;
+      modalBody.textContent = `ユーザー名: ${user.name}`;
+      modalTagInput.value = "";
+      modalError.style.display = "none";
+      modalError.textContent = "";
+      if (modalBackdrop) modalBackdrop.style.display = "flex";
+      modalTagInput.focus();
+    }
 
 function closeTagModal() {
       if (modalBackdrop) modalBackdrop.style.display = "none";
@@ -770,60 +697,9 @@ function closeTagModal() {
 const searchResults = document.getElementById("searchResults");
 
     async function doSearch() {
-  // Disabled: ld_users is RPC-only (direct search is not allowed)
-  if (searchResults) searchResults.innerHTML = "";
-  showToast("検索機能は一時停止中です（セキュリティ強化のためRPC化予定）。");
-}
-      searchResults.innerHTML = "検索中...";
-
-      const { data, error } = await supabase
-        .from("ld_users_DISABLED")
-        .select("id, name, tag, comment_count, mis_input_count")
-        .ilike("name", `%${term}%`)
-        .order("name", { ascending: true });
-
-      if (error) {
-        console.error(error);
-        searchResults.innerHTML = "<div>検索中にエラーが発生しました。</div>";
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        searchResults.innerHTML = "<div>該当ユーザーはいません。</div>";
-        return;
-      }
-
-      searchResults.innerHTML = "";
-      data.forEach(user => {
-        const row = document.createElement("div");
-        row.className = "search-item";
-
-        const btnEdit = document.createElement("button");
-        btnEdit.className = "btn-small";
-        btnEdit.textContent = "編集";
-        btnEdit.addEventListener("click", () => {
-          onClickEditUser(user);
-        });
-
-        const main = document.createElement("div");
-        main.className = "search-main";
-        const nameEl = document.createElement("div");
-        nameEl.className = "search-name";
-        nameEl.textContent = user.name;
-        const meta = document.createElement("div");
-        meta.className = "search-meta";
-        meta.textContent = `コメ:${user.comment_count ?? 0}  誤入力:${user.mis_input_count ?? 0}`;
-        computeBoardStatsForUser(user).then((st) => {
-          meta.textContent = `コメ:${st.comment_count}  誤入力:${st.mis_input_total}`;
-        });
-main.appendChild(nameEl);
-        main.appendChild(meta);
-
-        row.appendChild(btnEdit);
-        row.appendChild(main);
-
-        searchResults.appendChild(row);
-      });
+      // ld_users は RPC 専用化したため direct search は停止中（必要なら検索用RPCを追加）
+      if (searchResults) searchResults.innerHTML = "";
+      showToast("検索機能は現在停止中です。上部のユーザー名/パスで「続ける」を押してください。");
     }
 
     if (btnSearch) btnSearch.addEventListener("click", () => {
@@ -836,26 +712,9 @@ main.appendChild(nameEl);
     });
 
     async function onClickEditUser(userBasic) {
-  // Disabled in name+pass auth model.
-  showToast("この編集導線は停止中です。上部のユーザー名＋パスからログインしてください。");
-}
-      const { data, error } = await supabase
-        .from("ld_users_DISABLED")
-        .select("*")
-        .eq("id", userBasic.id)
-        .single();
-
-      if (error || !data) {
-        console.error(error);
-        showToast("ユーザー情報の取得に失敗しました。");
-        return;
-      }
-      openTagModal(data);
+      // legacy: direct ld_users access is disabled. Use the header login flow instead.
+      showToast("この経路での編集は停止中です。上部のユーザー名/パスで「続ける」を押してください。");
     }
-
-    if (btnModalOk) btnModalOk.addEventListener("click", () => {
-  showToast("この機能は停止中です。上部のユーザー名＋パスからログインしてください。");
-});
 
     const btnGoNew = document.getElementById("btnGoNew");
 const btnBackHome = document.getElementById("btnBackHome");
@@ -936,56 +795,108 @@ function openEditForm(user) {
 
       setView("form");
     }
-
     async function saveUser() {
-  const username = (appState.auth && appState.auth.username) ? appState.auth.username.trim() : "";
-  const pass = (appState.auth && appState.auth.pass) ? appState.auth.pass.trim() : "";
+      const headerName = (document.getElementById("userNameInput")?.value || "").trim();
+      const headerPass = (document.getElementById("userTagInput")?.value || "").trim();
 
-  const vaultLevel = parseInt(selectVaultLevel.value, 10);
-  const mythicState = collectMythicStateFromUI();
+      const name = inputName.value.trim();
+      const vaultLevel = parseInt(selectVaultLevel.value, 10);
+      const mythicState = collectMythicStateFromUI();
 
-  if (!username || !pass) {
-    showToast("上部の「ユーザー名」「パス」を入力してから操作してください。");
-    return;
-  }
-
-  if (vaultLevel < 1 || vaultLevel > 11 || Number.isNaN(vaultLevel)) {
-    showToast("金庫レベルは1〜11で指定してください。");
-    return;
-  }
-
-  const isNew = appState.mode === "new" || !appState.currentUser;
-
-  if (isNew) {
-    const r = await rpcRegister(username, pass, vaultLevel, mythicState);
-    if (!r.ok) {
-      console.error(r.error || r);
-      if (String(r.kind || "").toLowerCase().includes("already_exists")) {
-        showToast("同じユーザー名がすでに存在します。");
-      } else {
-        showToast("ユーザーの登録に失敗しました。");
+      if (!name) {
+        showToast("ユーザー名を入力してください。");
+        return;
       }
-      return;
-    }
-    showToast("ユーザーを登録しました。");
-    await fetchUsersCount();
-    setView("home");
-  } else {
-    const r = await rpcSaveUserdata(username, pass, vaultLevel, mythicState);
-    if (!r.ok) {
-      console.error(r.error || r);
-      if (r.lockedUntilMs && r.lockedUntilMs > Date.now()) {
-        localStorage.setItem(authState.lockKeyPrefix + username, String(r.lockedUntilMs));
-      } else {
-        setLockMinutes(username, 3);
+      if (!headerName || !headerPass) {
+        showToast("上部の「ユーザー名」「パス」を入力してください。");
+        return;
       }
-      showToast("保存に失敗しました。一定時間ロック中です。");
-      return;
+      if (headerName !== name) {
+        showToast("上部のユーザー名が編集中ユーザーと一致しません。");
+        return;
+      }
+
+      if (vaultLevel < 1 || vaultLevel > 11 || Number.isNaN(vaultLevel)) {
+        showToast("金庫レベルは1〜11で指定してください。");
+        return;
+      }
+
+      const isNew = appState.mode === "new" || !appState.currentUser;
+
+      function unwrap(data){
+        if (Array.isArray(data)) return data[0] ?? null;
+        return data ?? null;
+      }
+      function parseUntil(v){
+        if (v == null) return 0;
+        const t = Date.parse(String(v));
+        return Number.isFinite(t) ? t : 0;
+      }
+      async function rpcTry(fn, variants){
+        if (!requireSupabase()) return { data:null, error:new Error("Supabase not ready") };
+        let last = null;
+        for (const args of variants){
+          const { data, error } = await supabase.rpc(fn, args);
+          if (!error) return { data, error:null };
+          last = error;
+        }
+        return { data:null, error:last };
+      }
+
+      if (isNew) {
+        // Register (name + pass)
+        const variants = [
+          { p_username: name, p_pass: headerPass, p_vault_level: vaultLevel, p_mythic_state: mythicState },
+          { username: name, pass: headerPass, vault_level: vaultLevel, mythic_state: mythicState },
+          { user_name: name, pass: headerPass, vault_level: vaultLevel, mythic_state: mythicState },
+        ];
+        const { data, error } = await rpcTry("ld_register_user", variants);
+        if (error){
+          console.error(error);
+          showToast("登録に失敗しました。");
+          return;
+        }
+        const r = unwrap(data);
+        if (r && (r.ok === false || r.success === false)){
+          showToast(`登録に失敗しました（${r.reason || r.code || "register_failed"}）`);
+          return;
+        }
+
+        showToast("ユーザーを登録しました。");
+        await fetchUsersCount();
+        setView("home");
+        return;
+      }
+
+      // Save (name + pass)
+      const variants = [
+        { p_username: name, p_pass: headerPass, p_vault_level: vaultLevel, p_mythic_state: mythicState },
+        { username: name, pass: headerPass, vault_level: vaultLevel, mythic_state: mythicState },
+        { user_name: name, pass: headerPass, vault_level: vaultLevel, mythic_state: mythicState },
+      ];
+      const { data, error } = await rpcTry("ld_save_userdata", variants);
+      if (error){
+        console.error(error);
+        showToast("保存に失敗しました。");
+        return;
+      }
+      const r = unwrap(data);
+
+      if (r && (r.ok === false || r.success === false)){
+        const reason = r.reason || r.code || r.status || "save_failed";
+        const untilMs = parseUntil(r.locked_until || r.lockedUntil);
+        if (untilMs > Date.now()){
+          localStorage.setItem(authState.lockKeyPrefix + name, String(untilMs));
+        } else if (String(reason).toLowerCase().includes("invalid_pass") || String(reason).toLowerCase().includes("locked")){
+          setLockMinutes(name, 3);
+        }
+        showToast(`保存に失敗しました（${reason}）`);
+        return;
+      }
+
+      showToast("ユーザー情報を更新しました。");
+      setView("home");
     }
-    showToast("ユーザー情報を更新しました。");
-    setView("home");
-  }
-}
 
     btnSaveUser.addEventListener("click", () => {
       saveUser();
@@ -997,7 +908,7 @@ function openEditForm(user) {
  * ========================= */
 function setupHeaderAuthUI(){
   const nameEl = document.getElementById("userNameInput");
-  const passEl = document.getElementById("userTagInput");
+  const passEl = document.getElementById("userTagInput"); // UI上は「パス」
   const btn    = document.getElementById("userActionBtn");
   const statusEl = document.getElementById("userStatusLabel");
 
@@ -1009,6 +920,53 @@ function setupHeaderAuthUI(){
     const s = sec%60;
     return `${m}分${String(s).padStart(2,"0")}秒`;
   }
+  function unwrap(data){
+    if (Array.isArray(data)) return data[0] ?? null;
+    return data ?? null;
+  }
+  function parseUntil(v){
+    if (v == null) return 0;
+    if (typeof v === "number" && Number.isFinite(v)) return v < 2e12 ? Math.floor(v*1000) : Math.floor(v);
+    const t = Date.parse(String(v));
+    return Number.isFinite(t) ? t : 0;
+  }
+  async function rpcTry(fn, variants){
+    if (!requireSupabase()) return { data:null, error:new Error("Supabase not ready") };
+    let last = null;
+    for (const args of variants){
+      const { data, error } = await supabase.rpc(fn, args);
+      if (!error) return { data, error:null };
+      last = error;
+    }
+    return { data:null, error:last };
+  }
+
+  async function rpcGetUserdata(name, pass){
+    const variants = [
+      { p_username: name, p_pass: pass },
+      { username: name, pass: pass },
+      { user_name: name, pass: pass },
+    ];
+    const { data, error } = await rpcTry("ld_get_userdata", variants);
+    if (error) return { ok:false, kind:"rpc_error", error };
+
+    const r = unwrap(data);
+    if (!r) return { ok:false, kind:"empty" };
+
+    if (typeof r === "object") {
+      if (r.ok === true || r.success === true) return { ok:true, user: r.user || r.data || r.profile || null };
+      if (r.ok === false || r.success === false) {
+        return {
+          ok:false,
+          kind: r.reason || r.code || r.status || "auth_failed",
+          lockedUntilMs: parseUntil(r.locked_until || r.lockedUntil)
+        };
+      }
+      // If RPC returns direct user json
+      if (r.id && r.name) return { ok:true, user: r };
+    }
+    return { ok:false, kind:"auth_failed" };
+  }
 
   function setBtn(label, disabled){
     btn.textContent = label;
@@ -1016,34 +974,28 @@ function setupHeaderAuthUI(){
   }
 
   function refresh(){
-    const username = nameEl.value.trim();
+    const name = nameEl.value.trim();
     const pass = passEl.value.trim();
 
-    // store latest inputs
-    appState.auth.username = username;
-    appState.auth.pass = pass;
-
-    const locked = lockRemainingMs(username);
+    const locked = lockRemainingMs(name);
     if (locked > 0){
       setBtn("続ける", true);
       statusEl.textContent = `一定時間ロック中（残り ${fmtRemain(locked)}）`;
       return;
     }
 
-    if (!username){
+    if (!name){
       setBtn("続ける", true);
       statusEl.textContent = "ユーザー名を入力してください";
       return;
     }
-
     if (!pass){
       setBtn("続ける", true);
       statusEl.textContent = "パスを入力してください";
       return;
     }
 
-    // width check only（typing中に登録有無/正誤は出さない）
-    const ok = isValidNameTag(username, pass);
+    const ok = isValidNameTag(name, pass);
     setBtn("続ける", !ok);
     statusEl.textContent = ok ? "「続ける」を押してください" : "文字数が条件を満たしていません";
   }
@@ -1052,55 +1004,46 @@ function setupHeaderAuthUI(){
   passEl.addEventListener("input", refresh);
 
   btn.addEventListener("click", async () => {
-    const username = nameEl.value.trim();
+    const name = nameEl.value.trim();
     const pass = passEl.value.trim();
-    if (!isValidNameTag(username, pass)) return;
+    if (!isValidNameTag(name, pass)) return;
 
-    const locked = lockRemainingMs(username);
+    const locked = lockRemainingMs(name);
     if (locked > 0){
       showToast(`一定時間ロック中です（残り ${fmtRemain(locked)}）`, 2200);
       refresh();
       return;
     }
 
-    const res = await rpcLogin(username, pass);
+    const g = await rpcGetUserdata(name, pass);
 
-    if (res.ok){
-      // login success -> open edit
-      openEditForm(res.user);
-      return;
-    }
-
-    if (res.lockedUntilMs && res.lockedUntilMs > Date.now()){
-      localStorage.setItem(authState.lockKeyPrefix + username, String(res.lockedUntilMs));
-      showToast("一定時間ロック中です。", 2200);
-      refresh();
+    if (g.ok){
+      openEditForm(g.user);
       return;
     }
 
-    const k = String(res.kind || "").toLowerCase();
-    if (k.includes("not_found")){
-      openNewForm(username, pass);
-      return;
-    }
-    if (k.includes("ambiguous")){
-      showToast("同名ユーザーが複数存在します。管理者に統合/改名を依頼してください。", 3200);
-      return;
-    }
-    if (k.includes("pass not set")){
-      showToast("このユーザーはパス未設定です。管理者側でpass_hashを設定してください。", 3200);
+    // not found -> new registration flow
+    if (String(g.kind || "").toLowerCase().includes("not_found")){
+      openNewForm(name, "");
       return;
     }
 
-    // invalid pass or other -> local lock
-    setLockMinutes(username, 3);
+    // locked / invalid pass -> lock locally too (server also sets locked_until)
+    const untilMs = g.lockedUntilMs || 0;
+    if (untilMs > Date.now()){
+      localStorage.setItem(authState.lockKeyPrefix + name, String(untilMs));
+    } else {
+      setLockMinutes(name, 3);
+    }
+
+    // clear pass field to match spec ("パス欄クリア")
+    passEl.value = "";
     showToast("認証に失敗しました。一定時間ロック中です。", 2500);
     refresh();
   });
 
   refresh();
 }
-
 
 
 /* =========================
@@ -1111,7 +1054,7 @@ function setupUnitAccordion(){
   const body = document.getElementById("unitAccordionBody");
   if (!btn || !body) return;
 
-  const KEY = "ld_users_editor_units_open";
+  const KEY = "ld_users_units_open";
   const saved = localStorage.getItem(KEY);
   const isOpen = saved === null ? true : (saved === "1");
 
