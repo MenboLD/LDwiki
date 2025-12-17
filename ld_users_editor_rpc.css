@@ -1,0 +1,361 @@
+:root {
+  --bg: #f5f5f5;
+  --surface: #ffffff;
+  --border: #d0d0d0;
+  --text-main: #222222;
+  --text-sub: #666666;
+  --accent: #3874ff;
+  --accent-soft: #e3f2fd;
+  --danger: #d9534f;
+  --shadow-soft: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; height: 100%; }
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: var(--bg);
+  color: var(--text-main);
+}
+
+/* ルート */
+.app-root{
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 420px;
+  margin: 0 auto;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+}
+
+/* ヘッダー（掲示板寄せ） */
+.app-header{
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--bg);
+  padding: 6px 6px 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.app-title{
+  margin: 0 0 2px;
+  padding: 0 2px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.app-subtitle{
+  padding: 0 2px 4px;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+/* ユーザー名 / パス */
+.user-panel{
+  padding: 4px 4px 2px;
+  border-radius: 8px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.user-input-row{
+  display: flex;
+  gap: 6px;
+  margin-bottom: 3px;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+}
+
+.user-input-row--one-line{ flex-wrap: nowrap; }
+
+.user-label{
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--text-sub);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.user-label input{
+  padding: 3px 5px;
+  font-size: 12px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.user-action-btn{
+  width: 78px;
+  flex: 0 0 auto;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background-color: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.user-action-btn:disabled{
+  opacity: 0.6;
+  cursor: default;
+}
+
+.user-status-row{
+  font-size: 11px;
+  color: var(--text-sub);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.user-status-label{ padding-left: 2px; }
+
+/* メイン */
+.app-main{
+  flex: 1;
+  padding: 4px 4px 16px;
+}
+
+/* カード */
+.card{
+  background-color: var(--surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  padding: 8px;
+}
+
+.card-title{
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.home-note{
+  font-size: 12px;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+/* 既存フォーム */
+.field{ margin-bottom: 6px; }
+.field label{
+  display: block;
+  font-size: 11px;
+  margin-bottom: 2px;
+  color: var(--text-sub);
+}
+.field input[type="text"], .field select{
+  width: 100%;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+}
+.field input:disabled{
+  background-color: #eeeeee;
+  color: #bbbbbb;
+}
+
+.btn-row{
+  display:flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.btn-primary, .btn-secondary{
+  flex: 1;
+  padding: 8px 14px;
+  font-size: 13px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.btn-primary{
+  border: 1px solid var(--accent);
+  background-color: var(--accent);
+  color: #fff;
+}
+
+.btn-secondary{
+  border: 1px solid var(--border);
+  background-color: #fff;
+  color: var(--text-main);
+}
+
+.btn-primary:disabled, .btn-secondary:disabled{
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* トースト */
+.toast{
+  position: fixed;
+  right: 8px;
+  bottom: 12px;
+  background: #333;
+  color: #fff;
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 50;
+}
+.toast.show{
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ユニットUI（fixed2から必要部分を維持） */
+.unit-controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.unit-controls-row button {
+  flex: 1;
+  min-width: 0;
+}
+.unit-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-top: 4px;
+}
+.unit-item {
+  position: relative;
+  width: 100%;
+  padding-top: 100%;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background-color: #f5f5f5;
+  touch-action: manipulation;
+}
+.unit-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+}
+.unit-img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+.unit-item.selected{
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.unit-crown{
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.unit-level-badge{
+  position: absolute;
+  left: 2px;
+  bottom: 2px;
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.85);
+  border: 1px solid var(--border);
+}
+
+.status-row{
+  display:flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+.hidden{ display:none; }
+
+@media (min-width: 768px){
+  .app-root{ max-width: 720px; }
+}
+
+
+/* ユーザー名はヘッダーに表示されるためフォーム内は非表示 */
+.field--name{ display:none; }
+
+
+/* アコーディオン（ユニット育成状態） */
+.accordion-toggle{
+  width: 100%;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid var(--accent);
+  background-color: #ffffff;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+}
+.accordion-body{
+  margin-top: 6px;
+}
+.accordion-body.hidden{ display:none; }
+
+
+
+/* ユニット状態の見た目（仕様準拠）
+  state-1: 灰 / 2-4: 青系 / 5-7: 赤系
+  state-1: 画像はセピア＋半透明
+*/
+.unit-item.state-1{ background:#d9d9d9; }
+.unit-item.state-2{ background:#d7e8ff; }
+.unit-item.state-3{ background:#a9ccff; }
+.unit-item.state-4{ background:#6aa6ff; }
+.unit-item.state-5{ background:#ffd6d6; }
+.unit-item.state-6{ background:#ffaaaa; }
+.unit-item.state-7{ background:#ff6f6f; }
+
+.unit-item.state-1 .unit-img{
+  filter: sepia(1);
+  opacity: 0.35;
+}
+
+/* ラベル（Lv/不滅/👑）: 小さめ＋中央寄せ */
+.unit-badge{
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  font-size: 9px;
+  padding: 1px 4px;
+  text-align: center;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.85);
+  border: 1px solid var(--border);
+  line-height: 1.2;
+}
+
+/* Lv0(未所持)は薄く（state-1で制御）。念のためdimも同等に */
+.unit-item.dim .unit-img{
+  filter: sepia(1);
+  opacity: 0.35;
+}
+
