@@ -292,7 +292,10 @@
     const elLoginBtn = $("authLoginBtn");
     const elStateWrap = $("authStateWrap");
 
-    if(elLabel) elLabel.style.display = "";
+    if(elLabel){
+      elLabel.style.display = "";
+      elLabel.textContent = window.matchMedia("(max-width: 380px)").matches ? "未:" : "未ログイン：";
+    }
     if(elUser) elUser.parentElement.style.display = "";
     if(elPass) elPass.parentElement.style.display = "";
     if(elLoginBtn) elLoginBtn.style.display = "";
@@ -511,6 +514,13 @@
     // default state
     setLoggedOutUI();
     updateAuthControls();
+    // keep label compact on narrow screens
+    window.addEventListener("resize", () => {
+      const l = $("topbarAuthLabel");
+      if(!l) return;
+      if(l.style.display === "none") return;
+      l.textContent = window.matchMedia("(max-width: 380px)").matches ? "未:" : "未ログイン：";
+    });
   }
 
   function boot(){

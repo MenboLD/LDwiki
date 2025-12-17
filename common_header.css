@@ -29,14 +29,14 @@ html.ld-common-header-enabled body{
 .topbar-row{
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 8px 10px;
 }
 
 .topbar-row--primary{
-  min-height: 52px;
-  padding-top: 12px;
-  padding-bottom: 8px;
+  min-height: 48px;
+  padding-top: 10px;
+  padding-bottom: 6px;
 }
 
 .topbar-title{
@@ -70,9 +70,9 @@ html.ld-common-header-enabled body{
 .topbar-menu-btn:active{ transform: translateY(1px); }
 
 .topbar-row--auth{
-  min-height: 52px;
-  padding-top: 8px;
-  padding-bottom: 12px;
+  min-height: 46px;
+  padding-top: 6px;
+  padding-bottom: 8px;
   border-top: 1px solid var(--ld-border);
 }
 
@@ -91,7 +91,7 @@ html.ld-common-header-enabled body{
 
 .topbar-auth-field input{
   width: 100%;
-  height: 38px;
+  height: 34px;
   border-radius: 12px;
   border: 1px solid var(--ld-border);
   background: rgba(255,255,255,0.06);
@@ -118,7 +118,7 @@ html.ld-common-header-enabled body{
 }
 
 .topbar-auth-btn{
-  height: 38px;
+  height: 34px;
   border-radius: 12px;
   border: 1px solid var(--ld-border);
   background: rgba(255,255,255,0.10);
@@ -285,5 +285,10 @@ html.ld-common-header-enabled body{
 @media (max-width: 380px){
   .topbar-title{ font-size: 15px; }
   .topbar-page{ font-size: 12px; }
-  .topbar-auth-label{ display: none; }
+  .topbar-row{ gap: 6px; padding: 6px 8px; }
+  .topbar-row--primary{ min-height: 44px; padding-top: 8px; padding-bottom: 4px; }
+  .topbar-row--auth{ min-height: 42px; padding-top: 4px; padding-bottom: 6px; }
+  .topbar-auth-label{ font-size: 11px; letter-spacing: 0; }
+  .topbar-auth-btn{ padding: 0 10px; font-size: 13px; }
+  .topbar-auth-field input{ height: 32px; font-size: 13px; }
 }
