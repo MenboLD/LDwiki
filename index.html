@@ -20,12 +20,106 @@
 <title>ラッキー傭兵団 攻略 wiki</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="index.css">
-
-  <link rel="stylesheet" href="common_header.css?v=20251218_2">
-  <script src="common_header.js?v=20251218_2" defer></script>
 </head>
 <body data-page-name="トップ">
-<main>
+  <!-- 上部固定ヘッダー -->
+  <div class="topbar" role="banner">
+    <div class="topbar-row topbar-row--primary">
+      <div class="topbar-title">ラッキー傭兵団 攻略 wiki</div>
+      <div class="topbar-page" id="topbarPageName">&gt; トップ</div>
+      <button class="topbar-menu-btn" id="topbarMenuBtn" type="button" aria-label="メニューを開閉">☰</button>
+    </div>
+
+    <form class="topbar-row topbar-row--auth" id="authForm" aria-label="ログイン操作" autocomplete="on">
+      <div class="topbar-auth-label" id="topbarAuthLabel">未ログイン：</div>
+
+      <label class="topbar-auth-field" aria-label="ユーザー名">
+        <input id="authUserName" type="text" inputmode="text" autocomplete="username" placeholder="ユーザー名" />
+      </label>
+
+      <label class="topbar-auth-field" aria-label="パス">
+        <input id="authPass" type="password" autocomplete="current-password" placeholder="" />
+        <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
+      </label>
+
+      <button class="topbar-auth-btn" id="authLoginBtn" type="button">ログイン</button>
+
+      <div class="topbar-auth-state" id="authStateWrap">
+        <span class="topbar-auth-state-text" id="authStateText">ログイン中: -</span>
+        <button class="topbar-auth-logout" id="authLogoutBtn" type="button">ログアウト</button>
+      </div>
+    </form>
+    </div>
+  </div>
+
+  <!-- 左側ドロワーメニュー -->
+  <nav class="drawer" id="drawer" aria-label="サイトメニュー">
+    <div class="drawer-header">
+      <p class="drawer-title">ラッキー傭兵団 攻略 wiki</p>
+      <p class="drawer-subtitle">(試験運用・作成中)</p>
+    </div>
+    <div class="drawer-close-row">
+      <button class="drawer-close-button" type="button" id="drawerCloseBtn">閉じる ◀</button>
+    </div>
+    <div class="drawer-body">
+      <ul class="drawer-nav">
+        <!-- 上段：メイン導線 -->
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">トップページ</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">情報掲示板</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">ユーザーデータベース</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">攻略の手引き</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">ユニットDB</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">データツール</a>
+        </li>
+
+        <!-- スペース -->
+        <li class="drawer-group-separator"></li>
+
+        <!-- 中段：サイト情報系 -->
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">サイトについて</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">利用ルール</a>
+        </li>
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">更新履歴</a>
+        </li>
+
+        <!-- スペース -->
+        <li class="drawer-group-separator"></li>
+
+        <!-- 下段：編集者向け -->
+        <li class="drawer-nav-item">
+          <a href="#" class="drawer-link">編集者ログイン / ログアウト</a>
+        </li>
+      </ul>
+    </div>
+    <div class="drawer-footer">
+      編集メニューや子ツリー（攻略・ユニットDB・データツール）は、後日ここから展開予定。
+    </div>
+  </nav>
+
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+<!-- ページ本体 -->
+  <div class="page">
+    <header>
+      <h1>ラッキー傭兵団 攻略 wiki</h1>
+      <p class="subtitle">(試験運用・作成中)</p>
+    </header>
+
+    <main>
       <section class="category-list" aria-label="主要カテゴリ">
         <article class="category-card" data-link="#">
           <div class="category-title">
