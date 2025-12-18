@@ -40,6 +40,7 @@
 
 /* Auth field states */
 .topbar-auth-field.is-guest input#authPass,
+#authPass.ld-pass-guest,
 #authPass:disabled{
   background: var(--ld-auth-disabled-bg) !important;
   border-color: var(--ld-auth-disabled-border) !important;
@@ -48,6 +49,7 @@
   filter: grayscale(0.35);
 }
 .topbar-auth-field.is-guest input#authPass::placeholder,
+#authPass.ld-pass-guest::placeholder,
 #authPass:disabled::placeholder{
   color: rgba(255,255,255,0.28) !important;
 }
@@ -56,11 +58,15 @@
 }
 
 /* Need-pass emphasis (thicker red feel without resizing the input box) */
-.topbar-auth-field.is-needpass input#authPass{
+.topbar-auth-field.is-needpass input#authPass,
+#authPass.ld-pass-needed{
   border-color: var(--ld-auth-needpass-border) !important;
   box-shadow: 0 0 0 1px var(--ld-auth-needpass-border) inset, 0 0 0 1px rgba(0,0,0,0.25) !important;
+  outline: 1px dotted var(--ld-auth-needpass-border);
+  outline-offset: 0;
 }
-.topbar-auth-field.is-needpass .topbar-auth-ghost{
+.topbar-auth-field.is-needpass .topbar-auth-ghost,
+.topbar-auth-ghost.ld-ghost-needed{
   color: rgba(255,120,120,0.95) !important;
 }
 

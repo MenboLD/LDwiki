@@ -488,6 +488,14 @@
 
     if(!elUser || !elPass || !elLoginBtn || !elGhost) return;
 
+    // Pass field wrapper (for CSS state classes)
+    const passField = elPass.closest(".topbar-auth-field") || elPass.parentElement;
+    const setPassFieldState = (state) => {
+      if(!passField) return;
+      passField.classList.remove("is-guest","is-needpass");
+      if(state) passField.classList.add(state);
+    };
+
     // Ensure placeholder
     elUser.setAttribute("placeholder", "ユーザー名(任意)");
 
@@ -500,6 +508,7 @@
 
     // Helper to apply visual states
     const setGuestState = () => {
+      setPassFieldState("is-guest");
       elPass.value = "";
       elPass.disabled = true;
       elPass.classList.remove("ld-pass-needed");
@@ -511,6 +520,7 @@
     };
 
     const setNeedPassState = () => {
+      setPassFieldState("is-needpass");
       elPass.disabled = false;
       elPass.classList.remove("ld-pass-guest");
       elPass.classList.add("ld-pass-needed");
@@ -521,7 +531,9 @@
     };
 
     const setPassEnteredState = () => {
+      setPassFieldState(null);
       elPass.disabled = false;
+      setPassFieldState(null);
       elPass.classList.remove("ld-pass-guest");
       elPass.classList.remove("ld-pass-needed");
       elGhost.classList.remove("ld-ghost-needed");
@@ -543,14 +555,17 @@
         setGuestState();
       }else{
         elPass.disabled = false;
+        setPassFieldState(null);
         elPass.classList.remove("ld-pass-guest");
         // keep red prompt only when registered + empty
         if(userExistsRpcAvailable && currentUserExists === true && !pass){
+          setPassFieldState("is-needpass");
           elPass.classList.add("ld-pass-needed");
           elGhost.textContent = "要パス";
           elGhost.classList.add("ld-ghost-needed");
           elGhost.style.display = "";
         }else{
+          setPassFieldState(null);
           elPass.classList.remove("ld-pass-needed");
           elGhost.classList.remove("ld-ghost-needed");
           elGhost.style.display = pass ? "none" : "none";
@@ -588,6 +603,7 @@
     }
 
     // Fallback mode (no ld_user_exists): allow pass for any username
+    setPassFieldState(null);
     elPass.disabled = false;
     elPass.classList.remove("ld-pass-guest");
     elPass.classList.remove("ld-pass-needed");
