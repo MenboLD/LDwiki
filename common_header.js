@@ -1,41 +1,27 @@
 /* common_header.js
-   Shared header logic for LDwiki (no fetch).
-   - If the page already has header/drawer HTML, this script only binds + updates.
-   - If the page does NOT have header/drawer HTML, it injects a minimal header/drawer.
-   - Idempotent: safe even if loaded multiple times.
+   Shared header/drawer behavior + auth (RPC-based).
+   - Works with pages that already contain header/drawer HTML.
+   - Falls back to injecting minimal header/drawer only if missing.
 */
 (() => {
   'use strict';
 
+  // ====== Supabase RPC endpoint (PostgREST) ======
   const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
 
+  // ====== Local storage (do not rename) ======
   const AUTH_STORAGE_KEY = "ld_auth_v1";
   const LOCK_PREFIX = "ld_users_lock:";
 
-  // Optional RPC: checks if username is registered (exact match).
-  // If this RPC is not installed, the UI falls back to the previous behavior.
-  const USER_EXISTS_RPC = "ld_user_exists";
-  let userExistsRpcAvailable = true;
-  const userExistsCache = new Map(); // username -> boolean
-  let currentUserExists = null;      // for current input username
-  let userExistsTimer = null;
-
-
+  // ====== UI texts ======
   const SITE_TITLE = "ラッキー傭兵団 攻略 wiki";
-  const DRAWER_SUBTITLE = "(試験運用・作成中)";
 
-  const MAIN_MENU_ITEMS = [
-    { text: "トップページ", href: "index.html" },
-    { text: "情報掲示板", href: "ld_board.html" },
-    { text: "ユーザー情報", href: "ld_users.html" },
-    { text: "攻略の手引き", href: "#", soon: true },
-    { text: "各種データ", href: "#", soon: true },
-    { text: "データツール", href: "#", soon: true }
-  ];
-
-  function $(id){ return document.getElementById(id); }
-  function safeTrim(v){ return (v || "").trim(); }
+  // ====== helpers ======
+  const $ = (id) => document.getElementById(id);
+  const q = (sel, root=document) => root.querySelector(sel);
+  const qa = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+  const safeTrim = (v) => (v || "").trim();
 
   function loadAuth(){
     try{
@@ -48,17 +34,15 @@
       return null;
     }
   }
-
   function saveAuth(obj){
-    try{
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(obj));
-    }catch(_e){}
+    try{ localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(obj)); }catch(_e){}
   }
-
-  function clearAuthKeepUsername(username){
+  function ensureAuthBase(){
+    const a = loadAuth();
+    if(a) return a;
     const base = {
       loggedIn: false,
-      username: username || "",
+      username: "",
       pass: "",
       userId: null,
       level: null,
@@ -67,26 +51,21 @@
       lastLoginAt: null
     };
     saveAuth(base);
+    return base;
   }
 
-  function lockKeyFor(username){
-    return LOCK_PREFIX + (username || "");
-  }
-
+  function lockKeyFor(username){ return LOCK_PREFIX + (username || ""); }
   function getLockedUntilMs(username){
-    // Prefer common-format lockedUntil if present, else per-user lock key.
     const saved = loadAuth();
     if(saved && saved.username === username && saved.lockedUntil){
       const lu = Number(saved.lockedUntil);
       if(Number.isFinite(lu) && lu > 0) return lu;
     }
-    const raw = localStorage.getItem(lockKeyFor(username));
+    const raw = localStorage.getItem(lockKeyFor(username || ""));
     if(!raw) return 0;
     const n = Number(raw);
-    if(!Number.isFinite(n)) return 0;
-    return n;
+    return Number.isFinite(n) ? n : 0;
   }
-
   function setLockedUntilMs(username, untilMs){
     localStorage.setItem(lockKeyFor(username), String(untilMs));
     const saved = loadAuth();
@@ -95,7 +74,6 @@
       saveAuth(saved);
     }
   }
-
   function clearLock(username){
     localStorage.removeItem(lockKeyFor(username));
     const saved = loadAuth();
@@ -112,6 +90,26 @@
     return `${m}分${String(s).padStart(2,"0")}秒`;
   }
 
+  // ====== tiny toast ======
+  function ensureToast(){
+    let el = q(".ld-mini-toast");
+    if(el) return el;
+    el = document.createElement("div");
+    el.className = "ld-mini-toast";
+    el.setAttribute("aria-live", "polite");
+    document.body.appendChild(el);
+    return el;
+  }
+  let toastTimer = null;
+  function toast(msg, ms=1800){
+    const el = ensureToast();
+    el.textContent = msg;
+    el.classList.add("visible");
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("visible"), ms);
+  }
+
+  // ====== RPC ======
   async function rpc(fn, args){
     const url = `${SUPABASE_URL}/rest/v1/rpc/${fn}`;
     const res = await fetch(url, {
@@ -124,692 +122,510 @@
       body: JSON.stringify(args || {})
     });
     const text = await res.text();
-    let data = null;
-    try{ data = text ? JSON.parse(text) : null; }catch(_e){ data = null; }
+    let json = null;
+    try{ json = text ? JSON.parse(text) : null; }catch(_e){ json = null; }
     if(!res.ok){
-      const msg = (data && (data.message || data.error_description)) ? (data.message || data.error_description) : `HTTP ${res.status}`;
+      const msg = (json && (json.message || json.error_description || json.hint)) || text || `RPC error (${res.status})`;
       const err = new Error(msg);
       err.status = res.status;
-      err.data = data;
+      err.payload = json;
       throw err;
     }
-    return data;
+    return json;
   }
 
-
-  function readBoolFromRpc(data){
-    if(typeof data === "boolean") return data;
-    if(data && typeof data === "object"){
-      if(typeof data.exists === "boolean") return data.exists;
-      if(typeof data.ok === "boolean") return data.ok;
-      if(typeof data.result === "boolean") return data.result;
-    }
-    return null;
-  }
-
-  function scheduleUserExistsCheck(){
-    const elUser = $("authUserName");
-    if(!elUser) return;
-    const name = safeTrim(elUser.value);
-
-    // reset when username changes
-    currentUserExists = null;
-
-    if(!userExistsRpcAvailable || !name){
-      scheduleUserExistsCheck();
-    updateAuthControls();
-      return;
-    }
-
-    if(userExistsCache.has(name)){
-      currentUserExists = userExistsCache.get(name);
-      updateAuthControls();
-      return;
-    }
-
-    if(userExistsTimer) clearTimeout(userExistsTimer);
-    userExistsTimer = setTimeout(async () => {
-      const latestName = safeTrim(($("authUserName") && $("authUserName").value) || "");
-      if(!latestName) return;
-
-      // cache hit (maybe filled while waiting)
-      if(userExistsCache.has(latestName)){
-        currentUserExists = userExistsCache.get(latestName);
-        updateAuthControls();
-        return;
-      }
-
-      try{
-        const data = await rpc(USER_EXISTS_RPC, { p_username: latestName });
-        const b = readBoolFromRpc(data);
-        if(b === null) throw new Error("Invalid ld_user_exists response");
-        userExistsCache.set(latestName, b);
-
-        // apply only if username hasn't changed
-        const nowName = safeTrim(($("authUserName") && $("authUserName").value) || "");
-        if(nowName === latestName){
-          currentUserExists = b;
-          updateAuthControls();
-        }
-      }catch(err){
-        console.warn("[ldwiki] USER_EXISTS_RPC unavailable -> fallback", err);
-        userExistsRpcAvailable = false;
-        currentUserExists = null;
-        updateAuthControls();
-      }
-    }, 220);
-  }
-
-  function dispatchAuthChanged(auth){
-    window.dispatchEvent(new CustomEvent("ld-auth-changed", { detail: auth }));
-  }
-
-  function ensureToast(){
-    let el = document.querySelector(".ld-mini-toast");
-    if(el) return el;
-    el = document.createElement("div");
-    el.className = "ld-mini-toast";
-    el.setAttribute("aria-live", "polite");
-    document.body.appendChild(el);
-    return el;
-  }
-
-  let toastTimer = null;
-  function toast(msg, ms=1800){
-    const el = ensureToast();
-    el.textContent = msg;
-    el.classList.add("visible");
-    if(toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { el.classList.remove("visible"); }, ms);
-  }
-
+  // ====== page name ======
   function getPageName(){
     const raw = document.body?.dataset?.pageName;
     const name = safeTrim(raw);
     return name || "トップ";
   }
 
-  function hasAnyHeaderMarkup(){
-    return !!(
-      document.getElementById("topbarMenuBtn") ||
-      document.getElementById("authForm") ||
-      document.getElementById("drawer") ||
-      document.getElementById("drawerOverlay") ||
-      document.querySelector(".topbar")
-    );
-  }
+  // ====== inject header (fallback only) ======
+  function injectHeaderIfMissing(){
+    // If any of the expected elements already exist, DO NOT inject (prevents duplicate IDs).
+    const hasExisting =
+      !!$("topbarWrap") ||
+      !!$("topbarMenuBtn") ||
+      !!$("authForm") ||
+      !!$("drawer") ||
+      !!$("drawerOverlay");
 
-  function injectHeader(){
-    // Do NOT inject if the page already provides header/drawer markup.
-    if(hasAnyHeaderMarkup()) return;
+    if(hasExisting) return;
 
+    // Minimal injection for pages not yet updated.
     document.documentElement.classList.add("ld-common-header-enabled");
 
-    const topbar = document.createElement("div");
-    topbar.className = "topbar";
-    topbar.id = "ldCommonTopbar";
-    topbar.setAttribute("role", "banner");
-
-    topbar.innerHTML = `
-      <div class="topbar-row topbar-row--primary">
-        <div class="topbar-title">${SITE_TITLE}</div>
-        <div class="topbar-page" id="topbarPageName"></div>
-        <button class="topbar-menu-btn" id="topbarMenuBtn" type="button" aria-label="メニューを開閉">☰</button>
-      </div>
-
-      <form class="topbar-row topbar-row--auth" id="authForm" aria-label="ログイン操作" autocomplete="on">
-        <div class="topbar-auth-label" id="topbarAuthLabel">未ログイン：</div>
-
-        <label class="topbar-auth-field" aria-label="ユーザー名">
-          <input id="authUserName" type="text" inputmode="text" autocomplete="username" placeholder="ユーザー名(任意)" />
-        </label>
-
-        <label class="topbar-auth-field" aria-label="パス">
-          <input id="authPass" type="password" autocomplete="current-password" placeholder="" />
-          <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
-        </label>
-
-        <button class="topbar-auth-btn" id="authLoginBtn" type="button">ログイン</button>
-
-        <div class="topbar-auth-state" id="authStateWrap" data-visible="0">
-          <span class="topbar-auth-state-text" id="authStateText">ログイン中: -</span>
-          <button class="topbar-auth-logout" id="authLogoutBtn" type="button">ログアウト</button>
+    const topbarWrap = document.createElement("div");
+    topbarWrap.className = "topbar-wrap";
+    topbarWrap.id = "topbarWrap";
+    topbarWrap.innerHTML = `
+      <div class="topbar-shell">
+        <div class="topbar-row topbar-row--primary">
+          <div class="topbar-title">${SITE_TITLE}</div>
+          <div class="topbar-page" id="topbarPageName"></div>
+          <button class="topbar-menu-btn" id="topbarMenuBtn" type="button" aria-label="メニューを開閉">☰</button>
         </div>
-      </form>
-    `.trim();
 
-    // Drawer + overlay
-    const drawer = document.createElement("nav");
-    drawer.className = "drawer";
-    drawer.id = "drawer";
-    drawer.setAttribute("aria-label", "サイトメニュー");
-    drawer.innerHTML = `
-<div class="drawer-close-row">
+        <form class="topbar-row topbar-row--auth" id="authForm" aria-label="ログイン操作" autocomplete="on">
+          <div class="topbar-auth-label" id="topbarAuthLabel">未ログイン：</div>
+
+          <label class="topbar-auth-field" aria-label="ユーザー名">
+            <input id="authUserName" type="text" inputmode="text" autocomplete="username" placeholder="ユーザー名(任意)" />
+          </label>
+
+          <label class="topbar-auth-field" aria-label="パス">
+            <input id="authPass" type="password" autocomplete="current-password" placeholder="" />
+            <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
+          </label>
+
+          <button class="topbar-auth-btn" id="authLoginBtn" type="button">ログイン</button>
+
+          <div class="topbar-auth-state" id="authStateWrap">
+            <span class="topbar-auth-state-text" id="authStateText">ログイン中: -</span>
+            <button class="topbar-auth-logout" id="authLogoutBtn" type="button">ログアウト</button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.prepend(topbarWrap);
+
+    const nav = document.createElement("nav");
+    nav.className = "drawer";
+    nav.id = "drawer";
+    nav.setAttribute("aria-label", "サイトメニュー");
+    nav.innerHTML = `
+      <div class="drawer-close-row">
         <button class="drawer-close-button" type="button" id="drawerCloseBtn">閉じる ◀</button>
       </div>
       <div class="drawer-body">
         <ul class="drawer-nav">
-          <li><a class="drawer-link" href="index.html">トップページ</a></li>
-          <li><a class="drawer-link" href="ld_board.html">情報掲示板</a></li>
-          <li><a class="drawer-link" href="ld_users.html">ユーザー情報</a></li>
-          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">攻略の手引き</a></li>
-          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">各種データ</a></li>
-          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">データツール</a></li>
+          <li class="drawer-nav-item"><a href="./index.html" class="drawer-link">トップページ</a></li>
+          <li class="drawer-nav-item"><a href="./ld_board.html" class="drawer-link">情報掲示板</a></li>
+          <li class="drawer-nav-item"><a href="./ld_users.html" class="drawer-link">ユーザー情報</a></li>
+          <li class="drawer-nav-item"><a href="#" class="drawer-link" data-comingsoon="1">攻略の手引き</a></li>
+          <li class="drawer-nav-item"><a href="#" class="drawer-link" data-comingsoon="1">各種データ</a></li>
+          <li class="drawer-nav-item"><a href="#" class="drawer-link" data-comingsoon="1">データツール</a></li>
         </ul>
       </div>
-    `.trim();
+      <div class="drawer-footer"></div>
+    `;
+    document.body.prepend(nav);
 
     const overlay = document.createElement("div");
     overlay.className = "drawer-overlay";
     overlay.id = "drawerOverlay";
-
-    // Insert at top of body
-    document.body.insertBefore(overlay, document.body.firstChild);
-    document.body.insertBefore(drawer, overlay.nextSibling);
-    document.body.insertBefore(topbar, drawer.nextSibling);
-
-    // page name
-    const elPage = $("topbarPageName");
-    if(elPage) elPage.textContent = `> ${getPageName()}`;
-
-    // measure topbar height -> css var
-    requestAnimationFrame(() => {
-      const h = topbar.getBoundingClientRect().height || 112;
-      document.documentElement.style.setProperty("--ld-topbar-h", `${Math.ceil(h)}px`);
-    });
+    document.body.appendChild(overlay);
   }
 
-  function normalizeExistingHeader(){
-    // Ensure common layout is enabled even when header HTML is written directly in the page.
-    document.documentElement.classList.add("ld-common-header-enabled");
-
-    // page name
-    const elPage = $("topbarPageName");
-    if(elPage) elPage.textContent = `> ${getPageName()}`;
-
-    
-    // Remove redundant drawer header (title/subtitle) if exists
-    const drawerHeader = document.querySelector(".drawer-header");
-    if(drawerHeader) drawerHeader.remove();
-
-    // Remove "編集者ログイン / ログアウト" entry if present (header already covers it)
-    document.querySelectorAll(".drawer-link").forEach(a => {
-      const t = (a.textContent || "").trim();
-      if(t === "編集者ログイン / ログアウト" || t === "編集者ログイン/ログアウト"){
-        const li = a.closest("li");
-        if(li) li.remove();
-        else a.remove();
-      }
-    });
-// Remove legacy footer note (not needed now)
-    const drawerFooter = document.querySelector(".drawer-footer");
-    if(drawerFooter) drawerFooter.remove();
-
-    // Update main menu group texts/hrefs (until first separator)
-    const nav = document.querySelector(".drawer-nav");
-    if(nav){
-      const children = Array.from(nav.children);
-      const mainLis = [];
-      for(const li of children){
-        if(li && li.classList && li.classList.contains("drawer-group-separator")) break;
-        mainLis.push(li);
-      }
-      const n = Math.min(mainLis.length, MAIN_MENU_ITEMS.length);
-      for(let i=0; i<n; i++){
-        const li = mainLis[i];
-        const a = li ? li.querySelector("a") : null;
-        if(!a) continue;
-        const m = MAIN_MENU_ITEMS[i];
-        a.textContent = m.text;
-        a.setAttribute("href", m.href);
-        if(m.soon){
-          a.dataset.soon = "1";
-          a.classList.add("drawer-link--soon");
-        }else{
-          a.removeAttribute("data-soon");
-          a.classList.remove("drawer-link--soon");
-        }
-      }
-    }
-
-    // measure topbar height -> css var
-    const topbar = document.querySelector(".topbar");
-    if(topbar){
-      requestAnimationFrame(() => {
-        const h = topbar.getBoundingClientRect().height || 112;
-        document.documentElement.style.setProperty("--ld-topbar-h", `${Math.ceil(h)}px`);
-      });
-    }
+  // ====== topbar height -> CSS var ======
+  function syncTopbarHeight(){
+    const el = $("topbarWrap") || q(".topbar-wrap") || q(".topbar") || $("ldCommonTopbar");
+    if(!el) return;
+    const h = Math.max(1, Math.round(el.getBoundingClientRect().height));
+    document.documentElement.style.setProperty("--ld-topbar-h", `${h}px`);
   }
 
+  // ====== drawer ======
   function setupDrawer(){
     const btn = $("topbarMenuBtn");
     const drawer = $("drawer");
     const overlay = $("drawerOverlay");
-    const closeBtn = $("drawerCloseBtn");
-    if(!drawer || !overlay || !btn || !closeBtn) return;
-    if(btn.dataset && btn.dataset.boundDrawer === "1") return;
-    if(btn.dataset) btn.dataset.boundDrawer = "1";
+    if(!btn || !drawer || !overlay) return;
 
-    function open(){
-      drawer.classList.add("open");
-      overlay.classList.add("visible");
-    }
-    function close(){
-      drawer.classList.remove("open");
-      overlay.classList.remove("visible");
-    }
-    function toggle(){
-      if(drawer.classList.contains("open")) close();
-      else open();
-    }
+    if(document.documentElement.dataset.ldDrawerBound === "1") return;
+    document.documentElement.dataset.ldDrawerBound = "1";
+
+    const closeBtn = $("drawerCloseBtn");
+    const setOpen = (open) => {
+      drawer.classList.toggle("open", open);
+      overlay.classList.toggle("open", open);
+      document.documentElement.classList.toggle("drawer-open", open);
+      drawer.setAttribute("aria-hidden", open ? "false" : "true");
+    };
+    const toggle = () => setOpen(!drawer.classList.contains("open"));
 
     btn.addEventListener("click", (e) => { e.preventDefault(); toggle(); });
-    closeBtn.addEventListener("click", (e) => { e.preventDefault(); close(); });
-    overlay.addEventListener("click", () => close());
+    if(closeBtn) closeBtn.addEventListener("click", (e) => { e.preventDefault(); setOpen(false); });
+    overlay.addEventListener("click", () => setOpen(false));
     document.addEventListener("keydown", (e) => {
-      if(e.key === "Escape") close();
+      if(e.key === "Escape") setOpen(false);
     });
 
-    // close drawer when clicking a link
-    drawer.querySelectorAll("a").forEach(a => {
-      a.addEventListener("click", () => close());
-    });
-  }
-
-  function setupSoonLinks(){
-    // event delegation: do not add listeners to every link
-    const root = document.documentElement;
-    if(root.dataset && root.dataset.ldSoonBound === "1") return;
-    if(root.dataset) root.dataset.ldSoonBound = "1";
-
-    document.addEventListener("click", (e) => {
-      const a = e.target?.closest?.('a[data-soon="1"]');
+    // Close on drawer link click
+    drawer.addEventListener("click", (e) => {
+      const a = e.target && e.target.closest ? e.target.closest("a") : null;
       if(!a) return;
-      e.preventDefault();
-      toast("準備中です", 1200);
-    }, { passive: false });
-  }
-
-  function setLoggedInUI(username){
-    const elLabel = $("topbarAuthLabel");
-    const elUser = $("authUserName");
-    const elPass = $("authPass");
-    const elGhost = $("authGhost");
-    const elLoginBtn = $("authLoginBtn");
-    const elStateWrap = $("authStateWrap");
-    const elStateText = $("authStateText");
-
-    if(elLabel) elLabel.style.display = "none";
-    if(elUser) elUser.parentElement.style.display = "none";
-    if(elPass) elPass.parentElement.style.display = "none";
-    if(elLoginBtn) elLoginBtn.style.display = "none";
-    if(elGhost) elGhost.style.display = "none";
-
-    if(elStateText) elStateText.textContent = `ログイン中: ${username}`;
-    if(elStateWrap){
-      elStateWrap.dataset.visible = "1";
-      elStateWrap.style.display = "flex";
-    }
-  }
-
-  function setLoggedOutUI(){
-    const elLabel = $("topbarAuthLabel");
-    const elUser = $("authUserName");
-    const elPass = $("authPass");
-    const elGhost = $("authGhost");
-    const elLoginBtn = $("authLoginBtn");
-    const elStateWrap = $("authStateWrap");
-
-    if(elLabel){
-      elLabel.style.display = "";
-      elLabel.textContent = window.matchMedia("(max-width: 380px)").matches ? "未:" : "未ログイン：";
-    }
-    if(elUser) elUser.parentElement.style.display = "";
-    if(elPass) elPass.parentElement.style.display = "";
-    if(elLoginBtn) elLoginBtn.style.display = "";
-    if(elStateWrap){
-      elStateWrap.dataset.visible = "0";
-      elStateWrap.style.display = "none";
-    }
-    if(elGhost) elGhost.style.display = "";
-  }
-
-  function updateAuthControls(){
-    const elUser = $("authUserName");
-    const elPass = $("authPass");
-    const elGhost = $("authGhost");
-    const elLoginBtn = $("authLoginBtn");
-
-    if(!elUser || !elPass || !elLoginBtn || !elGhost) return;
-
-    // Ensure placeholder
-    elUser.setAttribute("placeholder", "ユーザー名(任意)");
-
-    const user = safeTrim(elUser.value);
-    const pass = safeTrim(elPass.value);
-
-    // Lock check (local cache of server lock)
-    const untilMs = user ? getLockedUntilMs(user) : 0;
-    const isLocked = (untilMs > Date.now());
-
-    // Helper to apply visual states
-    const setGuestState = () => {
-      elPass.value = "";
-      elPass.disabled = true;
-      elPass.classList.remove("ld-pass-needed");
-      elPass.classList.add("ld-pass-guest");
-      elGhost.textContent = "ゲスト状態";
-      elGhost.classList.remove("ld-ghost-needed");
-      elGhost.style.display = "";
-      elLoginBtn.disabled = true;
-    };
-
-    const setNeedPassState = () => {
-      elPass.disabled = false;
-      elPass.classList.remove("ld-pass-guest");
-      elPass.classList.add("ld-pass-needed");
-      elGhost.textContent = "要パス";
-      elGhost.classList.add("ld-ghost-needed");
-      elGhost.style.display = "";
-      elLoginBtn.disabled = true;
-    };
-
-    const setPassEnteredState = () => {
-      elPass.disabled = false;
-      elPass.classList.remove("ld-pass-guest");
-      elPass.classList.remove("ld-pass-needed");
-      elGhost.classList.remove("ld-ghost-needed");
-      elGhost.style.display = "none";
-      elLoginBtn.disabled = false;
-    };
-
-    // State A: username empty -> guest
-    if(!user){
-      setGuestState();
-      return;
-    }
-
-    // If locked, keep UI but disable login
-    if(isLocked){
-      // During lock, keep pass box enabled only when we know it's a registered user.
-      // Otherwise act as guest.
-      if(userExistsRpcAvailable && currentUserExists === false){
-        setGuestState();
-      }else{
-        elPass.disabled = false;
-        elPass.classList.remove("ld-pass-guest");
-        // keep red prompt only when registered + empty
-        if(userExistsRpcAvailable && currentUserExists === true && !pass){
-          elPass.classList.add("ld-pass-needed");
-          elGhost.textContent = "要パス";
-          elGhost.classList.add("ld-ghost-needed");
-          elGhost.style.display = "";
-        }else{
-          elPass.classList.remove("ld-pass-needed");
-          elGhost.classList.remove("ld-ghost-needed");
-          elGhost.style.display = pass ? "none" : "none";
-        }
-        elLoginBtn.disabled = true;
-      }
-      return;
-    }
-
-    // When USER_EXISTS RPC is available:
-    // - unregistered -> guest (pass disabled)
-    // - registered -> "要パス" (red) until pass entered
-    // When not available -> fallback: allow pass for any username (previous behavior)
-    if(userExistsRpcAvailable){
-      if(currentUserExists === false){
-        setGuestState();
+      if(a.dataset && a.dataset.comingsoon === "1"){
+        e.preventDefault();
+        toast("準備中");
+        setOpen(false);
         return;
       }
-      if(currentUserExists === true){
-        if(!pass){
-          setNeedPassState();
-          return;
-        }
-        setPassEnteredState();
-        return;
-      }
-      // currentUserExists is null (checking / unknown): fallback UI but keep login disabled until pass exists
-      elPass.disabled = false;
-      elPass.classList.remove("ld-pass-guest");
-      elPass.classList.remove("ld-pass-needed");
-      elGhost.classList.remove("ld-ghost-needed");
-      elGhost.style.display = "none";
-      elLoginBtn.disabled = !pass;
-      return;
-    }
-
-    // Fallback mode (no ld_user_exists): allow pass for any username
-    elPass.disabled = false;
-    elPass.classList.remove("ld-pass-guest");
-    elPass.classList.remove("ld-pass-needed");
-    elGhost.classList.remove("ld-ghost-needed");
-    elGhost.style.display = pass ? "none" : "";
-    elGhost.textContent = pass ? "" : "ゲスト状態";
-    elLoginBtn.disabled = !pass;
+      setOpen(false);
+    });
   }
 
-  async function handleLogin(){
-    const elUser = $("authUserName");
-    const elPass = $("authPass");
-    if(!elUser || !elPass) return;
+  // ====== drawer menu grooming ======
+  function normalizeDrawerMenu(){
+    const drawer = $("drawer");
+    if(!drawer) return;
 
-    const username = safeTrim(elUser.value);
-    const pass = safeTrim(elPass.value);
+    // Remove redundant header area if exists
+    const header = q(".drawer-header", drawer);
+    if(header) header.remove();
 
-    if(!username){
-      toast("ユーザー名を入力してください");
-      updateAuthControls();
-      return;
-    }
-    
-    // If username is not registered, keep guest mode (pass disabled)
-    if((userExistsRpcAvailable && currentUserExists === false) || elPass.disabled){
-      toast("このユーザー名は未登録のためログインできません", 2200);
-      updateAuthControls();
-      return;
-    }
+    // Remove footer note if exists
+    const footer = q(".drawer-footer", drawer);
+    if(footer) footer.remove();
 
-if(!pass){
-      toast("パスを入力してください");
-      updateAuthControls();
-      return;
-    }
+    // Remove editor login item(s)
+    qa(".drawer-link", drawer).forEach(a => {
+      const t = safeTrim(a.textContent);
+      if(/編集者ログイン/.test(t)){
+        const li = a.closest("li");
+        if(li) li.remove();
+      }
+    });
 
-    const untilMs = getLockedUntilMs(username);
-    if(untilMs > Date.now()){
-      toast(`ロック中（残り ${fmtRemain(untilMs - Date.now())}）`, 2200);
-      updateAuthControls();
-      return;
-    }
+    // Rename primary items
+    qa(".drawer-link", drawer).forEach(a => {
+      const t = safeTrim(a.textContent);
+      if(t === "ユーザーデータベース" || t === "ユーザーデータ" ) a.textContent = "ユーザー情報";
+      if(t === "ユニットDB") a.textContent = "各種データ";
+    });
+
+    // Ensure known pages link to real pages if still "#"
+    qa(".drawer-link", drawer).forEach(a => {
+      const t = safeTrim(a.textContent);
+      if(a.getAttribute("href") === "#"){
+        if(t === "トップページ") a.setAttribute("href", "./index.html");
+        if(t === "情報掲示板") a.setAttribute("href", "./ld_board.html");
+        if(t === "ユーザー情報") a.setAttribute("href", "./ld_users.html");
+      }
+      // Mark coming soon for pages we don't have
+      if(["攻略の手引き","各種データ","データツール"].includes(t)){
+        if(!a.getAttribute("href") || a.getAttribute("href") === "#"){
+          a.dataset.comingsoon = "1";
+          a.setAttribute("href", "#");
+        }
+      }
+    });
+  }
+
+  // ====== auth ======
+  const existsCache = new Map(); // username -> { exists:boolean, ts:number, known:boolean }
+  let existsSeq = 0;
+  let existsKnown = true;
+  let currentExists = false;
+
+  async function checkUserExists(username){
+    const key = username;
+    const cached = existsCache.get(key);
+    const now = Date.now();
+    if(cached && (now - cached.ts) < 30_000) return cached;
 
     try{
-      const result = await rpc("ld_login", { p_username: username, p_pass: pass });
+      const v = await rpc("ld_user_exists", { p_username: username });
+      const out = { exists: !!v, known: true, ts: now };
+      existsCache.set(key, out);
+      return out;
+    }catch(_e){
+      // If the RPC isn't available (or denied), keep login workable by assuming "need pass".
+      const out = { exists: true, known: false, ts: now };
+      existsCache.set(key, out);
+      return out;
+    }
+  }
 
-      if(result && result.ok === true){
-        const user = result.user || {};
-        const auth = {
-          loggedIn: true,
-          username,
-          pass,
-          userId: user.id || null,
-          level: (user.level ?? null),
-          exp: (user.exp ?? null),
-          lockedUntil: 0,
-          lastLoginAt: new Date().toISOString()
-        };
-        saveAuth(auth);
-        clearLock(username);
-        setLoggedInUI(username);
-        dispatchAuthChanged(auth);
-        toast("ログインしました", 1200);
+  function setupAuth(){
+    const form = $("authForm");
+    const userInput = $("authUserName");
+    const passInput = $("authPass");
+    const ghost = $("authGhost");
+    const loginBtn = $("authLoginBtn");
+    const stateWrap = $("authStateWrap");
+    const stateText = $("authStateText");
+    const logoutBtn = $("authLogoutBtn");
+    const label = $("topbarAuthLabel");
+
+    if(!form || !userInput || !passInput || !ghost || !loginBtn || !stateWrap || !stateText || !logoutBtn) return;
+
+    if(document.documentElement.dataset.ldAuthBound === "1") return;
+    document.documentElement.dataset.ldAuthBound = "1";
+
+    // username placeholder
+    userInput.setAttribute("placeholder", "ユーザー名(任意)");
+
+    const userField = userInput.closest(".topbar-auth-field") || userInput.parentElement;
+    const passField = passInput.closest(".topbar-auth-field") || passInput.parentElement;
+
+    const showLoggedIn = (username) => {
+      if(label) label.style.display = "none";
+      if(userField) userField.style.display = "none";
+      if(passField) passField.style.display = "none";
+      loginBtn.style.display = "none";
+      stateWrap.style.display = "flex";
+      stateText.textContent = `ログイン中: ${username || "-"}`;
+    };
+
+    const showLoggedOut = () => {
+      if(label) label.style.display = "";
+      if(userField) userField.style.display = "";
+      if(passField) passField.style.display = "";
+      loginBtn.style.display = "";
+      stateWrap.style.display = "none";
+    };
+
+    const setPassMode = (mode /* 'guest' | 'needpass' */) => {
+      passField?.classList.remove("is-guest", "is-needpass");
+      if(mode === "guest"){
+        passField?.classList.add("is-guest");
+        passInput.disabled = true;
+        passInput.value = "";
+        ghost.textContent = "ゲスト状態";
+        ghost.style.display = "block";
+      }else{
+        passField?.classList.add("is-needpass");
+        passInput.disabled = false;
+        ghost.textContent = "要パス";
+        ghost.style.display = passInput.value ? "none" : "block";
+      }
+    };
+
+    const updateButtons = () => {
+      const username = safeTrim(userInput.value);
+      const pass = safeTrim(passInput.value);
+      const now = Date.now();
+      const lockedUntil = username ? getLockedUntilMs(username) : 0;
+      const locked = lockedUntil && now < lockedUntil;
+
+      // enable login only when username exists (needpass) and pass filled and not locked
+      const canLogin = !!username && currentExists && !!pass && !locked && !passInput.disabled;
+      loginBtn.disabled = !canLogin;
+
+      // ghost visibility when typing
+      if(passInput.disabled){
+        ghost.style.display = "block";
+      }else{
+        ghost.style.display = pass ? "none" : "block";
+      }
+    };
+
+    let debounceTimer = null;
+    const scheduleExistsCheck = () => {
+      const username = safeTrim(userInput.value);
+      existsSeq += 1;
+      const mySeq = existsSeq;
+
+      if(debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(async () => {
+        // If user already logged in, no need.
+        const auth = loadAuth();
+        if(auth && auth.loggedIn) return;
+
+        if(!username){
+          existsKnown = true;
+          currentExists = false;
+          setPassMode("guest");
+          updateButtons();
+          return;
+        }
+
+        const res = await checkUserExists(username);
+        if(mySeq !== existsSeq) return; // stale
+
+        existsKnown = res.known;
+        currentExists = !!res.exists;
+
+        if(currentExists){
+          setPassMode("needpass");
+        }else{
+          setPassMode("guest");
+        }
+        updateButtons();
+      }, 220);
+    };
+
+    // Restore auth / initial view
+    const init = () => {
+      const auth = ensureAuthBase();
+      if(auth.loggedIn && auth.username){
+        showLoggedIn(auth.username);
+        clearLock(auth.username);
+      }else{
+        showLoggedOut();
+        // restore typed username if any
+        if(auth.username && !userInput.value) userInput.value = auth.username;
+        // Start as guest until exists-check says otherwise
+        setPassMode("guest");
+        scheduleExistsCheck();
+        updateButtons();
+      }
+    };
+
+    userInput.addEventListener("input", () => {
+      // username change resets pass mode until check completes
+      scheduleExistsCheck();
+    });
+
+    passInput.addEventListener("input", () => {
+      updateButtons();
+    });
+
+    // login
+    const doLogin = async () => {
+      const username = safeTrim(userInput.value);
+      const pass = safeTrim(passInput.value);
+
+      if(!username){
+        toast("ユーザー名が未入力です");
+        return;
+      }
+      if(passInput.disabled){
+        toast("このユーザー名は未登録のため、ゲスト状態です");
+        return;
+      }
+      if(!pass){
+        toast("パスが未入力です");
         return;
       }
 
-      const reason = (result && result.reason) ? String(result.reason) : "auth_failed";
-      const lockedUntilRaw = (result && result.locked_until) ? String(result.locked_until) : "";
-      const lockedUntilMs = lockedUntilRaw ? Date.parse(lockedUntilRaw) : 0;
-      const isLocking = Number.isFinite(lockedUntilMs) && lockedUntilMs > Date.now();
-
-      if(isLocking){
-        setLockedUntilMs(username, lockedUntilMs);
-      }else{
-        clearLock(username);
+      const lockedUntil = getLockedUntilMs(username);
+      if(lockedUntil && Date.now() < lockedUntil){
+        toast(`ロック中：残り ${fmtRemain(lockedUntil - Date.now())}`, 2200);
+        updateButtons();
+        return;
       }
 
-      // clear pass input (State B)
-      elPass.value = "";
-      updateAuthControls();
+      try{
+        loginBtn.disabled = true;
+        const result = await rpc("ld_login", { p_username: username, p_pass: pass });
 
-      if(isLocking){
-        toast(`認証に失敗しました。ロック中（残り ${fmtRemain(lockedUntilMs - Date.now())}）`, 2600);
-      }else{
-        toast("認証に失敗しました。", 1800);
+        if(result && result.ok === true){
+          const user = result.user || {};
+          const auth = {
+            loggedIn: true,
+            username: username,
+            pass: pass,
+            userId: user.id ?? user.userId ?? null,
+            level: user.level ?? null,
+            exp: user.exp ?? null,
+            lockedUntil: 0,
+            lastLoginAt: new Date().toISOString()
+          };
+          saveAuth(auth);
+          clearLock(username);
+          toast("ログインしました");
+          showLoggedIn(username);
+          return;
+        }
+
+        // fail
+        const reason = result?.reason || "login_failed";
+
+        if(reason === "locked"){
+          // server says currently locked
+          const until = result?.locked_until;
+          const untilMs = until ? Date.parse(until) : 0;
+          if(untilMs && Number.isFinite(untilMs)) setLockedUntilMs(username, untilMs);
+          toast(`ロック中：残り ${fmtRemain((untilMs||Date.now()) - Date.now())}`, 2400);
+        }else if(reason === "invalid_pass"){
+          // server may lock (or not) depending on policy
+          const until = result?.locked_until;
+          if(until){
+            const untilMs = Date.parse(until);
+            if(untilMs && Number.isFinite(untilMs)){
+              setLockedUntilMs(username, untilMs);
+              toast(`パスが違います（ロック：${fmtRemain(untilMs - Date.now())}）`, 2400);
+            }else{
+              toast("パスが違います", 2000);
+            }
+          }else{
+            toast("パスが違います", 2000);
+          }
+        }else if(reason === "invalid_username"){
+          toast("そのユーザー名は登録されていません", 2200);
+        }else if(reason === "invalid_input"){
+          toast("入力が不正です", 1800);
+        }else{
+          toast("ログインできませんでした", 1800);
+        }
+      }catch(_e){
+        toast("ログイン処理でエラーが発生しました", 2000);
+      }finally{
+        // after login attempt, re-evaluate
+        scheduleExistsCheck();
+        updateButtons();
       }
+    };
 
-      const saved = loadAuth() || {};
+    loginBtn.addEventListener("click", (e) => { e.preventDefault(); doLogin(); });
+    passInput.addEventListener("keydown", (e) => {
+      if(e.key === "Enter"){
+        e.preventDefault();
+        doLogin();
+      }
+    });
+
+    // logout
+    logoutBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const a = loadAuth();
+      const username = a?.username || safeTrim(userInput.value);
       saveAuth({
         loggedIn: false,
-        username,
+        username: username || "",
         pass: "",
         userId: null,
         level: null,
         exp: null,
-        lockedUntil: (isLocking ? lockedUntilMs : 0),
-        lastLoginAt: saved.lastLoginAt || null
+        lockedUntil: 0,
+        lastLoginAt: null
       });
-      dispatchAuthChanged(loadAuth());
-    }catch(err){
-      console.error(err);
-      toast("ログイン処理に失敗しました", 2200);
-    }
-  }
-
-  function handleLogout(){
-    const elUser = $("authUserName");
-    const username = safeTrim(elUser ? elUser.value : "");
-    clearAuthKeepUsername(username);
-    setLoggedOutUI();
-    const elPass = $("authPass");
-    if(elPass) elPass.value = "";
-    updateAuthControls();
-    dispatchAuthChanged(loadAuth());
-    toast("ログアウトしました", 1200);
-  }
-
-  function setupAuth(){
-    const elUser = $("authUserName");
-    const elPass = $("authPass");
-    const elLoginBtn = $("authLoginBtn");
-    const elLogoutBtn = $("authLogoutBtn");
-    if(!elUser || !elPass || !elLoginBtn || !elLogoutBtn) return;
-
-    // Idempotent bind guard
-    if(elLoginBtn.dataset && elLoginBtn.dataset.boundAuth === "1") return;
-    if(elLoginBtn.dataset) elLoginBtn.dataset.boundAuth = "1";
-
-    const elForm = $("authForm");
-    if(elForm && (!elForm.dataset || elForm.dataset.boundSubmit !== "1")){
-      if(elForm.dataset) elForm.dataset.boundSubmit = "1";
-      elForm.addEventListener("submit", (e) => { e.preventDefault(); });
-    }
-
-
-    elUser.addEventListener("input", () => { scheduleUserExistsCheck(); updateAuthControls(); });
-    elPass.addEventListener("input", updateAuthControls);
-
-    elLoginBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      handleLogin();
+      clearLock(username || "");
+      toast("ログアウトしました");
+      showLoggedOut();
+      userInput.value = username || "";
+      passInput.value = "";
+      setPassMode("guest");
+      scheduleExistsCheck();
+      updateButtons();
     });
 
-    elLogoutBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      handleLogout();
-    });
-
-    // restore
-    const saved = loadAuth();
-    if(saved && saved.loggedIn && saved.username && saved.pass){
-      elUser.value = saved.username;
-      elPass.value = saved.pass;
-
-      const untilMs = getLockedUntilMs(saved.username);
-      if(untilMs > Date.now()){
-        // lock -> do not auto-login
-        elPass.value = "";
-        setLoggedOutUI();
-        updateAuthControls();
-        toast("ロック中", 1200);
-        return;
-      }
-
-      // Verify via RPC (do not reveal result while typing)
-      rpc("ld_login", { p_username: saved.username, p_pass: saved.pass })
-        .then(result => {
-          if(result && result.ok === true){
-            // refresh saved meta
-            const user = result.user || {};
-            const auth = {
-              ...saved,
-              loggedIn: true,
-              userId: user.id || saved.userId || null,
-              level: (user.level ?? saved.level ?? null),
-              exp: (user.exp ?? saved.exp ?? null),
-              lockedUntil: 0,
-              lastLoginAt: new Date().toISOString()
-            };
-            saveAuth(auth);
-            setLoggedInUI(saved.username);
-            dispatchAuthChanged(auth);
-          }else{
-            // fail -> clear pass and stay logged out
-            elPass.value = "";
-            setLoggedOutUI();
-            updateAuthControls();
-            clearAuthKeepUsername(saved.username);
-            dispatchAuthChanged(loadAuth());
-          }
-        })
-        .catch(_e => {
-          // network fail -> keep logged out but preserve username
-          elPass.value = "";
-          setLoggedOutUI();
-          updateAuthControls();
-          clearAuthKeepUsername(saved.username);
-          dispatchAuthChanged(loadAuth());
-        });
-
-      return;
-    }
-
-    // default state
-    setLoggedOutUI();
-    updateAuthControls();
-    // keep label compact on narrow screens
-    window.addEventListener("resize", () => {
-      const l = $("topbarAuthLabel");
-      if(!l) return;
-      if(l.style.display === "none") return;
-      l.textContent = window.matchMedia("(max-width: 380px)").matches ? "未:" : "未ログイン：";
-    });
+    init();
   }
 
-  function boot(){
-    if(!document.body) return;
-    injectHeader();
-    normalizeExistingHeader();
+  // ====== init ======
+  function main(){
+    // prevent double-init
+    if(document.documentElement.dataset.ldCommonInit === "1") return;
+    document.documentElement.dataset.ldCommonInit = "1";
+
+    injectHeaderIfMissing();
+
+    // page name
+    const pageNameEl = $("topbarPageName");
+    if(pageNameEl) pageNameEl.textContent = `> ${getPageName()}`;
+
+    // menu grooming
+    normalizeDrawerMenu();
+
+    // bind behaviors
     setupDrawer();
-    setupSoonLinks();
     setupAuth();
+
+    // sync height initially and on resize
+    syncTopbarHeight();
+    window.addEventListener("resize", () => syncTopbarHeight());
+    // also after fonts/layout settle
+    setTimeout(syncTopbarHeight, 60);
+    setTimeout(syncTopbarHeight, 300);
   }
 
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", boot, { once: true });
+    document.addEventListener("DOMContentLoaded", main);
   }else{
-    boot();
+    main();
   }
 })();
