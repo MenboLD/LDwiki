@@ -229,7 +229,9 @@
   }
 
   function setupDrawer(){
-    if(document.getElementById("drawer") && document.getElementById("drawerOverlay")) return;
+    const btn = $("topbarMenuBtn");
+    if(btn && btn.dataset) btn.dataset.boundDrawer="1";
+    if(btn && btn.dataset && btn.dataset.boundDrawer==="1") return;
     const drawer = $("drawer");
     const overlay = $("drawerOverlay");
     const btn = $("topbarMenuBtn");
