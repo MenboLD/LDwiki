@@ -230,13 +230,12 @@
 
   function setupDrawer(){
     const btn = $("topbarMenuBtn");
-    if(btn && btn.dataset) btn.dataset.boundDrawer="1";
-    if(btn && btn.dataset && btn.dataset.boundDrawer==="1") return;
     const drawer = $("drawer");
     const overlay = $("drawerOverlay");
-    const btn = $("topbarMenuBtn");
     const closeBtn = $("drawerCloseBtn");
     if(!drawer || !overlay || !btn || !closeBtn) return;
+    if(btn.dataset && btn.dataset.boundDrawer === "1") return;
+    if(btn.dataset) btn.dataset.boundDrawer = "1";
 
     function open(){
       drawer.classList.add("open");
