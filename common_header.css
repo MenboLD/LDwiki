@@ -109,6 +109,42 @@ html.ld-common-header-enabled body{
 }
 
 
+.topbar-auth-ghost{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 12px;
+  color: var(--ld-ghost);
+  font-size: 13px;
+  pointer-events: none;
+  user-select: none;
+}
+
+
+
+/* Auth pass visual states */
+.topbar-auth-field input.ld-pass-needed{
+  border: 2px solid rgba(255, 90, 90, 0.85);
+}
+
+.topbar-auth-field input.ld-pass-needed:focus{
+  border-color: rgba(255, 110, 110, 0.95);
+}
+
+.topbar-auth-ghost.ld-ghost-needed{
+  color: rgba(255, 140, 140, 0.92);
+  font-weight: 600;
+}
+
+.topbar-auth-field input.ld-pass-guest{
+  background: rgba(245, 245, 245, 0.08);
+  border: 1px dashed rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.55);
+  cursor: not-allowed;
+}
+
 .topbar-auth-btn{
   height: 34px;
   border-radius: 12px;
@@ -301,5 +337,5 @@ html.ld-common-header-enabled .drawer{
 
 html.ld-common-header-enabled .page{
   /* body already has padding-top for the fixed header */
-  padding-top: 16px;
+  padding-top: 0px;
 }

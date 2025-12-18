@@ -13,6 +13,15 @@
   const AUTH_STORAGE_KEY = "ld_auth_v1";
   const LOCK_PREFIX = "ld_users_lock:";
 
+  // Optional RPC: checks if username is registered (exact match).
+  // If this RPC is not installed, the UI falls back to the previous behavior.
+  const USER_EXISTS_RPC = "ld_user_exists";
+  let userExistsRpcAvailable = true;
+  const userExistsCache = new Map(); // username -> boolean
+  let currentUserExists = null;      // for current input username
+  let userExistsTimer = null;
+
+
   const SITE_TITLE = "ラッキー傭兵団 攻略 wiki";
   const DRAWER_SUBTITLE = "(試験運用・作成中)";
 
@@ -127,6 +136,70 @@
     return data;
   }
 
+
+  function readBoolFromRpc(data){
+    if(typeof data === "boolean") return data;
+    if(data && typeof data === "object"){
+      if(typeof data.exists === "boolean") return data.exists;
+      if(typeof data.ok === "boolean") return data.ok;
+      if(typeof data.result === "boolean") return data.result;
+    }
+    return null;
+  }
+
+  function scheduleUserExistsCheck(){
+    const elUser = $("authUserName");
+    if(!elUser) return;
+    const name = safeTrim(elUser.value);
+
+    // reset when username changes
+    currentUserExists = null;
+
+    if(!userExistsRpcAvailable || !name){
+      scheduleUserExistsCheck();
+    updateAuthControls();
+      return;
+    }
+
+    if(userExistsCache.has(name)){
+      currentUserExists = userExistsCache.get(name);
+      updateAuthControls();
+      return;
+    }
+
+    if(userExistsTimer) clearTimeout(userExistsTimer);
+    userExistsTimer = setTimeout(async () => {
+      const latestName = safeTrim(($("authUserName") && $("authUserName").value) || "");
+      if(!latestName) return;
+
+      // cache hit (maybe filled while waiting)
+      if(userExistsCache.has(latestName)){
+        currentUserExists = userExistsCache.get(latestName);
+        updateAuthControls();
+        return;
+      }
+
+      try{
+        const data = await rpc(USER_EXISTS_RPC, { p_username: latestName });
+        const b = readBoolFromRpc(data);
+        if(b === null) throw new Error("Invalid ld_user_exists response");
+        userExistsCache.set(latestName, b);
+
+        // apply only if username hasn't changed
+        const nowName = safeTrim(($("authUserName") && $("authUserName").value) || "");
+        if(nowName === latestName){
+          currentUserExists = b;
+          updateAuthControls();
+        }
+      }catch(err){
+        console.warn("[ldwiki] USER_EXISTS_RPC unavailable -> fallback", err);
+        userExistsRpcAvailable = false;
+        currentUserExists = null;
+        updateAuthControls();
+      }
+    }, 220);
+  }
+
   function dispatchAuthChanged(auth){
     window.dispatchEvent(new CustomEvent("ld-auth-changed", { detail: auth }));
   }
@@ -188,7 +261,7 @@
         <div class="topbar-auth-label" id="topbarAuthLabel">未ログイン：</div>
 
         <label class="topbar-auth-field" aria-label="ユーザー名">
-          <input id="authUserName" type="text" inputmode="text" autocomplete="username" placeholder="ユーザー名" />
+          <input id="authUserName" type="text" inputmode="text" autocomplete="username" placeholder="ユーザー名(任意)" />
         </label>
 
         <label class="topbar-auth-field" aria-label="パス">
@@ -211,11 +284,7 @@
     drawer.id = "drawer";
     drawer.setAttribute("aria-label", "サイトメニュー");
     drawer.innerHTML = `
-      <div class="drawer-header">
-        <p class="drawer-title">${SITE_TITLE}</p>
-        <p class="drawer-subtitle">${DRAWER_SUBTITLE}</p>
-      </div>
-      <div class="drawer-close-row">
+<div class="drawer-close-row">
         <button class="drawer-close-button" type="button" id="drawerCloseBtn">閉じる ◀</button>
       </div>
       <div class="drawer-body">
@@ -258,7 +327,21 @@
     const elPage = $("topbarPageName");
     if(elPage) elPage.textContent = `> ${getPageName()}`;
 
-    // Remove legacy footer note (not needed now)
+    
+    // Remove redundant drawer header (title/subtitle) if exists
+    const drawerHeader = document.querySelector(".drawer-header");
+    if(drawerHeader) drawerHeader.remove();
+
+    // Remove "編集者ログイン / ログアウト" entry if present (header already covers it)
+    document.querySelectorAll(".drawer-link").forEach(a => {
+      const t = (a.textContent || "").trim();
+      if(t === "編集者ログイン / ログアウト" || t === "編集者ログイン/ログアウト"){
+        const li = a.closest("li");
+        if(li) li.remove();
+        else a.remove();
+      }
+    });
+// Remove legacy footer note (not needed now)
     const drawerFooter = document.querySelector(".drawer-footer");
     if(drawerFooter) drawerFooter.remove();
 
@@ -400,37 +483,113 @@
 
     if(!elUser || !elPass || !elLoginBtn || !elGhost) return;
 
+    // Ensure placeholder
+    elUser.setAttribute("placeholder", "ユーザー名(任意)");
+
     const user = safeTrim(elUser.value);
     const pass = safeTrim(elPass.value);
 
-    // State A
-    if(!user){
+    // Lock check (local cache of server lock)
+    const untilMs = user ? getLockedUntilMs(user) : 0;
+    const isLocked = (untilMs > Date.now());
+
+    // Helper to apply visual states
+    const setGuestState = () => {
       elPass.value = "";
       elPass.disabled = true;
+      elPass.classList.remove("ld-pass-needed");
+      elPass.classList.add("ld-pass-guest");
+      elGhost.textContent = "ゲスト状態";
+      elGhost.classList.remove("ld-ghost-needed");
       elGhost.style.display = "";
       elLoginBtn.disabled = true;
+    };
+
+    const setNeedPassState = () => {
+      elPass.disabled = false;
+      elPass.classList.remove("ld-pass-guest");
+      elPass.classList.add("ld-pass-needed");
+      elGhost.textContent = "要パス";
+      elGhost.classList.add("ld-ghost-needed");
+      elGhost.style.display = "";
+      elLoginBtn.disabled = true;
+    };
+
+    const setPassEnteredState = () => {
+      elPass.disabled = false;
+      elPass.classList.remove("ld-pass-guest");
+      elPass.classList.remove("ld-pass-needed");
+      elGhost.classList.remove("ld-ghost-needed");
+      elGhost.style.display = "none";
+      elLoginBtn.disabled = false;
+    };
+
+    // State A: username empty -> guest
+    if(!user){
+      setGuestState();
       return;
     }
 
-    // State B / B2
+    // If locked, keep UI but disable login
+    if(isLocked){
+      // During lock, keep pass box enabled only when we know it's a registered user.
+      // Otherwise act as guest.
+      if(userExistsRpcAvailable && currentUserExists === false){
+        setGuestState();
+      }else{
+        elPass.disabled = false;
+        elPass.classList.remove("ld-pass-guest");
+        // keep red prompt only when registered + empty
+        if(userExistsRpcAvailable && currentUserExists === true && !pass){
+          elPass.classList.add("ld-pass-needed");
+          elGhost.textContent = "要パス";
+          elGhost.classList.add("ld-ghost-needed");
+          elGhost.style.display = "";
+        }else{
+          elPass.classList.remove("ld-pass-needed");
+          elGhost.classList.remove("ld-ghost-needed");
+          elGhost.style.display = pass ? "none" : "none";
+        }
+        elLoginBtn.disabled = true;
+      }
+      return;
+    }
+
+    // When USER_EXISTS RPC is available:
+    // - unregistered -> guest (pass disabled)
+    // - registered -> "要パス" (red) until pass entered
+    // When not available -> fallback: allow pass for any username (previous behavior)
+    if(userExistsRpcAvailable){
+      if(currentUserExists === false){
+        setGuestState();
+        return;
+      }
+      if(currentUserExists === true){
+        if(!pass){
+          setNeedPassState();
+          return;
+        }
+        setPassEnteredState();
+        return;
+      }
+      // currentUserExists is null (checking / unknown): fallback UI but keep login disabled until pass exists
+      elPass.disabled = false;
+      elPass.classList.remove("ld-pass-guest");
+      elPass.classList.remove("ld-pass-needed");
+      elGhost.classList.remove("ld-ghost-needed");
+      elGhost.style.display = "none";
+      elLoginBtn.disabled = !pass;
+      return;
+    }
+
+    // Fallback mode (no ld_user_exists): allow pass for any username
     elPass.disabled = false;
-
-    if(!pass){
-      elGhost.style.display = "";
-      elLoginBtn.disabled = true;
-      return;
-    }
-
-    elGhost.style.display = "none";
-
-    // lock check
-    const untilMs = getLockedUntilMs(user);
-    if(untilMs > Date.now()){
-      elLoginBtn.disabled = true;
-      return;
-    }
-
-    elLoginBtn.disabled = false;
+    elPass.classList.remove("ld-pass-guest");
+    elPass.classList.remove("ld-pass-needed");
+    elGhost.classList.remove("ld-ghost-needed");
+    elGhost.style.display = pass ? "none" : "";
+    elGhost.textContent = pass ? "" : "ゲスト状態";
+    elLoginBtn.disabled = !pass;
   }
 
   async function handleLogin(){
@@ -446,7 +605,15 @@
       updateAuthControls();
       return;
     }
-    if(!pass){
+    
+    // If username is not registered, keep guest mode (pass disabled)
+    if((userExistsRpcAvailable && currentUserExists === false) || elPass.disabled){
+      toast("このユーザー名は未登録のためログインできません", 2200);
+      updateAuthControls();
+      return;
+    }
+
+if(!pass){
       toast("パスを入力してください");
       updateAuthControls();
       return;
@@ -483,14 +650,25 @@
       }
 
       const reason = (result && result.reason) ? String(result.reason) : "auth_failed";
-      const lockedUntil = result && result.locked_until ? Date.parse(result.locked_until) : 0;
-      const lockMs = Number.isFinite(lockedUntil) && lockedUntil > 0 ? lockedUntil : (Date.now() + 3*60*1000);
-      setLockedUntilMs(username, lockMs);
+      const lockedUntilRaw = (result && result.locked_until) ? String(result.locked_until) : "";
+      const lockedUntilMs = lockedUntilRaw ? Date.parse(lockedUntilRaw) : 0;
+      const isLocking = Number.isFinite(lockedUntilMs) && lockedUntilMs > Date.now();
+
+      if(isLocking){
+        setLockedUntilMs(username, lockedUntilMs);
+      }else{
+        clearLock(username);
+      }
 
       // clear pass input (State B)
       elPass.value = "";
       updateAuthControls();
-      toast("認証に失敗しました。一定時間ロック中です。", 2500);
+
+      if(isLocking){
+        toast(`認証に失敗しました。ロック中（残り ${fmtRemain(lockedUntilMs - Date.now())}）`, 2600);
+      }else{
+        toast("認証に失敗しました。", 1800);
+      }
 
       const saved = loadAuth() || {};
       saveAuth({
@@ -500,7 +678,7 @@
         userId: null,
         level: null,
         exp: null,
-        lockedUntil: lockMs,
+        lockedUntil: (isLocking ? lockedUntilMs : 0),
         lastLoginAt: saved.lastLoginAt || null
       });
       dispatchAuthChanged(loadAuth());
@@ -533,7 +711,14 @@
     if(elLoginBtn.dataset && elLoginBtn.dataset.boundAuth === "1") return;
     if(elLoginBtn.dataset) elLoginBtn.dataset.boundAuth = "1";
 
-    elUser.addEventListener("input", updateAuthControls);
+    const elForm = $("authForm");
+    if(elForm && (!elForm.dataset || elForm.dataset.boundSubmit !== "1")){
+      if(elForm.dataset) elForm.dataset.boundSubmit = "1";
+      elForm.addEventListener("submit", (e) => { e.preventDefault(); });
+    }
+
+
+    elUser.addEventListener("input", () => { scheduleUserExistsCheck(); updateAuthControls(); });
     elPass.addEventListener("input", updateAuthControls);
 
     elLoginBtn.addEventListener("click", (e) => {
