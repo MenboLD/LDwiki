@@ -313,3 +313,64 @@ html.ld-common-header-enabled body{
 .topbar-auth-input{ height: var(--auth-input-h); }
 .topbar-auth-btn, .topbar-auth-logout{ height: var(--auth-btn-h); }
 .menu-btn{ width: var(--menu-btn-size); height: var(--menu-btn-size); }
+
+
+/* --- Compact v3 + guest overflow fixes --- */
+:root{
+  --topbar-padding: 8px;
+  --topbar-row-gap: 2px;
+  --topbar-title-size: 14px;
+  --topbar-subtitle-size: 12px;
+  --auth-input-h: 26px;
+  --auth-btn-h: 26px;
+  --menu-btn-size: 38px;
+}
+
+/* tighter overall */
+.topbar{ padding: var(--topbar-padding) !important; }
+.topbar-row{ gap: 8px !important; }
+.topbar-row--top{ gap: 10px !important; }
+.topbar-row--auth{ padding: 6px 8px 8px !important; }
+
+.topbar-title{ font-size: var(--topbar-title-size) !important; line-height: 1.2 !important; }
+.topbar-page{ font-size: var(--topbar-subtitle-size) !important; line-height: 1.2 !important; }
+
+.menu-btn, .topbar-menu-btn{
+  width: var(--menu-btn-size) !important;
+  height: var(--menu-btn-size) !important;
+}
+
+/* allow shrink on small widths */
+.topbar-row--auth{ align-items: center !important; }
+.topbar-auth-label{ flex: 0 0 auto !important; }
+.topbar-auth-field{ flex: 1 1 0 !important; min-width: 0 !important; }
+.topbar-auth-btn{ flex: 0 0 auto !important; }
+
+/* smaller inputs + ellipsize */
+.topbar-auth-input{
+  height: var(--auth-input-h) !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  line-height: var(--auth-input-h) !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* guest overlay */
+.topbar-auth-ghost{
+  padding: 0 10px !important;
+  justify-content: center !important;
+  font-size: 12px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* buttons smaller */
+.topbar-auth-btn, .topbar-auth-logout{
+  height: var(--auth-btn-h) !important;
+  padding: 0 10px !important;
+  font-size: 12px !important;
+  white-space: nowrap !important;
+}
