@@ -107,6 +107,19 @@ html.ld-common-header-enabled body{
 }
 
 
+/* "ゲスト状態" overlay (shown only when pass is empty) */
+.topbar-auth-ghost{
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  color: var(--ld-ghost);
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
 .topbar-auth-btn{
   height: 34px;
   border-radius: 12px;

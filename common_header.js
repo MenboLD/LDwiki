@@ -145,98 +145,150 @@
   }
 
   function injectHeader(){
-    if(document.getElementById("ldCommonHeader")) return;
+    // If the page already includes the header/drawer markup, do NOT inject duplicates.
+    const hasTopbar = !!$("topbarMenuBtn") && !!$("authForm") && !!$("authUserName") && !!$("authPass") && !!$("authLoginBtn");
+    const hasDrawer = !!$("drawer") && !!$("drawerOverlay");
+
+    // If everything exists already, just sync page name + topbar height and return.
+    if(hasTopbar && hasDrawer){
+      const elPage = $("topbarPageName");
+      if(elPage) elPage.textContent = `> ${getPageName()}`;
+      const topbar = document.querySelector(".topbar");
+      if(topbar){
+        requestAnimationFrame(() => {
+          const h = topbar.getBoundingClientRect().height;
+          if(h) document.documentElement.style.setProperty("--ld-topbar-h", `${Math.ceil(h)}px`);
+        });
+      }
+      return;
+    }
+
+    // Already injected in this page?
     if(document.getElementById("ldCommonTopbar")) return;
 
-    document.documentElement.classList.add("ld-common-header-enabled");
+    const overlayExisting = $("drawerOverlay");
+    const drawerExisting = $("drawer");
 
-    const topbar = document.createElement("div");
-    topbar.className = "topbar";
-    topbar.id = "ldCommonTopbar";
-    topbar.setAttribute("role", "banner");
+    let overlay = overlayExisting;
+    let drawer = drawerExisting;
+    let topbar = document.querySelector(".topbar");
 
-    topbar.innerHTML = `
-      <div class="topbar-row topbar-row--primary">
-        <div class="topbar-title">${SITE_TITLE}</div>
-        <div class="topbar-page" id="topbarPageName"></div>
-        <button class="topbar-menu-btn" id="topbarMenuBtn" type="button" aria-label="メニューを開閉">☰</button>
-      </div>
+    let overlayCreated = false;
+    let drawerCreated = false;
+    let topbarCreated = false;
 
-      <form class="topbar-row topbar-row--auth" id="authForm" aria-label="ログイン操作" autocomplete="on">
-        <div class="topbar-auth-label" id="topbarAuthLabel">未ログイン：</div>
+    // Drawer overlay (create if missing)
+    if(!overlay){
+      overlay = document.createElement("div");
+      overlay.className = "drawer-overlay";
+      overlay.id = "drawerOverlay";
+      overlayCreated = true;
+    }
 
-        <label class="topbar-auth-field" aria-label="ユーザー名">
-          <input id="authUserName" type="text" inputmode="text" autocomplete="username" placeholder="ユーザー名" />
-        </label>
-
-        <label class="topbar-auth-field" aria-label="パス">
-          <input id="authPass" type="password" autocomplete="current-password" placeholder="" />
-          <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
-        </label>
-
-        <button class="topbar-auth-btn" id="authLoginBtn" type="button">ログイン</button>
-
-        <div class="topbar-auth-state" id="authStateWrap" data-visible="0">
-          <span class="topbar-auth-state-text" id="authStateText">ログイン中: -</span>
-          <button class="topbar-auth-logout" id="authLogoutBtn" type="button">ログアウト</button>
+    // Drawer (create if missing)
+    if(!drawer){
+      drawer = document.createElement("nav");
+      drawer.className = "drawer";
+      drawer.id = "drawer";
+      drawer.setAttribute("aria-label", "サイトメニュー");
+      drawer.innerHTML = `
+        <div class="drawer-header">
+          <p class="drawer-title">${SITE_TITLE}</p>
+          <p class="drawer-subtitle">${DRAWER_SUBTITLE}</p>
         </div>
-      </form>
-    `.trim();
+        <div class="drawer-close-row">
+          <button class="drawer-close-button" type="button" id="drawerCloseBtn">閉じる ◀</button>
+        </div>
+        <div class="drawer-body">
+          <ul class="drawer-nav">
+            <li><a class="drawer-link" href="index.html">トップページ</a></li>
+            <li><a class="drawer-link" href="ld_board.html">情報掲示板</a></li>
+            <li><a class="drawer-link" href="ld_users.html">ユーザーデータ</a></li>
+          </ul>
+        </div>
+        <div class="drawer-footer">
+          編集メニューや子ツリー（攻略・ユニットDB・データツール）は、後日ここから展開予定。
+        </div>
+      `.trim();
+      drawerCreated = true;
+    }
 
-    // Drawer + overlay
-    const drawer = document.createElement("nav");
-    drawer.className = "drawer";
-    drawer.id = "drawer";
-    drawer.setAttribute("aria-label", "サイトメニュー");
-    drawer.innerHTML = `
-      <div class="drawer-header">
-        <p class="drawer-title">${SITE_TITLE}</p>
-        <p class="drawer-subtitle">${DRAWER_SUBTITLE}</p>
-      </div>
-      <div class="drawer-close-row">
-        <button class="drawer-close-button" type="button" id="drawerCloseBtn">閉じる ◀</button>
-      </div>
-      <div class="drawer-body">
-        <ul class="drawer-nav">
-          <li><a class="drawer-link" href="index.html">トップページ</a></li>
-          <li><a class="drawer-link" href="ld_board.html">情報掲示板</a></li>
-          <li><a class="drawer-link" href="ld_users.html">ユーザーデータ</a></li>
-        </ul>
-      </div>
-      <div class="drawer-footer">
-        編集メニューや子ツリー（攻略・ユニットDB・データツール）は、後日ここから展開予定。
-      </div>
-    `.trim();
+    // Topbar (create if missing)
+    if(!hasTopbar){
+      topbar = document.createElement("div");
+      topbar.className = "topbar";
+      topbar.id = "ldCommonTopbar";
+      topbar.setAttribute("role", "banner");
+      topbar.innerHTML = `
+        <div class="topbar-row topbar-row--primary">
+          <div class="topbar-title">${SITE_TITLE}</div>
+          <div class="topbar-page" id="topbarPageName"></div>
+          <button class="topbar-menu-btn" id="topbarMenuBtn" type="button" aria-label="メニューを開閉">☰</button>
+        </div>
 
-    const overlay = document.createElement("div");
-    overlay.className = "drawer-overlay";
-    overlay.id = "drawerOverlay";
+        <form class="topbar-row topbar-row--auth" id="authForm" aria-label="ログイン操作" autocomplete="on">
+          <div class="topbar-auth-label" id="topbarAuthLabel">未ログイン：</div>
 
-    // Insert at top of body
-    document.body.insertBefore(overlay, document.body.firstChild);
-    document.body.insertBefore(drawer, overlay.nextSibling);
-    document.body.insertBefore(topbar, drawer.nextSibling);
+          <label class="topbar-auth-field" aria-label="ユーザー名">
+            <input id="authUserName" type="text" inputmode="text" autocomplete="username" placeholder="ユーザー名" />
+          </label>
+
+          <label class="topbar-auth-field" aria-label="パス">
+            <input id="authPass" type="password" autocomplete="current-password" placeholder="" />
+            <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
+          </label>
+
+          <button class="topbar-auth-btn" id="authLoginBtn" type="button">ログイン</button>
+
+          <div class="topbar-auth-state" id="authStateWrap" data-visible="0">
+            <span class="topbar-auth-state-text" id="authStateText">ログイン中: -</span>
+            <button class="topbar-auth-logout" id="authLogoutBtn" type="button">ログアウト</button>
+          </div>
+        </form>
+      `.trim();
+      topbarCreated = true;
+    }
+
+    // Insert only what we created (overlay -> drawer -> topbar)
+    if(overlayCreated){
+      document.body.insertBefore(overlay, document.body.firstChild);
+    }
+    if(drawerCreated){
+      const ref = (overlayExisting || overlay) ? (overlayExisting || overlay) : null;
+      document.body.insertBefore(drawer, ref ? ref.nextSibling : document.body.firstChild);
+    }
+    if(topbarCreated){
+      const ref = (drawerExisting || drawer) ? (drawerExisting || drawer) : ((overlayExisting || overlay) ? (overlayExisting || overlay) : null);
+      document.body.insertBefore(topbar, ref ? ref.nextSibling : document.body.firstChild);
+
+      // Enable body padding only when we inject the shared topbar.
+      document.documentElement.classList.add("ld-common-header-enabled");
+    }
 
     // page name
     const elPage = $("topbarPageName");
     if(elPage) elPage.textContent = `> ${getPageName()}`;
 
-    // measure topbar height -> css var
-    requestAnimationFrame(() => {
-      const h = topbar.getBoundingClientRect().height || 112;
-      document.documentElement.style.setProperty("--ld-topbar-h", `${Math.ceil(h)}px`);
-    });
+    // measure topbar height -> css var (for common_header.css)
+    const tb = document.querySelector(".topbar");
+    if(tb){
+      requestAnimationFrame(() => {
+        const h = tb.getBoundingClientRect().height || 112;
+        document.documentElement.style.setProperty("--ld-topbar-h", `${Math.ceil(h)}px`);
+      });
+    }
   }
 
   function setupDrawer(){
     const btn = $("topbarMenuBtn");
-    if(btn && btn.dataset) btn.dataset.boundDrawer="1";
-    if(btn && btn.dataset && btn.dataset.boundDrawer==="1") return;
     const drawer = $("drawer");
     const overlay = $("drawerOverlay");
-    const btn = $("topbarMenuBtn");
     const closeBtn = $("drawerCloseBtn");
-    if(!drawer || !overlay || !btn || !closeBtn) return;
+
+    if(!btn || !drawer || !overlay) return;
+
+    // Idempotent bind
+    if(btn.dataset && btn.dataset.boundDrawer === "1") return;
 
     function open(){
       drawer.classList.add("open");
@@ -251,17 +303,24 @@
       else open();
     }
 
-    btn.addEventListener("click", (e) => { e.preventDefault(); toggle(); });
-    closeBtn.addEventListener("click", (e) => { e.preventDefault(); close(); });
+    btn.addEventListener("click", (e) => { e.preventDefault(); toggle(); }, { passive: false });
+
+    if(closeBtn){
+      closeBtn.addEventListener("click", (e) => { e.preventDefault(); close(); }, { passive: false });
+    }
+
     overlay.addEventListener("click", () => close());
+
     document.addEventListener("keydown", (e) => {
       if(e.key === "Escape") close();
     });
 
-    // close drawer when clicking a link
+    // Close drawer when clicking any link inside it
     drawer.querySelectorAll("a").forEach(a => {
       a.addEventListener("click", () => close());
     });
+
+    if(btn.dataset) btn.dataset.boundDrawer = "1";
   }
 
   function setLoggedInUI(username){
@@ -439,24 +498,46 @@
   }
 
   function setupAuth(){
+    const form = $("authForm");
     const elUser = $("authUserName");
     const elPass = $("authPass");
     const elLoginBtn = $("authLoginBtn");
     const elLogoutBtn = $("authLogoutBtn");
     if(!elUser || !elPass || !elLoginBtn || !elLogoutBtn) return;
 
+    // Idempotent bind (but still refresh UI)
+    if(form && form.dataset && form.dataset.boundAuth === "1"){
+      updateAuthControls();
+      return;
+    }
+
+    if(form && form.dataset) form.dataset.boundAuth = "1";
+
+    // Prevent form submit (Enter key) from reloading the page
+    if(form){
+      form.addEventListener("submit", (e) => { e.preventDefault(); }, { passive: false });
+    }
+
     elUser.addEventListener("input", updateAuthControls);
     elPass.addEventListener("input", updateAuthControls);
+
+    // Enter key triggers login when possible
+    elPass.addEventListener("keydown", (e) => {
+      if(e.key !== "Enter") return;
+      e.preventDefault();
+      updateAuthControls();
+      if(!elLoginBtn.disabled) handleLogin();
+    }, { passive: false });
 
     elLoginBtn.addEventListener("click", (e) => {
       e.preventDefault();
       handleLogin();
-    });
+    }, { passive: false });
 
     elLogoutBtn.addEventListener("click", (e) => {
       e.preventDefault();
       handleLogout();
-    });
+    }, { passive: false });
 
     // restore
     const saved = loadAuth();
@@ -516,13 +597,17 @@
     // default state
     setLoggedOutUI();
     updateAuthControls();
-    // keep label compact on narrow screens
-    window.addEventListener("resize", () => {
-      const l = $("topbarAuthLabel");
-      if(!l) return;
-      if(l.style.display === "none") return;
-      l.textContent = window.matchMedia("(max-width: 380px)").matches ? "未:" : "未ログイン：";
-    });
+
+    // keep label compact on narrow screens (bind once globally)
+    if(!window.__ld_common_header_resize_bound){
+      window.__ld_common_header_resize_bound = true;
+      window.addEventListener("resize", () => {
+        const l = $("topbarAuthLabel");
+        if(!l) return;
+        if(l.style.display === "none") return;
+        l.textContent = window.matchMedia("(max-width: 380px)").matches ? "未:" : "未ログイン：";
+      });
+    }
   }
 
   function boot(){
