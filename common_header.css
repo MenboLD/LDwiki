@@ -106,19 +106,19 @@ html.ld-common-header-enabled body{
   color: rgba(255,255,255,0.55);
 }
 
-
-/* "ゲスト状態" overlay (shown only when pass is empty) */
 .topbar-auth-ghost{
   position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 13px;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 12px;
   color: var(--ld-ghost);
-  pointer-events: none;
+  font-size: 13px;
+  pointer-events: none; /* allow clicks to reach the input */
   user-select: none;
-  white-space: nowrap;
 }
+
 
 .topbar-auth-btn{
   height: 34px;
@@ -186,7 +186,7 @@ html.ld-common-header-enabled body{
 /* Drawer */
 .drawer-overlay{
   position: fixed;
-  inset: 0;
+  inset: var(--ld-topbar-h) 0 0 0; /* headerの下から暗幕を開始 */
   background: rgba(0,0,0,0.55);
   z-index: 1900;
   opacity: 0;
@@ -201,11 +201,11 @@ html.ld-common-header-enabled body{
 
 .drawer{
   position: fixed;
-  top: 0;
+  top: var(--ld-topbar-h);
   left: 0;
   width: 78vw;
   max-width: 360px;
-  height: 100vh;
+  height: calc(100vh - var(--ld-topbar-h));
   background: var(--ld-panel);
   border-right: 1px solid var(--ld-border);
   z-index: 1950;
@@ -218,7 +218,7 @@ html.ld-common-header-enabled body{
 .drawer.open{ transform: translateX(0); }
 
 .drawer-header{
-  padding: 14px 14px 8px;
+  padding: 12px 14px 6px;
   border-bottom: 1px solid var(--ld-border);
 }
 
@@ -235,13 +235,13 @@ html.ld-common-header-enabled body{
 }
 
 .drawer-close-row{
-  padding: 10px 14px;
+  padding: 8px 14px;
   border-bottom: 1px solid var(--ld-border);
 }
 
 .drawer-close-button{
   width: 100%;
-  height: 40px;
+  height: 36px;
   border-radius: 14px;
   border: 1px solid var(--ld-border);
   background: rgba(255,255,255,0.06);
@@ -251,7 +251,7 @@ html.ld-common-header-enabled body{
 }
 
 .drawer-body{
-  padding: 12px 14px;
+  padding: 10px 14px;
   overflow: auto;
   flex: 1 1 auto;
 }
@@ -261,18 +261,18 @@ html.ld-common-header-enabled body{
   padding: 0;
   margin: 0;
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .drawer-link{
   display: block;
-  padding: 12px 12px;
+  padding: 10px 12px;
   border-radius: 16px;
   border: 1px solid var(--ld-border);
   background: rgba(255,255,255,0.04);
   color: var(--ld-text);
   text-decoration: none;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .drawer-link:active{ transform: translateY(1px); }
@@ -319,10 +319,11 @@ html.ld-common-header-enabled body{
 
 
 /* --- Compact v4 overrides (preserve drawer behavior) --- */
-.topbar{ padding: 8px 10px !important; }
+.topbar{ padding: 0 !important; }
 .topbar-row{ gap: 8px !important; }
 .topbar-row--top{ gap: 10px !important; }
-.topbar-row--auth{ padding: 4px 10px 8px !important; }
+.topbar-row--auth{ padding: 3px 10px 6px !important; }
+.topbar-row--primary{ padding: 8px 10px 4px !important; }
 .topbar-title{ font-size: 14px !important; line-height: 1.2 !important; }
 .topbar-page{ font-size: 12px !important; line-height: 1.2 !important; }
 .topbar-auth-label{ font-size: 12px !important; }
