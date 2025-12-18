@@ -292,3 +292,24 @@ html.ld-common-header-enabled body{
   .topbar-auth-btn{ padding: 0 10px; font-size: 13px; }
   .topbar-auth-field input{ height: 32px; font-size: 13px; }
 }
+
+
+/* --- Compact v2 overrides (iPhone SE friendly) --- */
+:root{
+  --topbar-padding: 10px;
+  --topbar-row-gap: 3px;
+  --topbar-title-size: 14px;
+  --topbar-subtitle-size: 12px;
+  --auth-input-h: 28px;
+  --auth-btn-h: 28px;
+  --menu-btn-size: 40px;
+}
+.topbar{ padding: var(--topbar-padding); }
+.topbar-row{ gap: 8px; }
+.topbar-row--top{ gap: 10px; }
+.topbar-row--auth{ padding: 6px 10px 8px; }
+.topbar-title{ font-size: var(--topbar-title-size); }
+.topbar-page{ font-size: var(--topbar-subtitle-size); }
+.topbar-auth-input{ height: var(--auth-input-h); }
+.topbar-auth-btn, .topbar-auth-logout{ height: var(--auth-btn-h); }
+.menu-btn{ width: var(--menu-btn-size); height: var(--menu-btn-size); }
