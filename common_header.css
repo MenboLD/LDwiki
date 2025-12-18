@@ -11,7 +11,7 @@
   --ld-accent: #7dd3fc;
   --ld-danger: #ff6b6b;
   --ld-topbar-h: 112px; /* JS will update */
-  --ld-content-top-gap: 8px; /* page content gap below header */
+  --ld-content-top-gap: 0px; /* page content gap below header (blue-circle extra space reduction) */
   --ld-drawer-top-gap: 2px; /* menu starts slightly below header */
 }
 
@@ -283,3 +283,23 @@ html.ld-common-header-enabled body{
   .topbar-auth-field input{ height: 32px; font-size: 13px; }
 }
 .drawer-link--soon{ opacity: 0.72; }
+
+/* ------------------------------------------------------------
+   Page-local CSS (e.g. index.css) may also define .drawer/.page.
+   To prevent the menu from being hidden behind the fixed header
+   (red-circle) and to avoid double top-spacing (blue-circle),
+   we re-apply the critical layout values with higher specificity.
+   ------------------------------------------------------------ */
+html.ld-common-header-enabled .drawer-overlay{
+  inset: calc(var(--ld-topbar-h) + var(--ld-drawer-top-gap)) 0 0 0;
+}
+
+html.ld-common-header-enabled .drawer{
+  top: calc(var(--ld-topbar-h) + var(--ld-drawer-top-gap));
+  height: calc(100dvh - var(--ld-topbar-h) - var(--ld-drawer-top-gap));
+}
+
+html.ld-common-header-enabled .page{
+  /* body already has padding-top for the fixed header */
+  padding-top: 16px;
+}
