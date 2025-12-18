@@ -1,5 +1,8 @@
 /* common_header.js
-   Injects shared header + drawer, handles auth state (RPC-based).
+   Shared header logic for LDwiki (no fetch).
+   - If the page already has header/drawer HTML, this script only binds + updates.
+   - If the page does NOT have header/drawer HTML, it injects a minimal header/drawer.
+   - Idempotent: safe even if loaded multiple times.
 */
 (() => {
   'use strict';
@@ -12,6 +15,15 @@
 
   const SITE_TITLE = "ラッキー傭兵団 攻略 wiki";
   const DRAWER_SUBTITLE = "(試験運用・作成中)";
+
+  const MAIN_MENU_ITEMS = [
+    { text: "トップページ", href: "index.html" },
+    { text: "情報掲示板", href: "ld_board.html" },
+    { text: "ユーザー情報", href: "ld_users.html" },
+    { text: "攻略の手引き", href: "#", soon: true },
+    { text: "各種データ", href: "#", soon: true },
+    { text: "データツール", href: "#", soon: true }
+  ];
 
   function $(id){ return document.getElementById(id); }
   function safeTrim(v){ return (v || "").trim(); }
@@ -144,9 +156,19 @@
     return name || "トップ";
   }
 
+  function hasAnyHeaderMarkup(){
+    return !!(
+      document.getElementById("topbarMenuBtn") ||
+      document.getElementById("authForm") ||
+      document.getElementById("drawer") ||
+      document.getElementById("drawerOverlay") ||
+      document.querySelector(".topbar")
+    );
+  }
+
   function injectHeader(){
-    if(document.getElementById("ldCommonHeader")) return;
-    if(document.getElementById("ldCommonTopbar")) return;
+    // Do NOT inject if the page already provides header/drawer markup.
+    if(hasAnyHeaderMarkup()) return;
 
     document.documentElement.classList.add("ld-common-header-enabled");
 
@@ -228,6 +250,55 @@
     });
   }
 
+  function normalizeExistingHeader(){
+    // Ensure common layout is enabled even when header HTML is written directly in the page.
+    document.documentElement.classList.add("ld-common-header-enabled");
+
+    // page name
+    const elPage = $("topbarPageName");
+    if(elPage) elPage.textContent = `> ${getPageName()}`;
+
+    // Remove legacy footer note (not needed now)
+    const drawerFooter = document.querySelector(".drawer-footer");
+    if(drawerFooter) drawerFooter.remove();
+
+    // Update main menu group texts/hrefs (until first separator)
+    const nav = document.querySelector(".drawer-nav");
+    if(nav){
+      const children = Array.from(nav.children);
+      const mainLis = [];
+      for(const li of children){
+        if(li && li.classList && li.classList.contains("drawer-group-separator")) break;
+        mainLis.push(li);
+      }
+      const n = Math.min(mainLis.length, MAIN_MENU_ITEMS.length);
+      for(let i=0; i<n; i++){
+        const li = mainLis[i];
+        const a = li ? li.querySelector("a") : null;
+        if(!a) continue;
+        const m = MAIN_MENU_ITEMS[i];
+        a.textContent = m.text;
+        a.setAttribute("href", m.href);
+        if(m.soon){
+          a.dataset.soon = "1";
+          a.classList.add("drawer-link--soon");
+        }else{
+          a.removeAttribute("data-soon");
+          a.classList.remove("drawer-link--soon");
+        }
+      }
+    }
+
+    // measure topbar height -> css var
+    const topbar = document.querySelector(".topbar");
+    if(topbar){
+      requestAnimationFrame(() => {
+        const h = topbar.getBoundingClientRect().height || 112;
+        document.documentElement.style.setProperty("--ld-topbar-h", `${Math.ceil(h)}px`);
+      });
+    }
+  }
+
   function setupDrawer(){
     const btn = $("topbarMenuBtn");
     const drawer = $("drawer");
@@ -261,6 +332,20 @@
     drawer.querySelectorAll("a").forEach(a => {
       a.addEventListener("click", () => close());
     });
+  }
+
+  function setupSoonLinks(){
+    // event delegation: do not add listeners to every link
+    const root = document.documentElement;
+    if(root.dataset && root.dataset.ldSoonBound === "1") return;
+    if(root.dataset) root.dataset.ldSoonBound = "1";
+
+    document.addEventListener("click", (e) => {
+      const a = e.target?.closest?.('a[data-soon="1"]');
+      if(!a) return;
+      e.preventDefault();
+      toast("準備中です", 1200);
+    }, { passive: false });
   }
 
   function setLoggedInUI(username){
@@ -444,6 +529,10 @@
     const elLogoutBtn = $("authLogoutBtn");
     if(!elUser || !elPass || !elLoginBtn || !elLogoutBtn) return;
 
+    // Idempotent bind guard
+    if(elLoginBtn.dataset && elLoginBtn.dataset.boundAuth === "1") return;
+    if(elLoginBtn.dataset) elLoginBtn.dataset.boundAuth = "1";
+
     elUser.addEventListener("input", updateAuthControls);
     elPass.addEventListener("input", updateAuthControls);
 
@@ -527,7 +616,9 @@
   function boot(){
     if(!document.body) return;
     injectHeader();
+    normalizeExistingHeader();
     setupDrawer();
+    setupSoonLinks();
     setupAuth();
   }
 

@@ -12,6 +12,7 @@
   --ld-danger: #ff6b6b;
   --ld-topbar-h: 112px; /* JS will update */
   --ld-content-top-gap: 8px; /* page content gap below header */
+  --ld-drawer-top-gap: 2px; /* menu starts slightly below header */
 }
 
 html.ld-common-header-enabled body{
@@ -174,8 +175,7 @@ html.ld-common-header-enabled body{
 /* Drawer */
 .drawer-overlay{
   position: fixed;
-  inset: 0;
-  top: var(--ld-topbar-h);
+  inset: calc(var(--ld-topbar-h) + var(--ld-drawer-top-gap)) 0 0 0; /* ヘッダー下から暗幕を開始 */
   background: rgba(0,0,0,0.55);
   z-index: 1900;
   opacity: 0;
@@ -190,8 +190,8 @@ html.ld-common-header-enabled body{
 
 .drawer{
   position: fixed;
-  top: var(--ld-topbar-h);
-  height: calc(100dvh - var(--ld-topbar-h));
+  top: calc(var(--ld-topbar-h) + var(--ld-drawer-top-gap));
+  height: calc(100dvh - var(--ld-topbar-h) - var(--ld-drawer-top-gap));
   left: 0;
   width: 78vw;
   max-width: 360px;
@@ -262,16 +262,13 @@ html.ld-common-header-enabled body{
   background: rgba(255,255,255,0.04);
   color: var(--ld-text);
   text-decoration: none;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .drawer-link:active{ transform: translateY(1px); }
 
 .drawer-footer{
-  padding: 12px 14px 16px;
-  border-top: 1px solid var(--ld-border);
-  color: var(--ld-muted);
-  font-size: 12px;
+  display: none !important; /* 余計な注記は非表示（必要なら後日復活） */
 }
 
 /* Small screens */
@@ -285,46 +282,4 @@ html.ld-common-header-enabled body{
   .topbar-auth-btn{ padding: 0 10px; font-size: 13px; }
   .topbar-auth-field input{ height: 32px; font-size: 13px; }
 }
-
-
-/* --- Compact v2 overrides (iPhone SE friendly) --- */
-:root{
-  --topbar-padding: 10px;
-  --topbar-row-gap: 3px;
-  --topbar-title-size: 14px;
-  --topbar-subtitle-size: 12px;
-  --auth-input-h: 28px;
-  --auth-btn-h: 28px;
-  --menu-btn-size: 40px;
-}
-.topbar{ padding: var(--topbar-padding); }
-.topbar-row{ gap: 8px; }
-.topbar-row--top{ gap: 10px; }
-.topbar-row--auth{ padding: 6px 10px 8px; }
-.topbar-title{ font-size: var(--topbar-title-size); }
-.topbar-page{ font-size: var(--topbar-subtitle-size); }
-.topbar-auth-input{ height: var(--auth-input-h); }
-.topbar-auth-btn, .topbar-auth-logout{ height: var(--auth-btn-h); }
-.menu-btn{ width: var(--menu-btn-size); height: var(--menu-btn-size); }
-
-
-/* --- Compact v4 overrides (preserve drawer behavior) --- */
-.topbar{ padding: 8px 10px !important; }
-.topbar-row{ gap: 8px !important; }
-.topbar-row--top{ gap: 10px !important; }
-.topbar-row--auth{ padding: 4px 10px 8px !important; }
-.topbar-title{ font-size: 14px !important; line-height: 1.2 !important; }
-.topbar-page{ font-size: 12px !important; line-height: 1.2 !important; }
-.topbar-auth-label{ font-size: 12px !important; }
-.topbar-auth-input{ height: 28px !important; padding: 0 10px !important; }
-.topbar-auth-btn, .topbar-auth-logout{ height: 28px !important; }
-.menu-btn{ width: 40px !important; height: 40px !important; }
-
-/* Ensure the auth row doesn't reserve extra height */
-.topbar-row--auth, .topbar-row--top{ min-height: 0 !important; }
-
-
-/* Hide legacy drawer footer note */
-.drawer-footer{ display: none; }
-
 .drawer-link--soon{ opacity: 0.72; }
