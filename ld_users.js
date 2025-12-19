@@ -52,9 +52,8 @@
 
   const userNameInput = $("userNameInput");
   const userPassInput = $("userPassInput");
-  const registerBtn = $("registerBtn");
-  const editBtn = $("editBtn");
-  const userStatusLabel = $("userStatusLabel");
+  const userActionBtn = $("userActionBtn");
+      const userStatusLabel = $("userStatusLabel");
   const headerStats = $("headerStats");
 
   const formModeLabel = $("formModeLabel");
@@ -410,11 +409,17 @@
       refreshProceedEnabled();
     });
 
-          enterEditFlow(mode);
-    });
-
-    registerBtn.addEventListener("click", () => enterEditFlow("register"));
-    editBtn.addEventListener("click", () => enterEditFlow("edit"));
+    
+    if (userActionBtn) {
+      userActionBtn.addEventListener("click", async () => {
+        const name = safeTrim(userNameInput.value);
+        const pass = safeTrim(userPassInput.value);
+        if (!name || !pass) return;
+        const mode = (userExistsKnown && userExists) ? "edit" : "register";
+        await enterEditFlow(mode, name, pass);
+      });
+    }
+});
 
     btnBackHome.addEventListener("click", showHome);
     btnSaveUser.addEventListener("click", onSave);
