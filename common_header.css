@@ -74,3 +74,20 @@
 .page{
   padding-top: calc(var(--ld-topbar-h) + 10px) !important;
 }
+
+
+/* auth pass textarea (iOS IME workaround) */
+.topbar-auth-field textarea.auth-pass-ta{
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.92);
+  outline: none;
+  resize: none;
+  height: 34px;
+  line-height: 18px;
+  overflow: hidden;
+}

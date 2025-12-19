@@ -270,7 +270,7 @@
         </label>
 
         <label class="topbar-auth-field" aria-label="パス">
-          <input id="authPass" type="text" autocomplete="off" placeholder="" / inputmode="text" name="ldpass" lang="ja" autocorrect="off">
+          <textarea id="authPass" class="auth-pass-ta" rows="1" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ゲスト状態"></textarea>
           <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
         </label>
 
