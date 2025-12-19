@@ -9,15 +9,13 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
 
-  <!-- Supabase config -->
-  <script defer src="./supabase_config.js?v=20251219f"></script>
-
   <!-- Common Header -->
-  <link rel="stylesheet" href="./common_header.css?v=20251219f" />
-  <script defer src="./common_header.js?v=20251219f"></script>
+  <link rel="stylesheet" href="./common_header.css?v=20251219g" />
+  <script defer src="./supabase_config.js?v=20251219g"></script>
+  <script defer src="./common_header.js?v=20251219g"></script>
 
   <!-- Page CSS -->
-  <link rel="stylesheet" href="./ld_users.css?v=20251219f" />
+  <link rel="stylesheet" href="./ld_users.css?v=20251219a" />
 </head>
 
 <body data-page-name="ユーザー情報">
@@ -35,22 +33,20 @@
         <div class="home-form">
           <label class="home-label">
             ユーザー名
-            <input id="userNameInput" type="text" inputmode="text" maxlength="16" placeholder="最大 全角8文字 / 半角16文字" autocomplete="off" />
+            <input id="userNameInput" type="text" maxlength="16" placeholder="最大 全角8文字 / 半角16文字" autocomplete="username" />
           </label>
 
           <label class="home-label">
             パス
-            <input id="userPassInput" type="text" inputmode="text" maxlength="24" placeholder="（未入力）" autocomplete="off" autocapitalize="off" spellcheck="false" />
+            <input id="userPassInput" type="password" maxlength="24" placeholder="（未入力）" autocomplete="current-password" disabled />
           </label>
+
+          <button id="userActionBtn" type="button" class="home-action-btn" disabled>続ける</button>
         </div>
 
         <div class="home-status-row">
           <span id="userStatusLabel" class="home-status-label">ユーザー名を入力してください</span>
           <span id="headerStats" class="home-status-label home-status-right"></span>
-        </div>
-
-        <div class="home-actions">
-          <button id="userActionBtn" type="button" class="home-action-btn" disabled>続ける</button>
         </div>
 
         <div class="card-title" style="margin-top:10px;">注意</div>
@@ -71,7 +67,7 @@
 
         <div class="field">
           <label for="inputPass">パス（本人確認）</label>
-          <input id="inputPass" type="text" inputmode="text" autocapitalize="off" spellcheck="false" autocomplete="off" maxlength="24" autocomplete="current-password" />
+          <input id="inputPass" type="password" maxlength="24" autocomplete="current-password" />
         </div>
 
         <div class="field">
@@ -107,6 +103,6 @@
     <div id="toast" class="toast"></div>
   </div>
 
-  <script type="module" src="./ld_users.js?v=20251219f"></script>
+  <script type="module" src="./ld_users.js?v=20251219a"></script>
 </body>
 </html>

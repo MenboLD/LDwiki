@@ -1,4 +1,4 @@
-html, body { overflow-x: hidden; }
+body{ padding-top: calc(var(--ld-topbar-h) + 10px); }
 :root{
   --bg: #0b0f14;
   --surface: #111823;
@@ -54,7 +54,13 @@ body{
   line-height: 1.45;
 }
 
-.home-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.home-form{
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: end;
+}
 
 .home-label{
   display:flex;
@@ -196,7 +202,3 @@ body{
   z-index: 50;
 }
 .toast.show{ opacity:1; transform: translateY(0); }
-
-.home-actions{margin-top:10px;display:flex;flex-direction:column;gap:10px;}
-
-.home-action-btn{width:100%;min-height:44px;}
