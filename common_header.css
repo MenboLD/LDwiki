@@ -1,83 +1,151 @@
-/* common_header.css (overrides / shared tweaks)
-   - Align drawer to fixed 2-row header
-   - Reduce drawer vertical footprint (no title/subtitle/footer)
-   - Auth pass field: guest/needpass visual states
+/* common_header.css (self-contained, page-independent)
+   - Header + Drawer styles must not depend on page CSS (index/ld_users/etc).
 */
-
 :root{
-  /* JS will update --ld-topbar-h at runtime (topbarWrap height). */
   --ld-topbar-h: 88px;
-  --ld-drawer-top-gap: 2px;
-
-  --ld-auth-disabled-bg: rgba(255,255,255,0.06);
-  --ld-auth-disabled-border: rgba(255,255,255,0.12);
-  --ld-auth-disabled-text: rgba(255,255,255,0.35);
-
-  --ld-auth-needpass-border: rgba(255,80,80,0.78);
+  --ld-bg: #070a11;
+  --ld-border: rgba(255,255,255,0.12);
+  --ld-text: rgba(255,255,255,0.92);
+  --ld-sub: rgba(255,255,255,0.68);
+  --ld-accent: #3fbfff;
+  --ld-ok: #48e39a;
+  --ld-danger: #ff4d4f;
 }
 
-/* Drawer and overlay should start below fixed header */
-#drawer.drawer{
-  top: calc(var(--ld-topbar-h) + var(--ld-drawer-top-gap)) !important;
-  height: calc(100dvh - (var(--ld-topbar-h) + var(--ld-drawer-top-gap))) !important;
-}
-#drawerOverlay.drawer-overlay{
-  top: calc(var(--ld-topbar-h) + var(--ld-drawer-top-gap)) !important;
-  height: calc(100dvh - (var(--ld-topbar-h) + var(--ld-drawer-top-gap))) !important;
-}
-
-/* Slightly smaller menu items to maximize visible list */
-.drawer-link{
-  font-size: 13px !important;
-  line-height: 1.2;
-  padding-top: 10px;
-  padding-bottom: 10px;
+html, body{
+  margin:0; padding:0;
+  background: radial-gradient(1200px 600px at 60% 0%, rgba(63,191,255,0.08), transparent 55%),
+              radial-gradient(900px 500px at 10% 30%, rgba(131,97,255,0.06), transparent 55%),
+              var(--ld-bg);
+  color: var(--ld-text);
+  overflow-x: hidden;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
 }
 
-/* Auth field states */
-.topbar-auth-field.is-guest input#authPass,
-#authPass.ld-pass-guest,
-#authPass:disabled{
-  background: var(--ld-auth-disabled-bg) !important;
-  border-color: var(--ld-auth-disabled-border) !important;
-  color: var(--ld-auth-disabled-text) !important;
-  cursor: not-allowed !important;
-  filter: grayscale(0.35);
-}
-.topbar-auth-field.is-guest input#authPass::placeholder,
-#authPass.ld-pass-guest::placeholder,
-#authPass:disabled::placeholder{
-  color: rgba(255,255,255,0.28) !important;
-}
-.topbar-auth-field.is-guest .topbar-auth-ghost{
-  opacity: 0.85;
+/* --- Topbar --- */
+.topbar{
+  position: fixed;
+  top:0; left:0; right:0;
+  z-index: 1200;
+  background: rgba(6,8,12,0.92);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--ld-border);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  padding: 8px 10px;
+  display:flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-/* Need-pass emphasis (thicker red feel without resizing the input box) */
-.topbar-auth-field.is-needpass input#authPass,
-#authPass.ld-pass-needed{
-  border-color: var(--ld-auth-needpass-border) !important;
-  box-shadow: 0 0 0 1px var(--ld-auth-needpass-border) inset, 0 0 0 1px rgba(0,0,0,0.25) !important;
-  outline: 1px dotted var(--ld-auth-needpass-border);
-  outline-offset: 0;
+.topbar-row{ display:flex; align-items:center; gap:8px; }
+.topbar-row--primary{ justify-content: space-between; }
+.topbar-title{ font-weight:700; font-size: 14px; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; max-width: 55%; }
+.topbar-page{ font-size: 12px; color: var(--ld-sub); white-space: nowrap; overflow:hidden; text-overflow: ellipsis; }
+
+.topbar-menu-btn{
+  all: unset;
+  width: 38px; height: 32px;
+  border-radius: 10px;
+  display:flex; align-items:center; justify-content:center;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(63,191,255,0.10);
+  cursor: pointer;
+  user-select:none;
 }
-.topbar-auth-field.is-needpass .topbar-auth-ghost,
-.topbar-auth-ghost.ld-ghost-needed{
-  color: rgba(255,120,120,0.95) !important;
+.topbar-menu-btn:active{ transform: translateY(1px); }
+
+.topbar-row--auth{ flex-wrap: wrap; }
+.topbar-auth-label{ font-size: 12px; color: var(--ld-sub); }
+.topbar-auth-field{ flex: 1 1 140px; min-width: 120px; }
+.topbar-auth-field input{
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.08);
+  color: var(--ld-text);
+  outline: none;
 }
 
-/* If some pages add too-large top padding, normalize it to header height + small gap */
-.page{
-  padding-top: calc(var(--ld-topbar-h) + 10px) !important;
+.topbar-auth-btn{
+  flex: 0 0 auto;
+  padding: 7px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(63,191,255,0.35);
+  background: rgba(63,191,255,0.18);
+  color: var(--ld-text);
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-
-/* Prevent horizontal scrolling caused by wide fixed elements */
-html, body { overflow-x: hidden; }
-
-/* Locked login button state */
 .topbar-auth-btn.is-locked{
-  background: rgba(255, 60, 60, 0.85) !important;
-  border-color: rgba(255, 60, 60, 0.95) !important;
-  color: #fff !important;
+  border-color: rgba(255,255,255,0.22);
+  background: var(--ld-danger);
+  color: #fff;
+  cursor: not-allowed;
 }
+
+.topbar-auth-state{ display:none; gap:8px; align-items:center; }
+.topbar-auth-state-text{ color: var(--ld-ok); font-weight: 700; }
+.topbar-auth-logout{
+  all: unset;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.08);
+}
+
+/* --- Drawer --- */
+.drawer{
+  position: fixed;
+  top: calc(var(--ld-topbar-h) + 2px);
+  left: 0;
+  width: min(280px, 80vw);
+  height: calc(100dvh - (var(--ld-topbar-h) + 2px));
+  background: linear-gradient(135deg, #05070c, #151927);
+  border-right: 1px solid var(--ld-border);
+  box-shadow: 0 0 30px rgba(0,0,0,0.7);
+  transform: translateX(-100%);
+  transition: transform 0.22s ease-out;
+  z-index: 1100;
+  overflow-y: auto;
+}
+
+.drawer.open{ transform: translateX(0); }
+
+.drawer-overlay{
+  position: fixed;
+  top: calc(var(--ld-topbar-h) + 2px);
+  left: 0; right: 0;
+  height: calc(100dvh - (var(--ld-topbar-h) + 2px));
+  background: rgba(0,0,0,0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease-out;
+  z-index: 1050;
+}
+.drawer-overlay.visible{ opacity: 1; pointer-events: auto; }
+
+.drawer-body{ padding: 10px 8px 12px; }
+.drawer-close-row{ display:flex; justify-content:flex-end; padding: 4px 6px 10px; }
+.drawer-close-button{
+  all: unset; cursor: pointer; color: var(--ld-accent);
+  font-size: 12px; padding: 4px 8px; border-radius: 10px;
+}
+.drawer-close-button:hover{ background: rgba(63,191,255,0.12); }
+
+.drawer-nav{ list-style:none; margin:0; padding:0; }
+.drawer-nav > li{ margin: 2px 0; }
+.drawer-link{
+  display:block;
+  padding: 10px 10px;
+  border-radius: 10px;
+  color: var(--ld-text);
+  text-decoration:none;
+  font-size: 13px;
+}
+.drawer-link:hover{ background: rgba(63,191,255,0.12); }
+.drawer-link--soon{ opacity: 0.55; }
+.drawer-group-separator{ height: 10px; }
