@@ -7,8 +7,8 @@
 (() => {
   'use strict';
 
-  const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
+  const SUPABASE_URL = window.LD_SUPABASE_URL || "https://teggcuiyqkbcvbhdntni.supabase.co";
+  const SUPABASE_ANON_KEY = window.LD_SUPABASE_ANON_KEY || "";
 
   const AUTH_STORAGE_KEY = "ld_auth_v1";
   const LOCK_PREFIX = "ld_users_lock:";
@@ -270,7 +270,7 @@
         </label>
 
         <label class="topbar-auth-field" aria-label="パス">
-          <input id="authPass" type="password" autocomplete="current-password" placeholder="" />
+          <input id="authPass" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="" />
           <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
         </label>
 
@@ -283,27 +283,10 @@
       </form>
     `.trim();
 
-    
-    // Ensure password input allows full-width and is visible (no ● masking).
-    // Some pages may ship static markup (e.g., index.html). Normalize here.
-    const existingPass = document.getElementById("authPass");
-    if (existingPass) {
-      try { existingPass.type = "text"; } catch (_) {}
-      existingPass.setAttribute("inputmode", "text");
-      existingPass.setAttribute("autocomplete", "off");
-      existingPass.setAttribute("autocapitalize", "off");
-      existingPass.setAttribute("spellcheck", "false");
-    }
-
-// Drawer + overlay
-    let drawer = document.getElementById("drawer");
-    if (!drawer) {
-      drawer = document.createElement("nav");
-      drawer.className = "drawer";
-      drawer.id = "drawer";
-    } else {
-      drawer.className = "drawer";
-    }
+    // Drawer + overlay
+    const drawer = document.createElement("nav");
+    drawer.className = "drawer";
+    drawer.id = "drawer";
     drawer.setAttribute("aria-label", "サイトメニュー");
     drawer.innerHTML = `
 <div class="drawer-close-row">
@@ -313,34 +296,24 @@
         <ul class="drawer-nav">
           <li><a class="drawer-link" href="index.html">トップページ</a></li>
           <li><a class="drawer-link" href="ld_board.html">情報掲示板</a></li>
-          <li><a class="drawer-link" href="ld_users.html">ユーザーデータベース</a></li>
-
+          <li><a class="drawer-link" href="ld_users.html">ユーザー情報</a></li>
           <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">攻略の手引き</a></li>
-          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">ユニットDB</a></li>
+          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">各種データ</a></li>
           <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">データツール</a></li>
-          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">サイトについて</a></li>
-          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">利用ルール</a></li>
-          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">更新履歴</a></li>
-          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">編集者ログイン / ログアウト</a></li>
         </ul>
       </div>
     `.trim();
 
-    let overlay = document.getElementById("drawerOverlay");
-    if (!overlay) {
-      overlay = document.createElement("div");
-      overlay.className = "drawer-overlay";
-      overlay.id = "drawerOverlay";
-    } else {
-      overlay.className = "drawer-overlay";
-      overlay.id = "drawerOverlay";
-    }
+    const overlay = document.createElement("div");
+    overlay.className = "drawer-overlay";
+    overlay.id = "drawerOverlay";
 
-    // Insert at top of body (if not already present)
-    if (!overlay.isConnected) document.body.insertBefore(overlay, document.body.firstChild);
-    if (!drawer.isConnected) document.body.insertBefore(drawer, overlay.nextSibling);
-    if (!topbar.isConnected) document.body.insertBefore(topbar, drawer.nextSibling);
-// page name
+    // Insert at top of body
+    document.body.insertBefore(overlay, document.body.firstChild);
+    document.body.insertBefore(drawer, overlay.nextSibling);
+    document.body.insertBefore(topbar, drawer.nextSibling);
+
+    // page name
     const elPage = $("topbarPageName");
     if(elPage) elPage.textContent = `> ${getPageName()}`;
 
