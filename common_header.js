@@ -270,7 +270,7 @@
         </label>
 
         <label class="topbar-auth-field" aria-label="パス">
-          <input id="authPass" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" autocomplete="current-password" placeholder="" />
+          <input id="authPass" type="text" autocomplete="off" placeholder="" / inputmode="text" name="ldpass" lang="ja" autocorrect="off">
           <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
         </label>
 
@@ -300,9 +300,6 @@
           <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">攻略の手引き</a></li>
           <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">各種データ</a></li>
           <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">データツール</a></li>
-            <li><a href="./about.html">サイトについて</a></li>
-            <li><a href="./rules.html">利用ルール</a></li>
-            <li><a href="./updates.html">更新履歴</a></li>
         </ul>
       </div>
     `.trim();
