@@ -270,7 +270,7 @@
         </label>
 
         <label class="topbar-auth-field" aria-label="パス">
-          <textarea id="authPass" class="auth-pass-ta" rows="1" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ゲスト状態"></textarea>
+          <input id="authKey" type="password" autocomplete="current-password" placeholder="" / name="key" lang="ja" inputmode="text" autocapitalize="off" spellcheck="false">
           <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
         </label>
 
@@ -439,7 +439,7 @@
   function setLoggedInUI(username){
     const elLabel = $("topbarAuthLabel");
     const elUser = $("authUserName");
-    const elPass = $("authPass");
+    const elPass = $("authKey");
     const elGhost = $("authGhost");
     const elLoginBtn = $("authLoginBtn");
     const elStateWrap = $("authStateWrap");
@@ -461,7 +461,7 @@
   function setLoggedOutUI(){
     const elLabel = $("topbarAuthLabel");
     const elUser = $("authUserName");
-    const elPass = $("authPass");
+    const elPass = $("authKey");
     const elGhost = $("authGhost");
     const elLoginBtn = $("authLoginBtn");
     const elStateWrap = $("authStateWrap");
@@ -482,7 +482,7 @@
 
   function updateAuthControls(){
     const elUser = $("authUserName");
-    const elPass = $("authPass");
+    const elPass = $("authKey");
     const elGhost = $("authGhost");
     const elLoginBtn = $("authLoginBtn");
 
@@ -615,7 +615,7 @@
 
   async function handleLogin(){
     const elUser = $("authUserName");
-    const elPass = $("authPass");
+    const elPass = $("authKey");
     if(!elUser || !elPass) return;
 
     const username = safeTrim(elUser.value);
@@ -714,7 +714,7 @@ if(!pass){
     const username = safeTrim(elUser ? elUser.value : "");
     clearAuthKeepUsername(username);
     setLoggedOutUI();
-    const elPass = $("authPass");
+    const elPass = $("authKey");
     if(elPass) elPass.value = "";
     updateAuthControls();
     dispatchAuthChanged(loadAuth());
@@ -723,7 +723,7 @@ if(!pass){
 
   function setupAuth(){
     const elUser = $("authUserName");
-    const elPass = $("authPass");
+    const elPass = $("authKey");
     const elLoginBtn = $("authLoginBtn");
     const elLogoutBtn = $("authLogoutBtn");
     if(!elUser || !elPass || !elLoginBtn || !elLogoutBtn) return;
