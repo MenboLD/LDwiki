@@ -3,19 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="format-detection" content="telephone=no" />
 
   <title>ユーザー情報</title>
   <link rel="icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
 
+  <!-- Supabase config (set your real anon key once) -->
+  <script>
+    window.LD_SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
+    window.LD_SUPABASE_ANON_KEY = "PASTE_YOUR_REAL_ANON_KEY_HERE";
+  </script>
+
   <!-- Common Header -->
-  <link rel="stylesheet" href="./common_header.css?v=20251219g" />
-  <script defer src="./supabase_config.js?v=20251219g"></script>
-  <script defer src="./common_header.js?v=20251219g"></script>
+  <link rel="stylesheet" href="./common_header.css?v=20251219b" />
+  <script defer src="./common_header.js?v=20251219b"></script>
 
   <!-- Page CSS -->
-  <link rel="stylesheet" href="./ld_users.css?v=20251219a" />
+  <link rel="stylesheet" href="./ld_users.css?v=20251219b" />
 </head>
 
 <body data-page-name="ユーザー情報">
@@ -33,15 +39,17 @@
         <div class="home-form">
           <label class="home-label">
             ユーザー名
-            <input id="userNameInput" type="text" maxlength="16" placeholder="最大 全角8文字 / 半角16文字" autocomplete="username" />
+            <input id="userNameInput" type="text" inputmode="text" maxlength="16" placeholder="最大 全角8文字 / 半角16文字" autocomplete="username" />
           </label>
 
           <label class="home-label">
             パス
-            <input id="userPassInput" type="password" maxlength="24" placeholder="（未入力）" autocomplete="current-password" disabled />
+            <input id="userPassInput" type="text" inputmode="text" maxlength="24" placeholder="（未入力）" autocomplete="current-password" />
           </label>
 
-          <button id="userActionBtn" type="button" class="home-action-btn" disabled>続ける</button>
+          <div class="home-actions">
+            <button id="userActionBtn" type="button" class="home-action-btn" disabled>続ける</button>
+          </div>
         </div>
 
         <div class="home-status-row">
@@ -67,7 +75,7 @@
 
         <div class="field">
           <label for="inputPass">パス（本人確認）</label>
-          <input id="inputPass" type="password" maxlength="24" autocomplete="current-password" />
+          <input id="inputPass" type="text" inputmode="text" maxlength="24" autocomplete="current-password" />
         </div>
 
         <div class="field">
@@ -79,7 +87,7 @@
           <button id="unitAccordionToggle" type="button" class="accordion-toggle">▼育成状態（JSON / 仮）</button>
           <div id="unitAccordionBody" class="accordion-body">
             <div class="note-sub">※育成状態のカードUIは後日実装。現状はJSONで保存します。</div>
-            <textarea id="mythicStateJson" class="json-box" spellcheck="false" placeholder="{}"></textarea>
+            <textarea id="mythicJson" class="json-box" spellcheck="false" placeholder="{}"></textarea>
             <div class="btn-row" style="margin-top:6px;">
               <button id="btnJsonReset" type="button" class="btn-secondary">{} に戻す</button>
               <button id="btnJsonFormat" type="button" class="btn-secondary">整形</button>
@@ -102,7 +110,5 @@
 
     <div id="toast" class="toast"></div>
   </div>
-
-  <script type="module" src="./ld_users.js?v=20251219a"></script>
 </body>
 </html>

@@ -26,10 +26,6 @@
   height: calc(100dvh - (var(--ld-topbar-h) + var(--ld-drawer-top-gap))) !important;
 }
 
-/* Remove redundant drawer header/footer to save vertical space */
-.drawer-header{ display:none !important; }
-.drawer-footer{ display:none !important; }
-
 /* Slightly smaller menu items to maximize visible list */
 .drawer-link{
   font-size: 13px !important;
@@ -75,4 +71,13 @@
   padding-top: calc(var(--ld-topbar-h) + 10px) !important;
 }
 
-.topbar-auth-state-text{ color: #58ff9a; font-weight: 700; }
+
+/* Prevent horizontal scrolling caused by wide fixed elements */
+html, body { overflow-x: hidden; }
+
+/* Locked login button state */
+.topbar-auth-btn.is-locked{
+  background: rgba(255, 60, 60, 0.85) !important;
+  border-color: rgba(255, 60, 60, 0.95) !important;
+  color: #fff !important;
+}
