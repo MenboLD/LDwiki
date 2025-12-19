@@ -270,7 +270,7 @@
         </label>
 
         <label class="topbar-auth-field" aria-label="パス">
-          <input id="authPass" type="text" autocomplete="current-password" placeholder="" / inputmode="text">
+          <input id="authPass" type="password" autocomplete="current-password" placeholder="" />
           <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
         </label>
 
@@ -283,10 +283,27 @@
       </form>
     `.trim();
 
-    // Drawer + overlay
-    const drawer = document.createElement("nav");
-    drawer.className = "drawer";
-    drawer.id = "drawer";
+    
+    // Ensure password input allows full-width and is visible (no ● masking).
+    // Some pages may ship static markup (e.g., index.html). Normalize here.
+    const existingPass = document.getElementById("authPass");
+    if (existingPass) {
+      try { existingPass.type = "text"; } catch (_) {}
+      existingPass.setAttribute("inputmode", "text");
+      existingPass.setAttribute("autocomplete", "off");
+      existingPass.setAttribute("autocapitalize", "off");
+      existingPass.setAttribute("spellcheck", "false");
+    }
+
+// Drawer + overlay
+    let drawer = document.getElementById("drawer");
+    if (!drawer) {
+      drawer = document.createElement("nav");
+      drawer.className = "drawer";
+      drawer.id = "drawer";
+    } else {
+      drawer.className = "drawer";
+    }
     drawer.setAttribute("aria-label", "サイトメニュー");
     drawer.innerHTML = `
 <div class="drawer-close-row">
@@ -296,24 +313,34 @@
         <ul class="drawer-nav">
           <li><a class="drawer-link" href="index.html">トップページ</a></li>
           <li><a class="drawer-link" href="ld_board.html">情報掲示板</a></li>
-          <li><a class="drawer-link" href="ld_users.html">ユーザー情報</a></li>
+          <li><a class="drawer-link" href="ld_users.html">ユーザーデータベース</a></li>
+
           <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">攻略の手引き</a></li>
-          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">各種データ</a></li>
+          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">ユニットDB</a></li>
           <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">データツール</a></li>
+          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">サイトについて</a></li>
+          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">利用ルール</a></li>
+          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">更新履歴</a></li>
+          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">編集者ログイン / ログアウト</a></li>
         </ul>
       </div>
     `.trim();
 
-    const overlay = document.createElement("div");
-    overlay.className = "drawer-overlay";
-    overlay.id = "drawerOverlay";
+    let overlay = document.getElementById("drawerOverlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.className = "drawer-overlay";
+      overlay.id = "drawerOverlay";
+    } else {
+      overlay.className = "drawer-overlay";
+      overlay.id = "drawerOverlay";
+    }
 
-    // Insert at top of body
-    document.body.insertBefore(overlay, document.body.firstChild);
-    document.body.insertBefore(drawer, overlay.nextSibling);
-    document.body.insertBefore(topbar, drawer.nextSibling);
-
-    // page name
+    // Insert at top of body (if not already present)
+    if (!overlay.isConnected) document.body.insertBefore(overlay, document.body.firstChild);
+    if (!drawer.isConnected) document.body.insertBefore(drawer, overlay.nextSibling);
+    if (!topbar.isConnected) document.body.insertBefore(topbar, drawer.nextSibling);
+// page name
     const elPage = $("topbarPageName");
     if(elPage) elPage.textContent = `> ${getPageName()}`;
 

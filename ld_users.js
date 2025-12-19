@@ -1,21 +1,13 @@
-// ld_users.js (v20251219b) - RPC-based register/edit for ld_users (RLS ON, policy none)
+// ld_users.js (v20251219a) - RPC-based register/edit for ld_users (RLS ON, policy none)
 (() => {
   "use strict";
 
   // ========== Supabase REST RPC ==========
-  const SUPABASE_URL = (window.LD_SUPABASE_URL || "https://teggcuiyqkbcvbhdntni.supabase.co");
-  const SUPABASE_ANON_KEY = (window.LD_SUPABASE_ANON_KEY || "SET_YOUR_SUPABASE_ANON_KEY_HERE");
+  const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
   const AUTH_STORAGE_KEY = "ld_auth_v1";
 
-  function hasSupabase(){
-    return typeof SUPABASE_ANON_KEY === "string" && SUPABASE_ANON_KEY.length > 80 && !SUPABASE_ANON_KEY.includes("SET_YOUR_SUPABASE_ANON_KEY_HERE");
-  }
-
-
   async function rpc(fn, bodyObj) {
-    if(!hasSupabase()){
-      throw new Error("supabase_key_missing");
-    }
     const url = `${SUPABASE_URL}/rest/v1/rpc/${fn}`;
     const res = await fetch(url, {
       method: "POST",
@@ -74,15 +66,25 @@
   // ========== UI helpers ==========
   function safeTrim(v) { return (v ?? "").toString().trim(); }
 
-  // Supabase key guard (dev safety)
-  if(!hasSupabase()){
-    console.warn("[ld_users] Supabase anon key is missing. Set window.LD_SUPABASE_ANON_KEY before loading ld_users.js");
-  }
   function showToast(msg, ms = 1500) {
     toast.textContent = msg;
     toast.classList.add("show");
     window.clearTimeout(showToast._t);
     showToast._t = window.setTimeout(() => toast.classList.remove("show"), ms);
+  }
+
+  function readAuthStorage() {
+    try {
+      const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+      if (!raw) return { loggedIn: false };
+      const obj = JSON.parse(raw);
+      return obj && typeof obj === 'object' ? obj : { loggedIn: false };
+    } catch (_) { return { loggedIn: false }; }
+  }
+
+  function clearAuthStorage() {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    window.dispatchEvent(new CustomEvent('ld-auth-changed', { detail: { loggedIn: false } }));
   }
 
   function setAuthStorage(username, pass, extra = {}) {
@@ -98,6 +100,18 @@
     };
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
     window.dispatchEvent(new CustomEvent("ld-auth-changed", { detail: auth }));
+  }
+
+  function goHomeAndClear(msg = null) {
+    // back to home view and clear all username/pass inputs
+    inputName.value = '';
+    inputPass.value = '';
+    userNameInput.value = '';
+    userPassInput.value = '';
+    formView.hidden = true;
+    homeView.hidden = false;
+    setHomeState({ mode: '', canProceed: false, statusText: 'ユーザー名を入力してください', passEnabled: false, passPlaceholder: '（未入力）' });
+    if (msg) showToast(msg);
   }
 
   function setHomeState({ mode, canProceed, statusText, passEnabled, passPlaceholder }) {
@@ -340,8 +354,14 @@
     try {
       const res = await saveUserData(name, pass, vaultLevel, mythicObj);
       if (res && res.ok === true) {
+        const prev = readAuthStorage();
+        if (prev && prev.loggedIn && prev.username && prev.username !== name) {
+          const ok = confirm(`現在「${prev.username}」でログイン中です。
+保存した「${name}」にログインを切り替えます。よろしいですか？`);
+          if (!ok) { showToast("保存しました"); return; }
+        }
         setAuthStorage(name, pass);
-        showToast("保存しました");
+        goHomeAndClear("保存しました（ログインしました）");
       } else {
         showToast(res?.reason ? `保存失敗: ${res.reason}` : "保存に失敗しました");
       }
@@ -376,11 +396,6 @@
     fillVaultSelect();
     setAccordion(false);
 
-
-    if(!hasSupabase()){
-      showToast("Supabase anon key未設定です（window.LD_SUPABASE_ANON_KEY を設定してください）");
-    }
-
     userNameInput.addEventListener("input", () => {
       scheduleExistsCheck();
       refreshProceedEnabled();
@@ -403,7 +418,31 @@
     btnJsonReset.addEventListener("click", () => { mythicStateJson.value = "{}"; showToast("リセットしました"); });
     btnJsonFormat.addEventListener("click", formatJson);
 
-    // initial state
+
+    // If already logged in (e.g., via header), jump to edit view automatically.
+    async function onAuthChangedFromHeader(detail){
+      const d = detail || readAuthStorage();
+      if (!d || d.loggedIn !== true) return;
+      const uname = (d.username || "").trim();
+      const pass = (d.pass || "").trim();
+      if (!uname || !pass) return;
+      try{
+        // load and open edit form
+        await openEditFromCredentials(uname, pass);
+      }catch(e){
+        console.warn(e);
+      }
+    }
+
+    window.addEventListener("ld-auth-changed", (ev) => {
+      onAuthChangedFromHeader(ev.detail);
+    });
+
+    // run once on load
+    onAuthChangedFromHeader(readAuthStorage());
+
+
+        // initial state
     setHomeState({ mode: "", canProceed: false, statusText: "ユーザー名を入力してください", passEnabled: false, passPlaceholder: "（未入力）" });
   }
 
