@@ -10,8 +10,8 @@
   <link rel="manifest" href="manifest.webmanifest">
 
   <!-- Common Header -->
-  <link rel="stylesheet" href="./common_header.css?v=20251219a" />
-  <script defer src="./common_header.js?v=20251219a"></script>
+  <link rel="stylesheet" href="./common_header.css?v=20251219e" />
+  <script defer src="./common_header.js?v=20251219e"></script>
 
   <!-- Page CSS -->
   <link rel="stylesheet" href="./ld_users.css?v=20251219a" />
@@ -37,17 +37,15 @@
 
           <label class="home-label">
             パス
-            <input id="userPassInput" type="text" inputmode="text" maxlength="24" placeholder="（未入力）" autocomplete="off" autocapitalize="off" spellcheck="false" />
+            <input id="userPassInput" type="password" maxlength="24" placeholder="（未入力）" autocomplete="current-password" disabled />
           </label>
-</div>
+
+          <button id="userActionBtn" type="button" class="home-action-btn" disabled>続ける</button>
+        </div>
 
         <div class="home-status-row">
           <span id="userStatusLabel" class="home-status-label">ユーザー名を入力してください</span>
           <span id="headerStats" class="home-status-label home-status-right"></span>
-        </div>
-
-        <div class="home-actions">
-          <button id="userActionBtn" type="button" class="home-action-btn" disabled>続ける</button>
         </div>
 
         <div class="card-title" style="margin-top:10px;">注意</div>
@@ -68,7 +66,7 @@
 
         <div class="field">
           <label for="inputPass">パス（本人確認）</label>
-          <input id="inputPass" type="text" inputmode="text" maxlength="24" autocomplete="current-password" / autocapitalize="off" spellcheck="false" autocomplete="off" autocapitalize="off" spellcheck="false" autocomplete="off">
+          <input id="inputPass" type="password" maxlength="24" autocomplete="current-password" />
         </div>
 
         <div class="field">
@@ -104,6 +102,6 @@
     <div id="toast" class="toast"></div>
   </div>
 
-  <script type="module" src="./ld_users.js?v=20251219a"></script>
+  <script type="module" src="./ld_users.js?v=20251219e"></script>
 </body>
 </html>
