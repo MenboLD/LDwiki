@@ -7,23 +7,6 @@
 (() => {
   'use strict';
 
-
-  function forcePassTextMode(){
-    const p = document.getElementById("authPass");
-    if (!p) return;
-    p.type = "text";
-    p.setAttribute("inputmode","text");
-    p.setAttribute("autocapitalize","off");
-    p.setAttribute("spellcheck","false");
-  }
-  function syncPassGhost(){
-    const p = document.getElementById("authPass");
-    const g = document.getElementById("authGhost");
-    if (!p || !g) return;
-    g.style.display = p.value ? "none" : "";
-  }
-
-
   const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
 
@@ -287,7 +270,7 @@
         </label>
 
         <label class="topbar-auth-field" aria-label="パス">
-          <input id="authPass" type="text" inputmode="text" autocomplete="current-password" placeholder="" />
+          <input id="authPass" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" autocomplete="current-password" placeholder="" />
           <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
         </label>
 
@@ -317,6 +300,9 @@
           <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">攻略の手引き</a></li>
           <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">各種データ</a></li>
           <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">データツール</a></li>
+            <li><a href="./about.html">サイトについて</a></li>
+            <li><a href="./rules.html">利用ルール</a></li>
+            <li><a href="./updates.html">更新履歴</a></li>
         </ul>
       </div>
     `.trim();

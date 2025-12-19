@@ -74,11 +74,3 @@
 .page{
   padding-top: calc(var(--ld-topbar-h) + 10px) !important;
 }
-
-.topbar-row--auth{flex-wrap:nowrap;}
-
-@media (max-width: 360px){
-  .topbar-row--auth{flex-wrap: wrap;}
-}
-
-#authLoginBtn{min-width:72px;}
