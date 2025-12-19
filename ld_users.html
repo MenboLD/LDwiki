@@ -1,107 +1,43 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ユーザー情報 | ラッキー傭兵団 攻略 wiki</title>
 
-  <title>ユーザー情報</title>
-  <link rel="icon" href="favicon.ico">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="./common_header.css?v=20251219s" />
+  <link rel="stylesheet" href="./ld_users.css?v=20251219s" />
 
-  <!-- Common Header -->
-  <link rel="stylesheet" href="./common_header.css?v=20251219a" />
-  <script defer src="./common_header.js?v=20251219a"></script>
-
-  <!-- Page CSS -->
-  <link rel="stylesheet" href="./ld_users.css?v=20251219a" />
+  <script defer src="./supabase_config.js?v=20251219s"></script>
+  <script defer src="./common_header.js?v=20251219s"></script>
+  <script defer src="./ld_users.js?v=20251219s"></script>
 </head>
-
 <body data-page-name="ユーザー情報">
-  <div class="app-root">
-    <main class="app-main">
-      <!-- 初期画面 -->
-      <section id="homeView" class="card">
-        <div class="card-title">ユーザー情報（登録 / 編集）</div>
+  <main class="page">
+    <section class="card">
+      <h2>ユーザー情報（登録 / 編集）</h2>
+      <p class="note">ユーザー名とパスを入力してください。未登録なら新規登録、登録済みなら編集へ進みます。</p>
 
-        <div class="home-note">
-          <div>・ユーザー名とパスを入力してください</div>
-          <div>・未登録なら「新規登録」、登録済みなら「編集へ」になります</div>
+      <div class="home-form">
+        <div class="field">
+          <label>ユーザー名</label>
+          <input id="userNameInput" type="text" maxlength="16" placeholder="最大 全角8文字 / 半角16文字" autocomplete="off" inputmode="text" />
         </div>
 
-        <div class="home-form">
-          <label class="home-label">
-            ユーザー名
-            <input id="userNameInput" type="text" maxlength="16" placeholder="最大 全角8文字 / 半角16文字" autocomplete="username" />
-          </label>
-
-          <label class="home-label">
-            パス
-            <input id="userPassInput" type="text" maxlength="24" placeholder="（未入力）" autocomplete="current-password" / inputmode="text" autocapitalize="off" spellcheck="false">
-          </label>
-
-          <button id="userActionBtn" type="button" class="home-action-btn" disabled>続ける</button>
+        <div class="field">
+          <label>パス</label>
+          <input id="userPassInput" type="text" inputmode="text" maxlength="24" placeholder="（未入力）" autocomplete="off" autocapitalize="off" spellcheck="false" />
         </div>
 
         <div class="home-status-row">
-          <span id="userStatusLabel" class="home-status-label">ユーザー名を入力してください</span>
-          <span id="headerStats" class="home-status-label home-status-right"></span>
+          <span id="userStatusLabel" class="status">ユーザー名を入力してください</span>
         </div>
 
-        <div class="card-title" style="margin-top:10px;">注意</div>
-        <div class="home-note">
-          ・ユーザー名は変更できません。<br>
-          ・パスは第三者に共有しないでください。
+        <div class="home-actions">
+          <button id="userActionBtn" type="button" class="btn-primary" disabled>続ける</button>
         </div>
-      </section>
-
-      <!-- 編集画面 -->
-      <section id="formView" class="card hidden">
-        <div id="formModeLabel" class="mode-label"></div>
-
-        <div class="field">
-          <label for="inputName">ユーザー名</label>
-          <input id="inputName" type="text" autocomplete="off" disabled />
-        </div>
-
-        <div class="field">
-          <label for="inputPass">パス（本人確認）</label>
-          <input id="inputPass" type="text" maxlength="24" autocomplete="current-password" / inputmode="text" autocapitalize="off" spellcheck="false">
-        </div>
-
-        <div class="field">
-          <label for="selectVaultLevel">金庫レベル（1〜11）</label>
-          <select id="selectVaultLevel"></select>
-        </div>
-
-        <div class="field">
-          <button id="unitAccordionToggle" type="button" class="accordion-toggle">▼育成状態（JSON / 仮）</button>
-          <div id="unitAccordionBody" class="accordion-body">
-            <div class="note-sub">※育成状態のカードUIは後日実装。現状はJSONで保存します。</div>
-            <textarea id="mythicStateJson" class="json-box" spellcheck="false" placeholder="{}"></textarea>
-            <div class="btn-row" style="margin-top:6px;">
-              <button id="btnJsonReset" type="button" class="btn-secondary">{} に戻す</button>
-              <button id="btnJsonFormat" type="button" class="btn-secondary">整形</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="status-row">
-          <span id="statusComments">コメ数: -</span>
-          <span id="statusMisInputs">誤入力: -</span>
-          <span id="statusLikes">イイね: -</span>
-        </div>
-
-        <div class="btn-row">
-          <button id="btnBackHome" class="btn-secondary" type="button">戻る</button>
-          <button id="btnSaveUser" class="btn-primary" type="button">保存</button>
-        </div>
-      </section>
-    </main>
-
-    <div id="toast" class="toast"></div>
-  </div>
-
-  <script type="module" src="./ld_users.js?v=20251219a"></script>
+      </div>
+    </section>
+  </main>
 </body>
 </html>

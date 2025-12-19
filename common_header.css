@@ -1,84 +1,101 @@
-/* common_header.css (overrides / shared tweaks)
-   - Align drawer to fixed 2-row header
-   - Reduce drawer vertical footprint (no title/subtitle/footer)
-   - Auth pass field: guest/needpass visual states
-*/
-
 :root{
-  /* JS will update --ld-topbar-h at runtime (topbarWrap height). */
   --ld-topbar-h: 88px;
-  --ld-drawer-top-gap: 2px;
-
-  --ld-auth-disabled-bg: rgba(255,255,255,0.06);
-  --ld-auth-disabled-border: rgba(255,255,255,0.12);
-  --ld-auth-disabled-text: rgba(255,255,255,0.35);
-
-  --ld-auth-needpass-border: rgba(255,80,80,0.78);
+  --bg0:#05070c;
+  --bg1:#0c1020;
+  --text:#eef3ff;
+  --sub:rgba(255,255,255,.7);
+  --border:rgba(255,255,255,.12);
+  --accent:#3fbfff;
 }
+html,body{margin:0; padding:0; overflow-x:hidden; background:var(--bg0); color:var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;}
+/* Topbar */
+.topbar{
+  position:fixed; top:0; left:0; right:0; z-index:1200;
+  background:rgba(6,8,12,.90);
+  backdrop-filter: blur(6px);
+  border-bottom:1px solid var(--border);
+  box-shadow:0 6px 18px rgba(0,0,0,.35);
+  padding:8px 10px;
+  display:flex; flex-direction:column; gap:6px;
+}
+.topbar-row{display:flex; align-items:center; gap:8px;}
+.topbar-row--primary{justify-content:space-between;}
+.topbar-title{font-weight:700; font-size:.92rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:62%;}
+.topbar-page{font-size:.72rem; color:var(--sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.topbar-menu-btn{
+  all:unset; cursor:pointer;
+  width:38px; height:32px; border-radius:10px;
+  display:inline-flex; align-items:center; justify-content:center;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(63,191,255,.10);
+  -webkit-tap-highlight-color:transparent;
+}
+.topbar-row--auth{flex-wrap:wrap; align-items:stretch;}
+.topbar-auth-label{font-size:.72rem; color:var(--sub); white-space:nowrap; padding-top:6px;}
+.topbar-auth-field{flex:1; min-width:110px; position:relative;}
+.topbar-auth-field input{
+  width:100%;
+  font-size:.8rem;
+  padding:6px 8px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.08);
+  color:var(--text);
+  outline:none;
+}
+.topbar-auth-field input:focus{border-color:rgba(63,191,255,.55); box-shadow:0 0 0 2px rgba(63,191,255,.18);}
+#authName, #authPass{
+  background:rgba(255,255,255,.08) !important;
+  color:var(--text) !important;
+}
+.topbar-auth-btn{
+  flex:0 0 auto;
+  font-size:.78rem;
+  padding:6px 10px;
+  border-radius:10px;
+  border:1px solid rgba(63,191,255,.35);
+  background:rgba(63,191,255,.18);
+  color:var(--text);
+  cursor:pointer;
+}
+.topbar-auth-btn[disabled]{opacity:.45; cursor:default;}
+/* Page padding under header */
+.page{padding-top: calc(var(--ld-topbar-h) + 10px);}
 
-/* Drawer and overlay should start below fixed header */
-#drawer.drawer{
-  top: calc(var(--ld-topbar-h) + var(--ld-drawer-top-gap)) ;
-  height: calc(100dvh - (var(--ld-topbar-h) + var(--ld-drawer-top-gap))) ;
+/* Drawer */
+.drawer-overlay{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.45);
+  opacity:0; pointer-events:none;
+  transition:opacity .22s ease;
+  z-index:1050;
 }
-#drawerOverlay.drawer-overlay{
-  top: calc(var(--ld-topbar-h) + var(--ld-drawer-top-gap)) ;
-  height: calc(100dvh - (var(--ld-topbar-h) + var(--ld-drawer-top-gap))) ;
+.drawer-overlay.visible{opacity:1; pointer-events:auto;}
+.drawer{
+  position:fixed; top:0; left:0; height:100vh; width:min(280px,80vw);
+  background:linear-gradient(135deg, var(--bg0), var(--bg1));
+  border-right:1px solid var(--border);
+  box-shadow:0 0 30px rgba(0,0,0,.7);
+  transform:translateX(-100%);
+  transition:transform .22s ease;
+  z-index:1100;
+  display:flex; flex-direction:column;
 }
-
-/* Remove redundant drawer header/footer to save vertical space */
-.drawer-header{ display:none ; }
-.drawer-footer{ display:none ; }
-
-/* Slightly smaller menu items to maximize visible list */
-.drawer-link {
-      display: block;
-      padding: 6px 8px;
-      border-radius: 8px;
-      color: var(--text-main);
-      text-decoration: none;
-    }
-
-/* Auth field states */
-.topbar-auth-field.is-guest input#authPass,
-#authPass.ld-pass-guest,
-#authPass:disabled{
-  background: var(--ld-auth-disabled-bg) ;
-  border-color: var(--ld-auth-disabled-border) ;
-  color: var(--ld-auth-disabled-text) ;
-  cursor: not-allowed ;
-  filter: grayscale(0.35);
+.drawer.open{transform:translateX(0);}
+.drawer-body{padding:10px 10px 14px; overflow:auto; flex:1;}
+.drawer-nav{list-style:none; padding:0; margin:0;}
+.drawer-nav li{margin:0;}
+.drawer-link{
+  display:block;
+  padding:10px 8px;
+  border-radius:8px;
+  color:var(--text);
+  text-decoration:none;
+  font-size:14px;
+  line-height:1.2;
 }
-.topbar-auth-field.is-guest input#authPass::placeholder,
-#authPass.ld-pass-guest::placeholder,
-#authPass:disabled::placeholder{
-  color: rgba(255,255,255,0.28) ;
-}
-.topbar-auth-field.is-guest .topbar-auth-ghost{
-  opacity: 0.85;
-}
-
-/* Need-pass emphasis (thicker red feel without resizing the input box) */
-.topbar-auth-field.is-needpass input#authPass,
-#authPass.ld-pass-needed{
-  border-color: var(--ld-auth-needpass-border) ;
-  box-shadow: 0 0 0 1px var(--ld-auth-needpass-border) inset, 0 0 0 1px rgba(0,0,0,0.25) ;
-  outline: 1px dotted var(--ld-auth-needpass-border);
-  outline-offset: 0;
-}
-.topbar-auth-field.is-needpass .topbar-auth-ghost,
-.topbar-auth-ghost.ld-ghost-needed{
-  color: rgba(255,120,120,0.95) ;
-}
-
-/* If some pages add too-large top padding, normalize it to header height + small gap */
-.page{
-  padding-top: calc(var(--ld-topbar-h) + 10px) ;
-}
-
-.drawer-nav {
-      list-style: none;
-      padding-left: 0;
-      margin: 0;
-      font-size: 0.85rem;
-    }
+.drawer-link:hover{background:rgba(63,191,255,.12);}
+.drawer-section-label{margin:10px 8px 4px; color:var(--sub); font-size:12px;}
+.drawer-close-row{padding:8px 10px 0; display:flex; justify-content:flex-end;}
+.drawer-close-button{all:unset; cursor:pointer; color:var(--accent); font-size:.85rem; padding:2px 6px; border-radius:8px;}
+.drawer-close-button:hover{background:rgba(63,191,255,.12);}
