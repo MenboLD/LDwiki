@@ -10,8 +10,8 @@
   <link rel="manifest" href="manifest.webmanifest">
 
   <!-- Common Header -->
-  <link rel="stylesheet" href="./common_header.css?v=20251219e" />
-  <script defer src="./common_header.js?v=20251219e"></script>
+  <link rel="stylesheet" href="./common_header.css?v=20251219a" />
+  <script defer src="./common_header.js?v=20251219a"></script>
 
   <!-- Page CSS -->
   <link rel="stylesheet" href="./ld_users.css?v=20251219a" />
@@ -37,7 +37,7 @@
 
           <label class="home-label">
             パス
-            <input id="userPassInput" type="password" maxlength="24" placeholder="（未入力）" autocomplete="current-password" disabled />
+            <input id="userPassInput" type="text" maxlength="24" placeholder="（未入力）" autocomplete="current-password" / inputmode="text" autocapitalize="off" spellcheck="false">
           </label>
 
           <button id="userActionBtn" type="button" class="home-action-btn" disabled>続ける</button>
@@ -66,7 +66,7 @@
 
         <div class="field">
           <label for="inputPass">パス（本人確認）</label>
-          <input id="inputPass" type="password" maxlength="24" autocomplete="current-password" />
+          <input id="inputPass" type="text" maxlength="24" autocomplete="current-password" / inputmode="text" autocapitalize="off" spellcheck="false">
         </div>
 
         <div class="field">
@@ -102,6 +102,6 @@
     <div id="toast" class="toast"></div>
   </div>
 
-  <script type="module" src="./ld_users.js?v=20251219e"></script>
+  <script type="module" src="./ld_users.js?v=20251219a"></script>
 </body>
 </html>

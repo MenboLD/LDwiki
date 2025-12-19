@@ -270,7 +270,7 @@
         </label>
 
         <label class="topbar-auth-field" aria-label="パス">
-          <input id="authPass" type="password" autocomplete="current-password" placeholder="" />
+          <input id="authPass" type="text" autocomplete="current-password" placeholder="" />
           <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
         </label>
 
@@ -289,30 +289,17 @@
     drawer.id = "drawer";
     drawer.setAttribute("aria-label", "サイトメニュー");
     drawer.innerHTML = `
-      <div class="drawer-header">
-        <p class="drawer-title">ラッキー傭兵団 攻略 wiki</p>
-        <p class="drawer-subtitle">(試験運用・作成中)</p>
-      </div>
-      <div class="drawer-close-row">
+<div class="drawer-close-row">
         <button class="drawer-close-button" type="button" id="drawerCloseBtn">閉じる ◀</button>
       </div>
       <div class="drawer-body">
         <ul class="drawer-nav">
-          <!-- 上段：メイン導線 -->
-          <li class="drawer-nav-item"><a class="drawer-link" href="index.html">トップページ</a></li>
-          <li class="drawer-nav-item"><a class="drawer-link" href="ld_board.html">情報掲示板</a></li>
-          <li class="drawer-nav-item"><a class="drawer-link" href="ld_users.html">ユーザーデータベース</a></li>
-          <li class="drawer-nav-item"><a class="drawer-link drawer-link--soon" href="#" data-soon="1">攻略の手引き</a></li>
-          <li class="drawer-nav-item"><a class="drawer-link drawer-link--soon" href="#" data-soon="1">ユニットDB</a></li>
-          <li class="drawer-nav-item"><a class="drawer-link drawer-link--soon" href="#" data-soon="1">データツール</a></li>
-
-          <!-- スペース -->
-          <li class="drawer-group-separator"></li>
-
-          <!-- 中段：サイト情報系 -->
-          <li class="drawer-nav-item"><a class="drawer-link drawer-link--soon" href="#" data-soon="1">サイトについて</a></li>
-          <li class="drawer-nav-item"><a class="drawer-link drawer-link--soon" href="#" data-soon="1">利用ルール</a></li>
-          <li class="drawer-nav-item"><a class="drawer-link drawer-link--soon" href="#" data-soon="1">更新履歴</a></li>
+          <li><a class="drawer-link" href="index.html">トップページ</a></li>
+          <li><a class="drawer-link" href="ld_board.html">情報掲示板</a></li>
+          <li><a class="drawer-link" href="ld_users.html">ユーザー情報</a></li>
+          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">攻略の手引き</a></li>
+          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">各種データ</a></li>
+          <li><a class="drawer-link drawer-link--soon" href="#" data-soon="1">データツール</a></li>
         </ul>
       </div>
     `.trim();
