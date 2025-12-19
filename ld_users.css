@@ -201,3 +201,78 @@ body{
   z-index: 50;
 }
 .toast.show{ opacity:1; transform: translateY(0); }
+
+
+/* === Home actions: stack buttons, prevent offscreen === */
+.home-actions{
+  display:flex !important;
+  flex-direction: column !important;
+  gap:10px !important;
+  align-items: stretch !important;
+}
+.home-action-btn{
+  width: 100% !important;
+  min-height: 44px !important;
+  font-size: 15px !important;
+  writing-mode: horizontal-tb !important;
+  white-space: nowrap !important;
+}
+.home-action-secondary{
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.16) !important;
+}
+.home-hint{
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.35;
+}
+
+/* Confirmation modal */
+.ld-modal-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index: 3000;
+  padding: 16px;
+}
+.ld-modal-overlay.visible{ display:flex; }
+
+.ld-modal{
+  width: min(520px, 92vw);
+  background: rgba(12,14,20,0.96);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  padding: 14px;
+}
+.ld-modal h3{
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+.ld-modal .ld-modal-body{
+  font-size: 13px;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.45;
+  word-break: break-word;
+}
+.ld-modal .ld-modal-actions{
+  margin-top: 14px;
+  display:flex;
+  gap:10px;
+}
+.ld-modal .ld-modal-actions button{
+  flex:1;
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.92);
+}
+.ld-modal .ld-modal-actions button.primary{
+  background: rgba(63,191,255,0.22);
+  border-color: rgba(63,191,255,0.40);
+}

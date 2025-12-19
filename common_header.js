@@ -7,8 +7,8 @@
 (() => {
   'use strict';
 
-  const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
+  const SUPABASE_URL = window.LD_SUPABASE_URL || "https://teggcuiyqkbcvbhdntni.supabase.co";
+  const SUPABASE_ANON_KEY = window.LD_SUPABASE_ANON_KEY || "";
 
   const AUTH_STORAGE_KEY = "ld_auth_v1";
   const LOCK_PREFIX = "ld_users_lock:";
@@ -270,7 +270,7 @@
         </label>
 
         <label class="topbar-auth-field" aria-label="パス">
-          <input id="authPass" type="password" autocomplete="current-password" placeholder="" />
+          <input id="authPass" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="" />
           <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
         </label>
 

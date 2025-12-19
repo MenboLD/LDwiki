@@ -11,7 +11,6 @@
 
   <!-- Common Header -->
   <link rel="stylesheet" href="./common_header.css?v=20251219a" />
-  <script defer src="./supabase_config.js?v=20251219a"></script>
   <script defer src="./common_header.js?v=20251219a"></script>
 
   <!-- Page CSS -->
@@ -38,7 +37,7 @@
 
           <label class="home-label">
             パス
-            <input id="userPassInput" type="password" maxlength="24" placeholder="（未入力）" autocomplete="current-password" disabled />
+            <input id="userPassInput" type="text" inputmode="text" maxlength="24" placeholder="（未入力）" autocomplete="off" autocapitalize="off" spellcheck="false" />
           </label>
 
           <button id="userActionBtn" type="button" class="home-action-btn" disabled>続ける</button>

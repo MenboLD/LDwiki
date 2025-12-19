@@ -2,9 +2,22 @@
 (() => {
   "use strict";
 
+  // Password pseudo-byte length: 半角=1, 全角=2（ざっくり: codepoint<=0xFF を半角扱い）
+  function pseudoByteLen(s){
+    if (!s) return 0;
+    let n = 0;
+    for (const ch of s){
+      const cp = ch.codePointAt(0);
+      n += (cp <= 0xFF) ? 1 : 2;
+      if (n > 999) break;
+    }
+    return n;
+  }
+
+
   // ========== Supabase REST RPC ==========
-  const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
+  const SUPABASE_URL = window.LD_SUPABASE_URL || "https://teggcuiyqkbcvbhdntni.supabase.co";
+  const SUPABASE_ANON_KEY = window.LD_SUPABASE_ANON_KEY || "";
   const AUTH_STORAGE_KEY = "ld_auth_v1";
 
   async function rpc(fn, bodyObj) {
@@ -39,7 +52,8 @@
 
   const userNameInput = $("userNameInput");
   const userPassInput = $("userPassInput");
-  const userActionBtn = $("userActionBtn");
+  const registerBtn = $("registerBtn");
+  const editBtn = $("editBtn");
   const userStatusLabel = $("userStatusLabel");
   const headerStats = $("headerStats");
 
@@ -88,16 +102,27 @@
     window.dispatchEvent(new CustomEvent("ld-auth-changed", { detail: auth }));
   }
 
-  function setHomeState({ mode, canProceed, statusText, passEnabled, passPlaceholder }) {
-    userActionBtn.disabled = !canProceed;
-    userPassInput.disabled = !passEnabled;
-    if (passPlaceholder != null) userPassInput.placeholder = passPlaceholder;
-    if (statusText != null) userStatusLabel.textContent = statusText;
+  function setHomeState({ mode, canRegister, canEdit, statusText, passPlaceholder }) {
+    // pass input is always editable on this page (全角OK)
+    userPassInput.disabled = false;
 
-    if (mode === "register") userActionBtn.textContent = "新規登録";
-    else if (mode === "edit") userActionBtn.textContent = "編集へ";
-    else userActionBtn.textContent = "続ける";
-    userActionBtn.dataset.mode = mode || "";
+    registerBtn.disabled = !canRegister;
+    editBtn.disabled = !canEdit;
+
+    if (passPlaceholder != null) userPassInput.placeholder = passPlaceholder;
+    if (statusText !=null) userStatusLabel.textContent = statusText;
+
+    // Highlight recommended action
+    if (mode === "register") {
+      registerBtn.classList.remove("home-action-secondary");
+      editBtn.classList.add("home-action-secondary");
+    } else if (mode === "edit") {
+      editBtn.classList.remove("home-action-secondary");
+      registerBtn.classList.add("home-action-secondary");
+    } else {
+      registerBtn.classList.remove("home-action-secondary");
+      editBtn.classList.add("home-action-secondary");
+    }
   }
 
   function showHome() {
@@ -148,13 +173,7 @@
       lastExistsQuery = "";
       lastExistsValue = false;
       headerStats.textContent = "";
-      setHomeState({
-        mode: "",
-        canProceed: false,
-        statusText: "ユーザー名を入力してください",
-        passEnabled: false,
-        passPlaceholder: "（未入力）",
-      });
+      setHomeState({ mode: "", canRegister: false, canEdit: false, statusText: "ユーザー名を入力してください", passPlaceholder: "（未入力）" });
       return;
     }
 
@@ -170,33 +189,27 @@
 
         const pass = safeTrim(userPassInput.value);
         if (exists) {
-          setHomeState({
-            mode: "edit",
-            canProceed: !!pass,
+          setHomeState({ mode: "edit", canRegister: false, canEdit: !!pass,
             statusText: pass ? "編集できます（パス確認）" : "登録済み：パスを入力してください",
-            passEnabled: true,
-            passPlaceholder: pass ? "●●●●" : "要パス",
-          });
+            
+            passPlaceholder: pass ? "（入力済み）" : "要パス",
+           });
         } else {
-          setHomeState({
-            mode: "register",
-            canProceed: !!pass,
+          setHomeState({ mode: "register", canRegister: !!pass, canEdit: false,
             statusText: pass ? "新規登録できます" : "未登録：登録用パスを入力してください",
-            passEnabled: true,
-            passPlaceholder: pass ? "●●●●" : "登録用パス",
-          });
+            
+            passPlaceholder: pass ? "（入力済み）" : "登録用パス",
+           });
         }
       } catch (e) {
         // If RPC fails, do not block user; treat as "edit" requiring pass
         headerStats.textContent = "判定不可";
         const pass = safeTrim(userPassInput.value);
-        setHomeState({
-          mode: "edit",
-          canProceed: !!pass,
+        setHomeState({ mode: "edit", canRegister: false, canEdit: !!pass,
           statusText: pass ? "編集できます（パス確認）" : "パスを入力してください",
-          passEnabled: true,
-          passPlaceholder: pass ? "●●●●" : "要パス",
-        });
+          
+          passPlaceholder: pass ? "（入力済み）" : "要パス",
+         });
       }
     }, 220);
   }
@@ -204,17 +217,43 @@
   function refreshProceedEnabled() {
     const uname = safeTrim(userNameInput.value);
     const pass = safeTrim(userPassInput.value);
+
     if (!uname) {
-      setHomeState({ mode: "", canProceed: false, statusText: "ユーザー名を入力してください", passEnabled: false });
+      setHomeState({ mode: "", canRegister: false, canEdit: false, statusText: "ユーザー名を入力してください", passPlaceholder: "（未入力）" });
       return;
     }
-    const mode = userActionBtn.dataset.mode || (lastExistsValue ? "edit" : "register");
-    setHomeState({
-      mode,
-      canProceed: !!pass,
-      statusText: userStatusLabel.textContent,
-      passEnabled: true,
-    });
+
+    const b = pseudoByteLen(pass);
+    const passOk = (b >= 1 && b <= 10);
+
+    if (!passOk) {
+      setHomeState({
+        mode: lastExistsValue ? "edit" : "register",
+        canRegister: false,
+        canEdit: false,
+        statusText: "パスは 1〜10バイト（半角=1 / 全角=2）",
+        passPlaceholder: "1〜10バイト",
+      });
+      return;
+    }
+
+    if (lastExistsValue) {
+      setHomeState({
+        mode: "edit",
+        canRegister: false,
+        canEdit: true,
+        statusText: "登録済みユーザーです（編集へ）",
+        passPlaceholder: "パスを入力",
+      });
+    } else {
+      setHomeState({
+        mode: "register",
+        canRegister: true,
+        canEdit: false,
+        statusText: "未登録ユーザーです（新規登録）",
+        passPlaceholder: "登録用パス",
+      });
+    }
   }
 
   // ========== Data RPCs ==========
@@ -236,66 +275,63 @@
   }
 
   // ========== Form actions ==========
-  async function enterEditFlow(mode) {
-    const name = safeTrim(userNameInput.value);
-    const pass = safeTrim(userPassInput.value);
-    if (!name || !pass) return;
+  async function enterEditFlow(mode, overrideName, overridePass) {
+    const name = safeTrim(overrideName ?? userNameInput.value);
+    const pass = safeTrim(overridePass ?? userPassInput.value);
 
-    userActionBtn.disabled = true;
+    if (!name) return;
+
+    const b = pseudoByteLen(pass);
+    if (b < 1 || b > 10) {
+      showToast("パスは 1〜10バイト（半角=1 / 全角=2）にしてください");
+      return;
+    }
+
+    // disable buttons during processing
+    registerBtn.disabled = true;
+    editBtn.disabled = true;
 
     try {
       if (mode === "register") {
+        const ok = await showRegisterConfirmModal(name, pass);
+        if (!ok) {
+          registerBtn.disabled = false;
+          editBtn.disabled = false;
+          return;
+        }
+
         const res = await registerUser(name, pass);
         if (!res || res.ok !== true) {
           showToast("登録に失敗しました");
-          userActionBtn.disabled = false;
+          registerBtn.disabled = false;
+          editBtn.disabled = false;
           return;
         }
-        // after register, immediately log in (for header)
-        setAuthStorage(name, pass, { userId: res.user_id ?? null });
-        showToast("登録しました");
-      } else {
-        // edit: validate pass and load current data
-        const data = await getUserData(name, pass);
-        if (!data || data.ok !== true) {
-          showToast("パスが違うか、取得できません");
-          userActionBtn.disabled = false;
-          return;
-        }
-        setAuthStorage(name, pass, {
-          userId: data.user_id ?? null,
-          level: data.level ?? null,
-          exp: data.exp ?? null,
-          lockedUntil: data.locked_until ? new Date(data.locked_until).getTime() : 0,
-        });
-      }
 
-      // load (after register, fetch data too so UI has server values)
-      const data2 = await getUserData(name, pass);
-      if (!data2 || data2.ok !== true) {
-        // register直後に get が無い/失敗でも最低限編集は続行（初期値）
-        inputName.value = name;
-        inputPass.value = pass;
-        selectVaultLevel.value = "1";
-        mythicStateJson.value = "{}";
-        setStats({ comment_count: 0, mis_input_count: 0, like_count: 0 });
-        formModeLabel.textContent = "編集";
-        showForm();
+        // 要望: 登録後は再読み込みして初期画面に戻す（入力はクリア）
+        alert("登録しました。ページを再読み込みします。");
+        userNameInput.value = "";
+        userPassInput.value = "";
+        location.reload();
         return;
       }
 
-      inputName.value = name;
-      inputPass.value = pass;
-      selectVaultLevel.value = String(data2.vault_level ?? 1);
-      mythicStateJson.value = JSON.stringify(data2.mythic_state ?? {}, null, 2);
-      setStats(data2);
-      formModeLabel.textContent = data2.is_new ? "新規登録（初期設定）" : "編集";
-      showForm();
+      // edit: validate pass and load current data
+      const data = await getUserData(name, pass);
+      if (!data || data.ok !== true) {
+        showToast("取得に失敗しました");
+        registerBtn.disabled = false;
+        editBtn.disabled = false;
+        return;
+      }
 
-    } catch (e) {
-      console.error(e);
-      showToast(String(e.message || e));
-      userActionBtn.disabled = false;
+      // For header auth coherence (ログイン後にパス欄は消えるので問題なし)
+      setAuthStorage(name, pass, { userId: data.user_id ?? null, level: data.level ?? null });
+      showForm(name, pass, data);
+    } finally {
+      // if we already reloaded, this won't matter
+      registerBtn.disabled = false;
+      editBtn.disabled = false;
     }
   }
 
@@ -374,10 +410,11 @@
       refreshProceedEnabled();
     });
 
-    userActionBtn.addEventListener("click", () => {
-      const mode = userActionBtn.dataset.mode || (lastExistsValue ? "edit" : "register");
-      enterEditFlow(mode);
+          enterEditFlow(mode);
     });
+
+    registerBtn.addEventListener("click", () => enterEditFlow("register"));
+    editBtn.addEventListener("click", () => enterEditFlow("edit"));
 
     btnBackHome.addEventListener("click", showHome);
     btnSaveUser.addEventListener("click", onSave);
@@ -387,7 +424,7 @@
     btnJsonFormat.addEventListener("click", formatJson);
 
     // initial state
-    setHomeState({ mode: "", canProceed: false, statusText: "ユーザー名を入力してください", passEnabled: false, passPlaceholder: "（未入力）" });
+    setHomeState({ mode: "", canRegister: false, statusText: "ユーザー名を入力してください", passPlaceholder: "（未入力）" });
   }
 
   document.addEventListener("DOMContentLoaded", init);
