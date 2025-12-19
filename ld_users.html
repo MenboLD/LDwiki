@@ -10,14 +10,12 @@
   <link rel="manifest" href="manifest.webmanifest">
 
   <!-- Common Header -->
-    <!-- Supabase config -->
-  <script defer src="./supabase_config.js?v=20251219c"></script>
-
-<link rel="stylesheet" href="./common_header.css?v=20251219c" />
-  <script defer src="./common_header.js?v=20251219c"></script>
+  <link rel="stylesheet" href="./common_header.css?v=20251219d" />
+    <script defer src="./supabase_config.js?v=20251219d"></script>
+<script defer src="./common_header.js?v=20251219d"></script>
 
   <!-- Page CSS -->
-  <link rel="stylesheet" href="./ld_users.css?v=20251219c" />
+  <link rel="stylesheet" href="./ld_users.css?v=20251219d" />
 </head>
 
 <body data-page-name="ユーザー情報">
@@ -40,16 +38,16 @@
 
           <label class="home-label">
             パス
-            <input id="userPassInput" type="password" maxlength="24" placeholder="（未入力）" autocomplete="current-password" disabled />
+            <input id="userPassInput" type="text" maxlength="24" placeholder="（未入力）" autocomplete="current-password" disabled / inputmode="text">
           </label>
-
-          <button id="userActionBtn" type="button" class="home-action-btn" disabled>続ける</button>
-        </div>
+</div>
 
         <div class="home-status-row">
           <span id="userStatusLabel" class="home-status-label">ユーザー名を入力してください</span>
           <span id="headerStats" class="home-status-label home-status-right"></span>
         </div>
+
+          <button id="userActionBtn" type="button" class="home-action-btn" disabled>続ける</button>
 
         <div class="card-title" style="margin-top:10px;">注意</div>
         <div class="home-note">
@@ -105,6 +103,6 @@
     <div id="toast" class="toast"></div>
   </div>
 
-  <script type="module" src="./ld_users.js?v=20251219c"></script>
+  <script type="module" src="./ld_users.js?v=20251219d"></script>
 </body>
 </html>

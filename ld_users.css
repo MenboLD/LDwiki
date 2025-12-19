@@ -11,7 +11,7 @@
 }
 
 *{ box-sizing:border-box; }
-html,body{ margin:0; padding:0; height:100%; }
+html,body{ margin:0; padding:0; height:100%; overflow-x:hidden; }
 body{
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--bg);
@@ -203,18 +203,12 @@ body{
 .toast.show{ opacity:1; transform: translateY(0); }
 
 
-/* Password masking but allow full-width input on mobile */
-.ld-passmask{
-  -webkit-text-security: disc;
-  text-security: disc;
-  letter-spacing: 0.08em;
-}
-
-.home-actions{ margin-top: 10px; }
+/* --- hotfix: prevent horizontal scroll and place action button under status label --- */
+.home-grid{max-width:100%;}
+.home-label input{max-width:100%;}
 .home-action-btn{
-  width: 100%;
-  min-height: 44px;
-  font-size: 16px;
-  line-height: 1.2;
-  writing-mode: horizontal-tb;
+  width:100%;
+  min-height:44px;
+  display:block;
+  margin-top:10px;
 }

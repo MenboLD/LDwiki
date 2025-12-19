@@ -7,16 +7,11 @@
 (() => {
   'use strict';
 
-  const SUPABASE_URL = (window.LD_SUPABASE_URL || "https://teggcuiyqkbcvbhdntni.supabase.co");
-  const SUPABASE_ANON_KEY = (window.LD_SUPABASE_ANON_KEY || "SET_YOUR_SUPABASE_ANON_KEY_HERE");
+  const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
 
   const AUTH_STORAGE_KEY = "ld_auth_v1";
   const LOCK_PREFIX = "ld_users_lock:";
-
-  function hasSupabase(){
-    return typeof SUPABASE_ANON_KEY === 'string' && SUPABASE_ANON_KEY.length > 80 && !SUPABASE_ANON_KEY.includes('SET_YOUR_SUPABASE_ANON_KEY_HERE');
-  }
-
 
   // Optional RPC: checks if username is registered (exact match).
   // If this RPC is not installed, the UI falls back to the previous behavior.
@@ -118,11 +113,6 @@
   }
 
   async function rpc(fn, args){
-    if(!hasSupabase()){
-      const err = new Error('supabase_key_missing');
-      err.status = 0;
-      throw err;
-    }
     const url = `${SUPABASE_URL}/rest/v1/rpc/${fn}`;
     const res = await fetch(url, {
       method: "POST",
@@ -276,11 +266,11 @@
         <div class="topbar-auth-label" id="topbarAuthLabel">未ログイン：</div>
 
         <label class="topbar-auth-field" aria-label="ユーザー名">
-          <input id="authUserName" type="text" inputmode="text" autocomplete="username" autocapitalize="none" autocorrect="off" placeholder="ユーザー名(任意)" />
+          <input id="authUserName" type="text" inputmode="text" autocomplete="username" placeholder="ユーザー名(任意)" />
         </label>
 
         <label class="topbar-auth-field" aria-label="パス">
-          <input id="authPass" type="text" class="ld-passmask" inputmode="text" autocomplete="current-password" placeholder="" />
+          <input id="authPass" type="text" autocomplete="current-password" placeholder="" / inputmode="text">
           <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
         </label>
 
