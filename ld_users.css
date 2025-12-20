@@ -223,15 +223,12 @@ body{
   text-overflow: ellipsis;
   box-sizing: border-box;
 }
+
+/* Home pass button should have red border (spec) */
+#userPassBtn.pass-modal-btn{ border-color: var(--danger); }
 .pass-modal-btn:disabled{
   background: rgba(255,255,255,0.06);
   color: rgba(255,255,255,0.45);
   border-style: dashed;
   cursor: default;
-}
-
-
-/* 初期画面のパス入力ボタン：枠を赤にする */
-.pass-modal-btn.pass-modal-btn--danger{
-  border-color: rgba(255, 60, 60, 0.95);
 }
