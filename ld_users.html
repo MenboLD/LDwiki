@@ -12,7 +12,7 @@
 
   <!-- Common Header -->
 <!-- Page CSS -->
-  <link rel="stylesheet" href="/LDwiki/ld_users.css?v=20251220ah">
+  <link rel="stylesheet" href="/LDwiki/ld_users.css?v=20251220am">
   <link rel="stylesheet" href="/LDwiki/common_header.css?v=20251220ah">
 </head>
 
@@ -21,13 +21,13 @@
     <main class="app-main">
       <!-- 初期画面 -->
       <section id="homeView" class="card">
-        <div class="card-title">ユーザー情報（新規登録 / 編集）</div>
+        <div class="card-title">ユーザー情報（登録 / 編集）</div>
 
         <div class="home-note">
-          <div>・新規登録にはユーザー名とパスをこの下で入力したあと、新規登録ボタンを押してください</div>
-          <div>・ユーザー名は最大で全角8文字、半角16文字まで。大文字と小文字の区別アリ</div>
-          <div>・パスは最大で全角5文字、半角10文字まで。大文字と小文字の区別アリ</div>
-          <div>・ユーザー名が未登録なら「新規登録」、すでに登録済みなら「編集へ」にボタンの表記が変化します</div>
+          <div>・ユーザー名とパスを入力してください</div>
+          <div>・パスは「パス欄をタップ」→ モーダルで入力します（iOS全角対応）</div>
+          <div>・※全角は5文字、半角は10文字（組み合わせて10byte）まで</div>
+          <div>・未登録なら「新規登録」、登録済みなら「編集へ」になります</div>
         </div>
 
         <div class="home-form">
@@ -49,21 +49,10 @@
           <span id="headerStats" class="home-status-label home-status-right"></span>
         </div>
 
-        <div class="card-title" style="margin-top:10px;">機能と目的</div>
-        <div class="home-note">
-          <div>・金庫のレベルやユニットの育成状態などを設定できます。掲示板コメントに表示されるプロフ部分から簡単にこれを確認でき、質問者や回答者に生じるであろう手間を省くことができます</div>
-          <div>・今後、戦闘力よりも正確なユーザー攻撃力指数の表示や指定した遺物レベルまでに必要な鉱山の鍵や見込み日数などを表示する機能を検討しています</div>
-          <div>・ユーザーの平均金庫レベルやグラフ出しに利用する可能性もあり、アンケート回答的な意味合いも兼ねています</div>
-          <div>・当サイトのページ編集作業については、ログイン中のユーザー情報から権限レベルを参照し、これを許可しています</div>
-        </div>
-
         <div class="card-title" style="margin-top:10px;">注意</div>
         <div class="home-note">
-          <div>・ユーザー名とパスは変更できません</div>
-          <div>・パスは再発行や再確認が不可能です。必ず画面スクリーンショットやメモするなどし、個人で控えてください</div>
-          <div>・ユーザー名やパスを除き、ユニットの育成情報などは基本的に公開情報扱いになります。今後、項目ごとに公開/非公開の設定機能は追加予定です</div>
-          <div>・登録するユーザー名はゲーム内のプレイヤーとは異なる名前で登録することを推奨します。</div>
-          <div>・ゲスト、登録ユーザーの差異にかかわらずIPアドレスなどの情報は運営側に保持されます。</div>
+          ・ユーザー名は変更できません。<br>
+          ・パスは第三者に共有しないでください。
         </div>
       </section>
 
@@ -115,6 +104,6 @@
   </div>
   <script src="/LDwiki/supabase_config.js?v=20251220ah"></script>
   <script src="/LDwiki/common_header.js?v=20251220ah"></script>
-  <script src="/LDwiki/ld_users.js?v=20251220ai"></script>
+  <script src="/LDwiki/ld_users.js?v=20251220am"></script>
 </body>
 </html>

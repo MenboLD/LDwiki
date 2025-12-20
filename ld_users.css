@@ -229,3 +229,9 @@ body{
   border-style: dashed;
   cursor: default;
 }
+
+
+/* 初期画面のパス入力ボタン：枠を赤にする */
+.pass-modal-btn.pass-modal-btn--danger{
+  border-color: rgba(255, 60, 60, 0.95);
+}
