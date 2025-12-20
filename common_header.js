@@ -1,5 +1,6 @@
+console.log("[ldwiki] UNIFIED_BUILD:20251220ah");
 // common_header.js (unified: core u)
-// build: 20251220af
+// build: 20251220ah
 
 /* common_header_core_20251220u.js
    Shared header logic for LDwiki.
@@ -938,7 +939,7 @@
 
   function boot(){
     if(!document.body) return;
-    console.log(`[ldwiki] common_header loaded (${VERSION})`, { supabaseReady });
+    console.log(`P251220ah)`, { supabaseReady });
 
     injectHeader();
     ensureCommonModal();
