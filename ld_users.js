@@ -1,5 +1,7 @@
 
 // ========== iOS IME workaround: Pass inputs -> hidden + modal button ==========
+// NOTE: 文言は確定仕様どおり（勝手に変更しない）
+const PASS_MODAL_HELP = "正しいパスを入力し、決定ボタンを押してください\n※全角は5文字、半角は10文字（組み合わせて10byte）まで";
 function ensurePassButton(inputEl, btnId) {
   if (!inputEl) return null;
 
@@ -30,7 +32,7 @@ function ensurePassButton(inputEl, btnId) {
 
     window.LD_openTextModal({
       modalTitle: "パス入力",
-      modalHelp: "正しいパスを入力し、決定ボタンを押してください\\n※全角は５文字、半角は10文字(組み合わせて10byte)まで",
+      modalHelp: PASS_MODAL_HELP,
       initialValue: inputEl.value || "",
       onCommit: (v) => {
         inputEl.value = String(v ?? "");
@@ -147,6 +149,9 @@ function syncPassButton(btnId, inputEl, fallbackText) {
     if (passPlaceholder != null) userPassInput.placeholder = passPlaceholder;
     if (statusText != null) userStatusLabel.textContent = statusText;
 
+    // モーダル呼び出しボタン側へ disabled / 表示文字を常に同期
+    syncPassButton("userPassBtn", userPassInput, userPassInput.placeholder);
+
     if (mode === "register") userActionBtn.textContent = "新規登録";
     else if (mode === "edit") userActionBtn.textContent = "編集へ";
     else userActionBtn.textContent = "続ける";
@@ -213,6 +218,7 @@ function syncPassButton(btnId, inputEl, fallbackText) {
 
     // enable pass for register/edit flows on this page
     userPassInput.disabled = false;
+    syncPassButton("userPassBtn", userPassInput, userPassInput.placeholder);
 
     existsTimer = window.setTimeout(async () => {
       try {
