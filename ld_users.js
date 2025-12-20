@@ -1,7 +1,5 @@
 
 // ========== iOS IME workaround: Pass inputs -> hidden + modal button ==========
-// NOTE: 文言は確定仕様どおり（勝手に変更しない）
-const PASS_MODAL_HELP = "正しいパスを入力し、決定ボタンを押してください\n※全角は5文字、半角は10文字（組み合わせて10byte）まで";
 function ensurePassButton(inputEl, btnId) {
   if (!inputEl) return null;
 
@@ -32,7 +30,7 @@ function ensurePassButton(inputEl, btnId) {
 
     window.LD_openTextModal({
       modalTitle: "パス入力",
-      modalHelp: PASS_MODAL_HELP,
+      modalHelp: "パスを入力してください\n・パスは最大で全角5文字、半角10文字まで。大文字と小文字の区別アリ\n\n注意\n・ユーザー名とパスは変更できません\n・パスは再発行や再確認が不可能です。必ず画面スクリーンショットやメモするなどし、個人で控えてください\n・ユーザー名やパスを除き、ユニットの育成情報などは基本的に公開情報扱いになります。今後、項目ごとに公開/非公開の設定機能は追加予定です\n・登録するユーザー名はゲーム内のプレイヤーとは異なる名前で登録することを推奨します。\n・ゲスト、登録ユーザーの差異にかかわらずIPアドレスなどの情報は運営側に保持されます。",
       initialValue: inputEl.value || "",
       onCommit: (v) => {
         inputEl.value = String(v ?? "");
@@ -149,9 +147,6 @@ function syncPassButton(btnId, inputEl, fallbackText) {
     if (passPlaceholder != null) userPassInput.placeholder = passPlaceholder;
     if (statusText != null) userStatusLabel.textContent = statusText;
 
-    // モーダル呼び出しボタン側へ disabled / 表示文字を常に同期
-    syncPassButton("userPassBtn", userPassInput, userPassInput.placeholder);
-
     if (mode === "register") userActionBtn.textContent = "新規登録";
     else if (mode === "edit") userActionBtn.textContent = "編集へ";
     else userActionBtn.textContent = "続ける";
@@ -218,7 +213,6 @@ function syncPassButton(btnId, inputEl, fallbackText) {
 
     // enable pass for register/edit flows on this page
     userPassInput.disabled = false;
-    syncPassButton("userPassBtn", userPassInput, userPassInput.placeholder);
 
     existsTimer = window.setTimeout(async () => {
       try {
