@@ -1,5 +1,5 @@
 // common_header.js (unified: core u)
-// build: 20251220ae
+// build: 20251220af
 
 /* common_header_core_20251220u.js
    Shared header logic for LDwiki.
