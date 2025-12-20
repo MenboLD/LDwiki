@@ -180,3 +180,27 @@
   text-align:center;
 }
 .ld-mini-toast.visible{ opacity:1; }
+
+
+/* === LDWIKI_DRAWER_BASE_FIX === */
+/* drawer が箇条書き/青リンクに退行するケース（ld_usersで頻発）をcore側で強制的に潰す */
+.drawer-body ul,
+ul.drawer-nav,
+#drawerNavRoot {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+#drawerNavRoot > li {
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+#drawerNavRoot a,
+a.drawer-link {
+  color: rgba(255,255,255,0.92) !important;
+  text-decoration: none !important;
+}
+#drawerNavRoot a:visited {
+  color: rgba(255,255,255,0.92) !important;
+}
