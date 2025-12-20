@@ -1,3 +1,13 @@
+/* =====================================================================
+   common_header.css  (single source of truth)
+   - Contains BOTH:
+     1) BASE: topbar/drawer layout skeleton (position: fixed, z-index, etc.)
+     2) CORE/OVERRIDES: iOS pass modal workaround, lock UI, small adjustments
+   Versioning rule (recommended):
+     - When you change this file, bump the query string ?v=YYYYMMDDxx
+       (e.g. 20251220aj, 20251221a1) on ALL pages.
+   ===================================================================== */
+
 /* common_header.css
    [ldwiki] UNIFIED_BUILD:20251220aj
    Purpose:
@@ -5,7 +15,8 @@
    - Keep iOS pass IME workaround + lock UI + drawer alignment overrides (from common_header_core_20251220u.css)
 */
 
-/* ===== Base: Drawer (moved from index.css) ===== */
+/* ===== SECTION: BASE (layout skeleton) ===== */
+/* Base: Drawer (moved from index.css) */
     /* ドロワー本体 */
     .drawer {
       position: fixed;
@@ -128,7 +139,7 @@
       pointer-events: auto;
     }
 
-/* ===== Base: Topbar (moved from index.css) ===== */
+/* Base: Topbar (moved from index.css) */
     /* 上部固定ヘッダー（右上にメニューボタン） */
     .topbar {
       position: fixed;
@@ -311,7 +322,7 @@
 }
 
 
-/* ===== Base: Logged-in visibility rules (moved from index.css) ===== */
+/* Base: Logged-in visibility rules (moved from index.css) */
 /* ログイン中は入力欄と「未ログイン：」を非表示（ログイン中表示＋ログアウトのみ） */
 .topbar-row--auth.is-logged-in .topbar-auth-label,
 .topbar-row--auth.is-logged-in .topbar-auth-field,
@@ -323,7 +334,9 @@
   display: inline-flex !important;
 }
 
-/* ===== Overrides: common_header_core_20251220u.css ===== */
+
+/* ===== SECTION: CORE / OVERRIDES ===== */
+/* iOS pass modal workaround / lock UI / minor tweaks */
 /* common_header_core_20251220u.css
    Shared overrides / shared tweaks for LDwiki common header
    - Drawer aligned to fixed 2-row header
