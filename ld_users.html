@@ -10,12 +10,11 @@
   <link rel="manifest" href="manifest.webmanifest">
 
   <!-- Common Header -->
-  <link rel="stylesheet" href="./common_header.css?v=20251220m" />
-  <script defer src="./supabase_config.js?v=20251219g"></script>
-  <script defer src="./common_header.js?v=20251220m"></script>
+  <link rel="stylesheet" href="./common_header.css?v=20251220r" />
+  <script defer src="./common_header.js?v=20251220r"></script>
 
   <!-- Page CSS -->
-  <link rel="stylesheet" href="./ld_users.css?v=20251220m" />
+  <link rel="stylesheet" href="./ld_users.css?v=20251219a" />
 </head>
 
 <body data-page-name="ユーザー情報">
@@ -38,7 +37,7 @@
 
           <label class="home-label">
             パス
-            <input id="userPassInput" type="text" maxlength="24" placeholder="（未入力）" autocomplete="current-password" disabled / data-ld-modal="true" readonly inputmode="text" name="ld_key" autocapitalize="off" spellcheck="false">
+            <input id="userPassInput" type="password" maxlength="24" placeholder="（未入力）" autocomplete="current-password" disabled />
           </label>
 
           <button id="userActionBtn" type="button" class="home-action-btn" disabled>続ける</button>
@@ -67,7 +66,7 @@
 
         <div class="field">
           <label for="inputPass">パス（本人確認）</label>
-          <input id="inputPass" type="text" maxlength="24" autocomplete="current-password" / data-ld-modal="true" readonly inputmode="text" name="ld_key" autocapitalize="off" spellcheck="false">
+          <input id="inputPass" type="password" maxlength="24" autocomplete="current-password" />
         </div>
 
         <div class="field">
@@ -103,6 +102,6 @@
     <div id="toast" class="toast"></div>
   </div>
 
-  <script type="module" src="./ld_users.js?v=20251220m"></script>
+  <script type="module" src="./ld_users.js?v=20251219a"></script>
 </body>
 </html>
