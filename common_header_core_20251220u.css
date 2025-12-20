@@ -1,0 +1,182 @@
+/* common_header_core_20251220u.css
+   Shared overrides / shared tweaks for LDwiki common header
+   - Drawer aligned to fixed 2-row header
+   - Auth pass field: button + modal (iOS IME workaround)
+   - Lock UI: "ロック中" (white text, red) on login button
+   - Pass button shows ONLY remaining time during lock
+*/
+
+:root{
+  --ld-topbar-h: 88px;
+  --ld-drawer-top-gap: 2px;
+
+  --ld-auth-disabled-bg: rgba(255,255,255,0.06);
+  --ld-auth-disabled-border: rgba(255,255,255,0.12);
+  --ld-auth-disabled-text: rgba(255,255,255,0.35);
+
+  --ld-auth-needpass-border: rgba(255,80,80,0.78);
+  --ld-auth-locked-border: rgba(255,60,60,0.92);
+  --ld-auth-locked-bg: rgba(255,60,60,0.86);
+}
+
+/* Drawer and overlay should start below fixed header */
+#drawer.drawer{
+  top: calc(var(--ld-topbar-h) + var(--ld-drawer-top-gap)) !important;
+  height: calc(100dvh - (var(--ld-topbar-h) + var(--ld-drawer-top-gap))) !important;
+}
+#drawerOverlay.drawer-overlay{
+  top: calc(var(--ld-topbar-h) + var(--ld-drawer-top-gap)) !important;
+  height: calc(100dvh - (var(--ld-topbar-h) + var(--ld-drawer-top-gap))) !important;
+}
+
+/* Remove redundant drawer header/footer to save vertical space */
+.drawer-header{ display:none !important; }
+.drawer-footer{ display:none !important; }
+
+.drawer-link{
+  font-size: 13px !important;
+  line-height: 1.2;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* ===== Pass button (replaces input to avoid iOS IME issues) ===== */
+.topbar-auth-passbtn{
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.92);
+  text-align: left;
+  font-size: 13px;
+  line-height: 34px;
+  cursor: pointer;
+  box-sizing: border-box;
+  white-space: nowrap;          /* keep 1 line */
+  overflow: hidden;
+  text-overflow: ellipsis;      /* just in case */
+}
+.topbar-auth-passbtn:disabled{
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Ghost overlay caused "placeholder remains" regressions -> always hide */
+.topbar-auth-ghost{ display:none !important; }
+
+/* Auth field states (apply to PASS BUTTON) */
+.topbar-auth-field.is-guest .topbar-auth-passbtn,
+#authPassBtn:disabled{
+  background: var(--ld-auth-disabled-bg) !important;
+  border-color: var(--ld-auth-disabled-border) !important;
+  color: var(--ld-auth-disabled-text) !important;
+  filter: grayscale(0.35);
+}
+
+/* Need-pass emphasis */
+.topbar-auth-field.is-needpass .topbar-auth-passbtn{
+  border-color: var(--ld-auth-needpass-border) !important;
+  box-shadow: 0 0 0 1px var(--ld-auth-needpass-border) inset, 0 0 0 1px rgba(0,0,0,0.25) !important;
+  outline: 1px dotted var(--ld-auth-needpass-border);
+  outline-offset: 0;
+}
+
+/* Locked emphasis for pass side */
+.topbar-auth-field.is-locked .topbar-auth-passbtn{
+  border-color: var(--ld-auth-locked-border) !important;
+  box-shadow: 0 0 0 1px var(--ld-auth-locked-border) inset !important;
+}
+
+/* ===== Login button lock UI (spec) ===== */
+#authLoginBtn.is-locked,
+.topbar-auth-btn.is-locked{
+  background: var(--ld-auth-locked-bg) !important;
+  border-color: var(--ld-auth-locked-border) !important;
+  color: #fff !important;
+  opacity: 1 !important;
+}
+
+/* Normalize page padding to header height */
+.page{
+  padding-top: calc(var(--ld-topbar-h) + 10px) !important;
+}
+
+/* ===== LD Common Input Modal (IME-friendly) ===== */
+.ld-modal-overlay{
+  position:fixed; inset:0; z-index:6500;
+  background:rgba(0,0,0,0.56);
+  display:none; align-items:center; justify-content:center;
+  padding:16px;
+}
+.ld-modal-overlay.is-open{ display:flex; }
+.ld-modal{
+  width:min(520px,92vw);
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,0.14);
+  background:rgba(10,12,18,0.96);
+  box-shadow:0 18px 60px rgba(0,0,0,0.65);
+  padding:12px;
+}
+.ld-modal-title{
+  font-weight:800; font-size:14px; margin:2px 4px 8px;
+  color:rgba(255,255,255,0.92);
+}
+.ld-modal-help{
+  margin:0 4px 10px; font-size:12px;
+  color:rgba(255,255,255,0.72);
+  line-height:1.35;
+  white-space: pre-line; /* show \n as line breaks */
+}
+.ld-modal-textarea{
+  width:100%; box-sizing:border-box;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.16);
+  background:rgba(255,255,255,0.08);
+  color:rgba(255,255,255,0.92);
+  padding:10px;
+  outline:none;
+  min-height:44px;
+  max-height:40vh;
+  resize:vertical;
+  font-size:16px;
+  line-height:1.35;
+}
+.ld-modal-actions{ display:flex; gap:10px; margin-top:12px; }
+.ld-modal-btn{
+  flex:1 1 auto;
+  height:44px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.18);
+  background:rgba(255,255,255,0.08);
+  color:rgba(255,255,255,0.92);
+  font-weight:800;
+  cursor:pointer;
+}
+.ld-modal-btn.primary{
+  border-color:rgba(63,191,255,0.40);
+  background:rgba(63,191,255,0.18);
+}
+
+/* ===== Mini toast ===== */
+.ld-mini-toast{
+  position:fixed;
+  left:50%;
+  bottom:18px;
+  transform:translateX(-50%);
+  z-index:7000;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.14);
+  background:rgba(10,12,18,0.92);
+  color:rgba(255,255,255,0.92);
+  font-size:13px;
+  font-weight:700;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .18s ease;
+  max-width:min(520px, 92vw);
+  text-align:center;
+}
+.ld-mini-toast.visible{ opacity:1; }
