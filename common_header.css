@@ -75,71 +75,20 @@
   padding-top: calc(var(--ld-topbar-h) + 10px) !important;
 }
 
+.topbar-auth-state-text{ color: #58ff9a; font-weight: 700; }
 
-/* ===== LD Common Input Modal (IME-friendly) ===== */
-.ld-modal-overlay{
-  position: fixed;
-  inset: 0;
-  z-index: 6000;
-  background: rgba(0,0,0,0.56);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-.ld-modal-overlay.is-open{ display:flex; }
 
-.ld-modal{
-  width: min(520px, 92vw);
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.14);
-  background: rgba(10,12,18,0.96);
-  box-shadow: 0 18px 60px rgba(0,0,0,0.65);
-  padding: 12px;
+/* Ensure authPass is never masked (no bullets) */
+#authPass{
+  -webkit-text-security: none !important;
 }
-.ld-modal-title{
-  font-weight: 800;
-  font-size: 14px;
-  margin: 2px 4px 8px;
-  color: rgba(255,255,255,0.92);
-}
-.ld-modal-help{
-  margin: 0 4px 10px;
-  font-size: 12px;
-  color: rgba(255,255,255,0.72);
-  line-height: 1.35;
-}
-.ld-modal-textarea{
-  width: 100%;
-  box-sizing: border-box;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.16);
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.92);
-  padding: 10px;
-  outline: none;
-  min-height: 44px;
-  max-height: 40vh;
-  resize: vertical;
-  font-size: 16px; /* avoid iOS zoom */
-  line-height: 1.35;
-}
-.ld-modal-actions{
-  display:flex;
-  gap: 10px;
-  margin-top: 12px;
-}
-.ld-modal-btn{
-  flex: 1 1 auto;
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.18);
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.92);
-  font-weight: 800;
-  cursor: pointer;
-}
-.ld-modal-btn.primary{
-  border-color: rgba(63,191,255,0.40);
-  background: rgba(63,191,255,0.18);
-}
+
+.ld-modal-overlay{position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,.56);display:none;align-items:center;justify-content:center;padding:16px;}
+.ld-modal-overlay.is-open{display:flex;}
+.ld-modal{width:min(520px,92vw);border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(10,12,18,.96);box-shadow:0 18px 60px rgba(0,0,0,.65);padding:12px;}
+.ld-modal-title{font-weight:800;font-size:14px;margin:2px 4px 8px;color:rgba(255,255,255,.92);}
+.ld-modal-help{margin:0 4px 10px;font-size:12px;color:rgba(255,255,255,.72);line-height:1.35;}
+.ld-modal-textarea{width:100%;box-sizing:border-box;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:rgba(255,255,255,.92);padding:10px;outline:none;min-height:44px;max-height:40vh;resize:vertical;font-size:16px;line-height:1.35;}
+.ld-modal-actions{display:flex;gap:10px;margin-top:12px;}
+.ld-modal-btn{flex:1 1 auto;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:rgba(255,255,255,.92);font-weight:800;cursor:pointer;}
+.ld-modal-btn.primary{border-color:rgba(63,191,255,.40);background:rgba(63,191,255,.18);}

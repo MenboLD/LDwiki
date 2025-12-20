@@ -270,7 +270,7 @@
         </label>
 
         <label class="topbar-auth-field" aria-label="パス">
-          <input id="authPass" type="password" autocomplete="current-password" placeholder="" />
+          <input id="authPass" type="text" autocomplete="current-password" placeholder="" />
           <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
         </label>
 
@@ -441,29 +441,13 @@
     const elUser = $("authUserName");
     const elPass = $("authPass");
     
-    // IME workaround: open modal for editing (iOS full-width input)
-    if(elPass && !elPass.dataset.ldModalHooked){
-      elPass.dataset.ldModalHooked = "1";
-      elPass.setAttribute("readonly","readonly");
-      elPass.setAttribute("type","text"); // keep visible
-      elPass.setAttribute("autocomplete","off");
-      elPass.setAttribute("inputmode","text");
-      elPass.setAttribute("autocapitalize","off");
-      elPass.setAttribute("spellcheck","false");
-
-      const open = (ev) => {
-        // do not open if disabled (guest/lock state)
-        if(elPass.disabled) return;
-        ev?.preventDefault?.();
-        ev?.stopPropagation?.();
-        window.LD_openTextModal?.(elPass, { title: "ログインキー", help: "ここで入力して「決定」を押すと、ヘッダーの入力欄に反映されます。" });
-      };
-      // Use touchstart to beat iOS focus, plus click as fallback
-      elPass.addEventListener("touchstart", open, { passive: false });
-      elPass.addEventListener("mousedown", open, { passive: false });
-      elPass.addEventListener("click", open, { passive: false });
-      // Block focus selection
-      elPass.addEventListener("focus", (e) => { try{ elPass.blur(); }catch(_e){} }, { passive: true });
+    if(elPass){
+      // hard-enforce visible text (no bullets) even if some CSS sets text-security
+      try{
+        elPass.type = "text";
+        elPass.style.webkitTextSecurity = "none";
+        elPass.style.webkitTextSecurity = "none";
+      }catch(_e){}
     }
 const elGhost = $("authGhost");
     const elLoginBtn = $("authLoginBtn");
@@ -844,10 +828,23 @@ if(!pass){
     });
   }
 
-  // ===== Common Input Modal (shared across pages) =====
-  function setupTextModal(){
-    if(document.getElementById("ldModalOverlay")) return;
+  function boot(){
+    if(!document.body) return;
+    injectHeader();
+    normalizeExistingHeader();
+    setupDrawer();
+    setupSoonLinks();
+    setupAuth();
+  }
 
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", boot, { once: true });
+  }else{
+    
+/* ===== LD Common Input Modal (IME-friendly) ===== */
+(function(){
+  function ensureModal(){
+    if(document.getElementById("ldModalOverlay")) return;
     const ov = document.createElement("div");
     ov.id = "ldModalOverlay";
     ov.className = "ld-modal-overlay";
@@ -861,72 +858,82 @@ if(!pass){
           <button class="ld-modal-btn" id="ldModalCancel" type="button">キャンセル</button>
           <button class="ld-modal-btn primary" id="ldModalOk" type="button">決定</button>
         </div>
-      </div>
-    `;
+      </div>`;
     document.body.appendChild(ov);
 
-    const els = {
-      ov,
-      title: document.getElementById("ldModalTitle"),
-      help: document.getElementById("ldModalHelp"),
-      ta: document.getElementById("ldModalTextarea"),
-      ok: document.getElementById("ldModalOk"),
-      cancel: document.getElementById("ldModalCancel"),
-    };
-
+    const ta = document.getElementById("ldModalTextarea");
+    const ok = document.getElementById("ldModalOk");
+    const cancel = document.getElementById("ldModalCancel");
     let target = null;
 
-    function open(targetEl, opts={}){
-      if(!targetEl || targetEl.disabled) return;
-      target = targetEl;
-      els.title.textContent = opts.title || "入力";
-      els.help.textContent = opts.help || "ここで入力して「決定」を押すと元の欄に反映されます。";
-      els.ta.value = targetEl.value || "";
-      els.ov.classList.add("is-open");
-      setTimeout(() => {
-        els.ta.focus();
-        els.ta.setSelectionRange(els.ta.value.length, els.ta.value.length);
-      }, 0);
-    }
-
     function close(){
-      els.ov.classList.remove("is-open");
+      ov.classList.remove("is-open");
       target = null;
     }
-
     function commit(){
       if(!target) return close();
-      target.value = els.ta.value;
-      target.dispatchEvent(new Event("input", { bubbles: true }));
+      target.value = ta.value;
+      target.dispatchEvent(new Event("input", { bubbles:true }));
       close();
     }
 
-    els.cancel?.addEventListener("click", close);
-    els.ok?.addEventListener("click", commit);
-    els.ov.addEventListener("click", (e) => { if(e.target === els.ov) close(); }, { passive: true });
-    els.ta.addEventListener("keydown", (e) => {
-      if(e.key === "Escape"){ e.preventDefault(); close(); }
-      if(e.key === "Enter" && (e.metaKey || e.ctrlKey)){ e.preventDefault(); commit(); }
+    cancel.addEventListener("click", close);
+    ok.addEventListener("click", commit);
+    ov.addEventListener("click", (e)=>{ if(e.target===ov) close(); }, {passive:true});
+    ta.addEventListener("keydown", (e)=>{
+      if(e.key==="Escape"){ e.preventDefault(); close(); }
+      if(e.key==="Enter" && (e.metaKey||e.ctrlKey)){ e.preventDefault(); commit(); }
     });
 
-    // expose
-    window.LD_openTextModal = open;
+    window.LD_openTextModal = (el, opts={})=>{
+      if(!el || el.disabled) return;
+      target = el;
+      document.getElementById("ldModalTitle").textContent = opts.title || "入力";
+      document.getElementById("ldModalHelp").textContent = opts.help || "ここで入力して「決定」を押すと元の欄に反映されます。";
+      ta.value = el.value || "";
+      ov.classList.add("is-open");
+      setTimeout(()=>{ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 0);
+    };
   }
 
-
-  function boot(){
-    if(!document.body) return;
-    setupTextModal();
-    injectHeader();
-    normalizeExistingHeader();
-    setupDrawer();
-    setupSoonLinks();
-    setupAuth();
-  }
-
+  // Ensure after DOM ready
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", boot, { once: true });
+    document.addEventListener("DOMContentLoaded", ensureModal);
   }else{
-    boot();
+    ensureModal();
+  }
+})();
+
+boot();
+  }
+})();
+
+// ===== Modal hook for authPass (v2) =====
+(function(){
+  const hook = ()=>{
+    const el = document.getElementById("authPass");
+    if(!el) return;
+    if(el.dataset.ldModalHookedV2) return;
+    el.dataset.ldModalHookedV2 = "1";
+    try{
+      el.type = "text";
+      el.style.webkitTextSecurity = "none";
+    }catch(_e){}
+    el.setAttribute("readonly","readonly");
+    const open = (e)=>{
+      if(el.disabled) return;
+      if(e){ e.preventDefault(); e.stopPropagation(); }
+      window.LD_openTextModal?.(el, { title:"ログインキー", help:"ここで入力して「決定」を押すと、ヘッダーの入力欄に反映されます。" });
+    };
+    el.addEventListener("pointerdown", open, { passive:false });
+    el.addEventListener("touchstart", open, { passive:false });
+    el.addEventListener("mousedown", open, { passive:false });
+    el.addEventListener("click", open, { passive:false });
+    el.addEventListener("focus", ()=>{ try{ el.blur(); }catch(_e){} }, { passive:true });
+  };
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded", hook);
+  }else{
+    hook();
   }
 })();
