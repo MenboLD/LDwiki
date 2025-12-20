@@ -35,7 +35,59 @@
   ];
 
   function $(id){ return document.getElementById(id); }
-  function safeTrim(v){ return (v || "").trim(); }
+  
+
+  // ===== Common Text Modal API (IME-friendly) =====
+  const _modal = {
+    ov: () => document.getElementById("ldModalOverlay"),
+    title: () => document.getElementById("ldModalTitle"),
+    help: () => document.getElementById("ldModalHelp"),
+    ta: () => document.getElementById("ldModalTextarea"),
+    ok: () => document.getElementById("ldModalOk"),
+    cancel: () => document.getElementById("ldModalCancel"),
+  };
+
+  let _modalTarget = null;
+
+  function openTextModal(targetInput, opts = {}){
+    const ov = _modal.ov();
+    const ta = _modal.ta();
+    if(!ov || !ta || !targetInput) return;
+    if(targetInput.disabled) return;
+
+    _modalTarget = targetInput;
+
+    const title = _modal.title();
+    const help = _modal.help();
+    if(title) title.textContent = opts.title || "入力";
+    if(help) help.textContent = opts.help || "ここで入力して「決定」を押すと元の欄に反映されます。";
+
+    ta.value = targetInput.value || "";
+    ov.classList.add("is-open");
+
+    setTimeout(() => {
+      ta.focus();
+      try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch(e){}
+    }, 0);
+  }
+
+  function closeTextModal(){
+    const ov = _modal.ov();
+    if(!ov) return;
+    ov.classList.remove("is-open");
+    _modalTarget = null;
+  }
+
+  function commitTextModal(){
+    const ta = _modal.ta();
+    if(!_modalTarget || !ta) return closeTextModal();
+    _modalTarget.value = ta.value;
+    _modalTarget.dispatchEvent(new Event("input", { bubbles: true }));
+    closeTextModal();
+  }
+
+  window.LD_openTextModal = openTextModal;
+function safeTrim(v){ return (v || "").trim(); }
 
   function loadAuth(){
     try{
@@ -270,7 +322,7 @@
         </label>
 
         <label class="topbar-auth-field" aria-label="パス">
-          <input id="authPass" type="text" autocomplete="off" placeholder="" / inputmode="text" name="ld_key" autocapitalize="off" spellcheck="false" data-ld-modal="true" readonly>
+          <input id="authPass" type="password" autocomplete="current-password" placeholder="" / readonly data-ld-modal="true">
           <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
         </label>
 
@@ -312,6 +364,27 @@
     document.body.insertBefore(overlay, document.body.firstChild);
     document.body.insertBefore(drawer, overlay.nextSibling);
     document.body.insertBefore(topbar, drawer.nextSibling);
+
+    // ===== IME-friendly common modal (shared across pages) =====
+    if (!document.getElementById("ldModalOverlay")) {
+      const ov = document.createElement("div");
+      ov.id = "ldModalOverlay";
+      ov.className = "ld-modal-overlay";
+      ov.innerHTML = `
+        <div class="ld-modal" role="dialog" aria-modal="true" aria-labelledby="ldModalTitle">
+          <div class="ld-modal-title" id="ldModalTitle">入力</div>
+          <div class="ld-modal-help" id="ldModalHelp">ここで入力して「決定」を押すと元の欄に反映されます。</div>
+          <textarea class="ld-modal-textarea" id="ldModalTextarea" rows="2"
+            inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+          <div class="ld-modal-actions">
+            <button class="ld-modal-btn" id="ldModalCancel" type="button">キャンセル</button>
+            <button class="ld-modal-btn primary" id="ldModalOk" type="button">決定</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(ov);
+    }
+
 
     // page name
     const elPage = $("topbarPageName");
@@ -546,6 +619,37 @@
       setGuestState();
       return;
     }
+
+    // ===== IME-friendly modal wiring for auth pass =====
+    (function hookLdModalInputs(){
+      const ov = document.getElementById("ldModalOverlay");
+      const ok = document.getElementById("ldModalOk");
+      const cancel = document.getElementById("ldModalCancel");
+      const ta = document.getElementById("ldModalTextarea");
+
+      if(cancel) cancel.addEventListener("click", closeTextModal);
+      if(ok) ok.addEventListener("click", commitTextModal);
+      if(ov) ov.addEventListener("click", (e) => { if(e.target === ov) closeTextModal(); });
+
+      if(ta){
+        ta.addEventListener("keydown", (e) => {
+          if(e.key === "Escape"){ e.preventDefault(); closeTextModal(); }
+          if(e.key === "Enter" && (e.metaKey || e.ctrlKey)){ e.preventDefault(); commitTextModal(); }
+        });
+      }
+
+      // Keep readonly to avoid iOS password heuristics; edit via modal
+      elPass.setAttribute("readonly","readonly");
+
+      const open = () => openTextModal(elPass, {
+        title: "ログインキー",
+        help: "ここで入力して「決定」を押すと、元の欄に反映されます。"
+      });
+
+      elPass.addEventListener("click", open);
+      elPass.addEventListener("touchstart", open, { passive: true });
+    })();
+
 
     // If locked, keep UI but disable login
     if(isLocked){

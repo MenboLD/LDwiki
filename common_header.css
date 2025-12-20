@@ -75,8 +75,6 @@
   padding-top: calc(var(--ld-topbar-h) + 10px) !important;
 }
 
-.topbar-auth-state-text{ color: #58ff9a; font-weight: 700; }
-
 
 /* ===== Common Text Input Modal (IME-friendly) ===== */
 .ld-modal-overlay{
@@ -90,7 +88,6 @@
   padding: 18px;
 }
 .ld-modal-overlay.is-open{ display: flex; }
-
 .ld-modal{
   width: min(520px, 92vw);
   border-radius: 14px;
@@ -99,7 +96,6 @@
   box-shadow: 0 18px 60px rgba(0,0,0,0.65);
   padding: 12px;
 }
-
 .ld-modal-title{
   font-weight: 800;
   font-size: 14px;
@@ -112,7 +108,6 @@
   color: rgba(255,255,255,0.70);
   line-height: 1.35;
 }
-
 .ld-modal-textarea{
   width: 100%;
   box-sizing: border-box;
@@ -125,10 +120,9 @@
   min-height: 44px;
   max-height: 40vh;
   resize: vertical;
-  font-size: 16px; /* avoid iOS zoom */
+  font-size: 16px;
   line-height: 1.35;
 }
-
 .ld-modal-actions{
   display: flex;
   gap: 10px;
