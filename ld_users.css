@@ -223,12 +223,18 @@ body{
   text-overflow: ellipsis;
   box-sizing: border-box;
 }
-
-/* Home pass button should have red border (spec) */
-#userPassBtn.pass-modal-btn{ border-color: var(--danger); }
 .pass-modal-btn:disabled{
   background: rgba(255,255,255,0.06);
   color: rgba(255,255,255,0.45);
   border-style: dashed;
   cursor: default;
+}
+
+/* Need-pass emphasis (match common_header: red + dotted outline)
+   ※登録済みユーザー名が入力されていて、かつパス未入力のときのみ付与 */
+.pass-modal-btn.is-needpass{
+  border-color: rgba(255,80,80,0.78) !important;
+  box-shadow: 0 0 0 1px rgba(255,80,80,0.78) inset, 0 0 0 1px rgba(0,0,0,0.25) !important;
+  outline: 1px dotted rgba(255,80,80,0.78);
+  outline-offset: 0;
 }

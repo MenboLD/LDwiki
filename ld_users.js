@@ -1,14 +1,14 @@
-
 // ========== iOS IME workaround: Pass inputs -> hidden + modal button ==========
+// NOTE: 文言は共通ヘッダー側の確定仕様を先頭に含める（このページでは「注意」も追記する）
 const LD_USERS_PASS_MODAL_HELP =
-  "正しいパスを入力し、決定ボタンを押してください\n"
- + "※全角は5文字、半角は10文字（組み合わせて10byte）まで\n\n"
- + "注意\n"
- + "・ユーザー名とパスは変更できません\n"
- + "・パスは再発行や再確認が不可能です。必ず画面スクリーンショットやメモするなどし、個人で控えてください\n"
- + "・ユーザー名やパスを除き、ユニットの育成情報などは基本的に公開情報扱いになります。今後、項目ごとに公開/非公開の設定機能は追加予定です\n"
- + "・登録するユーザー名はゲーム内のプレイヤーとは異なる名前で登録することを推奨します。\n"
- + "・ゲスト、登録ユーザーの差異にかかわらずIPアドレスなどの情報は運営側に保持されます。";
+  "正しいパスを入力し、決定ボタンを押してください\n" +
+  "※全角は5文字、半角は10文字（組み合わせて10byte）まで\n\n" +
+  "注意\n" +
+  "・ユーザー名とパスは変更できません\n" +
+  "・パスは再発行や再確認が不可能です。必ず画面スクリーンショットやメモするなどし、個人で控えてください\n" +
+  "・ユーザー名やパスを除き、ユニットの育成情報などは基本的に公開情報扱いになります。今後、項目ごとに公開/非公開の設定機能は追加予定です\n" +
+  "・登録するユーザー名はゲーム内のプレイヤーとは異なる名前で登録することを推奨します。\n" +
+  "・ゲスト、登録ユーザーの差異にかかわらずIPアドレスなどの情報は運営側に保持されます。";
 
 function ensurePassButton(inputEl, btnId) {
   if (!inputEl) return null;
@@ -17,7 +17,6 @@ function ensurePassButton(inputEl, btnId) {
   inputEl.type = "hidden";
 
   let btn = document.getElementById(btnId);
-  if (btnId === "userPassBtn" && btn) btn.classList.add("pass-modal-btn--danger");
   if (!btn) {
     btn = document.createElement("button");
     btn.id = btnId;
@@ -35,7 +34,8 @@ function ensurePassButton(inputEl, btnId) {
     if (btn.disabled) return;
 
     if (typeof window.LD_openTextModal !== "function") {
-      showToast("モーダル未初期化（common_header）");
+      // showToast は IIFE 内にあることがあるため、ここでは安全にフォールバック
+      try { window.alert("モーダル未初期化（common_header）"); } catch {}
       return;
     }
 
@@ -61,7 +61,7 @@ function syncPassButton(btnId, inputEl, fallbackText) {
   btn.textContent = inputEl.value ? inputEl.value : (fallbackText ?? inputEl.placeholder ?? "（未入力）");
 }
 
-// ld_users.js (v20251219a) - RPC-based register/edit for ld_users (RLS ON, policy none)
+// ld_users.js (v20251221aa) - RPC-based register/edit for ld_users (RLS ON, policy none)
 (() => {
   "use strict";
 
@@ -152,48 +152,14 @@ function syncPassButton(btnId, inputEl, fallbackText) {
     window.dispatchEvent(new CustomEvent("ld-auth-changed", { detail: auth }));
   }
 
-  function setHomeState({ mode, canProceed, statusText, passEnabled, passPlaceholder }) {
-    // pass input/button state
-    userPassInput.disabled = !passEnabled;
-    if (passPlaceholder != null) userPassInput.placeholder = passPlaceholder;
-
-    // mirror to pass-modal-button (disabled / label)
-    syncPassButton("userPassBtn", userPassInput, userPassInput.placeholder);
-
-    // status label
-    if (statusText != null) userStatusLabel.textContent = statusText;
-
-    // action button label rules (homeView):
-    const uname = safeTrim(userNameInput.value);
-    const pass = safeTrim(userPassInput.value);
-
-    if (!uname) {
-      userActionBtn.disabled = true;
-      userActionBtn.textContent = "※先にユーザー名を入力してください";
-      userActionBtn.dataset.mode = "";
-      return;
-    }
-
-    if (!pass) {
-      userActionBtn.disabled = true;
-      userActionBtn.textContent = "※先にパスを入力してください";
-      userActionBtn.dataset.mode = mode || "";
-      return;
-    }
-
-    // both present
-    userActionBtn.disabled = !canProceed;
-    if (mode === "register") userActionBtn.textContent = "新規登録";
-    else if (mode === "edit") userActionBtn.textContent = "編集へ";
-    else userActionBtn.textContent = "続ける";
-    userActionBtn.dataset.mode = mode || "";
-  }
-
   function showHome() {
     formView.classList.add("hidden");
     homeView.classList.remove("hidden");
     inputPass.value = "";
     btnSaveUser.disabled = false;
+
+    // 同期（本人確認パスボタン）
+    syncPassButton("inputPassBtn", inputPass, inputPass.placeholder);
   }
 
   function showForm() {
@@ -229,6 +195,66 @@ function syncPassButton(btnId, inputEl, fallbackText) {
     return !!ok;
   }
 
+  function getExistsKnownFor(uname) {
+    const u = safeTrim(uname);
+    if (!u) return null;
+    if (u === lastExistsQuery) return lastExistsValue;
+    return null; // unknown
+  }
+
+  function updateHomeUi() {
+    const uname = safeTrim(userNameInput.value);
+    const pass = safeTrim(userPassInput.value);
+    const hasU = !!uname;
+
+    // pass button enable/disable
+    userPassInput.disabled = !hasU;
+
+    // clear pass if username cleared (avoid stale pass)
+    if (!hasU && userPassInput.value) {
+      userPassInput.value = "";
+    }
+
+    const existsKnown = getExistsKnownFor(uname); // true / false / null
+
+    // Pass button label + needpass emphasis (登録済みのみ)
+    let passLabel = "（未入力）";
+    if (hasU) {
+      if (pass) passLabel = pass;
+      else if (existsKnown === true) passLabel = "要パス";
+      else passLabel = "パスを設定してください";
+    }
+
+    syncPassButton("userPassBtn", userPassInput, passLabel);
+    const passBtn = $("userPassBtn");
+    if (passBtn) {
+      const needPass = hasU && existsKnown === true;
+      passBtn.classList.toggle("is-needpass", needPass);
+    }
+
+    // Action button label spec
+    if (!hasU) {
+      userActionBtn.textContent = "※先にユーザー名を入力してください";
+      userActionBtn.disabled = true;
+      userActionBtn.dataset.mode = "";
+      return;
+    }
+
+    if (!pass) {
+      userActionBtn.textContent = "※先にパスを入力してください";
+      userActionBtn.disabled = true;
+      // mode表示は exists判定後に更新（ただし動作はクリック時に確定させる）
+      userActionBtn.dataset.mode = (existsKnown === true) ? "edit" : "register";
+      return;
+    }
+
+    // passあり：表示は existsKnown を優先。未知なら暫定で「新規登録」表示。
+    const modeForLabel = (existsKnown === true) ? "edit" : "register";
+    userActionBtn.dataset.mode = modeForLabel;
+    userActionBtn.textContent = (modeForLabel === "edit") ? "編集へ" : "新規登録";
+    userActionBtn.disabled = false;
+  }
+
   function scheduleExistsCheck() {
     const uname = safeTrim(userNameInput.value);
     window.clearTimeout(existsTimer);
@@ -237,25 +263,14 @@ function syncPassButton(btnId, inputEl, fallbackText) {
       lastExistsQuery = "";
       lastExistsValue = false;
       headerStats.textContent = "";
-      setHomeState({
-        mode: "",
-        canProceed: false,
-        statusText: "ユーザー名を入力してください",
-        passEnabled: false,
-        passPlaceholder: "（未入力）",
-      });
+      userStatusLabel.textContent = "ユーザー名を入力してください";
+      updateHomeUi();
       return;
     }
 
-    // Enable pass button immediately (do not wait for RPC)
-    const passNow = safeTrim(userPassInput.value);
-    setHomeState({
-      mode: userActionBtn.dataset.mode || "",
-      canProceed: !!passNow,
-      statusText: passNow ? "続けられます" : "パスを入力してください",
-      passEnabled: true,
-      passPlaceholder: passNow ? "●●●●" : "パスを設定してください",
-    });
+    // Enable pass button immediately (so it is clickable after username input)
+    userPassInput.disabled = false;
+    updateHomeUi();
 
     existsTimer = window.setTimeout(async () => {
       try {
@@ -265,66 +280,18 @@ function syncPassButton(btnId, inputEl, fallbackText) {
         headerStats.textContent = exists ? "登録済み" : "未登録";
 
         const pass = safeTrim(userPassInput.value);
-        const emptyLabel = exists ? "要パス" : "パスを設定してください";
-
         if (exists) {
-          setHomeState({
-            mode: "edit",
-            canProceed: !!pass,
-            statusText: pass ? "編集できます（パス確認）" : "登録済み：パスを入力してください",
-            passEnabled: true,
-            passPlaceholder: pass ? "●●●●" : emptyLabel,
-          });
+          userStatusLabel.textContent = pass ? "編集できます（パス確認）" : "登録済み：パスを入力してください";
         } else {
-          setHomeState({
-            mode: "register",
-            canProceed: !!pass,
-            statusText: pass ? "新規登録できます" : "未登録：パスを設定してください",
-            passEnabled: true,
-            passPlaceholder: pass ? "●●●●" : emptyLabel,
-          });
+          userStatusLabel.textContent = pass ? "新規登録できます" : "未登録：パスを設定してください";
         }
       } catch (e) {
         headerStats.textContent = "判定不可";
-        const pass = safeTrim(userPassInput.value);
-        setHomeState({
-          mode: "register",
-          canProceed: !!pass,
-          statusText: pass ? "続けられます（判定不可）" : "パスを入力してください",
-          passEnabled: true,
-          passPlaceholder: pass ? "●●●●" : "パスを設定してください",
-        });
+        userStatusLabel.textContent = "ユーザー名を確認できません";
+      } finally {
+        updateHomeUi();
       }
-    }, 180);
-  }
-
-  function refreshProceedEnabled() {
-    const uname = safeTrim(userNameInput.value);
-    const pass = safeTrim(userPassInput.value);
-
-    if (!uname) {
-      setHomeState({
-        mode: "",
-        canProceed: false,
-        statusText: "ユーザー名を入力してください",
-        passEnabled: false,
-        passPlaceholder: "（未入力）",
-      });
-      return;
-    }
-
-    const existsKnown = (lastExistsQuery === uname);
-    const exists = existsKnown ? lastExistsValue : false;
-    const mode = exists ? "edit" : "register";
-    const emptyLabel = exists ? "要パス" : "パスを設定してください";
-
-    setHomeState({
-      mode,
-      canProceed: !!pass,
-      statusText: userStatusLabel.textContent,
-      passEnabled: true,
-      passPlaceholder: pass ? "●●●●" : emptyLabel,
-    });
+    }, 220);
   }
 
   // ========== Data RPCs ==========
@@ -346,6 +313,16 @@ function syncPassButton(btnId, inputEl, fallbackText) {
   }
 
   // ========== Form actions ==========
+  async function resolveModeByServer(name) {
+    try {
+      const exists = await checkExistsNow(name);
+      return exists ? "edit" : "register";
+    } catch {
+      // fallback: last known
+      return (safeTrim(name) === lastExistsQuery && lastExistsValue) ? "edit" : "register";
+    }
+  }
+
   async function enterEditFlow(mode) {
     const name = safeTrim(userNameInput.value);
     const pass = safeTrim(userPassInput.value);
@@ -391,6 +368,9 @@ function syncPassButton(btnId, inputEl, fallbackText) {
         setStats({ comment_count: 0, mis_input_count: 0, like_count: 0 });
         formModeLabel.textContent = "編集";
         showForm();
+
+        // 同期（本人確認パスボタン）
+        syncPassButton("inputPassBtn", inputPass, inputPass.placeholder);
         return;
       }
 
@@ -401,6 +381,9 @@ function syncPassButton(btnId, inputEl, fallbackText) {
       setStats(data2);
       formModeLabel.textContent = data2.is_new ? "新規登録（初期設定）" : "編集";
       showForm();
+
+      // 同期（本人確認パスボタン）
+      syncPassButton("inputPassBtn", inputPass, inputPass.placeholder);
 
     } catch (e) {
       console.error(e);
@@ -476,24 +459,36 @@ function syncPassButton(btnId, inputEl, fallbackText) {
     // Pass inputs -> modal buttons (iOS IME workaround)
     ensurePassButton(userPassInput, "userPassBtn");
     ensurePassButton(inputPass, "inputPassBtn");
-    syncPassButton("userPassBtn", userPassInput, userPassInput.placeholder);
-    syncPassButton("inputPassBtn", inputPass, inputPass.placeholder);
 
     setAccordion(false);
 
     userNameInput.addEventListener("input", () => {
       scheduleExistsCheck();
-      refreshProceedEnabled();
+      updateHomeUi();
     });
 
     userPassInput.addEventListener("input", () => {
+      // pass changes should update labels immediately, but user existence check doesn't need to rerun
+      updateHomeUi();
       scheduleExistsCheck();
-      refreshProceedEnabled();
     });
 
-    userActionBtn.addEventListener("click", () => {
-      const mode = userActionBtn.dataset.mode || (lastExistsValue ? "edit" : "register");
-      enterEditFlow(mode);
+    userActionBtn.addEventListener("click", async () => {
+      const name = safeTrim(userNameInput.value);
+      const pass = safeTrim(userPassInput.value);
+      if (!name) {
+        showToast("ユーザー名を入力してください");
+        updateHomeUi();
+        return;
+      }
+      if (!pass) {
+        showToast("パスを入力してください");
+        updateHomeUi();
+        return;
+      }
+
+      const resolvedMode = await resolveModeByServer(name);
+      enterEditFlow(resolvedMode);
     });
 
     btnBackHome.addEventListener("click", showHome);
@@ -504,7 +499,9 @@ function syncPassButton(btnId, inputEl, fallbackText) {
     btnJsonFormat.addEventListener("click", formatJson);
 
     // initial state
-    setHomeState({ mode: "", canProceed: false, statusText: "ユーザー名を入力してください", passEnabled: false, passPlaceholder: "（未入力）" });
+    headerStats.textContent = "";
+    userStatusLabel.textContent = "ユーザー名を入力してください";
+    updateHomeUi();
   }
 
   document.addEventListener("DOMContentLoaded", init);
