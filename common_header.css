@@ -1,174 +1,329 @@
-/* common_header.css (unified: base r + core u) */
-/* build: 20251220ah */
-
-/* common_header.css (overrides / shared tweaks)
-   - Align drawer to fixed 2-row header
-   - Reduce drawer vertical footprint (no title/subtitle/footer)
-   - Auth pass field: guest/needpass visual states
+/* common_header.css
+   [ldwiki] UNIFIED_BUILD:20251220aj
+   Purpose:
+   - Provide the *base* styling for the shared topbar + drawer (previously only in index.css)
+   - Keep iOS pass IME workaround + lock UI + drawer alignment overrides (from common_header_core_20251220u.css)
 */
 
-:root{
-  /* JS will update --ld-topbar-h at runtime (topbarWrap height). */
-  --ld-topbar-h: 88px;
-  --ld-drawer-top-gap: 2px;
+/* ===== Base: Drawer (moved from index.css) ===== */
+    /* ドロワー本体 */
+    .drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: min(280px, 80vw);
+      max-width: 320px;
+      background: linear-gradient(135deg, #05070c, #151927);
+      border-right: 1px solid var(--border-soft, var(--border, rgba(255,255,255,0.10)));
+      box-shadow: 0 0 30px rgba(0,0,0,0.7);
+      transform: translateX(-100%);
+      transition: transform var(--transition-fast, 0.22s ease-out);
+      z-index: 1100;
+      display: flex;
+      flex-direction: column;
+    }
 
-  --ld-auth-disabled-bg: rgba(255,255,255,0.06);
-  --ld-auth-disabled-border: rgba(255,255,255,0.12);
-  --ld-auth-disabled-text: rgba(255,255,255,0.35);
+    .drawer.open {
+      transform: translateX(0);
+    }
 
-  --ld-auth-needpass-border: rgba(255,80,80,0.78);
+    .drawer-header {
+      padding: 16px 14px 10px;
+      border-bottom: 1px solid var(--border-soft, var(--border, rgba(255,255,255,0.10)));
+    }
+
+    .drawer-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 0 0 2px;
+    }
+
+    .drawer-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-sub, rgba(255,255,255,0.68));
+      margin: 0;
+    }
+
+    .drawer-close-row {
+      display: flex;
+      justify-content: flex-end;
+      padding: 8px 12px 0;
+      font-size: 0.85rem;
+    }
+
+    .drawer-close-button {
+      all: unset;
+      cursor: pointer;
+      color: var(--accent, #3fbfff);
+      font-size: 0.8rem;
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    .drawer-close-button:hover {
+      background: var(--accent-soft, rgba(63, 191, 255, 0.18));
+    }
+
+    .drawer-body {
+      padding: 8px 8px 12px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .drawer-nav {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+      font-size: 0.85rem;
+    }
+
+    .drawer-nav-item {
+      margin: 2px 0;
+    }
+
+    .drawer-link {
+      display: block;
+      padding: 6px 8px;
+      border-radius: 8px;
+      color: var(--text-main, rgba(255,255,255,0.92));
+      text-decoration: none;
+    }
+
+    .drawer-link:hover {
+      background: var(--accent-soft, rgba(63, 191, 255, 0.18));
+    }
+
+    .drawer-group-separator {
+      height: 10px;
+    }
+
+    .drawer-section-label {
+      font-size: 0.75rem;
+      color: var(--text-sub, rgba(255,255,255,0.68));
+      margin: 6px 0 2px;
+      padding: 0 8px;
+    }
+
+    .drawer-footer {
+      padding: 10px 12px 12px;
+      border-top: 1px solid var(--border-soft, var(--border, rgba(255,255,255,0.10)));
+      font-size: 0.75rem;
+      color: var(--text-sub, rgba(255,255,255,0.68));
+    }
+
+    /* メニュー開閉時のオーバーレイ */
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition-fast, 0.22s ease-out);
+      z-index: 1050;
+    }
+
+    .drawer-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+/* ===== Base: Topbar (moved from index.css) ===== */
+    /* 上部固定ヘッダー（右上にメニューボタン） */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 44px;
+      z-index: 1200; /* drawer(1100)より前面 */
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      background: rgba(6, 8, 12, 0.9);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--border-soft, var(--border, rgba(255,255,255,0.10)));
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    }
+
+    .topbar-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: calc(100% - 60px);
+    }
+
+    .topbar-menu-btn {
+      all: unset;
+      cursor: pointer;
+      width: 38px;
+      height: 32px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-main, rgba(255,255,255,0.92));
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(63, 191, 255, 0.10);
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .topbar-menu-btn:active {
+      transform: translateY(1px);
+    }
+
+/* ===== Topbar 2段（ページ名＋ログイン） ===== */
+
+.topbar{
+  height: auto;
+  padding: 8px 10px 8px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
-/* Drawer and overlay should start below fixed header */
-#drawer.drawer{
-  top: calc(var(--ld-topbar-h) + var(--ld-drawer-top-gap)) !important;
-  height: calc(100dvh - (var(--ld-topbar-h) + var(--ld-drawer-top-gap))) !important;
-}
-#drawerOverlay.drawer-overlay{
-  top: calc(var(--ld-topbar-h) + var(--ld-drawer-top-gap)) !important;
-  height: calc(100dvh - (var(--ld-topbar-h) + var(--ld-drawer-top-gap))) !important;
-}
-
-/* Remove redundant drawer header/footer to save vertical space */
-.drawer-header{ display:none !important; }
-.drawer-footer{ display:none !important; }
-
-/* Slightly smaller menu items to maximize visible list */
-.drawer-link{
-  font-size: 13px !important;
-  line-height: 1.2;
-  padding-top: 10px;
-  padding-bottom: 10px;
-}
-
-/* Auth field states */
-.topbar-auth-field.is-guest input#authPass,
-#authPass.ld-pass-guest,
-#authPass:disabled{
-  background: var(--ld-auth-disabled-bg) !important;
-  border-color: var(--ld-auth-disabled-border) !important;
-  color: var(--ld-auth-disabled-text) !important;
-  cursor: not-allowed !important;
-  filter: grayscale(0.35);
-}
-.topbar-auth-field.is-guest input#authPass::placeholder,
-#authPass.ld-pass-guest::placeholder,
-#authPass:disabled::placeholder{
-  color: rgba(255,255,255,0.28) !important;
-}
-.topbar-auth-field.is-guest .topbar-auth-ghost{
-  opacity: 0.85;
-}
-
-/* Need-pass emphasis (thicker red feel without resizing the input box) */
-.topbar-auth-field.is-needpass input#authPass,
-#authPass.ld-pass-needed{
-  border-color: var(--ld-auth-needpass-border) !important;
-  box-shadow: 0 0 0 1px var(--ld-auth-needpass-border) inset, 0 0 0 1px rgba(0,0,0,0.25) !important;
-  outline: 1px dotted var(--ld-auth-needpass-border);
-  outline-offset: 0;
-}
-.topbar-auth-field.is-needpass .topbar-auth-ghost,
-.topbar-auth-ghost.ld-ghost-needed{
-  color: rgba(255,120,120,0.95) !important;
-}
-
-/* If some pages add too-large top padding, normalize it to header height + small gap */
-.page{
-  padding-top: calc(var(--ld-topbar-h) + 10px) !important;
-}
-
-
-/* ===== LD Common Input Modal (IME-friendly) ===== */
-.ld-modal-overlay{
-  position: fixed;
-  inset: 0;
-  z-index: 6000;
-  background: rgba(0,0,0,0.56);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-.ld-modal-overlay.is-open{ display:flex; }
-
-.ld-modal{
-  width: min(520px, 92vw);
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.14);
-  background: rgba(10,12,18,0.96);
-  box-shadow: 0 18px 60px rgba(0,0,0,0.65);
-  padding: 12px;
-}
-.ld-modal-title{
-  font-weight: 800;
-  font-size: 14px;
-  margin: 2px 4px 8px;
-  color: rgba(255,255,255,0.92);
-}
-.ld-modal-help{
-  margin: 0 4px 10px;
-  font-size: 12px;
-  color: rgba(255,255,255,0.72);
-  line-height: 1.35;
-}
-.ld-modal-textarea{
-  width: 100%;
-  box-sizing: border-box;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.16);
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.92);
-  padding: 10px;
-  outline: none;
-  min-height: 44px;
-  max-height: 40vh;
-  resize: vertical;
-  font-size: 16px; /* avoid iOS zoom */
-  line-height: 1.35;
-}
-.ld-modal-actions{
+.topbar-row{
   display:flex;
-  gap: 10px;
-  margin-top: 12px;
-}
-.ld-modal-btn{
-  flex: 1 1 auto;
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.18);
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.92);
-  font-weight: 800;
-  cursor: pointer;
-}
-.ld-modal-btn.primary{
-  border-color: rgba(63,191,255,0.40);
-  background: rgba(63,191,255,0.18);
+  align-items:center;
+  gap:8px;
 }
 
+.topbar-row--primary{
+  justify-content: space-between;
+}
 
-/* Pass button (replaces input to avoid iOS IME issues) */
-.topbar-auth-passbtn{
+.topbar-title{
+  max-width: 55%;
+}
+
+.topbar-page{
+  font-size: 0.72rem;
+  color: var(--text-sub, rgba(255,255,255,0.68));
+  white-space: nowrap;
+  overflow:hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar-row--auth{
+  margin-top: 6px;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+}
+
+.topbar-auth-label{
+  font-size: 0.72rem;
+  color: var(--text-sub, rgba(255,255,255,0.68));
+  white-space: nowrap;
+}
+
+.topbar-auth-field{
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.topbar-auth-field input{
   width: 100%;
-  height: 34px;
-  padding: 0 10px;
+  font-size: 0.8rem;
+  padding: 6px 8px;
   border-radius: 10px;
   border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.92);
-  text-align: left;
-  font-size: 13px;
-  line-height: 34px;
+  background: rgba(255,255,255,0.08);
+  color: var(--text-main, rgba(255,255,255,0.92));
+  outline: none;
+}
+
+.topbar-auth-field input:focus{
+  border-color: rgba(63,191,255,0.55);
+  box-shadow: 0 0 0 2px rgba(63,191,255,0.18);
+}
+
+.topbar-auth-field input[disabled]{
+  background: rgba(255,255,255,0.05);
+  color: rgba(245,247,255,0.35);
+}
+
+.topbar-auth-field input[readonly]{
+  opacity: 0.92;
+}
+
+.topbar-auth-ghost{
+  position:absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.78rem;
+  color: rgba(169, 180, 200, 0.65);
+  pointer-events:none;
+  user-select:none;
+}
+
+.topbar-auth-btn{
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(63,191,255,0.35);
+  background: rgba(63,191,255,0.18);
+  color: var(--text-main, rgba(255,255,255,0.92));
   cursor: pointer;
-}
-.topbar-auth-passbtn:disabled{
-  opacity: 0.55;
-  cursor: not-allowed;
+  user-select:none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* === core u overrides === */
+.topbar-auth-btn[disabled]{
+  opacity: 0.45;
+  cursor: default;
+}
 
+.topbar-auth-state{
+  display:none; /* login中のみ表示 */
+  align-items:center;
+  gap:8px;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+.topbar-auth-state-text{
+  font-size: 0.72rem;
+  color: rgba(180, 255, 200, 0.92);
+}
+
+.topbar-auth-logout{
+  all: unset;
+  cursor:pointer;
+  font-size: 0.72rem;
+  padding: 4px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.08);
+  color: var(--text-main, rgba(255,255,255,0.92));
+}
+
+.topbar-auth-logout:active{
+  transform: translateY(1px);
+}
+
+
+/* ===== Base: Logged-in visibility rules (moved from index.css) ===== */
+/* ログイン中は入力欄と「未ログイン：」を非表示（ログイン中表示＋ログアウトのみ） */
+.topbar-row--auth.is-logged-in .topbar-auth-label,
+.topbar-row--auth.is-logged-in .topbar-auth-field,
+.topbar-row--auth.is-logged-in .topbar-auth-btn{
+  display: none !important;
+}
+
+.topbar-row--auth.is-logged-in .topbar-auth-state{
+  display: inline-flex !important;
+}
+
+/* ===== Overrides: common_header_core_20251220u.css ===== */
 /* common_header_core_20251220u.css
    Shared overrides / shared tweaks for LDwiki common header
    - Drawer aligned to fixed 2-row header
@@ -352,26 +507,3 @@
 }
 .ld-mini-toast.visible{ opacity:1; }
 
-/* === LDWIKI_DRAWER_BASE_FIX (forced) ===
-   ld_usersで「箇条書き＋青リンク」に退行するケースを確実に防ぐ。
-*/
-.drawer-body ul,
-ul.drawer-nav,
-#drawerNavRoot{
-  list-style:none !important;
-  padding:0 !important;
-  margin:0 !important;
-}
-#drawerNavRoot > li{
-  list-style:none !important;
-  margin:0 !important;
-  padding:0 !important;
-}
-#drawerNavRoot a,
-a.drawer-link{
-  color:rgba(255,255,255,0.92) !important;
-  text-decoration:none !important;
-}
-#drawerNavRoot a:visited{
-  color:rgba(255,255,255,0.92) !important;
-}
