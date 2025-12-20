@@ -203,3 +203,29 @@ body{
   z-index: 50;
 }
 .toast.show{ opacity:1; transform: translateY(0); }
+
+
+/* Pass input is replaced by hidden + button (iOS IME workaround) */
+.pass-modal-btn{
+  width: 100%;
+  height: 30px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(255,255,255,0.16));
+  background: var(--surface2, rgba(255,255,255,0.08));
+  color: var(--text-main, rgba(255,255,255,0.92));
+  outline: none;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+.pass-modal-btn:disabled{
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.45);
+  border-style: dashed;
+  cursor: default;
+}

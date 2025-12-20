@@ -1,11 +1,64 @@
+
+// ========== iOS IME workaround: Pass inputs -> hidden + modal button ==========
+function ensurePassButton(inputEl, btnId) {
+  if (!inputEl) return null;
+
+  // Keep the value in hidden input for existing logic
+  inputEl.type = "hidden";
+
+  let btn = document.getElementById(btnId);
+  if (!btn) {
+    btn = document.createElement("button");
+    btn.id = btnId;
+    btn.type = "button";
+    btn.className = "pass-modal-btn";
+    btn.textContent = inputEl.value ? inputEl.value : (inputEl.placeholder || "（未入力）");
+    inputEl.insertAdjacentElement("afterend", btn);
+  }
+
+  // Mirror disabled state
+  btn.disabled = !!inputEl.disabled;
+
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (btn.disabled) return;
+
+    if (typeof window.LD_openTextModal !== "function") {
+      showToast("モーダル未初期化（common_header）");
+      return;
+    }
+
+    window.LD_openTextModal({
+      modalTitle: "パス入力",
+      modalHelp: "正しいパスを入力し、決定ボタンを押してください\\n※全角は５文字、半角は10文字(組み合わせて10byte)まで",
+      initialValue: inputEl.value || "",
+      onCommit: (v) => {
+        inputEl.value = String(v ?? "");
+        btn.textContent = inputEl.value ? inputEl.value : (inputEl.placeholder || "（未入力）");
+        inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    });
+  });
+
+  return btn;
+}
+
+function syncPassButton(btnId, inputEl, fallbackText) {
+  const btn = document.getElementById(btnId);
+  if (!btn || !inputEl) return;
+  btn.disabled = !!inputEl.disabled;
+  btn.textContent = inputEl.value ? inputEl.value : (fallbackText ?? inputEl.placeholder ?? "（未入力）");
+}
+
 // ld_users.js (v20251219a) - RPC-based register/edit for ld_users (RLS ON, policy none)
 (() => {
   "use strict";
 
   // ========== Supabase REST RPC ==========
-  const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
+  const SUPABASE_URL = window.LD_SUPABASE_URL || "";
+  const SUPABASE_ANON_KEY = window.LD_SUPABASE_ANON_KEY || "";
   const AUTH_STORAGE_KEY = "ld_auth_v1";
+  const supabaseReady = !!(SUPABASE_URL && SUPABASE_ANON_KEY && !String(SUPABASE_ANON_KEY).includes("PASTE_"));
 
   async function rpc(fn, bodyObj) {
     const url = `${SUPABASE_URL}/rest/v1/rpc/${fn}`;
@@ -362,6 +415,13 @@
   // ========== init ==========
   function init() {
     fillVaultSelect();
+
+    // Pass inputs -> modal buttons (iOS IME workaround)
+    ensurePassButton(userPassInput, "userPassBtn");
+    ensurePassButton(inputPass, "inputPassBtn");
+    syncPassButton("userPassBtn", userPassInput, userPassInput.placeholder);
+    syncPassButton("inputPassBtn", inputPass, inputPass.placeholder);
+
     setAccordion(false);
 
     userNameInput.addEventListener("input", () => {
