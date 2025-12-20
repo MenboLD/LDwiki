@@ -17,9 +17,9 @@
   <meta property="og:image" content="https://menbold.github.io/LDwiki/ogp.png">
   <meta name="twitter:card" content="summary_large_image">
 
-<title>ラッキー傭兵団 攻略 wiki</title>
+  <title>ラッキー傭兵団 攻略 wiki</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="common_header_core_20251220s.css">
+  <link rel="stylesheet" href="common_header_core_20251220t.css">
   <link rel="stylesheet" href="index.css">
 </head>
 <body data-page-name="トップ">
@@ -39,7 +39,8 @@
       </label>
 
       <label class="topbar-auth-field" aria-label="パス">
-        <input id="authPass" type="password" autocomplete="current-password" placeholder="" />
+        <input id="authPass" type="hidden" autocomplete="current-password" />
+        <button id="authPassBtn" type="button" class="topbar-auth-passbtn" aria-label="パス入力">ゲスト状態</button>
         <div class="topbar-auth-ghost" id="authGhost">ゲスト状態</div>
       </label>
 
@@ -112,7 +113,8 @@
   </nav>
 
   <div class="drawer-overlay" id="drawerOverlay"></div>
-<!-- ページ本体 -->
+
+  <!-- ページ本体 -->
   <div class="page">
     <header>
       <h1>ラッキー傭兵団 攻略 wiki</h1>
@@ -214,7 +216,8 @@
     </main>
   </div>
 
-  <script src="common_header_core_20251220s.js"></script>
+  <script src="supabase_config.js"></script>
+  <script src="common_header_core_20251220t.js"></script>
   <script src="index.js"></script>
 </body>
 </html>
