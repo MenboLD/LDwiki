@@ -385,6 +385,7 @@
 
   // ===== Mythic submodal (image grid) =====
   const mythicBackdrop = $("mythicBackdrop");
+  let lastFocusReturnEl = null; // focus return target for mythic submodal
   const btnMythicClose = $("btnMythicClose");
   const btnMythicOk = $("btnMythicOk");
   const mythicControls = $("mythicControls");
