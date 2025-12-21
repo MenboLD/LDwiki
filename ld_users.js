@@ -400,15 +400,13 @@
   const codeToIconBig = new Map();      // code(int) -> icon_big_filename (e.g. "501_big")
   const mythicToImmortal = new Map();   // mythicCode(int) -> immortalCode(int)
   let mythicCodes = [];                // e.g. [501..528,...] derived from master
-
-  async 
 function normalizePngFilename(name) {
   const s = String(name || "").trim();
   if (!s) return "";
   return s.toLowerCase().endsWith(".png") ? s : (s + ".png");
 }
 
-function loadUnitMaster() {
+async function loadUnitMaster() {
     if (unitMasterLoaded) return true;
     try {
       const url = `${SUPABASE_URL}/rest/v1/ld_units_master?select=*`;
@@ -464,8 +462,8 @@ function loadUnitMaster() {
 
   function iconUrlForCode(code) {
     const key = codeToIconBig.get(Number(code));
-    if (key) return ASSET_BASE_URL + key + ".png";
-    return ASSET_BASE_URL + String(code) + "_big.png";
+    if (key) return ASSET_BASE_URL + normalizePngFilename(key);
+    return ASSET_BASE_URL + normalizePngFilename(String(code) + "_big");
   }
 
   function hasImmortalPair(mythicCode) {
