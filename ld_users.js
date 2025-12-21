@@ -401,7 +401,14 @@
   const mythicToImmortal = new Map();   // mythicCode(int) -> immortalCode(int)
   let mythicCodes = [];                // e.g. [501..528,...] derived from master
 
-  async function loadUnitMaster() {
+  async 
+function normalizePngFilename(name) {
+  const s = String(name || "").trim();
+  if (!s) return "";
+  return s.toLowerCase().endsWith(".png") ? s : (s + ".png");
+}
+
+function loadUnitMaster() {
     if (unitMasterLoaded) return true;
     try {
       const url = `${SUPABASE_URL}/rest/v1/ld_units_master?select=*`;
