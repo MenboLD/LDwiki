@@ -1,4 +1,4 @@
-// ld_users.js (20251221ae) - ld_users: register/edit -> info modal + mythic submodal (image grid)
+// ld_users.js (20251221af) - ld_users: register/edit -> info modal + mythic submodal (image grid)
 // NOTE: common_header is "stable". Do not modify common_header.* here.
 
 (() => {
@@ -391,13 +391,81 @@
   const mythicGridHost = $("mythicGrid");
   const mythicError = $("mythicError");
 
-  // ICON path: adjust if you store icons elsewhere.
-  const ICON_BASE_PATH = "/LDwiki/icons/"; // you can change later without touching common_header.
+  // Assets live on Supabase Storage (public/ld-assets)
+  const ASSET_BASE_URL = `${SUPABASE_URL}/storage/v1/object/public/ld-assets/`;
 
-  const MYTHIC_IDS = [
-    501,502,503,504,505,506,507,508,509,510,511,512,513,514,515,516,517,518,519,520,521,522,523,524,525,526,527,528
-  ];
-  const AWAKENABLE_IDS = new Set([515,516,517,518,519,520,521,522,523,524,525,526,527,528]); // from old v5
+  // unit master cache (ld_units_master)
+  let unitMasterLoaded = false;
+  const codeToIconBig = new Map();      // code(int) -> icon_big_filename (e.g. "501_big")
+  const mythicToImmortal = new Map();   // mythicCode(int) -> immortalCode(int)
+  let mythicCodes = [];                // e.g. [501..528,...] derived from master
+
+  async function loadUnitMaster() {
+    if (unitMasterLoaded) return true;
+    try {
+      const url = `${SUPABASE_URL}/rest/v1/ld_units_master?select=code,icon_big_filename,paired_mythic_code&order=code.asc`;
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        }
+      });
+      if (!res.ok) throw new Error(`ld_units_master fetch failed: ${res.status}`);
+      const rows = await res.json();
+
+      codeToIconBig.clear();
+      mythicToImmortal.clear();
+      mythicCodes = [];
+
+      // Build icon map and mythic list
+      for (const r of rows) {
+        const code = Number(r.code);
+        if (!Number.isFinite(code)) continue;
+        if (r.icon_big_filename) codeToIconBig.set(code, String(r.icon_big_filename));
+        // mythic range: 500-599
+        if (code >= 500 && code < 600) mythicCodes.push(code);
+      }
+
+      // Build pairing map from immortal rows: paired_mythic_code points to mythic code
+      for (const r of rows) {
+        const code = Number(r.code);
+        const paired = r.paired_mythic_code == null ? null : Number(r.paired_mythic_code);
+        if (code >= 600 && code < 700 && paired && Number.isFinite(paired)) {
+          mythicToImmortal.set(paired, code);
+        }
+      }
+
+      // Fallback safety: if master doesn't have mythic rows yet, keep 501-528
+      if (!mythicCodes.length) {
+        mythicCodes = [501,502,503,504,505,506,507,508,509,510,511,512,513,514,515,516,517,518,519,520,521,522,523,524,525,526,527,528];
+      }
+
+      unitMasterLoaded = true;
+      return true;
+    } catch (e) {
+      console.warn("[ldwiki] loadUnitMaster failed", e);
+      unitMasterLoaded = false;
+      // fallback list keeps UI usable even if master cannot load
+      mythicCodes = [501,502,503,504,505,506,507,508,509,510,511,512,513,514,515,516,517,518,519,520,521,522,523,524,525,526,527,528];
+      return false;
+    }
+  }
+
+  function iconUrlForCode(code) {
+    const key = codeToIconBig.get(Number(code));
+    if (key) return ASSET_BASE_URL + key + ".png";
+    return ASSET_BASE_URL + String(code) + "_big.png";
+  }
+
+  function hasImmortalPair(mythicCode) {
+    return mythicToImmortal.has(Number(mythicCode));
+  }
+
+  function immortalCodeFor(mythicCode) {
+    return mythicToImmortal.get(Number(mythicCode)) ?? null;
+  }
 
   let multiSelectMode = false;
   let selectedUnitIds = new Set();
@@ -413,7 +481,7 @@
     btnAll.className = "btn-small";
     btnAll.textContent = "全選択";
     btnAll.addEventListener("click", () => {
-      selectedUnitIds = new Set(MYTHIC_IDS.map(String));
+      selectedUnitIds = new Set(mythicCodes.map((n)=>String(n)));
       refreshSelectedVisual();
     });
 
@@ -481,14 +549,22 @@
     const grid = document.createElement("div");
     grid.className = "unit-grid";
 
-    MYTHIC_IDS.forEach((idNum) => {
+    mythicCodes.forEach((idNum) => {
       const id = String(idNum);
+      const baseId = Number(idNum);
+
+      // draft entry (stored by mythic id)
+      const raw = (draft.mythic_state && draft.mythic_state[id]) ? draft.mythic_state[id] : null;
+      const form = (raw && raw.form === "immortal") ? "immortal" : "mythic";
+      const level = raw && Number.isFinite(Number(raw.level)) ? Number(raw.level) : 0;
+      const treasure = !!(raw && raw.treasure);
+
       const item = document.createElement("div");
-      item.className = "unit-item dim";
+      item.className = "unit-item";
       item.dataset.id = id;
-      item.dataset.level = "0";
-      item.dataset.treasure = "0";
-      item.dataset.form = "mythic";
+      item.dataset.level = String([0,6,12,15].includes(level) ? level : (level <= 0 ? 0 : 6));
+      item.dataset.form = form;
+      item.dataset.treasure = (form === "mythic" && treasure && level >= 12) ? "1" : "0";
 
       const inner = document.createElement("div");
       inner.className = "unit-inner";
@@ -496,37 +572,81 @@
       const img = document.createElement("img");
       img.className = "unit-img";
       img.alt = id;
-      img.src = ICON_BASE_PATH + id + ".png";
+      img.loading = "lazy";
+      const displayCode = (form === "immortal") ? (immortalCodeFor(baseId) ?? baseId) : baseId;
+      img.src = iconUrlForCode(displayCode);
+      img.onerror = () => { img.onerror = null; img.src = ""; };
 
       const badge = document.createElement("div");
       badge.className = "unit-badge";
-      badge.textContent = "Lv0";
+      badge.textContent = "";
 
       inner.appendChild(img);
       inner.appendChild(badge);
       item.appendChild(inner);
-      grid.appendChild(item);
 
-      const info = draft.mythic_state?.[id];
-      if (info) {
-        const lv = typeof info.level === "number" ? info.level : 0;
-        const tre = info.treasure === true;
-        const form = info.form === "immortal" ? "immortal" : "mythic";
-        item.dataset.level = String(lv);
-        item.dataset.treasure = tre ? "1" : "0";
-        item.dataset.form = form;
-      }
-
+      // initial visuals
       updateUnitVisual(item);
 
       item.addEventListener("click", () => {
-        onClickUnitItem(id);
+        if (multiSelectMode) {
+          if (selectedUnitIds.has(id)) selectedUnitIds.delete(id);
+          else selectedUnitIds.add(id);
+          refreshSelectedVisual();
+          return;
+        }
+
+        // single mode: select + advance cycle on tap
+        selectedUnitIds = new Set([id]);
+        advanceUnitOnTap(item);
+
+        // write back to draft from this item
+        const lvl = parseInt(item.dataset.level || "0", 10);
+        const frm = item.dataset.form || "mythic";
+        const tr = item.dataset.treasure === "1";
+
+        if (lvl <= 0) {
+          if (draft.mythic_state) delete draft.mythic_state[id];
+        } else {
+          if (!draft.mythic_state) draft.mythic_state = {};
+          draft.mythic_state[id] = {
+            level: lvl,
+            treasure: (frm === "mythic") ? tr : false,
+            form: (frm === "immortal") ? "immortal" : "mythic"
+          };
+        }
+
+        setDirty(true);
+        refreshSelectedVisual();
       });
+
+      grid.appendChild(item);
     });
 
     mythicGridHost.appendChild(grid);
     refreshSelectedVisual();
   }
+  function syncDraftFromMythicGrid() {
+    const grid = mythicGridHost?.querySelector(".unit-grid");
+    if (!grid) return;
+    const json = {};
+    grid.querySelectorAll(".unit-item").forEach((item) => {
+      const id = item.dataset.id;
+      const level = parseInt(item.dataset.level || "0", 10);
+      const form = item.dataset.form || "mythic";
+      const hasTreasure = item.dataset.treasure === "1";
+      if (!id) return;
+      if (level <= 0) return;
+      json[id] = {
+        level,
+        treasure: (form === "mythic") ? !!hasTreasure : false,
+        form: (form === "immortal") ? "immortal" : "mythic",
+      };
+    });
+    draft.mythic_state = json;
+    setDirty(true);
+  }
+
 
   function onClickUnitItem(id) {
     if (!multiSelectMode) {
@@ -550,14 +670,34 @@
 
   function updateUnitVisual(item) {
     const level = parseInt(item.dataset.level || "0", 10);
-    const hasTreasure = item.dataset.treasure === "1";
+    let hasTreasure = item.dataset.treasure === "1";
     const form = item.dataset.form || "mythic";
     const badge = item.querySelector(".unit-badge");
     if (!badge) return;
 
+    // enforce treasure constraints: mythic only, and level>=12
+    if (form !== "mythic" || level < 12) {
+      hasTreasure = false;
+      item.dataset.treasure = "0";
+    }
+
+    // background tint per spec
+    const lv = level;
+    if (lv <= 0) {
+      item.style.background = "rgba(255,255,255,0.02)";
+    } else if (form === "mythic") {
+      if (lv === 6) item.style.background = "rgba(80,140,255,0.10)";
+      else if (lv === 12) item.style.background = "rgba(80,140,255,0.16)";
+      else item.style.background = "rgba(80,140,255,0.22)"; // 15
+    } else {
+      if (lv === 6) item.style.background = "rgba(255,80,120,0.10)";
+      else if (lv === 12) item.style.background = "rgba(255,80,120,0.16)";
+      else item.style.background = "rgba(255,80,120,0.22)"; // 15
+    }
+
     if (level <= 0) {
       item.classList.add("dim");
-      badge.textContent = "Lv0";
+      badge.textContent = "未取得";
     } else {
       item.classList.remove("dim");
       const label = (form === "immortal") ? "不滅" : "Lv";
@@ -582,6 +722,7 @@
       if (parseInt(item.dataset.level, 10) < 12) item.dataset.treasure = "0";
       updateUnitVisual(item);
     });
+    syncDraftFromMythicGrid();
   }
 
   function toggleTreasureOnSelection() {
@@ -613,6 +754,7 @@
       item.dataset.treasure = current ? "0" : "1";
       updateUnitVisual(item);
     });
+    syncDraftFromMythicGrid();
   }
 
   function toggleFormAwakening() {
@@ -623,23 +765,84 @@
       return;
     }
     selectedUnitIds.forEach((id) => {
-      if (!AWAKENABLE_IDS.has(Number(id))) return;
       const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
       if (!item) return;
+
+      const mythicId = Number(item.dataset.id);
       let form = item.dataset.form || "mythic";
       let level = parseInt(item.dataset.level || "0", 10);
+
       if (form === "mythic") {
-        if (level === 0) level = 6;
+        // awaken only if mythic Lv15 and has immortal pair
+        if (level !== 15) return;
+        if (!hasImmortalPair(mythicId)) return;
         item.dataset.form = "immortal";
-        item.dataset.level = String(level);
+        item.dataset.level = "6"; // start immortal at Lv6
         item.dataset.treasure = "0";
       } else {
+        // degenerate: immortal -> mythic Lv15 (user can then loop/toggle)
         item.dataset.form = "mythic";
-        item.dataset.level = String(level);
+        item.dataset.level = "15";
+        // treasure remains off by default after returning
+        item.dataset.treasure = "0";
       }
+
+      // refresh image
+      const img = item.querySelector("img");
+      if (img) {
+        const displayCode = (item.dataset.form === "immortal")
+          ? (immortalCodeFor(mythicId) ?? mythicId)
+          : mythicId;
+        img.src = iconUrlForCode(displayCode);
+      }
+
       updateUnitVisual(item);
     });
+    syncDraftFromMythicGrid();
   }
+
+  function advanceUnitOnTap(item) {
+    const mythicId = Number(item.dataset.id);
+    let form = item.dataset.form || "mythic";
+    let level = parseInt(item.dataset.level || "0", 10);
+
+    if (form === "mythic") {
+      if (level <= 0) level = 6;
+      else if (level === 6) level = 12;
+      else if (level === 12) level = 15;
+      else {
+        if (hasImmortalPair(mythicId)) {
+          form = "immortal";
+          level = 6;
+        } else {
+          form = "mythic";
+          level = 0;
+        }
+        item.dataset.treasure = "0";
+      }
+    } else {
+      if (level <= 0) level = 6;
+      else if (level === 6) level = 12;
+      else if (level === 12) level = 15;
+      else {
+        form = "mythic";
+        level = 0;
+        item.dataset.treasure = "0";
+      }
+    }
+
+    item.dataset.form = form;
+    item.dataset.level = String(level);
+
+    const img = item.querySelector("img");
+    if (img) {
+      const displayCode = (form === "immortal") ? (immortalCodeFor(mythicId) ?? mythicId) : mythicId;
+      img.src = iconUrlForCode(displayCode);
+    }
+
+    updateUnitVisual(item);
+  }
+
 
   function collectMythicStateFromUI() {
     const grid = mythicGridHost?.querySelector(".unit-grid");
@@ -660,20 +863,38 @@
     return json;
   }
 
-  function openMythicSubmodal() {
+  async function openMythicSubmodal() {
     if (mythicError) mythicError.textContent = "";
+    lastFocusReturnEl = document.activeElement;
+
+    await loadUnitMaster();
+
+    // create local copy from main draft into grid (render reads draft.mythic_state)
+    multiSelectMode = false;
+    selectedUnitIds = new Set();
+
     buildMythicControls();
     renderMythicGridFromDraft();
+
+    if (mythicBackdrop) mythicBackdrop.setAttribute("aria-hidden", "false");
     openBackdrop(mythicBackdrop);
+
+    // focus close for accessibility
+    setTimeout(() => { try { btnMythicClose?.focus(); } catch(e){} }, 0);
   }
 
-  function closeMythicSubmodal(confirmDiscard) {
-    if (!confirmDiscard) {
-      closeBackdrop(mythicBackdrop);
-      return;
-    }
-    // submodal edits are applied only on "確定" so discard is safe
+  function closeMythicSubmodal() {
+    if (!mythicBackdrop) return;
+
+    // move focus out BEFORE hiding (fixes aria-hidden warning + "won't close" edge cases)
+    try {
+      btnMythicOk?.blur?.();
+      btnMythicClose?.blur?.();
+      lastFocusReturnEl?.focus?.();
+    } catch(e){}
+
     closeBackdrop(mythicBackdrop);
+    if (mythicBackdrop) mythicBackdrop.setAttribute("aria-hidden", "true");
   }
 
   // ===== Main flow: click register/edit -> open info modal =====
@@ -901,9 +1122,9 @@
     btnPasteGuildCode?.addEventListener("click", pasteGuildCode);
 
     // mythic submodal events
-    btnMythicClose?.addEventListener("click", () => closeMythicSubmodal(false));
+    btnMythicClose?.addEventListener("click", () => closeMythicSubmodal());
     mythicBackdrop?.addEventListener("click", (e) => {
-      if (e.target === mythicBackdrop) closeMythicSubmodal(false);
+      if (e.target === mythicBackdrop) closeMythicSubmodal();
     });
     btnMythicOk?.addEventListener("click", () => {
       // apply UI -> draft
