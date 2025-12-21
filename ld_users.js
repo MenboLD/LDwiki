@@ -404,7 +404,7 @@
   async function loadUnitMaster() {
     if (unitMasterLoaded) return true;
     try {
-      const url = `${SUPABASE_URL}/rest/v1/ld_units_master?select=code,icon_big_filename,paired_mythic_code&order=code.asc`;
+      const url = `${SUPABASE_URL}/rest/v1/ld_units_master?select=*`;
       const res = await fetch(url, {
         method: "GET",
         headers: {
@@ -422,7 +422,7 @@
 
       // Build icon map and mythic list
       for (const r of rows) {
-        const code = Number(r.code);
+        const code = Number(r.code ?? r.unit_code ?? r.unitId ?? r.unit_id ?? r.id_code);
         if (!Number.isFinite(code)) continue;
         if (r.icon_big_filename) codeToIconBig.set(code, String(r.icon_big_filename));
         // mythic range: 500-599
@@ -431,7 +431,7 @@
 
       // Build pairing map from immortal rows: paired_mythic_code points to mythic code
       for (const r of rows) {
-        const code = Number(r.code);
+        const code = Number(r.code ?? r.unit_code ?? r.unitId ?? r.unit_id ?? r.id_code);
         const paired = r.paired_mythic_code == null ? null : Number(r.paired_mythic_code);
         if (code >= 600 && code < 700 && paired && Number.isFinite(paired)) {
           mythicToImmortal.set(paired, code);
@@ -443,6 +443,7 @@
         mythicCodes = [501,502,503,504,505,506,507,508,509,510,511,512,513,514,515,516,517,518,519,520,521,522,523,524,525,526,527,528];
       }
 
+      mythicCodes = Array.from(new Set(mythicCodes)).sort((a,b)=>a-b);
       unitMasterLoaded = true;
       return true;
     } catch (e) {
