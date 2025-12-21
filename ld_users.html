@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
 
-  <link rel="stylesheet" href="/LDwiki/ld_users.css?v=20251221ao">
+  <link rel="stylesheet" href="/LDwiki/ld_users.css?v=20251221ap">
   <link rel="stylesheet" href="/LDwiki/common_header.css?v=20251220ah">
 </head>
 
@@ -75,10 +75,9 @@
       <div class="modal-header">
         <button id="btnUserInfoClose" type="button" class="modal-close">×</button>
         <div id="userInfoTitle" class="modal-title">ユーザー情報</div>
-      <div id="userInfoError" class="modal-header-error" aria-live="polite"></div>
-
-        <button id="btnUserInfoSave" type="button" class="modal-ok">保存して閉じる</button>
+<button id="btnUserInfoSave" type="button" class="modal-ok">保存して閉じる</button>
       </div>
+      <div id="userInfoError" class="modal-errorbar" aria-live="polite" style="display:none;"></div>
       <div class="modal-body">
         <div class="info-block">
           <div class="info-row"><span class="info-key">ユーザー名</span><span id="lblUserName" class="info-val">-</span></div>
@@ -162,6 +161,7 @@
         <div class="modal-title">ユニット育成情報</div>
         <button id="btnMythicOk" type="button" class="modal-ok">確定</button>
       </div>
+      <div id="userInfoError" class="modal-errorbar" aria-live="polite" style="display:none;"></div>
       <div class="modal-body">
         <div id="mythicControls" class="unit-controls"></div>
         <div id="mythicGridWrap">
@@ -179,6 +179,6 @@
 
   <script src="/LDwiki/supabase_config.js?v=20251220ah"></script>
   <script src="/LDwiki/common_header.js?v=20251220ah"></script>
-  <script src="/LDwiki/ld_users.js?v=20251221ao"></script>
+  <script src="/LDwiki/ld_users.js?v=20251221ap"></script>
 </body>
 </html>

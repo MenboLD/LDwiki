@@ -493,3 +493,37 @@ input, textarea, select, button { font-size: 16px; }
 
 .modal-header-error{ margin: 8px 12px 0; padding: 6px 10px; border-radius: 10px; background: rgba(255,215,0,0.85); color: #c40000; font-weight: 700; font-size: 14px; display:block; }
 .modal-header-error:empty{ display:none; }
+
+
+/* Error bar under user info modal header */
+.modal-errorbar{
+  width: 100%;
+  background: #f0c400; /* yellow */
+  color: #b00000; /* red */
+  font-weight: 700;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.25);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Validation highlight */
+.acc-toggle.error{
+  background: #f0c400;
+  color: #b00000;
+  border: 2px solid #b00000;
+}
+.field.error{
+  background: rgba(240,196,0,0.12);
+  border: 2px solid #b00000;
+  border-radius: 12px;
+  padding: 8px;
+}
+
+/* Multi-select ON button (btn-small.active) */
+.unit-controls .btn-small.active{
+  background: #b00000 !important;
+  border-color: #b00000 !important;
+  color: #ffffff !important;
+}

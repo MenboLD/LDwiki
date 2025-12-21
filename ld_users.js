@@ -325,29 +325,71 @@
     if (inpGamePlayerLevel) inpGamePlayerLevel.value = (draft.game_player_level ?? "") === null ? "" : String(draft.game_player_level ?? "");
   }
 
-  function pullInputsToDraft() {
-    draft.game_player_name = safeTrim(inpGamePlayerName?.value || "");
-    draft.guild_name = safeTrim(inpGuildName?.value || "");
-    draft.guild_code = safeTrim(inpGuildCode?.value || "");
-    const lvlRaw = safeTrim(inpGamePlayerLevel?.value || "");
+  
+  function clearValidationHighlights() {
+    const otherToggle = document.getElementById("accOtherToggle");
+    otherToggle?.classList.remove("error");
+    document.querySelectorAll(".field.error").forEach(el => el.classList.remove("error"));
+  }
+
+  function highlightField(id) {
+    const el = document.getElementById(id);
+    const field = el?.closest(".field");
+    field?.classList.add("error");
+    const otherToggle = document.getElementById("accOtherToggle");
+    otherToggle?.classList.add("error");
+    // Ensure accordion is open so the user can see the fields
+    const body = document.getElementById("accOtherBody");
+    if (body && !body.classList.contains("open")) {
+      body.classList.add("open");
+      otherToggle?.setAttribute("data-open", "1");
+      otherToggle && (otherToggle.textContent = "▼そのほかのゲーム内情報");
+    }
+  }
+
+  function setUserInfoError(msg) {
+    if (!userInfoError) return;
+    if (msg) {
+      userInfoError.textContent = msg;
+      userInfoError.style.display = "block";
+    } else {
+      userInfoError.textContent = "";
+      userInfoError.style.display = "none";
+    }
+  }
+
+function pullInputsToDraft() {
+    draft.game_player_name = safeTrim(inpGamePlayerName?.value || "") || null;
+    draft.guild_name = safeTrim(inpGuildName?.value || "") || null;
+    draft.guild_code = safeTrim(inpGuildCode?.value || "") || null;
+const lvlRaw = safeTrim(inpGamePlayerLevel?.value || "");
     draft.game_player_level = lvlRaw ? Number(lvlRaw) : null;
   }
 
   function validateOtherInfo() {
-    // player level
+    clearValidationHighlights();
+
+    // player level (optional)
     if (draft.game_player_level !== null) {
       const n = Number(draft.game_player_level);
-      if (!Number.isFinite(n) || n < 1 || n > 30) return "プレイヤーレベルは1〜30で入力してください";
+      if (!Number.isFinite(n) || n < 1 || n > 30) {
+        highlightField("inpGamePlayerLevel");
+        return "プレイヤーレベルは1〜30で入力してください";
+      }
     }
-    // guild code
+
+    // guild code (optional)
     if (draft.guild_code) {
-      let code = draft.guild_code;
+      let code = String(draft.guild_code);
       if (!code.startsWith("#")) code = "#" + code;
-      // normalize to uppercase
       code = "#" + code.slice(1).toUpperCase();
       draft.guild_code = code;
-      if (!/^#[0-9A-F]{8}$/.test(code)) return "所属ギルドコードの形式が不正です（例：#1A2B3C4D）";
+      if (!/^#[0-9A-F]{8}$/.test(code)) {
+        highlightField("inpGuildCode");
+        return "所属ギルドコードの形式が不正です（例：#1A2B3C4D）";
+      }
     }
+
     return "";
   }
 
@@ -376,7 +418,7 @@
 
     if (modalNoticeText) modalNoticeText.innerHTML = NOTICE_HTML;
 
-    if (userInfoError) userInfoError.textContent = "";
+    setUserInfoError("");
     setDirty(false);
     // default: other/future accordion closed
     setAccordion(accOtherToggle, accOtherBody, false);
@@ -1024,12 +1066,12 @@ function toggleTreasureOnSelection() {
     pullInputsToDraft();
     const errMsg = validateOtherInfo();
     if (errMsg) {
-      if (userInfoError) userInfoError.textContent = errMsg;
+      setUserInfoError(errMsg);
       showToast("入力内容を確認してください");
       return;
     }
 
-    if (userInfoError) userInfoError.textContent = "";
+    setUserInfoError("");
     btnUserInfoSave.disabled = true;
 
     const name = safeTrim(userNameInput.value);
@@ -1061,13 +1103,27 @@ function toggleTreasureOnSelection() {
         closeBackdrop(userInfoBackdrop);
         // Keep username/pass (do not clear)
       } else {
-        const reason = res?.reason ? String(res.reason) : "保存に失敗しました";
-        if (userInfoError) userInfoError.textContent = reason;
+        const reason = res?.reason ? String(res.reason) : "";
+        let msg = "保存に失敗しました";
+        if (reason === "check_violation") {
+          msg = "入力内容が制約に合いません。プレイヤーレベル（1〜30）やギルドコード形式（# + 8桁16進）を確認してください";
+          const otherToggle = document.getElementById("accOtherToggle");
+          otherToggle?.classList.add("error");
+        } else if (reason === "not_null_violation") {
+          msg = "必須項目が未入力です";
+        } else if (reason === "password_incorrect") {
+          msg = "パスが正しくありません";
+        } else if (reason === "user_not_found") {
+          msg = "ユーザーが見つかりません";
+        } else if (reason) {
+          msg = reason;
+        }
+        setUserInfoError(msg);
         showToast("保存に失敗しました");
       }
     } catch (e) {
       console.error(e);
-      if (userInfoError) userInfoError.textContent = String(e.message || e);
+      setUserInfoError(String(e.message || e));
       showToast("保存に失敗しました");
     } finally {
       btnUserInfoSave.disabled = false;
