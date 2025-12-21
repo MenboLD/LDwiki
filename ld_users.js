@@ -393,7 +393,7 @@
   const mythicError = $("mythicError");
 
   // Assets live on Supabase Storage (public/ld-assets)
-  const ASSET_BASE_URL = `${SUPABASE_URL}/storage/v1/object/public/ld-assets/`;
+  const ASSET_BASE_URL = `${SUPABASE_URL}/storage/v1/object/public/ld-assets/unit_icons/`;
 
   // unit master cache (ld_units_master)
   let unitMasterLoaded = false;
