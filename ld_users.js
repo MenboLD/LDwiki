@@ -1,71 +1,24 @@
-// ========== iOS IME workaround: Pass inputs -> hidden + modal button ==========
-// NOTE: 文言は共通ヘッダー側の確定仕様を先頭に含める（このページでは「注意」も追記する）
-const LD_USERS_PASS_MODAL_HELP =
-  "正しいパスを入力し、決定ボタンを押してください\n" +
-  "※全角は5文字、半角は10文字（組み合わせて10byte）まで\n\n" +
-  "注意\n" +
-  "・ユーザー名とパスは変更できません\n" +
-  "・パスは再発行や再確認が不可能です。必ず画面スクリーンショットやメモするなどし、個人で控えてください\n" +
-  "・ユーザー名やパスを除き、ユニットの育成情報などは基本的に公開情報扱いになります。今後、項目ごとに公開/非公開の設定機能は追加予定です\n" +
-  "・登録するユーザー名はゲーム内のプレイヤーとは異なる名前で登録することを推奨します。\n" +
-  "・ゲスト、登録ユーザーの差異にかかわらずIPアドレスなどの情報は運営側に保持されます。";
+// ld_users.js (20251221ab) - ld_users: register/edit -> info modal + mythic submodal (image grid)
+// NOTE: common_header is "stable". Do not modify common_header.* here.
 
-function ensurePassButton(inputEl, btnId) {
-  if (!inputEl) return null;
-
-  // Keep the value in hidden input for existing logic
-  inputEl.type = "hidden";
-
-  let btn = document.getElementById(btnId);
-  if (!btn) {
-    btn = document.createElement("button");
-    btn.id = btnId;
-    btn.type = "button";
-    btn.className = "pass-modal-btn";
-    btn.textContent = inputEl.value ? inputEl.value : (inputEl.placeholder || "（未入力）");
-    inputEl.insertAdjacentElement("afterend", btn);
-  }
-
-  // Mirror disabled state
-  btn.disabled = !!inputEl.disabled;
-
-  btn.addEventListener("click", (e) => {
-    e.preventDefault();
-    if (btn.disabled) return;
-
-    if (typeof window.LD_openTextModal !== "function") {
-      // showToast は IIFE 内にあることがあるため、ここでは安全にフォールバック
-      try { window.alert("モーダル未初期化（common_header）"); } catch {}
-      return;
-    }
-
-    window.LD_openTextModal({
-      modalTitle: "パス入力",
-      modalHelp: LD_USERS_PASS_MODAL_HELP,
-      initialValue: inputEl.value || "",
-      onCommit: (v) => {
-        inputEl.value = String(v ?? "");
-        btn.textContent = inputEl.value ? inputEl.value : (inputEl.placeholder || "（未入力）");
-        inputEl.dispatchEvent(new Event("input", { bubbles: true }));
-      }
-    });
-  });
-
-  return btn;
-}
-
-function syncPassButton(btnId, inputEl, fallbackText) {
-  const btn = document.getElementById(btnId);
-  if (!btn || !inputEl) return;
-  btn.disabled = !!inputEl.disabled;
-  btn.textContent = inputEl.value ? inputEl.value : (fallbackText ?? inputEl.placeholder ?? "（未入力）");
-}
-
-// ld_users.js (v20251221aa) - RPC-based register/edit for ld_users (RLS ON, policy none)
 (() => {
   "use strict";
 
-  // ========== Supabase REST RPC ==========
+  // ===== Fixed texts =====
+  const NOTICE_HTML = `・ユーザー名とパスは変更できません<br>
+・パスは再発行や再確認が不可能です。必ず画面スクリーンショットやメモするなどし、個人で控えてください<br>
+・ユーザー名やパスを除き、ユニットの育成情報などは基本的に公開情報扱いになります。今後、項目ごとに公開/非公開の設定機能は追加予定です<br>
+・登録するユーザー名はゲーム内のプレイヤーとは異なる名前で登録することを推奨します。<br>
+・ゲスト、登録ユーザーの差異にかかわらずIPアドレスなどの情報は運営側に保持されます。`;
+
+  const PASS_MODAL_HELP = `正しいパスを入力し、決定ボタンを押してください\n※全角は5文字、半角は10文字（組み合わせて10byte）まで\n\n【注意】\n` +
+    `・ユーザー名とパスは変更できません\n` +
+    `・パスは再発行や再確認が不可能です。必ず画面スクリーンショットやメモするなどし、個人で控えてください\n` +
+    `・ユーザー名やパスを除き、ユニットの育成情報などは基本的に公開情報扱いになります。今後、項目ごとに公開/非公開の設定機能は追加予定です\n` +
+    `・登録するユーザー名はゲーム内のプレイヤーとは異なる名前で登録することを推奨します。\n` +
+    `・ゲスト、登録ユーザーの差異にかかわらずIPアドレスなどの情報は運営側に保持されます。`;
+
+  // ===== Supabase REST RPC =====
   const SUPABASE_URL = window.LD_SUPABASE_URL || "";
   const SUPABASE_ANON_KEY = window.LD_SUPABASE_ANON_KEY || "";
   const AUTH_STORAGE_KEY = "ld_auth_v1";
@@ -95,48 +48,31 @@ function syncPassButton(btnId, inputEl, fallbackText) {
     return data;
   }
 
-  // ========== DOM ==========
+  // ===== DOM helpers =====
   const $ = (id) => document.getElementById(id);
-
-  const homeView = $("homeView");
-  const formView = $("formView");
-
-  const userNameInput = $("userNameInput");
-  const userPassInput = $("userPassInput");
-  const userActionBtn = $("userActionBtn");
-  const userStatusLabel = $("userStatusLabel");
-  const headerStats = $("headerStats");
-
-  const formModeLabel = $("formModeLabel");
-  const inputName = $("inputName");
-  const inputPass = $("inputPass");
-  const selectVaultLevel = $("selectVaultLevel");
-  const mythicStateJson = $("mythicStateJson");
-
-  const unitAccordionToggle = $("unitAccordionToggle");
-  const unitAccordionBody = $("unitAccordionBody");
-  const btnJsonReset = $("btnJsonReset");
-  const btnJsonFormat = $("btnJsonFormat");
-
-  const statusComments = $("statusComments");
-  const statusMisInputs = $("statusMisInputs");
-  const statusLikes = $("statusLikes");
-
-  const btnBackHome = $("btnBackHome");
-  const btnSaveUser = $("btnSaveUser");
-
   const toast = $("toast");
 
-  // ========== UI helpers ==========
-  function safeTrim(v) { return (v ?? "").toString().trim(); }
-
-  function showToast(msg, ms = 1500) {
+  function showToast(msg, ms = 1600) {
+    if (!toast) return;
     toast.textContent = msg;
     toast.classList.add("show");
     window.clearTimeout(showToast._t);
     showToast._t = window.setTimeout(() => toast.classList.remove("show"), ms);
   }
 
+  function safeTrim(v) { return (v ?? "").toString().trim(); }
+
+  function fmtYYMMDD(isoLike) {
+    if (!isoLike) return "-";
+    const d = new Date(isoLike);
+    if (Number.isNaN(d.getTime())) return "-";
+    const yy = String(d.getFullYear()).slice(-2);
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yy}/${mm}/${dd}`;
+  }
+
+  // ===== Auth storage (for future header sync) =====
   function setAuthStorage(username, pass, extra = {}) {
     const auth = {
       loggedIn: true,
@@ -152,41 +88,63 @@ function syncPassButton(btnId, inputEl, fallbackText) {
     window.dispatchEvent(new CustomEvent("ld-auth-changed", { detail: auth }));
   }
 
-  function showHome() {
-    formView.classList.add("hidden");
-    homeView.classList.remove("hidden");
-    inputPass.value = "";
-    btnSaveUser.disabled = false;
+  // ===== Pass input -> modal button (iOS fullwidth support) =====
+  function ensurePassButton(inputEl, btnId) {
+    if (!inputEl) return null;
+    inputEl.type = "hidden";
 
-    // 同期（本人確認パスボタン）
-    syncPassButton("inputPassBtn", inputPass, inputPass.placeholder);
-  }
-
-  function showForm() {
-    homeView.classList.add("hidden");
-    formView.classList.remove("hidden");
-  }
-
-  function fillVaultSelect() {
-    selectVaultLevel.innerHTML = "";
-    for (let i = 1; i <= 11; i++) {
-      const opt = document.createElement("option");
-      opt.value = String(i);
-      opt.textContent = String(i);
-      selectVaultLevel.appendChild(opt);
+    let btn = document.getElementById(btnId);
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.id = btnId;
+      btn.type = "button";
+      btn.className = "pass-modal-btn";
+      btn.textContent = inputEl.value ? inputEl.value : (inputEl.placeholder || "（未入力）");
+      inputEl.insertAdjacentElement("afterend", btn);
     }
+
+    btn.disabled = !!inputEl.disabled;
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (btn.disabled) return;
+
+      if (typeof window.LD_openTextModal !== "function") {
+        showToast("モーダル未初期化（common_header）");
+        return;
+      }
+
+      window.LD_openTextModal({
+        modalTitle: "パス入力",
+        modalHelp: PASS_MODAL_HELP,
+        initialValue: inputEl.value || "",
+        onCommit: (v) => {
+          inputEl.value = String(v ?? "");
+          btn.textContent = inputEl.value ? inputEl.value : (inputEl.placeholder || "（未入力）");
+          inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      });
+    });
+
+    return btn;
   }
 
-  function setStats({ comment_count, mis_input_count, like_count }) {
-    statusComments.textContent = `コメ数: ${comment_count ?? "-"}`;
-    statusMisInputs.textContent = `誤入力: ${mis_input_count ?? "-"}`;
-    statusLikes.textContent = `イイね: ${like_count ?? "-"}`;
+  function syncPassButton(btnId, inputEl, fallbackText) {
+    const btn = document.getElementById(btnId);
+    if (!btn || !inputEl) return;
+    btn.disabled = !!inputEl.disabled;
+    btn.textContent = inputEl.value ? inputEl.value : (fallbackText ?? inputEl.placeholder ?? "（未入力）");
   }
 
-  // ========== Existence check debounce ==========
+  // ===== Home area state machine =====
+  const userNameInput = $("userNameInput");
+  const userPassInput = $("userPassInput");
+  const userActionBtn = $("userActionBtn");
+  const userStatusLabel = $("userStatusLabel");
+  const headerStats = $("headerStats");
+
+  let lastExistsValue = false; // true if registered
   let existsTimer = null;
-  let lastExistsQuery = "";
-  let lastExistsValue = false;
 
   async function checkExistsNow(name) {
     const uname = safeTrim(name);
@@ -195,64 +153,40 @@ function syncPassButton(btnId, inputEl, fallbackText) {
     return !!ok;
   }
 
-  function getExistsKnownFor(uname) {
-    const u = safeTrim(uname);
-    if (!u) return null;
-    if (u === lastExistsQuery) return lastExistsValue;
-    return null; // unknown
-  }
-
-  function updateHomeUi() {
+  function setActionButtonLabel() {
     const uname = safeTrim(userNameInput.value);
     const pass = safeTrim(userPassInput.value);
-    const hasU = !!uname;
-
-    // pass button enable/disable
-    userPassInput.disabled = !hasU;
-
-    // clear pass if username cleared (avoid stale pass)
-    if (!hasU && userPassInput.value) {
-      userPassInput.value = "";
-    }
-
-    const existsKnown = getExistsKnownFor(uname); // true / false / null
-
-    // Pass button label + needpass emphasis (登録済みのみ)
-    let passLabel = "（未入力）";
-    if (hasU) {
-      if (pass) passLabel = pass;
-      else if (existsKnown === true) passLabel = "要パス";
-      else passLabel = "パスを設定してください";
-    }
-
-    syncPassButton("userPassBtn", userPassInput, passLabel);
-    const passBtn = $("userPassBtn");
-    if (passBtn) {
-      const needPass = hasU && existsKnown === true;
-      passBtn.classList.toggle("is-needpass", needPass);
-    }
-
-    // Action button label spec
-    if (!hasU) {
+    if (!uname) {
       userActionBtn.textContent = "※先にユーザー名を入力してください";
       userActionBtn.disabled = true;
-      userActionBtn.dataset.mode = "";
       return;
     }
-
     if (!pass) {
       userActionBtn.textContent = "※先にパスを入力してください";
       userActionBtn.disabled = true;
-      // mode表示は exists判定後に更新（ただし動作はクリック時に確定させる）
-      userActionBtn.dataset.mode = (existsKnown === true) ? "edit" : "register";
       return;
     }
-
-    // passあり：表示は existsKnown を優先。未知なら暫定で「新規登録」表示。
-    const modeForLabel = (existsKnown === true) ? "edit" : "register";
-    userActionBtn.dataset.mode = modeForLabel;
-    userActionBtn.textContent = (modeForLabel === "edit") ? "編集へ" : "新規登録";
+    // both exist
     userActionBtn.disabled = false;
+    userActionBtn.textContent = lastExistsValue ? "編集へ" : "新規登録";
+  }
+
+  function updatePassButtonVisual() {
+    const btn = $("userPassBtn");
+    if (!btn) return;
+    // When username exists in DB: "要パス" and red dashed border (same behavior as header)
+    if (!safeTrim(userNameInput.value)) {
+      btn.classList.remove("needpass");
+      btn.textContent = userPassInput.value ? userPassInput.value : "（未入力）";
+      return;
+    }
+    if (lastExistsValue) {
+      btn.classList.add("needpass");
+      if (!userPassInput.value) btn.textContent = "要パス";
+    } else {
+      btn.classList.remove("needpass");
+      if (!userPassInput.value) btn.textContent = "パスを設定してください";
+    }
   }
 
   function scheduleExistsCheck() {
@@ -260,93 +194,509 @@ function syncPassButton(btnId, inputEl, fallbackText) {
     window.clearTimeout(existsTimer);
 
     if (!uname) {
-      lastExistsQuery = "";
       lastExistsValue = false;
-      headerStats.textContent = "";
-      userStatusLabel.textContent = "ユーザー名を入力してください";
-      updateHomeUi();
+      if (headerStats) headerStats.textContent = "";
+      userPassInput.disabled = true;
+      syncPassButton("userPassBtn", userPassInput, "（未入力）");
+      updatePassButtonVisual();
+      if (userStatusLabel) userStatusLabel.textContent = "ユーザー名を入力してください";
+      setActionButtonLabel();
       return;
     }
 
-    // Enable pass button immediately (so it is clickable after username input)
     userPassInput.disabled = false;
-    updateHomeUi();
+    syncPassButton("userPassBtn", userPassInput, userPassInput.placeholder);
+    updatePassButtonVisual();
 
     existsTimer = window.setTimeout(async () => {
       try {
-        lastExistsQuery = uname;
         const exists = await checkExistsNow(uname);
         lastExistsValue = exists;
-        headerStats.textContent = exists ? "登録済み" : "未登録";
-
-        const pass = safeTrim(userPassInput.value);
-        if (exists) {
-          userStatusLabel.textContent = pass ? "編集できます（パス確認）" : "登録済み：パスを入力してください";
-        } else {
-          userStatusLabel.textContent = pass ? "新規登録できます" : "未登録：パスを設定してください";
+        if (headerStats) headerStats.textContent = exists ? "登録済み" : "未登録";
+        if (userStatusLabel) {
+          userStatusLabel.textContent = exists ? "登録済み：パスを入力してください" : "未登録：パスを設定してください";
         }
       } catch (e) {
-        headerStats.textContent = "判定不可";
-        userStatusLabel.textContent = "ユーザー名を確認できません";
+        // fallback: allow proceed if pass exists
+        if (headerStats) headerStats.textContent = "判定不可";
       } finally {
-        updateHomeUi();
+        updatePassButtonVisual();
+        setActionButtonLabel();
       }
     }, 220);
   }
 
-  // ========== Data RPCs ==========
+  // ===== Info modal state =====
+  const userInfoBackdrop = $("userInfoBackdrop");
+  const btnUserInfoClose = $("btnUserInfoClose");
+  const btnUserInfoSave = $("btnUserInfoSave");
+  const userInfoTitle = $("userInfoTitle");
+  const userInfoError = $("userInfoError");
+
+  const lblUserName = $("lblUserName");
+  const lblCreatedAt = $("lblCreatedAt");
+  const lblUpdatedAt = $("lblUpdatedAt");
+  const lblSiteLevel = $("lblSiteLevel");
+
+  const btnVaultMinus = $("btnVaultMinus");
+  const btnVaultPlus = $("btnVaultPlus");
+  const lblVaultLevel = $("lblVaultLevel");
+
+  const btnOpenMythicSubmodal = $("btnOpenMythicSubmodal");
+
+  const accOtherToggle = $("accOtherToggle");
+  const accOtherBody = $("accOtherBody");
+  const accFutureToggle = $("accFutureToggle");
+  const accFutureBody = $("accFutureBody");
+
+  const inpGamePlayerName = $("inpGamePlayerName");
+  const inpGamePlayerLevel = $("inpGamePlayerLevel");
+  const inpGuildName = $("inpGuildName");
+  const inpGuildCode = $("inpGuildCode");
+  const btnPasteGuildCode = $("btnPasteGuildCode");
+
+  const lblCommentCount = $("lblCommentCount");
+  const lblLikeCount = $("lblLikeCount");
+  const lblMisInputCount = $("lblMisInputCount");
+
+  // mirror notice text into modal
+  const modalNoticeText = $("modalNoticeText");
+
+  // local working state (not yet saved)
+  let currentUser = null; // server payload
+  let draft = {
+    vault_level: 1,
+    mythic_state: {},
+    game_player_name: "",
+    game_player_level: null,
+    guild_name: "",
+    guild_code: ""
+  };
+  let dirty = false;
+
+  function setDirty(v=true) {
+    dirty = !!v;
+  }
+
+  function openBackdrop(backdrop) {
+    if (!backdrop) return;
+    backdrop.classList.add("show");
+    backdrop.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+  function closeBackdrop(backdrop) {
+    if (!backdrop) return;
+    backdrop.classList.remove("show");
+    backdrop.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+
+  function setAccordion(toggleEl, bodyEl, open) {
+    if (!toggleEl || !bodyEl) return;
+    if (open) {
+      bodyEl.classList.add("open");
+      toggleEl.textContent = toggleEl.textContent.replace("▶", "▼");
+    } else {
+      bodyEl.classList.remove("open");
+      toggleEl.textContent = toggleEl.textContent.replace("▼", "▶");
+    }
+  }
+
+  function setVaultLevel(n) {
+    const v = Math.max(1, Math.min(11, Number(n) || 1));
+    draft.vault_level = v;
+    if (lblVaultLevel) lblVaultLevel.textContent = `Lv.${v}`;
+    setDirty(true);
+  }
+
+  function bindDraftToInputs() {
+    if (inpGamePlayerName) inpGamePlayerName.value = draft.game_player_name || "";
+    if (inpGuildName) inpGuildName.value = draft.guild_name || "";
+    if (inpGuildCode) inpGuildCode.value = draft.guild_code || "";
+    if (inpGamePlayerLevel) inpGamePlayerLevel.value = (draft.game_player_level ?? "") === null ? "" : String(draft.game_player_level ?? "");
+  }
+
+  function pullInputsToDraft() {
+    draft.game_player_name = safeTrim(inpGamePlayerName?.value || "");
+    draft.guild_name = safeTrim(inpGuildName?.value || "");
+    draft.guild_code = safeTrim(inpGuildCode?.value || "");
+    const lvlRaw = safeTrim(inpGamePlayerLevel?.value || "");
+    draft.game_player_level = lvlRaw ? Number(lvlRaw) : null;
+  }
+
+  function validateOtherInfo() {
+    // player level
+    if (draft.game_player_level !== null) {
+      const n = Number(draft.game_player_level);
+      if (!Number.isFinite(n) || n < 1 || n > 30) return "プレイヤーレベルは1〜30で入力してください";
+    }
+    // guild code
+    if (draft.guild_code) {
+      let code = draft.guild_code;
+      if (!code.startsWith("#")) code = "#" + code;
+      // normalize to uppercase
+      code = "#" + code.slice(1).toUpperCase();
+      draft.guild_code = code;
+      if (!/^#[0-9A-F]{8}$/.test(code)) return "所属ギルドコードの形式が不正です（例：#1A2B3C4D）";
+    }
+    return "";
+  }
+
+  function fillInfoModalFromUser(user, modeText) {
+    currentUser = user;
+    if (userInfoTitle) userInfoTitle.textContent = modeText;
+
+    if (lblUserName) lblUserName.textContent = user.name ?? "-";
+    if (lblCreatedAt) lblCreatedAt.textContent = fmtYYMMDD(user.created_at);
+    if (lblUpdatedAt) lblUpdatedAt.textContent = fmtYYMMDD(user.updated_at);
+    if (lblSiteLevel) lblSiteLevel.textContent = (user.level ?? "-");
+
+    draft.vault_level = Number(user.vault_level ?? 1) || 1;
+    draft.mythic_state = (user.mythic_state && typeof user.mythic_state === "object") ? user.mythic_state : {};
+    draft.game_player_name = user.game_player_name ?? "";
+    draft.game_player_level = user.game_player_level ?? null;
+    draft.guild_name = user.guild_name ?? "";
+    draft.guild_code = user.guild_code ?? "";
+
+    setVaultLevel(draft.vault_level);
+    bindDraftToInputs();
+
+    if (lblCommentCount) lblCommentCount.textContent = String(user.comment_count ?? "-");
+    if (lblLikeCount) lblLikeCount.textContent = String(user.like_count ?? "-");
+    if (lblMisInputCount) lblMisInputCount.textContent = String(user.mis_input_count ?? "-");
+
+    if (modalNoticeText) modalNoticeText.innerHTML = NOTICE_HTML;
+
+    if (userInfoError) userInfoError.textContent = "";
+    setDirty(false);
+    // default: other/future accordion closed
+    setAccordion(accOtherToggle, accOtherBody, false);
+    setAccordion(accFutureToggle, accFutureBody, false);
+  }
+
+  // ===== Mythic submodal (image grid) =====
+  const mythicBackdrop = $("mythicBackdrop");
+  const btnMythicClose = $("btnMythicClose");
+  const btnMythicOk = $("btnMythicOk");
+  const mythicControls = $("mythicControls");
+  const mythicGridHost = $("mythicGrid");
+  const mythicError = $("mythicError");
+
+  // ICON path: adjust if you store icons elsewhere.
+  const ICON_BASE_PATH = "/LDwiki/icons/"; // you can change later without touching common_header.
+
+  const MYTHIC_IDS = [
+    501,502,503,504,505,506,507,508,509,510,511,512,513,514,515,516,517,518,519,520,521,522,523,524,525,526,527,528
+  ];
+  const AWAKENABLE_IDS = new Set([515,516,517,518,519,520,521,522,523,524,525,526,527,528]); // from old v5
+
+  let multiSelectMode = false;
+  let selectedUnitIds = new Set();
+
+  function buildMythicControls() {
+    if (!mythicControls) return;
+    mythicControls.innerHTML = "";
+
+    const row1 = document.createElement("div");
+    row1.className = "unit-controls-row";
+
+    const btnAll = document.createElement("button");
+    btnAll.className = "btn-small";
+    btnAll.textContent = "全選択";
+    btnAll.addEventListener("click", () => {
+      selectedUnitIds = new Set(MYTHIC_IDS.map(String));
+      refreshSelectedVisual();
+    });
+
+    const btnClear = document.createElement("button");
+    btnClear.className = "btn-small";
+    btnClear.textContent = "選択解除";
+    btnClear.addEventListener("click", () => {
+      selectedUnitIds = new Set();
+      refreshSelectedVisual();
+    });
+
+    const btnMulti = document.createElement("button");
+    btnMulti.className = "btn-small";
+    btnMulti.textContent = "複数選択: OFF";
+    btnMulti.addEventListener("click", () => {
+      multiSelectMode = !multiSelectMode;
+      btnMulti.textContent = multiSelectMode ? "複数選択: ON" : "複数選択: OFF";
+      btnMulti.classList.toggle("active", multiSelectMode);
+      if (!multiSelectMode && selectedUnitIds.size > 1) {
+        // keep only first
+        const first = selectedUnitIds.values().next().value;
+        selectedUnitIds = new Set(first ? [first] : []);
+      }
+      refreshSelectedVisual();
+    });
+
+    row1.appendChild(btnAll);
+    row1.appendChild(btnClear);
+    row1.appendChild(btnMulti);
+
+    const row2 = document.createElement("div");
+    row2.className = "unit-controls-row";
+
+    function btnLv(n) {
+      const b = document.createElement("button");
+      b.className = "btn-small";
+      b.textContent = `Lv${n}`;
+      b.addEventListener("click", () => applyLevelToSelection(n));
+      return b;
+    }
+    row2.appendChild(btnLv(6));
+    row2.appendChild(btnLv(12));
+    row2.appendChild(btnLv(15));
+
+    const btnTreasure = document.createElement("button");
+    btnTreasure.className = "btn-small";
+    btnTreasure.textContent = "専用👑切替";
+    btnTreasure.addEventListener("click", () => toggleTreasureOnSelection());
+    row2.appendChild(btnTreasure);
+
+    const btnAwaken = document.createElement("button");
+    btnAwaken.className = "btn-small";
+    btnAwaken.textContent = "覚醒/退化";
+    btnAwaken.addEventListener("click", () => toggleFormAwakening());
+    row2.appendChild(btnAwaken);
+
+    mythicControls.appendChild(row1);
+    mythicControls.appendChild(row2);
+  }
+
+  function renderMythicGridFromDraft() {
+    if (!mythicGridHost) return;
+    mythicGridHost.innerHTML = "";
+
+    const grid = document.createElement("div");
+    grid.className = "unit-grid";
+
+    MYTHIC_IDS.forEach((idNum) => {
+      const id = String(idNum);
+      const item = document.createElement("div");
+      item.className = "unit-item dim";
+      item.dataset.id = id;
+      item.dataset.level = "0";
+      item.dataset.treasure = "0";
+      item.dataset.form = "mythic";
+
+      const inner = document.createElement("div");
+      inner.className = "unit-inner";
+
+      const img = document.createElement("img");
+      img.className = "unit-img";
+      img.alt = id;
+      img.src = ICON_BASE_PATH + id + ".png";
+
+      const badge = document.createElement("div");
+      badge.className = "unit-badge";
+      badge.textContent = "Lv0";
+
+      inner.appendChild(img);
+      inner.appendChild(badge);
+      item.appendChild(inner);
+      grid.appendChild(item);
+
+      const info = draft.mythic_state?.[id];
+      if (info) {
+        const lv = typeof info.level === "number" ? info.level : 0;
+        const tre = info.treasure === true;
+        const form = info.form === "immortal" ? "immortal" : "mythic";
+        item.dataset.level = String(lv);
+        item.dataset.treasure = tre ? "1" : "0";
+        item.dataset.form = form;
+      }
+
+      updateUnitVisual(item);
+
+      item.addEventListener("click", () => {
+        onClickUnitItem(id);
+      });
+    });
+
+    mythicGridHost.appendChild(grid);
+    refreshSelectedVisual();
+  }
+
+  function onClickUnitItem(id) {
+    if (!multiSelectMode) {
+      selectedUnitIds = new Set([id]);
+    } else {
+      if (selectedUnitIds.has(id)) selectedUnitIds.delete(id);
+      else selectedUnitIds.add(id);
+    }
+    refreshSelectedVisual();
+  }
+
+  function refreshSelectedVisual() {
+    const grid = mythicGridHost?.querySelector(".unit-grid");
+    if (!grid) return;
+    grid.querySelectorAll(".unit-item").forEach((item) => {
+      const id = item.dataset.id;
+      if (selectedUnitIds.has(id)) item.classList.add("selected");
+      else item.classList.remove("selected");
+    });
+  }
+
+  function updateUnitVisual(item) {
+    const level = parseInt(item.dataset.level || "0", 10);
+    const hasTreasure = item.dataset.treasure === "1";
+    const form = item.dataset.form || "mythic";
+    const badge = item.querySelector(".unit-badge");
+    if (!badge) return;
+
+    if (level <= 0) {
+      item.classList.add("dim");
+      badge.textContent = "Lv0";
+    } else {
+      item.classList.remove("dim");
+      const label = (form === "immortal") ? "不滅" : "Lv";
+      let txt = label + level;
+      if (form === "mythic" && hasTreasure) txt += " 👑";
+      badge.textContent = txt;
+    }
+  }
+
+  function applyLevelToSelection(level) {
+    const grid = mythicGridHost?.querySelector(".unit-grid");
+    if (!grid) return;
+    if (selectedUnitIds.size === 0) {
+      showToast("ユニットが選択されていません。");
+      return;
+    }
+    selectedUnitIds.forEach((id) => {
+      const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
+      if (!item) return;
+      item.dataset.level = String(level);
+      // treasure rule: if level < 12, force off
+      if (parseInt(item.dataset.level, 10) < 12) item.dataset.treasure = "0";
+      updateUnitVisual(item);
+    });
+  }
+
+  function toggleTreasureOnSelection() {
+    const grid = mythicGridHost?.querySelector(".unit-grid");
+    if (!grid) return;
+    if (selectedUnitIds.size === 0) {
+      showToast("ユニットが選択されていません。");
+      return;
+    }
+    selectedUnitIds.forEach((id) => {
+      const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
+      if (!item) return;
+      const form = item.dataset.form || "mythic";
+      const level = parseInt(item.dataset.level || "0", 10);
+
+      // immortal: treasure always off
+      if (form === "immortal") {
+        item.dataset.treasure = "0";
+        updateUnitVisual(item);
+        return;
+      }
+      // level gate
+      if (level < 12) {
+        item.dataset.treasure = "0";
+        updateUnitVisual(item);
+        return;
+      }
+      const current = item.dataset.treasure === "1";
+      item.dataset.treasure = current ? "0" : "1";
+      updateUnitVisual(item);
+    });
+  }
+
+  function toggleFormAwakening() {
+    const grid = mythicGridHost?.querySelector(".unit-grid");
+    if (!grid) return;
+    if (selectedUnitIds.size === 0) {
+      showToast("ユニットが選択されていません。");
+      return;
+    }
+    selectedUnitIds.forEach((id) => {
+      if (!AWAKENABLE_IDS.has(Number(id))) return;
+      const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
+      if (!item) return;
+      let form = item.dataset.form || "mythic";
+      let level = parseInt(item.dataset.level || "0", 10);
+      if (form === "mythic") {
+        if (level === 0) level = 6;
+        item.dataset.form = "immortal";
+        item.dataset.level = String(level);
+        item.dataset.treasure = "0";
+      } else {
+        item.dataset.form = "mythic";
+        item.dataset.level = String(level);
+      }
+      updateUnitVisual(item);
+    });
+  }
+
+  function collectMythicStateFromUI() {
+    const grid = mythicGridHost?.querySelector(".unit-grid");
+    const json = {};
+    if (!grid) return json;
+    grid.querySelectorAll(".unit-item").forEach((item) => {
+      const id = item.dataset.id;
+      const level = parseInt(item.dataset.level || "0", 10);
+      const hasTreasure = item.dataset.treasure === "1";
+      const form = item.dataset.form || "mythic";
+      if (level <= 0) return; // omit defaults
+      json[id] = {
+        level,
+        treasure: (form === "mythic") ? !!hasTreasure : false,
+        form: (form === "immortal") ? "immortal" : "mythic"
+      };
+    });
+    return json;
+  }
+
+  function openMythicSubmodal() {
+    if (mythicError) mythicError.textContent = "";
+    buildMythicControls();
+    renderMythicGridFromDraft();
+    openBackdrop(mythicBackdrop);
+  }
+
+  function closeMythicSubmodal(confirmDiscard) {
+    if (!confirmDiscard) {
+      closeBackdrop(mythicBackdrop);
+      return;
+    }
+    // submodal edits are applied only on "確定" so discard is safe
+    closeBackdrop(mythicBackdrop);
+  }
+
+  // ===== Main flow: click register/edit -> open info modal =====
   async function registerUser(name, pass) {
     return await rpc("ld_register", { p_username: name, p_pass: pass });
   }
-
   async function getUserData(name, pass) {
     return await rpc("ld_get_user_data", { p_username: name, p_pass: pass });
   }
 
-  async function saveUserData(name, pass, vaultLevel, mythicStateObj) {
-    return await rpc("ld_update_user_data", {
-      p_username: name,
-      p_pass: pass,
-      p_vault_level: vaultLevel,
-      p_mythic_state: mythicStateObj,
-    });
-  }
-
-  // ========== Form actions ==========
-  async function resolveModeByServer(name) {
-    try {
-      const exists = await checkExistsNow(name);
-      return exists ? "edit" : "register";
-    } catch {
-      // fallback: last known
-      return (safeTrim(name) === lastExistsQuery && lastExistsValue) ? "edit" : "register";
+  async function enterFlow() {
+    if (!supabaseReady) {
+      showToast("Supabase設定が未完です");
+      return;
     }
-  }
-
-  async function enterEditFlow(mode) {
     const name = safeTrim(userNameInput.value);
     const pass = safeTrim(userPassInput.value);
-    if (!name || !pass) return;
+    if (!name) {
+      showToast("ユーザー名を入力してください");
+      return;
+    }
+    if (!pass) {
+      showToast("パスを入力してください");
+      return;
+    }
 
     userActionBtn.disabled = true;
-
     try {
-      if (mode === "register") {
-        const res = await registerUser(name, pass);
-        if (!res || res.ok !== true) {
-          showToast("登録に失敗しました");
-          userActionBtn.disabled = false;
-          return;
-        }
-        // after register, immediately log in (for header)
-        setAuthStorage(name, pass, { userId: res.user_id ?? null });
-        showToast("登録しました");
-      } else {
-        // edit: validate pass and load current data
+      if (lastExistsValue) {
         const data = await getUserData(name, pass);
         if (!data || data.ok !== true) {
           showToast("パスが違うか、取得できません");
-          userActionBtn.disabled = false;
           return;
         }
         setAuthStorage(name, pass, {
@@ -355,153 +705,204 @@ function syncPassButton(btnId, inputEl, fallbackText) {
           exp: data.exp ?? null,
           lockedUntil: data.locked_until ? new Date(data.locked_until).getTime() : 0,
         });
-      }
-
-      // load (after register, fetch data too so UI has server values)
-      const data2 = await getUserData(name, pass);
-      if (!data2 || data2.ok !== true) {
-        // register直後に get が無い/失敗でも最低限編集は続行（初期値）
-        inputName.value = name;
-        inputPass.value = pass;
-        selectVaultLevel.value = "1";
-        mythicStateJson.value = "{}";
-        setStats({ comment_count: 0, mis_input_count: 0, like_count: 0 });
-        formModeLabel.textContent = "編集";
-        showForm();
-
-        // 同期（本人確認パスボタン）
-        syncPassButton("inputPassBtn", inputPass, inputPass.placeholder);
-        return;
-      }
-
-      inputName.value = name;
-      inputPass.value = pass;
-      selectVaultLevel.value = String(data2.vault_level ?? 1);
-      mythicStateJson.value = JSON.stringify(data2.mythic_state ?? {}, null, 2);
-      setStats(data2);
-      formModeLabel.textContent = data2.is_new ? "新規登録（初期設定）" : "編集";
-      showForm();
-
-      // 同期（本人確認パスボタン）
-      syncPassButton("inputPassBtn", inputPass, inputPass.placeholder);
-
-    } catch (e) {
-      console.error(e);
-      showToast(String(e.message || e));
-      userActionBtn.disabled = false;
-    }
-  }
-
-  async function onSave() {
-    const name = safeTrim(inputName.value);
-    const pass = safeTrim(inputPass.value);
-    if (!name || !pass) {
-      showToast("パスを入力してください");
-      return;
-    }
-
-    let vaultLevel = Number(selectVaultLevel.value || 1);
-    if (!Number.isFinite(vaultLevel) || vaultLevel < 1) vaultLevel = 1;
-    if (vaultLevel > 11) vaultLevel = 11;
-
-    let mythicObj = {};
-    const raw = (mythicStateJson.value || "").trim() || "{}";
-    try {
-      mythicObj = JSON.parse(raw);
-      if (typeof mythicObj !== "object" || mythicObj === null || Array.isArray(mythicObj)) {
-        showToast("JSONはオブジェクト形式で入力してください");
-        return;
-      }
-    } catch {
-      showToast("JSONの形式が不正です");
-      return;
-    }
-
-    btnSaveUser.disabled = true;
-    try {
-      const res = await saveUserData(name, pass, vaultLevel, mythicObj);
-      if (res && res.ok === true) {
-        setAuthStorage(name, pass);
-        showToast("保存しました");
+        fillInfoModalFromUser(data, "ユーザー情報 編集");
+        openBackdrop(userInfoBackdrop);
       } else {
-        showToast(res?.reason ? `保存失敗: ${res.reason}` : "保存に失敗しました");
+        const res = await registerUser(name, pass);
+        if (!res || res.ok !== true) {
+          showToast("登録に失敗しました");
+          return;
+        }
+        setAuthStorage(name, pass, { userId: res.user_id ?? null });
+        const data2 = await getUserData(name, pass);
+        if (data2 && data2.ok === true) {
+          fillInfoModalFromUser(data2, "ユーザー情報 初期設定");
+        } else {
+          // fallback minimal
+          fillInfoModalFromUser({
+            ok:true, name, vault_level:1, mythic_state:{}, created_at:null, updated_at:null, level:1,
+            comment_count:0, like_count:0, mis_input_count:0
+          }, "ユーザー情報 初期設定");
+        }
+        openBackdrop(userInfoBackdrop);
       }
     } catch (e) {
       console.error(e);
       showToast(String(e.message || e));
     } finally {
-      btnSaveUser.disabled = false;
+      userActionBtn.disabled = false;
+      setActionButtonLabel();
     }
   }
 
-  // ========== Accordion ==========
-  let accOpen = false;
-  function setAccordion(open) {
-    accOpen = !!open;
-    unitAccordionBody.style.display = accOpen ? "block" : "none";
-    unitAccordionToggle.textContent = accOpen ? "▲育成状態（JSON / 仮）" : "▼育成状態（JSON / 仮）";
-  }
-
-  function formatJson() {
+  // ===== Save (updated_at should update on save) =====
+  async function saveUserDataV2(payload) {
+    // try v2 first
     try {
-      const obj = JSON.parse((mythicStateJson.value || "").trim() || "{}");
-      mythicStateJson.value = JSON.stringify(obj, null, 2);
-      showToast("整形しました");
-    } catch {
-      showToast("JSONが不正です");
+      return await rpc("ld_update_user_data_v2", payload);
+    } catch (e) {
+      // if function missing, fall back to old name
+      if (String(e.message || "").includes("Could not find the function") || e.status === 404) {
+        return await rpc("ld_update_user_data", payload);
+      }
+      throw e;
     }
   }
 
-  // ========== init ==========
+  async function onSaveAndClose() {
+    if (!currentUser) return;
+    pullInputsToDraft();
+    const errMsg = validateOtherInfo();
+    if (errMsg) {
+      if (userInfoError) userInfoError.textContent = errMsg;
+      showToast("入力内容を確認してください");
+      return;
+    }
+
+    if (userInfoError) userInfoError.textContent = "";
+    btnUserInfoSave.disabled = true;
+
+    const name = safeTrim(userNameInput.value);
+    const pass = safeTrim(userPassInput.value);
+
+    const payload = {
+      p_username: name,
+      p_pass: pass,
+      p_vault_level: draft.vault_level,
+      p_mythic_state: draft.mythic_state,
+      // optional extras (RPC may or may not accept; v2 should)
+      p_game_player_name: draft.game_player_name,
+      p_game_player_level: draft.game_player_level,
+      p_guild_name: draft.guild_name,
+      p_guild_code: draft.guild_code,
+    };
+
+    try {
+      const res = await saveUserDataV2(payload);
+      if (res && res.ok === true) {
+        showToast("保存しました");
+        // Refresh timestamps by re-fetching (ensures updated_at reflects save)
+        try {
+          const data = await getUserData(name, pass);
+          if (data && data.ok === true) {
+            fillInfoModalFromUser(data, userInfoTitle?.textContent || "ユーザー情報");
+          }
+        } catch (_) {}
+        closeBackdrop(userInfoBackdrop);
+        // Keep username/pass (do not clear)
+      } else {
+        const reason = res?.reason ? String(res.reason) : "保存に失敗しました";
+        if (userInfoError) userInfoError.textContent = reason;
+        showToast("保存に失敗しました");
+      }
+    } catch (e) {
+      console.error(e);
+      if (userInfoError) userInfoError.textContent = String(e.message || e);
+      showToast("保存に失敗しました");
+    } finally {
+      btnUserInfoSave.disabled = false;
+      setDirty(false);
+    }
+  }
+
+  function maybeCloseInfoModal() {
+    if (!dirty) {
+      closeBackdrop(userInfoBackdrop);
+      return;
+    }
+    const ok = window.confirm("変更を破棄して戻りますか？");
+    if (ok) closeBackdrop(userInfoBackdrop);
+  }
+
+  // ===== Clipboard paste for guild code =====
+  async function pasteGuildCode() {
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        showToast("貼り付けはこの環境では使えません");
+        return;
+      }
+      const t = await navigator.clipboard.readText();
+      if (!t) {
+        showToast("クリップボードが空です");
+        return;
+      }
+      let code = safeTrim(t);
+      if (!code.startsWith("#")) code = "#" + code;
+      code = "#" + code.slice(1).toUpperCase();
+      if (inpGuildCode) inpGuildCode.value = code;
+      setDirty(true);
+    } catch (e) {
+      showToast("貼り付けに失敗しました");
+    }
+  }
+
+  // ===== init =====
   function init() {
-    fillVaultSelect();
+    // notice mirror
+    const modalNotice = $("modalNoticeText");
+    if (modalNotice) modalNotice.innerHTML = NOTICE_HTML;
 
-    // Pass inputs -> modal buttons (iOS IME workaround)
+    // Pass inputs -> modal buttons
     ensurePassButton(userPassInput, "userPassBtn");
-    ensurePassButton(inputPass, "inputPassBtn");
+    syncPassButton("userPassBtn", userPassInput, userPassInput.placeholder);
 
-    setAccordion(false);
+    // initial state
+    userPassInput.disabled = true;
+    updatePassButtonVisual();
+    setActionButtonLabel();
 
     userNameInput.addEventListener("input", () => {
       scheduleExistsCheck();
-      updateHomeUi();
+      updatePassButtonVisual();
+      setActionButtonLabel();
     });
-
     userPassInput.addEventListener("input", () => {
-      // pass changes should update labels immediately, but user existence check doesn't need to rerun
-      updateHomeUi();
-      scheduleExistsCheck();
+      syncPassButton("userPassBtn", userPassInput, userPassInput.placeholder);
+      updatePassButtonVisual();
+      setActionButtonLabel();
     });
 
-    userActionBtn.addEventListener("click", async () => {
-      const name = safeTrim(userNameInput.value);
-      const pass = safeTrim(userPassInput.value);
-      if (!name) {
-        showToast("ユーザー名を入力してください");
-        updateHomeUi();
-        return;
-      }
-      if (!pass) {
-        showToast("パスを入力してください");
-        updateHomeUi();
-        return;
-      }
+    userActionBtn.addEventListener("click", enterFlow);
 
-      const resolvedMode = await resolveModeByServer(name);
-      enterEditFlow(resolvedMode);
+    // info modal events
+    btnUserInfoClose?.addEventListener("click", maybeCloseInfoModal);
+    userInfoBackdrop?.addEventListener("click", (e) => {
+      if (e.target === userInfoBackdrop) maybeCloseInfoModal();
+    });
+    btnUserInfoSave?.addEventListener("click", onSaveAndClose);
+
+    btnVaultMinus?.addEventListener("click", () => setVaultLevel((draft.vault_level || 1) - 1));
+    btnVaultPlus?.addEventListener("click", () => setVaultLevel((draft.vault_level || 1) + 1));
+
+    btnOpenMythicSubmodal?.addEventListener("click", openMythicSubmodal);
+
+    accOtherToggle?.addEventListener("click", () => {
+      const open = !accOtherBody.classList.contains("open");
+      setAccordion(accOtherToggle, accOtherBody, open);
+    });
+    accFutureToggle?.addEventListener("click", () => {
+      const open = !accFutureBody.classList.contains("open");
+      setAccordion(accFutureToggle, accFutureBody, open);
     });
 
-    btnBackHome.addEventListener("click", showHome);
-    btnSaveUser.addEventListener("click", onSave);
+    inpGamePlayerName?.addEventListener("input", () => setDirty(true));
+    inpGamePlayerLevel?.addEventListener("input", () => setDirty(true));
+    inpGuildName?.addEventListener("input", () => setDirty(true));
+    inpGuildCode?.addEventListener("input", () => setDirty(true));
+    btnPasteGuildCode?.addEventListener("click", pasteGuildCode);
 
-    unitAccordionToggle.addEventListener("click", () => setAccordion(!accOpen));
-    btnJsonReset.addEventListener("click", () => { mythicStateJson.value = "{}"; showToast("リセットしました"); });
-    btnJsonFormat.addEventListener("click", formatJson);
-
-    // initial state
-    headerStats.textContent = "";
-    userStatusLabel.textContent = "ユーザー名を入力してください";
-    updateHomeUi();
+    // mythic submodal events
+    btnMythicClose?.addEventListener("click", () => closeMythicSubmodal(false));
+    mythicBackdrop?.addEventListener("click", (e) => {
+      if (e.target === mythicBackdrop) closeMythicSubmodal(false);
+    });
+    btnMythicOk?.addEventListener("click", () => {
+      // apply UI -> draft
+      draft.mythic_state = collectMythicStateFromUI();
+      setDirty(true);
+      closeBackdrop(mythicBackdrop);
+      showToast("育成情報を反映しました");
+    });
   }
 
   document.addEventListener("DOMContentLoaded", init);
