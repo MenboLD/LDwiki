@@ -433,7 +433,7 @@ input, textarea, select, button { font-size: 16px; }
 }
 .unit-grid{
   display:grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 8px;
 }
 @media (max-width: 380px){
@@ -448,6 +448,7 @@ input, textarea, select, button { font-size: 16px; }
 .unit-item.selected{
   outline: 2px solid var(--accent);
   outline-offset: 0;
+  box-shadow: 0 0 0 2px rgba(120,200,255,0.25) inset, 0 0 12px rgba(120,200,255,0.25);
 }
 .unit-item.dim{ opacity: 0.45; }
 .unit-inner{
@@ -459,10 +460,11 @@ input, textarea, select, button { font-size: 16px; }
   justify-content:center;
 }
 .unit-img{
-  width: 100%;
-  height: 100%;
+  width: 92%;
+  height: 92%;
   object-fit: contain;
-  image-rendering: pixelated;
+  transform: translateY(-4px);
+  image-rendering: auto;
 }
 .unit-badge{
   position:absolute;
@@ -471,11 +473,12 @@ input, textarea, select, button { font-size: 16px; }
   font-size: 12px;
   padding: 2px 6px;
   border-radius: 999px;
-  background: rgba(0,0,0,0.55);
-  border: 1px solid rgba(255,255,255,0.12);
-  color: var(--text-main);
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(0,0,0,0.15);
+  color: rgba(10,10,10,0.95);
+  letter-spacing: 0.2px;
 }
-.mythic-note{ color: var(--text-sub); font-size: 12px; margin-top: 10px; }
+.mythic-note{ display:none; }
 
 
 /* Pass button: registered username requires password (red dashed border) */
@@ -484,15 +487,9 @@ input, textarea, select, button { font-size: 16px; }
 }
 
 
-/* --- v20251221an tweaks --- */
-.btn-small.toggle-on{background:#b92b2b;border-color:#ff6b6b;color:#fff;}
-/* Brighter immortal backgrounds */
-.unit-item.immortal.lv6{background:rgba(200,70,70,0.22)!important;}
-.unit-item.immortal.lv12{background:rgba(200,70,70,0.28)!important;}
-.unit-item.immortal.lv15{background:rgba(200,70,70,0.34)!important;}
-/* Treasure label border */
-.unit-item.has-treasure .unit-label{border:2px solid rgba(255,210,70,0.95)!important;}
+.btn-small.is-on{ background: #b02a2a; border-color: #ff6b6b; color:#fff; }
 
-.modal-header-error{display:block;min-height:0;padding:6px 10px;margin:0 10px 6px;border-radius:10px;background:rgba(255,235,0,0.85);color:#b00000;font-weight:700;font-size:14px;line-height:1.2;}
-.modal-header-error:empty{display:none;}
-.unit-item.selected{outline:2px solid rgba(255,255,255,0.95)!important;outline-offset:-2px;box-shadow:0 0 0 2px rgba(80,160,255,0.9) inset!important;}
+.unit-badge.has-treasure{ border: 2px solid rgba(255,215,0,0.85); }
+
+.modal-header-error{ margin: 8px 12px 0; padding: 6px 10px; border-radius: 10px; background: rgba(255,215,0,0.85); color: #c40000; font-weight: 700; font-size: 14px; display:block; }
+.modal-header-error:empty{ display:none; }

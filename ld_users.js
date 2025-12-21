@@ -241,7 +241,6 @@
   const btnUserInfoSave = $("btnUserInfoSave");
   const userInfoTitle = $("userInfoTitle");
   const userInfoError = $("userInfoError");
-  const userInfoErrorHeader = $("userInfoErrorHeader");
 
   const lblUserName = $("lblUserName");
   const lblCreatedAt = $("lblCreatedAt");
@@ -401,6 +400,7 @@
   const codeToIconBig = new Map();      // code(int) -> icon_big_filename (e.g. "501_big")
   const mythicToImmortal = new Map();   // mythicCode(int) -> immortalCode(int)
   let mythicCodes = [];                // e.g. [501..528,...] derived from master
+  let mythicBtnMulti = null;
 function normalizePngFilename(name) {
   const s = String(name || "").trim();
   if (!s) return "";
@@ -443,8 +443,6 @@ async function loadUnitMaster() {
           mythicToImmortal.set(paired, code);
         }
       }
-      // Special-case: 515 has split 615_a/615_b in master, but image is fixed to 615_big
-      if (!mythicToImmortal.has(515)) mythicToImmortal.set(515, 615);
 
       // Fallback safety: if master doesn't have mythic rows yet, keep 501-528
       if (!mythicCodes.length) {
@@ -452,6 +450,9 @@ async function loadUnitMaster() {
       }
 
       mythicCodes = Array.from(new Set(mythicCodes)).sort((a,b)=>a-b);
+      // Special-case: 515's immortal form uses 615_big (615 may appear as 615_a/615_b in master)
+      if (!mythicToImmortal.has(515)) mythicToImmortal.set(515, 615);
+
       unitMasterLoaded = true;
       return true;
     } catch (e) {
@@ -505,6 +506,7 @@ async function loadUnitMaster() {
 
     const btnMulti = document.createElement("button");
     btnMulti.className = "btn-small";
+    mythicBtnMulti = btnMulti;
     btnMulti.textContent = "複数選択: OFF";
     btnMulti.addEventListener("click", () => {
       multiSelectMode = !multiSelectMode;
@@ -513,7 +515,7 @@ async function loadUnitMaster() {
       if (!multiSelectMode && selectedUnitIds.size > 1) {
         // keep only first
         const first = selectedUnitIds.values().next().value;
-        selectedUnitIds = new Set(first ? [String(first)] : []);
+        selectedUnitIds = new Set(first ? [first] : []);
       }
       refreshSelectedVisual();
     });
@@ -538,7 +540,7 @@ async function loadUnitMaster() {
 
     const btnTreasure = document.createElement("button");
     btnTreasure.className = "btn-small";
-    btnTreasure.textContent = "専用👑切替";
+    btnTreasure.textContent = "専用財宝";
     btnTreasure.addEventListener("click", () => toggleTreasureOnSelection());
     row2.appendChild(btnTreasure);
 
@@ -547,6 +549,13 @@ async function loadUnitMaster() {
     btnAwaken.textContent = "覚醒/退化";
     btnAwaken.addEventListener("click", () => toggleFormAwakening());
     row2.appendChild(btnAwaken);
+
+    const btnAwakableAll = document.createElement("button");
+    btnAwakableAll.className = "btn-small";
+    btnAwakableAll.textContent = "覚醒可能を全選択";
+    btnAwakableAll.addEventListener("click", () => selectAwakableAll());
+    row2.appendChild(btnAwakableAll);
+
 
     mythicControls.appendChild(row1);
     mythicControls.appendChild(row2);
@@ -590,6 +599,7 @@ async function loadUnitMaster() {
       const badge = document.createElement("div");
       badge.className = "unit-badge";
       badge.textContent = "";
+      badge.classList.remove("has-treasure");
 
       inner.appendChild(img);
       inner.appendChild(badge);
@@ -606,9 +616,13 @@ async function loadUnitMaster() {
           return;
         }
 
-        // single mode: select + advance cycle on tap
+        // single mode: tap selects; tapping the same tile again advances the cycle
+        const already = (selectedUnitIds.size === 1 && selectedUnitIds.has(id));
         selectedUnitIds = new Set([id]);
-        advanceUnitOnTap(item);
+        refreshSelectedVisual();
+        if (already) {
+          advanceUnitOnTap(item);
+        }
 
         // write back to draft from this item
         const lvl = parseInt(item.dataset.level || "0", 10);
@@ -681,7 +695,6 @@ async function loadUnitMaster() {
   function updateUnitVisual(item) {
     const level = parseInt(item.dataset.level || "0", 10);
     let hasTreasure = item.dataset.treasure === "1";
-    item.classList.toggle("has-treasure", hasTreasure);
     const form = item.dataset.form || "mythic";
     const badge = item.querySelector(".unit-badge");
     if (!badge) return;
@@ -701,20 +714,21 @@ async function loadUnitMaster() {
       else if (lv === 12) item.style.background = "rgba(80,140,255,0.16)";
       else item.style.background = "rgba(80,140,255,0.22)"; // 15
     } else {
-      if (lv === 6) item.style.background = "rgba(255,80,120,0.10)";
-      else if (lv === 12) item.style.background = "rgba(255,80,120,0.16)";
-      else item.style.background = "rgba(255,80,120,0.22)"; // 15
+      if (lv === 6) item.style.background = "rgba(255,80,120,0.144)";
+      else if (lv === 12) item.style.background = "rgba(255,80,120,0.22)";
+      else item.style.background = "rgba(255,80,120,0.30)"; // 15
     }
 
     if (level <= 0) {
       item.classList.add("dim");
-      badge.textContent = "未取得";
+      badge.textContent = "";
+      badge.classList.remove("has-treasure");
     } else {
       item.classList.remove("dim");
-      const label = (form === "immortal") ? "不滅" : "Lv";
-      let txt = label + level;
-      if (form === "mythic" && hasTreasure) txt += " 👑";
+      let txt = String(level);
+      if (form === "mythic" && hasTreasure) txt += "専財";
       badge.textContent = txt;
+      badge.classList.toggle('has-treasure', (form === 'mythic' && hasTreasure));
     }
   }
 
@@ -736,7 +750,22 @@ async function loadUnitMaster() {
     syncDraftFromMythicGrid();
   }
 
-  function toggleTreasureOnSelection() {
+  
+  function selectAwakableAll() {
+    const grid = mythicGridHost?.querySelector(".unit-grid");
+    if (!grid) return;
+    const awakable = mythicCodes.filter((c) => mythicToImmortal.has(c));
+    if (awakable.length === 0) {
+      showToast("覚醒可能なユニットがありません。");
+      return;
+    }
+    multiSelectMode = true;
+    if (mythicBtnMulti) mythicBtnMulti.textContent = "複数選択: ON";
+    selectedUnitIds = new Set(awakable.map((x)=>String(x)));
+    refreshSelectedVisual();
+  }
+
+function toggleTreasureOnSelection() {
     const grid = mythicGridHost?.querySelector(".unit-grid");
     if (!grid) return;
     if (selectedUnitIds.size === 0) {
@@ -1029,20 +1058,16 @@ async function loadUnitMaster() {
             fillInfoModalFromUser(data, userInfoTitle?.textContent || "ユーザー情報");
           }
         } catch (_) {}
-        if (userInfoError) userInfoError.textContent = "";
-        if (userInfoErrorHeader) userInfoErrorHeader.textContent = "";
         closeBackdrop(userInfoBackdrop);
         // Keep username/pass (do not clear)
       } else {
         const reason = res?.reason ? String(res.reason) : "保存に失敗しました";
         if (userInfoError) userInfoError.textContent = reason;
-        if (userInfoErrorHeader) userInfoErrorHeader.textContent = reason;
         showToast("保存に失敗しました");
       }
     } catch (e) {
       console.error(e);
       if (userInfoError) userInfoError.textContent = String(e.message || e);
-      if (userInfoErrorHeader) userInfoErrorHeader.textContent = String(e.message || e);
       showToast("保存に失敗しました");
     } finally {
       btnUserInfoSave.disabled = false;
@@ -1052,15 +1077,11 @@ async function loadUnitMaster() {
 
   function maybeCloseInfoModal() {
     if (!dirty) {
-      if (userInfoError) userInfoError.textContent = "";
-        if (userInfoErrorHeader) userInfoErrorHeader.textContent = "";
-        closeBackdrop(userInfoBackdrop);
+      closeBackdrop(userInfoBackdrop);
       return;
     }
     const ok = window.confirm("変更を破棄して戻りますか？");
-    if (ok) if (userInfoError) userInfoError.textContent = "";
-        if (userInfoErrorHeader) userInfoErrorHeader.textContent = "";
-        closeBackdrop(userInfoBackdrop);
+    if (ok) closeBackdrop(userInfoBackdrop);
   }
 
   // ===== Clipboard paste for guild code =====
