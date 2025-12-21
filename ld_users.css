@@ -42,7 +42,7 @@ body{
 }
 
 .card-title{
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 700;
   margin-bottom: 6px;
 }
@@ -125,7 +125,7 @@ body{
   background: var(--surface2);
   color: var(--text-main);
   padding: 8px 10px;
-  font-size: 13px;
+  font-size: 16px;
   outline: none;
 }
 
@@ -175,7 +175,7 @@ body{
   flex:1;
   height: 36px;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 16px;
   cursor: pointer;
   border: 1px solid rgba(255,255,255,0.12);
   color: var(--text-main);
@@ -215,7 +215,7 @@ body{
   background: var(--surface2, rgba(255,255,255,0.08));
   color: var(--text-main, rgba(255,255,255,0.92));
   outline: none;
-  font-size: 13px;
+  font-size: 16px;
   text-align: left;
   cursor: pointer;
   white-space: nowrap;
@@ -229,6 +229,10 @@ body{
   border-style: dashed;
   cursor: default;
 }
+.pass-modal-btn.needpass{
+  border: 1px dashed rgba(255,77,79,0.95);
+}
+
 
 
 /* iOS Safari: prevent auto-zoom on focus (font-size >= 16px) */
@@ -302,7 +306,7 @@ input, textarea, select, button { font-size: 16px; }
 .modal-error{
   margin-top: 10px;
   color: var(--danger);
-  font-size: 13px;
+  font-size: 16px;
   white-space: pre-wrap;
 }
 
@@ -388,7 +392,7 @@ input, textarea, select, button { font-size: 16px; }
 }
 .field > span{
   color: var(--text-sub);
-  font-size: 13px;
+  font-size: 16px;
 }
 .field input{
   width: 100%;

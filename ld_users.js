@@ -103,11 +103,10 @@
       inputEl.insertAdjacentElement("afterend", btn);
     }
 
-    btn.disabled = !!inputEl.disabled;
+    btn.disabled = false; // keep clickable; state handled by label/logic
 
     btn.addEventListener("click", (e) => {
       e.preventDefault();
-      if (btn.disabled) return;
 
       if (typeof window.LD_openTextModal !== "function") {
         showToast("モーダル未初期化（common_header）");
@@ -132,7 +131,7 @@
   function syncPassButton(btnId, inputEl, fallbackText) {
     const btn = document.getElementById(btnId);
     if (!btn || !inputEl) return;
-    btn.disabled = !!inputEl.disabled;
+    btn.disabled = false; // keep clickable; state handled by label/logic
     btn.textContent = inputEl.value ? inputEl.value : (fallbackText ?? inputEl.placeholder ?? "（未入力）");
   }
 
