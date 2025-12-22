@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
 
-  <link rel="stylesheet" href="/LDwiki/ld_users.css?v=20251222ac">
+  <link rel="stylesheet" href="/LDwiki/ld_users.css?v=20251221ap">
   <link rel="stylesheet" href="/LDwiki/common_header.css?v=20251220ah">
 </head>
 
@@ -19,9 +19,9 @@
     <main class="app-main">
       <!-- 初期画面エリア -->
       <section id="homeView" class="card">
-        <div class="card-title">ユーザー情報（新規登録 / 編集）</div>
+        <button type="button" class="card-title acc-toggle" data-target="#homeNoteA" aria-expanded="false">▶︎ ユーザー情報（新規登録 / 編集）</button>
 
-        <div class="home-note">
+        <div class="home-note acc-content" id="homeNoteA">
           ・新規登録にはユーザー名とパスをこの下で入力したあと、新規登録ボタンを押してください<br>
           ・ユーザー名は最大で全角８文字、半角16文字まで。大文字と小文字の区別アリ<br>
           ・パスは最大で全角５文字、半角10文字まで。大文字と小文字の区別アリ<br>
@@ -47,16 +47,16 @@
           <span id="headerStats" class="home-status-label home-status-right"></span>
         </div>
 
-        <div class="card-title" style="margin-top:12px;">機能と目的</div>
-        <div class="home-note">
+        <button type="button" class="card-title acc-toggle" style="margin-top:12px;" data-target="#homeNoteB" aria-expanded="false">▶︎ 機能と目的</button>
+        <div class="home-note acc-content" id="homeNoteB">
           ・金庫のレベルやユニットの育成状態などを設定できます。掲示板コメントに表示されるプロフ部分から簡単にこれを確認でき、質問者や回答者に生じるであろう手間を省くことができます<br>
           ・今後、戦闘力よりも正確なユーザー攻撃力指数の表示や指定した遺物レベルまでに必要な鉱山の鍵や見込み日数などを表示する機能を検討しています<br>
           ・ユーザーの平均金庫レベルやグラフ出しに利用する可能性もあり、アンケート回答的な意味合いも兼ねています<br>
           ・当サイトのページ編集作業については、ログイン中のユーザー情報から権限レベルを参照し、これを許可しています
         </div>
 
-        <div class="card-title" style="margin-top:12px;">注意</div>
-        <div class="home-note" id="homeNoticeText">
+        <button type="button" class="card-title acc-toggle" style="margin-top:12px;" data-target="#homeNoticeText" aria-expanded="false">▶︎ 注意</button>
+        <div class="home-note acc-content" id="homeNoticeText">
           ・ユーザー名とパスは変更できません<br>
           ・パスは再発行や再確認が不可能です。必ず画面スクリーンショットやメモするなどし、個人で控えてください<br>
           ・ユーザー名やパスを除き、ユニットの育成情報などは基本的に公開情報扱いになります。今後、項目ごとに公開/非公開の設定機能は追加予定です<br>
@@ -86,11 +86,27 @@
           <div class="info-row"><span class="info-key">当サイト内の権限レベル</span><span id="lblSiteLevel" class="info-val">-</span></div>
         </div>
 
-        <div class="section-title">金庫レベル</div>
-        <div class="stepper">
-          <button id="btnVaultMinus" type="button" class="stepper-btn">−</button>
-          <div class="stepper-val"><span id="lblVaultLevel">Lv.1</span></div>
-          <button id="btnVaultPlus" type="button" class="stepper-btn">＋</button>
+        <div class="section-grid2">
+  <div class="section-block">
+    <div class="section-title small">金庫レベル</div>
+    <div class="stepper compact">
+      <button id="btnVaultMinus" type="button" class="stepper-btn">−</button>
+      <div class="stepper-val"><span id="lblVaultLevel">Lv.1</span></div>
+      <button id="btnVaultPlus" type="button" class="stepper-btn">＋</button>
+    </div>
+  </div>
+
+  <div class="section-block">
+    <div class="section-title small">Lv.15 エピックユニット数</div>
+    <div class="stepper compact">
+      <button id="btnEpic15Minus" type="button" class="stepper-btn">−</button>
+      <div class="stepper-val"><span id="lblEpic15Count">0</span></div>
+      <button id="btnEpic15Plus" type="button" class="stepper-btn">＋</button>
+    </div>
+  </div>
+</div>
+
+<button id="btnVaultPlus" type="button" class="stepper-btn">＋</button>
         </div>
 
         <div class="section-title">ユニット育成情報</div>
@@ -104,7 +120,7 @@
           <div id="accOtherBody" class="acc-body">
             <label class="field">
               <span>ゲーム内のプレイヤー名</span>
-              <input id="inpGamePlayerName" type="text" maxlength="32" placeholder="自由入力">
+              <input id="inpGamePlayerName" type="text" maxlength="32" placeholder="（任意）">
             </label>
 
             <label class="field">
@@ -114,13 +130,13 @@
 
             <label class="field">
               <span>所属ギルド名</span>
-              <input id="inpGuildName" type="text" maxlength="40" placeholder="自由入力">
+              <input id="inpGuildName" type="text" maxlength="40" placeholder="（任意）">
             </label>
 
             <div class="field">
               <span>所属ギルドコード</span>
               <div class="paste-row">
-                <input id="inpGuildCode" type="text" maxlength="9" placeholder="#A1B2C3D4">
+                <input id="inpGuildCode" type="text" maxlength="9" placeholder="#と8桁の16進法値">
                 <button id="btnPasteGuildCode" type="button" class="btn-secondary btn-paste">貼り付け</button>
               </div>
               <div class="field-hint">形式：# + 8桁16進（例：#1A2B3C4D）</div>
@@ -179,6 +195,6 @@
 
   <script src="/LDwiki/supabase_config.js?v=20251220ah"></script>
   <script src="/LDwiki/common_header.js?v=20251220ah"></script>
-  <script src="/LDwiki/ld_users.js?v=20251222ac"></script>
+  <script src="/LDwiki/ld_users.js?v=20251221ap"></script>
 </body>
 </html>
