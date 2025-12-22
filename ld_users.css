@@ -231,43 +231,333 @@ body{
 }
 
 
-/* ===== Home Accordion ===== */
-.accordion-header{
-  width: 100%;
-  text-align: left;
-  background: transparent;
-  border: 0;
-  color: inherit;
-  font: inherit;
-  padding: 10px 0;
-  cursor: pointer;
-}
-.accordion-header:active{ opacity: .85; }
-.accordion-content{ margin-top: 6px; }
+/* iOS Safari: prevent auto-zoom on focus (font-size >= 16px) */
+input, textarea, select, button { font-size: 16px; }
 
-/* ===== Two column steppers ===== */
-.two-col-steppers{
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
+
+
+/* ===== Modals for ld_users ===== */
+.modal-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  z-index: 9999;
+}
+.modal-backdrop.show{ display: flex; }
+
+.modal{
+  width: min(520px, 96vw);
+  max-height: 92vh;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+.modal-lg{ width: min(620px, 96vw); }
+.modal-xl{ width: min(820px, 96vw); }
+
+.modal-header{
+  display:flex;
+  align-items:center;
   justify-content: space-between;
-}
-.stepper-block{
-  flex: 1 1 0;
-  min-width: 0;
-}
-.section-title-sm{
-  font-size: 13px;
-  opacity: .92;
-  margin-bottom: 6px;
-}
-.stepper-compact{
   gap: 8px;
+  padding: 10px 10px;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--border);
 }
-.stepper-compact .stepper-btn{
+.modal-title{
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text-main);
+  flex: 1;
+  text-align: center;
+}
+.modal-close{
   width: 44px;
   height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-main);
 }
-.stepper-compact .stepper-val{
-  min-width: 0;
+.modal-ok{
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.06);
+  color: var(--text-main);
+  white-space: nowrap;
+}
+.modal-body{
+  padding: 12px;
+  overflow: auto;
+  max-height: calc(92vh - 54px);
+}
+.modal-error{
+  margin-top: 10px;
+  color: var(--danger);
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+/* Info rows */
+.info-block{
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255,255,255,0.02);
+  margin-bottom: 12px;
+}
+.info-row{
+  display:flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 0;
+}
+.info-key{ color: var(--text-sub); font-size: 13px; }
+.info-val{ color: var(--text-main); font-size: 13px; font-weight: 600; }
+
+/* Sections */
+.section-title{
+  margin-top: 12px;
+  margin-bottom: 6px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.row-actions{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+.row-hint{ color: var(--text-sub); font-size: 12px; }
+
+/* Stepper */
+.stepper{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  background: rgba(255,255,255,0.02);
+}
+.stepper-btn{
+  width: 44px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-main);
+}
+.stepper-val{ flex:1; text-align:center; color: var(--text-main); font-weight:700; }
+
+/* Accordion */
+.accordion{
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.acc-toggle{
+  width: 100%;
+  text-align: left;
+  padding: 10px;
+  background: rgba(255,255,255,0.03);
+  border: none;
+  color: var(--text-main);
+  font-weight: 700;
+}
+.acc-body{
+  display: none;
+  padding: 10px;
+  background: rgba(255,255,255,0.01);
+}
+.acc-body.open{ display: block; }
+
+.field{
+  display:flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+.field > span{
+  color: var(--text-sub);
+  font-size: 13px;
+}
+.field input{
+  width: 100%;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.25);
+  color: var(--text-main);
+}
+.field-hint{ color: var(--text-sub); font-size: 12px; margin-top: 6px; }
+
+.paste-row{
+  display:flex;
+  gap: 8px;
+  align-items:center;
+}
+.btn-paste{
+  min-width: 86px;
+}
+
+/* Ref muted */
+.ref-muted{ color: var(--text-sub); font-size: 13px; }
+.strike{ text-decoration: line-through; opacity: 0.75; }
+
+/* Unit controls + grid (borrowed from old editor style) */
+.unit-controls{ margin-bottom: 10px; }
+.unit-controls-row{
+  display:flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.btn-small{
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-main);
+}
+.btn-small.active{
+  border-color: var(--accent);
+}
+.unit-grid{
+  display:grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+@media (max-width: 380px){
+  .unit-grid{ grid-template-columns: repeat(5, 1fr); }
+}
+.unit-item{
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow:hidden;
+  background: rgba(255,255,255,0.02);
+}
+.unit-item.selected{
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+  box-shadow: 0 0 0 2px rgba(120,200,255,0.25) inset, 0 0 12px rgba(120,200,255,0.25);
+}
+
+.unit-item.ultimate{
+  border: 2px solid rgba(255, 215, 0, 0.92);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.28), 0 0 0 2px rgba(255, 215, 0, 0.14) inset;
+}
+.unit-item.ultimate.selected{
+  outline: 2px solid rgba(255, 215, 0, 0.98);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.34), 0 0 0 2px rgba(255, 215, 0, 0.18) inset;
+}
+
+.unit-item.dim{ opacity: 0.45; }
+.unit-inner{
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.unit-img{
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+  transform: translateY(-4px);
+  image-rendering: auto;
+}
+.unit-badge{
+  position:absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 6px;
+  border-radius: 999px;
+    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(0,0,0,0.15);
+    color: rgba(10,10,10,0.95);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    line-height: 1;
+    padding: 2px 6px;
+    letter-spacing: -0.2px;
+    max-width: calc(100% - 10px);
+    overflow: hidden;
+    text-overflow: clip;
+}
+
+.mythic-note{ display:none; }
+
+
+/* Pass button: registered username requires password (red dashed border) */
+.pass-modal-btn.needpass{
+  border: 1px dashed var(--danger, #ff6b6b);
+}
+
+
+.btn-small.is-on{ background: #b02a2a; border-color: #ff6b6b; color:#fff; }
+
+.unit-badge.has-treasure{ border: 2px solid rgba(255,215,0,0.85); }
+
+.modal-header-error{ margin: 8px 12px 0; padding: 6px 10px; border-radius: 10px; background: rgba(255,215,0,0.85); color: #c40000; font-weight: 700; font-size: 14px; display:block; }
+.modal-header-error:empty{ display:none; }
+
+
+/* Error bar under user info modal header */
+.modal-errorbar{
+  width: 100%;
+  background: #f0c400; /* yellow */
+  color: #b00000; /* red */
+  font-weight: 700;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.25);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Validation highlight */
+.acc-toggle.error{
+  background: #f0c400;
+  color: #b00000;
+  border: 2px solid #b00000;
+}
+.field.error{
+  background: rgba(240,196,0,0.12);
+  border: 2px solid #b00000;
+  border-radius: 12px;
+  padding: 8px;
+}
+
+/* Multi-select ON button (btn-small.active) */
+.unit-controls .btn-small.active{
+  background: #b00000 !important;
+  border-color: #b00000 !important;
+  color: #ffffff !important;
+}
+
+/* Selection clear button: becomes dark green when at least one tile is selected */
+.unit-controls .btn-small.has-selection{
+  background: #0b5d1e !important;
+  border-color: #0b5d1e !important;
+  color: #ffffff !important;
+}
+
+/* Selection clear button: becomes dark green when at least one tile is selected */
+.unit-controls .btn-small.has-selection{
+  background: #0b5d1e !important;
+  border-color: #0b5d1e !important;
+  color: #ffffff !important;
 }
