@@ -607,3 +607,12 @@ input, textarea, select, button { font-size: 16px; }
   min-width: 0;
   white-space: nowrap;
 }
+
+
+/* Highlight: 育成情報を編集 */
+#btnOpenMythicSubmodal{
+  background: rgba(170, 255, 120, 0.28);
+  border-color: #000;
+  color: #eaffea;
+}
+#btnOpenMythicSubmodal:active{ opacity: .9; }
