@@ -805,10 +805,16 @@ async function loadUnitMaster() {
       if (form === "mythic") return level >= 12;
       return level >= 6; // immortal
     })();
+
+
     if (!treasureAllowed) {
       hasTreasure = false;
       item.dataset.treasure = "0";
     }
+
+    // Ultimate highlight: immortal Lv15 + 専財 (最高育成)
+    item.classList.toggle("ultimate", (form === "immortal" && level === 15 && hasTreasure));
+
 
     // background tint per spec
     const lv = level;
@@ -827,8 +833,12 @@ async function loadUnitMaster() {
     if (level <= 0) {
       item.classList.add("dim");
       badge.textContent = "";
+      badge.style.display = "none"; // hide badge entirely for 未取得 to avoid stray bg/text
       badge.classList.remove("has-treasure");
     } else {
+      item.classList.remove("dim");
+      badge.style.display = ""; // restore
+
       item.classList.remove("dim");
       let txt = String(level);
       if (hasTreasure) txt += "専財";
