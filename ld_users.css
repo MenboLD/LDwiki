@@ -450,6 +450,16 @@ input, textarea, select, button { font-size: 16px; }
   outline-offset: 0;
   box-shadow: 0 0 0 2px rgba(120,200,255,0.25) inset, 0 0 12px rgba(120,200,255,0.25);
 }
+
+.unit-item.ultimate{
+  border: 2px solid rgba(255, 215, 0, 0.92);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.28), 0 0 0 2px rgba(255, 215, 0, 0.14) inset;
+}
+.unit-item.ultimate.selected{
+  outline: 2px solid rgba(255, 215, 0, 0.98);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.34), 0 0 0 2px rgba(255, 215, 0, 0.18) inset;
+}
+
 .unit-item.dim{ opacity: 0.45; }
 .unit-inner{
   position: relative;
@@ -468,16 +478,26 @@ input, textarea, select, button { font-size: 16px; }
 }
 .unit-badge{
   position:absolute;
-  left: 6px;
-  bottom: 6px;
-  font-size: 12px;
-  padding: 2px 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 6px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.55);
-  border: 1px solid rgba(0,0,0,0.15);
-  color: rgba(10,10,10,0.95);
-  letter-spacing: 0.2px;
+    background: rgba(255,255,255,0.55);
+    border: 1px solid rgba(0,0,0,0.15);
+    color: rgba(10,10,10,0.95);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    line-height: 1;
+    padding: 2px 6px;
+    letter-spacing: -0.2px;
+    max-width: calc(100% - 10px);
+    overflow: hidden;
+    text-overflow: clip;
 }
+
 .mythic-note{ display:none; }
 
 
@@ -528,48 +548,16 @@ input, textarea, select, button { font-size: 16px; }
   color: #ffffff !important;
 }
 
-
-/* --- Home accordion (default closed) --- */
-.card-title.acc-toggle{
-  width:100%;
-  text-align:left;
-  background:transparent;
-  border:none;
-  color:inherit;
-  padding:0;
-  cursor:pointer;
-}
-.acc-content{
-  display:none;
-}
-.card-title.acc-toggle[aria-expanded="true"] + .acc-content{
-  display:block;
+/* Selection clear button: becomes dark green when at least one tile is selected */
+.unit-controls .btn-small.has-selection{
+  background: #0b5d1e !important;
+  border-color: #0b5d1e !important;
+  color: #ffffff !important;
 }
 
-/* --- Info modal: compact 2-column steppers --- */
-.section-grid2{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:10px;
-  margin-top:8px;
-}
-.section-title.small{
-  font-size:13px;
-  opacity:0.92;
-  margin-bottom:6px;
-}
-.stepper.compact{
-  margin-top:0;
-}
-.stepper.compact .stepper-btn{
-  width:44px;
-  height:36px;
-}
-.stepper.compact .stepper-val{
-  height:36px;
-  min-width:72px;
-  font-size:14px;
-}
-@media (max-width: 360px){
-  .section-grid2{ grid-template-columns: 1fr; }
+/* Selection clear button: becomes dark green when at least one tile is selected */
+.unit-controls .btn-small.has-selection{
+  background: #0b5d1e !important;
+  border-color: #0b5d1e !important;
+  color: #ffffff !important;
 }
