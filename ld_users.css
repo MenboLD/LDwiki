@@ -528,13 +528,16 @@ input, textarea, select, button { font-size: 16px; }
   color: #ffffff !important;
 }
 
-.unit-controls .btn-small.active{
-  background: #c00 !important;
-  color: #fff !important;
-  border-color: rgba(255,255,255,0.18) !important;
-}
+/* Selection clear button: becomes dark green when at least one tile is selected */
 .unit-controls .btn-small.has-selection{
-  background: rgba(0,140,0,0.85) !important;
-  color: #fff !important;
-  border-color: rgba(255,255,255,0.18) !important;
+  background: #0b5d1e !important;
+  border-color: #0b5d1e !important;
+  color: #ffffff !important;
+}
+
+/* Selection clear button: becomes dark green when at least one tile is selected */
+.unit-controls .btn-small.has-selection{
+  background: #0b5d1e !important;
+  border-color: #0b5d1e !important;
+  color: #ffffff !important;
 }
