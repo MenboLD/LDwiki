@@ -577,29 +577,33 @@ input, textarea, select, button { font-size: 16px; }
 .accordion-header:active{ opacity: .85; }
 .accordion-content{ margin-top: 6px; }
 
-/* ===== Two column steppers ===== */
-.two-col-steppers{
+
+
+/* ===== Dual stepper row (safe on narrow screens) ===== */
+.dual-stepper-row{
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   align-items: flex-start;
-  justify-content: space-between;
 }
-.stepper-block{
-  flex: 1 1 0;
-  min-width: 0;
+.dual-stepper{
+  flex: 1 1 160px;
+  min-width: 160px;
 }
-.section-title-sm{
+.dual-stepper-title{
   font-size: 13px;
   opacity: .92;
   margin-bottom: 6px;
+  white-space: nowrap;
 }
-.stepper-compact{
+.stepper-dual{
   gap: 8px;
 }
-.stepper-compact .stepper-btn{
+.stepper-dual .stepper-btn{
   width: 44px;
   height: 36px;
 }
-.stepper-compact .stepper-val{
+.stepper-dual .stepper-val{
   min-width: 0;
+  white-space: nowrap;
 }
