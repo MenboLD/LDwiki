@@ -527,3 +527,14 @@ input, textarea, select, button { font-size: 16px; }
   border-color: #b00000 !important;
   color: #ffffff !important;
 }
+
+.unit-controls .btn-small.active{
+  background: #c00 !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,0.18) !important;
+}
+.unit-controls .btn-small.has-selection{
+  background: rgba(0,140,0,0.85) !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,0.18) !important;
+}
