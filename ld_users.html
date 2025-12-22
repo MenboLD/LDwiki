@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
 
-  <link rel="stylesheet" href="/LDwiki/ld_users.css?v=20251222aj">
+  <link rel="stylesheet" href="/LDwiki/ld_users.css?v=20251222an">
   <link rel="stylesheet" href="/LDwiki/common_header.css?v=20251220ah">
 </head>
 
@@ -19,14 +19,16 @@
     <main class="app-main">
       <!-- 初期画面エリア -->
       <section id="homeView" class="card">
-        <button type="button" class="accordion-header" data-target="accHomeUser">▶︎ ユーザー情報（新規登録 / 編集）</button>
-<div id="accHomeUser" class="accordion-content" style="display:none;">
+        <button type="button" class="accordion-header" data-target="accHomeUser">▼ ユーザー情報（新規登録 / 編集）</button>
+<div id="accHomeUser" class="accordion-content">
 <div class="home-note">
           ・新規登録にはユーザー名とパスをこの下で入力したあと、新規登録ボタンを押してください<br>
           ・ユーザー名は最大で全角８文字、半角16文字まで。大文字と小文字の区別アリ<br>
           ・パスは最大で全角５文字、半角10文字まで。大文字と小文字の区別アリ<br>
           ・ユーザー名が未登録なら「新規登録」、すでに登録済みなら「編集へ」にボタンの表記が変化します
         </div>
+</div>
+
 
         <div class="home-form">
           <label class="home-label">
@@ -199,6 +201,6 @@
 
   <script src="/LDwiki/supabase_config.js?v=20251220ah"></script>
   <script src="/LDwiki/common_header.js?v=20251220ah"></script>
-  <script src="/LDwiki/ld_users.js?v=20251222aj"></script>
+  <script src="/LDwiki/ld_users.js?v=20251222an"></script>
 </body>
 </html>
