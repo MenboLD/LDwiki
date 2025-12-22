@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
 
-  <link rel="stylesheet" href="/LDwiki/ld_users.css?v=20251222aj">
+  <link rel="stylesheet" href="/LDwiki/ld_users.css?v=20251222ak">
   <link rel="stylesheet" href="/LDwiki/common_header.css?v=20251220ah">
 </head>
 
@@ -90,23 +90,24 @@
         </div>
 
         
-
 <div class="dual-stepper-row">
-  <div class="dual-stepper">
-    <div class="section-title dual-stepper-title">金庫レベル</div>
-    <div class="stepper stepper-dual"></div>
+  <div class="dual-stepper-item">
+    <div class="section-title section-title-sm">金庫レベル</div>
+    <div class="stepper stepper-compact">
+          <button id="btnVaultMinus" type="button" class="stepper-btn">−</button>
+          <div class="stepper-val"><span id="lblVaultLevel">Lv.1</span></div>
+          <button id="btnVaultPlus" type="button" class="stepper-btn">＋</button>
+        </div>
   </div>
-
-  <div class="dual-stepper">
-    <div class="section-title dual-stepper-title">Lv.15 エピックユニット数</div>
-    <div class="stepper stepper-dual">
+  <div class="dual-stepper-item">
+    <div class="section-title section-title-sm">Lv.15 エピックユニット数</div>
+    <div class="stepper stepper-compact">
       <button id="btnEpic15Minus" type="button" class="stepper-btn">−</button>
       <div class="stepper-val"><span id="lblEpic15Count">0</span></div>
       <button id="btnEpic15Plus" type="button" class="stepper-btn">＋</button>
     </div>
   </div>
 </div>
-
 
 
         <div class="section-title">ユニット育成情報</div>
@@ -192,6 +193,6 @@
 
   <script src="/LDwiki/supabase_config.js?v=20251220ah"></script>
   <script src="/LDwiki/common_header.js?v=20251220ah"></script>
-  <script src="/LDwiki/ld_users.js?v=20251222aj"></script>
+  <script src="/LDwiki/ld_users.js?v=20251222ak"></script>
 </body>
 </html>
