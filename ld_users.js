@@ -1344,3 +1344,37 @@ function toggleTreasureOnSelection() {
 
   document.addEventListener("DOMContentLoaded", init);
 })();
+
+
+// ===== Lv.15 エピックユニット数 (UI only; DB/RPC will be wired later) =====
+(function setupEpic15Stepper(){
+  const btnMinus = document.getElementById("btnEpic15Minus");
+  const btnPlus  = document.getElementById("btnEpic15Plus");
+  const lbl      = document.getElementById("lblEpic15Count");
+  if(!btnMinus || !btnPlus || !lbl) return;
+
+  let epic15Count = 0;
+  const clamp = (v)=> Math.max(0, Math.min(5, v|0));
+  const render = ()=>{ lbl.textContent = String(epic15Count); };
+
+  btnMinus.addEventListener("click", ()=>{ epic15Count = clamp(epic15Count - 1); render(); });
+  btnPlus.addEventListener("click",  ()=>{ epic15Count = clamp(epic15Count + 1); render(); });
+  render();
+})();
+
+
+// ===== Home accordion setup =====
+(function setupHomeAccordions(){
+  const headers = document.querySelectorAll(".accordion-header[data-target]");
+  headers.forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const id = btn.getAttribute("data-target");
+      const body = document.getElementById(id);
+      if(!body) return;
+      const open = body.style.display !== "none";
+      body.style.display = open ? "none" : "block";
+      const label = btn.textContent.replace(/^▶︎|^▼/,'').trim();
+      btn.textContent = (open ? "▶︎ " : "▼ ") + label;
+    });
+  });
+})();

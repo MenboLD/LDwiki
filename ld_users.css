@@ -561,3 +561,45 @@ input, textarea, select, button { font-size: 16px; }
   border-color: #0b5d1e !important;
   color: #ffffff !important;
 }
+
+
+/* ===== Home Accordion ===== */
+.accordion-header{
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  padding: 10px 0;
+  cursor: pointer;
+}
+.accordion-header:active{ opacity: .85; }
+.accordion-content{ margin-top: 6px; }
+
+/* ===== Two column steppers ===== */
+.two-col-steppers{
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.stepper-block{
+  flex: 1 1 0;
+  min-width: 0;
+}
+.section-title-sm{
+  font-size: 13px;
+  opacity: .92;
+  margin-bottom: 6px;
+}
+.stepper-compact{
+  gap: 8px;
+}
+.stepper-compact .stepper-btn{
+  width: 44px;
+  height: 36px;
+}
+.stepper-compact .stepper-val{
+  min-width: 0;
+}
