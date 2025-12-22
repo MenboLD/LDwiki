@@ -1,3 +1,57 @@
+
+// ===== Treasure (専財) rules =====
+// Display / keep treasure state independent from form,
+// but availability differs by state/level per spec:
+//  - not acquired + mythic Lv6: do NOT display (even if true; we also prevent setting)
+//  - mythic Lv12/Lv15: display & can toggle
+//  - immortal Lv6/Lv12/Lv15: display & can toggle
+function canShowTreasure(cell){
+  if(!cell || !cell.treasure) return false;
+  const lv = Number(cell.level||0);
+  const form = cell.form || 'mythic'; // 'mythic' | 'immortal'
+  if(form === 'mythic'){
+    return lv >= 12;
+  }
+  // immortal
+  return lv >= 6;
+}
+function canToggleTreasure(cell){
+  if(!cell) return false;
+  const lv = Number(cell.level||0);
+  const form = cell.form || 'mythic';
+  if(form === 'mythic'){
+    return lv >= 12;
+  }
+  return lv >= 6;
+}
+
+function showInlineError(msg){ try{ setErrorBar(msg); }catch(e){ console.warn(msg);} }
+
+// ===== Treasure (専財) rules =====
+// Display / keep treasure state independent from form,
+// but availability differs by state/level per spec:
+//  - not acquired + mythic Lv6: do NOT display (even if true; we also prevent setting)
+//  - mythic Lv12/Lv15: display & can toggle
+//  - immortal Lv6/Lv12/Lv15: display & can toggle
+function canShowTreasure(cell){
+  if(!cell || !cell.treasure) return false;
+  const lv = Number(cell.level||0);
+  const form = cell.form || 'mythic'; // 'mythic' | 'immortal'
+  if(form === 'mythic'){
+    return lv >= 12;
+  }
+  // immortal
+  return lv >= 6;
+}
+function canToggleTreasure(cell){
+  if(!cell) return false;
+  const lv = Number(cell.level||0);
+  const form = cell.form || 'mythic';
+  if(form === 'mythic'){
+    return lv >= 12;
+  }
+  return lv >= 6;
+}
 // ld_users.js (20251221af) - ld_users: register/edit -> info modal + mythic submodal (image grid)
 // NOTE: common_header is "stable". Do not modify common_header.* here.
 
