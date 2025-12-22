@@ -1,4 +1,3 @@
-let epic15Count = 0;
 // ld_users.js (20251221af) - ld_users: register/edit -> info modal + mythic submodal (image grid)
 // NOTE: common_header is "stable". Do not modify common_header.* here.
 
@@ -89,6 +88,19 @@ let epic15Count = 0;
     window.dispatchEvent(new CustomEvent("ld-auth-changed", { detail: auth }));
   }
 
+  function getAuthStorage() {
+    try {
+      const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!obj || obj.loggedIn !== true) return null;
+      if (!obj.username || !obj.pass) return null;
+      return obj;
+    } catch {
+      return null;
+    }
+  }
+
   // ===== Pass input -> modal button (iOS fullwidth support) =====
   function ensurePassButton(inputEl, btnId) {
     if (!inputEl) return null;
@@ -155,6 +167,10 @@ let epic15Count = 0;
 
   let lastExistsValue = false; // true if registered
   let existsTimer = null;
+
+  // Header sync (auto-fill) rules:
+  // 1) On page load, if header is already logged in -> auto fill and set to "編集へ".
+  // 2) When header transitions to logged in -> overwrite ld_users inputs with header auth.
 
   async function checkExistsNow(name) {
     const uname = safeTrim(name);
@@ -234,6 +250,33 @@ let epic15Count = 0;
         setActionButtonLabel();
       }
     }, 220);
+  }
+
+  // ===== Sync from header login state =====
+  function applyHeaderAuthToHome(auth, { clearFirst = false } = {}) {
+    if (!auth || auth.loggedIn !== true) return;
+    const uname = safeTrim(auth.username);
+    const pass = String(auth.pass ?? "");
+    if (!uname || !pass) return;
+
+    if (clearFirst) {
+      userNameInput.value = "";
+      userPassInput.value = "";
+      syncPassButton("userPassBtn", userPassInput, "（未入力）");
+    }
+
+    userNameInput.value = uname;
+    userPassInput.value = pass;
+    // keep button text in sync with hidden value
+    syncPassButton("userPassBtn", userPassInput, userPassInput.value);
+
+    // logged-in implies registered
+    lastExistsValue = true;
+    if (headerStats) headerStats.textContent = "登録済み";
+    if (userStatusLabel) userStatusLabel.textContent = "登録済み：パスを入力してください";
+
+    updatePassButtonVisual();
+    setActionButtonLabel();
   }
 
   // ===== Info modal state =====
@@ -444,6 +487,7 @@ const lvlRaw = safeTrim(inpGamePlayerLevel?.value || "");
   const mythicToImmortal = new Map();   // mythicCode(int) -> immortalCode(int)
   let mythicCodes = [];                // e.g. [501..528,...] derived from master
   let mythicBtnMulti = null;
+  let mythicBtnClear = null;
 function normalizePngFilename(name) {
   const s = String(name || "").trim();
   if (!s) return "";
@@ -541,6 +585,7 @@ async function loadUnitMaster() {
 
     const btnClear = document.createElement("button");
     btnClear.className = "btn-small";
+    mythicBtnClear = btnClear;
     btnClear.textContent = "選択解除";
     btnClear.addEventListener("click", () => {
       selectedUnitIds = new Set();
@@ -626,7 +671,11 @@ async function loadUnitMaster() {
       item.dataset.id = id;
       item.dataset.level = String([0,6,12,15].includes(level) ? level : (level <= 0 ? 0 : 6));
       item.dataset.form = form;
-      item.dataset.treasure = (form === "mythic" && treasure && level >= 12) ? "1" : "0";
+      // (4-3) treasure persisted for mythic/immortal, but only enabled when allowed
+      {
+        const allow = (level > 0) && ((form === "mythic") ? (level >= 12) : (level >= 6));
+        item.dataset.treasure = (treasure && allow) ? "1" : "0";
+      }
 
       const inner = document.createElement("div");
       inner.className = "unit-inner";
@@ -678,7 +727,7 @@ async function loadUnitMaster() {
           if (!draft.mythic_state) draft.mythic_state = {};
           draft.mythic_state[id] = {
             level: lvl,
-            treasure: (frm === "mythic") ? tr : false,
+            treasure: !!tr,
             form: (frm === "immortal") ? "immortal" : "mythic"
           };
         }
@@ -706,7 +755,7 @@ async function loadUnitMaster() {
       if (level <= 0) return;
       json[id] = {
         level,
-        treasure: (form === "mythic") ? !!hasTreasure : false,
+        treasure: !!hasTreasure,
         form: (form === "immortal") ? "immortal" : "mythic",
       };
     });
@@ -733,6 +782,11 @@ async function loadUnitMaster() {
       if (selectedUnitIds.has(id)) item.classList.add("selected");
       else item.classList.remove("selected");
     });
+
+    // (4-2) "選択解除" button becomes dark green when there is at least one selected tile
+    if (mythicBtnClear) {
+      mythicBtnClear.classList.toggle("has-selection", selectedUnitIds.size > 0);
+    }
   }
 
   function updateUnitVisual(item) {
@@ -742,11 +796,25 @@ async function loadUnitMaster() {
     const badge = item.querySelector(".unit-badge");
     if (!badge) return;
 
-    // enforce treasure constraints: mythic only, and level>=12
-    if (form !== "mythic" || level < 12) {
+    // (4-3) Treasure rules (independent from form, but constrained by state)
+    // - 未取得(level<=0) / 神話Lv6: treasure not shown and cannot be enabled
+    // - 神話Lv12, Lv15: treasure allowed
+    // - 不滅Lv6, Lv12, Lv15: treasure allowed
+    const treasureAllowed = (() => {
+      if (level <= 0) return false;
+      if (form === "mythic") return level >= 12;
+      return level >= 6; // immortal
+    })();
+
+
+    if (!treasureAllowed) {
       hasTreasure = false;
       item.dataset.treasure = "0";
     }
+
+    // Ultimate highlight: immortal Lv15 + 専財 (最高育成)
+    item.classList.toggle("ultimate", (form === "immortal" && level === 15 && hasTreasure));
+
 
     // background tint per spec
     const lv = level;
@@ -765,13 +833,17 @@ async function loadUnitMaster() {
     if (level <= 0) {
       item.classList.add("dim");
       badge.textContent = "";
+      badge.style.display = "none"; // hide badge entirely for 未取得 to avoid stray bg/text
       badge.classList.remove("has-treasure");
     } else {
       item.classList.remove("dim");
+      badge.style.display = ""; // restore
+
+      item.classList.remove("dim");
       let txt = String(level);
-      if (form === "mythic" && hasTreasure) txt += "専財";
+      if (hasTreasure) txt += "専財";
       badge.textContent = txt;
-      badge.classList.toggle('has-treasure', (form === 'mythic' && hasTreasure));
+      badge.classList.toggle('has-treasure', hasTreasure);
     }
   }
 
@@ -786,8 +858,11 @@ async function loadUnitMaster() {
       const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
       if (!item) return;
       item.dataset.level = String(level);
-      // treasure rule: if level < 12, force off
-      if (parseInt(item.dataset.level, 10) < 12) item.dataset.treasure = "0";
+      // treasure rule: if the new state doesn't allow treasure, force off
+      const frm = item.dataset.form || "mythic";
+      const lv = parseInt(item.dataset.level, 10);
+      const allow = (lv > 0) && ((frm === "mythic") ? (lv >= 12) : (lv >= 6));
+      if (!allow) item.dataset.treasure = "0";
       updateUnitVisual(item);
     });
     syncDraftFromMythicGrid();
@@ -803,7 +878,10 @@ async function loadUnitMaster() {
       return;
     }
     multiSelectMode = true;
-    if (mythicBtnMulti) mythicBtnMulti.textContent = "複数選択: ON";
+    if (mythicBtnMulti) {
+      mythicBtnMulti.textContent = "複数選択: ON";
+      mythicBtnMulti.classList.add("active");
+    }
     selectedUnitIds = new Set(awakable.map((x)=>String(x)));
     refreshSelectedVisual();
   }
@@ -821,14 +899,9 @@ function toggleTreasureOnSelection() {
       const form = item.dataset.form || "mythic";
       const level = parseInt(item.dataset.level || "0", 10);
 
-      // immortal: treasure always off
-      if (form === "immortal") {
-        item.dataset.treasure = "0";
-        updateUnitVisual(item);
-        return;
-      }
-      // level gate
-      if (level < 12) {
+      // (4-3) level gates
+      const allow = (level > 0) && ((form === "mythic") ? (level >= 12) : (level >= 6));
+      if (!allow) {
         item.dataset.treasure = "0";
         updateUnitVisual(item);
         return;
@@ -851,6 +924,8 @@ function toggleTreasureOnSelection() {
       const item = grid.querySelector('.unit-item[data-id="' + id + '"]');
       if (!item) return;
 
+      const prevTreasure = item.dataset.treasure === "1";
+
       const mythicId = Number(item.dataset.id);
       let form = item.dataset.form || "mythic";
       let level = parseInt(item.dataset.level || "0", 10);
@@ -861,13 +936,18 @@ function toggleTreasureOnSelection() {
         if (!hasImmortalPair(mythicId)) return;
         item.dataset.form = "immortal";
         item.dataset.level = "6"; // start immortal at Lv6
-        item.dataset.treasure = "0";
       } else {
         // degenerate: immortal -> mythic Lv15 (user can then loop/toggle)
         item.dataset.form = "mythic";
         item.dataset.level = "15";
-        // treasure remains off by default after returning
-        item.dataset.treasure = "0";
+      }
+
+      // (4-3) Keep treasure if still allowed; otherwise force off
+      {
+        const frm = item.dataset.form || "mythic";
+        const lv = parseInt(item.dataset.level || "0", 10);
+        const allow = (lv > 0) && ((frm === "mythic") ? (lv >= 12) : (lv >= 6));
+        item.dataset.treasure = (prevTreasure && allow) ? "1" : "0";
       }
 
       // refresh image
@@ -886,6 +966,7 @@ function toggleTreasureOnSelection() {
 
   function advanceUnitOnTap(item) {
     const mythicId = Number(item.dataset.id);
+    const prevTreasure = item.dataset.treasure === "1";
     let form = item.dataset.form || "mythic";
     let level = parseInt(item.dataset.level || "0", 10);
 
@@ -901,7 +982,7 @@ function toggleTreasureOnSelection() {
           form = "mythic";
           level = 0;
         }
-        item.dataset.treasure = "0";
+        // treasure handled after state transition
       }
     } else {
       if (level <= 0) level = 6;
@@ -910,12 +991,18 @@ function toggleTreasureOnSelection() {
       else {
         form = "mythic";
         level = 0;
-        item.dataset.treasure = "0";
+        // treasure handled after state transition
       }
     }
 
     item.dataset.form = form;
     item.dataset.level = String(level);
+
+    // (4-3) Keep treasure across transitions only when the resulting state allows it
+    {
+      const allow = (level > 0) && ((form === "mythic") ? (level >= 12) : (level >= 6));
+      item.dataset.treasure = (prevTreasure && allow) ? "1" : "0";
+    }
 
     const img = item.querySelector("img");
     if (img) {
@@ -939,7 +1026,7 @@ function toggleTreasureOnSelection() {
       if (level <= 0) return; // omit defaults
       json[id] = {
         level,
-        treasure: (form === "mythic") ? !!hasTreasure : false,
+        treasure: !!hasTreasure,
         form: (form === "immortal") ? "immortal" : "mythic"
       };
     });
@@ -1102,6 +1189,12 @@ function toggleTreasureOnSelection() {
           }
         } catch (_) {}
         closeBackdrop(userInfoBackdrop);
+        // (3) After first save (e.g. immediately after new registration), treat as registered on home.
+        lastExistsValue = true;
+        if (headerStats) headerStats.textContent = "登録済み";
+        if (userStatusLabel) userStatusLabel.textContent = "登録済み：パスを入力してください";
+        updatePassButtonVisual();
+        setActionButtonLabel();
         // Keep username/pass (do not clear)
       } else {
         const reason = res?.reason ? String(res.reason) : "";
@@ -1178,6 +1271,23 @@ function toggleTreasureOnSelection() {
     updatePassButtonVisual();
     setActionButtonLabel();
 
+    // (1) On load: if header already logged in, auto-fill and set to "編集へ".
+    const authOnLoad = getAuthStorage();
+    if (authOnLoad) {
+      applyHeaderAuthToHome(authOnLoad, { clearFirst: false });
+      // still run existence check after a tick (keeps labels consistent even if storage is stale)
+      setTimeout(() => scheduleExistsCheck(), 0);
+    }
+
+    // (2) After load: when header becomes logged in, overwrite ld_users inputs.
+    window.addEventListener("ld-auth-changed", (ev) => {
+      const a = ev?.detail;
+      if (a && a.loggedIn === true) {
+        applyHeaderAuthToHome(a, { clearFirst: true });
+        scheduleExistsCheck();
+      }
+    });
+
     userNameInput.addEventListener("input", () => {
       scheduleExistsCheck();
       updatePassButtonVisual();
@@ -1236,19 +1346,20 @@ function toggleTreasureOnSelection() {
 })();
 
 
-// ===== Epic15 stepper (UI-only scaffold; RPC hookup later) =====
+// ===== Lv.15 エピックユニット数 (UI only; DB/RPC will be wired later) =====
 (function setupEpic15Stepper(){
-  const btnEpic15Minus = document.getElementById("btnEpic15Minus");
-  const btnEpic15Plus  = document.getElementById("btnEpic15Plus");
-  const lblEpic15Count = document.getElementById("lblEpic15Count");
-  if(!btnEpic15Minus || !btnEpic15Plus || !lblEpic15Count) return;
+  const btnMinus = document.getElementById("btnEpic15Minus");
+  const btnPlus  = document.getElementById("btnEpic15Plus");
+  const lbl      = document.getElementById("lblEpic15Count");
+  if(!btnMinus || !btnPlus || !lbl) return;
 
-  const clamp = (v)=> Math.max(0, Math.min(5, (v|0)));
-  const render = ()=>{ lblEpic15Count.textContent = String(epic15Count); };
+  let epic15Count = 0;
+  const clamp = (v)=> Math.max(0, Math.min(5, v|0));
+  const render = ()=>{ lbl.textContent = String(epic15Count); };
+
+  btnMinus.addEventListener("click", ()=>{ epic15Count = clamp(epic15Count - 1); render(); });
+  btnPlus.addEventListener("click",  ()=>{ epic15Count = clamp(epic15Count + 1); render(); });
   render();
-
-  btnEpic15Minus.addEventListener("click", ()=>{ epic15Count = clamp(epic15Count-1); render(); });
-  btnEpic15Plus.addEventListener("click",  ()=>{ epic15Count = clamp(epic15Count+1); render(); });
 })();
 
 
