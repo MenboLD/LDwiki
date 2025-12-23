@@ -322,10 +322,13 @@ function cacheDom() {
 }
 
 function setupBasicHandlers() {
-  dom.filterToggleBtn.addEventListener("click", function () {
-    const collapsed = dom.filterPanel.classList.toggle("filter-panel--collapsed");
-    dom.filterToggleBtn.textContent = collapsed ? "🔍 フィルターを開く" : "🔍 フィルターを閉じる";
-  });
+  // Filter UI is optional (some builds omit it)
+  if (dom.filterToggleBtn && dom.filterPanel) {
+    dom.filterToggleBtn.addEventListener("click", function () {
+      const collapsed = dom.filterPanel.classList.toggle("filter-panel--collapsed");
+      dom.filterToggleBtn.textContent = collapsed ? "🔍 フィルターを開く" : "🔍 フィルターを閉じる";
+    });
+  }
 
   const filterElems = [
     dom.keywordInput,
@@ -338,26 +341,35 @@ function setupBasicHandlers() {
     dom.genreAnnounce,
     dom.filterSinceMyLast,
     dom.filterHasAttachment,
-  ];
-  filterElems.forEach(function (el) {
-    el.addEventListener("input", handleFilterChange);
-    el.addEventListener("change", handleFilterChange);
-  });
+  ].filter(Boolean);
 
-  dom.loadMoreBtn.addEventListener("click", function () {
-    loadMoreThreads();
-  });
+  if (filterElems.length) {
+    filterElems.forEach(function (el) {
+      el.addEventListener("input", handleFilterChange);
+      el.addEventListener("change", handleFilterChange);
+    });
+  }
 
-  dom.footerToggle.addEventListener("click", function () {
-    const opened = dom.composerBody.classList.toggle("footer-body--open");
-    dom.composerToggleLabel.textContent = opened
-      ? "▼コメントの入力ツールを非表示(タップ)"
-      : "▲コメントの入力ツールを表示(タップ)";
-  });
+  if (dom.loadMoreBtn) {
+    dom.loadMoreBtn.addEventListener("click", function () {
+      loadMoreThreads();
+    });
+  }
 
-  dom.cancelReplyBtn.addEventListener("click", function () {
-    clearReplyState();
-  });
+  if (dom.footerToggle && dom.composerBody && dom.composerToggleLabel) {
+    dom.footerToggle.addEventListener("click", function () {
+      const opened = dom.composerBody.classList.toggle("footer-body--open");
+      dom.composerToggleLabel.textContent = opened
+        ? "▼コメントの入力ツールを非表示(タップ)"
+        : "▲コメントの入力ツールを表示(タップ)";
+    });
+  }
+
+  if (dom.cancelReplyBtn) {
+    dom.cancelReplyBtn.addEventListener("click", function () {
+      clearReplyState();
+    });
+  }
 
   dom.attachBoardBtn.addEventListener("click", handleAttachBoardClick);
   dom.attachImageBtn.addEventListener("click", handleAttachImageClick);
