@@ -326,10 +326,6 @@ function setupBasicHandlers() {
     const collapsed = dom.filterPanel.classList.toggle("filter-panel--collapsed");
     dom.filterToggleBtn.textContent = collapsed ? "🔍 フィルターを開く" : "🔍 フィルターを閉じる";
   });
-    }
-    saveUserInputsToLocalStorage();
-    updateUserStatusLabel();
-  });
 
   const filterElems = [
     dom.keywordInput,
