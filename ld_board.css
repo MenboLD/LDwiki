@@ -1,14 +1,20 @@
-:root {
-  --bg: #f5f5f5;
-  --surface: #ffffff;
-  --border: #d0d0d0;
-  --text-main: #222222;
-  --text-sub: #666666;
-  --accent: #3874ff;
-  --accent-soft: #e3f2fd;
-  --highlight: #d1ecf1;
-  --danger: #d9534f;
-  --shadow-soft: 0 2px 6px rgba(0, 0, 0, 0.08);
+:root{
+  --bg:#0c1016;
+  --surface:#161b22;
+  --surface-2:#11161d;
+  --border:rgba(255,255,255,0.10);
+  --border-2:rgba(255,255,255,0.14);
+  --text:#f5f7ff;
+  --text-sub:#a9b4c8;
+  --muted:#7f8aa3;
+  --accent:#3fbfff;
+  --accent-soft:rgba(63,191,255,0.18);
+  --good:#37d67a;
+  --warn:#ffd166;
+  --danger:#ff6584;
+
+  --radius:12px;
+  --shadow:0 12px 30px rgba(0,0,0,0.45);
 }
 
 *,
@@ -18,11 +24,14 @@
 }
 
 html,
-body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
+body{
+  margin:0;
+  padding:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
 }
+
 
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -58,7 +67,7 @@ body {
 .user-panel {
   padding: 4px 4px 2px;
   border-radius: 8px;
-  background-color: #ffffff;
+  background-color: var(--surface);
   border: 1px solid var(--border);
 }
 
@@ -113,7 +122,7 @@ body {
   padding: 6px 10px;
   font-size: 12px;
   border: 1px solid var(--accent);
-  background-color: #ffffff;
+  background-color: var(--surface);
   color: var(--accent);
   cursor: pointer;
 }
@@ -122,7 +131,7 @@ body {
   margin-top: 4px;
   padding: 6px 6px 8px;
   border-radius: 8px;
-  background-color: #ffffff;
+  background-color: var(--surface);
   border: 1px solid var(--border);
   max-height: 999px;
   overflow: hidden;
@@ -212,7 +221,7 @@ body {
   padding: 5px 14px;
   border-radius: 999px;
   border: 1px solid var(--accent);
-  background: #ffffff;
+  background: var(--surface);
   color: var(--accent);
   font-size: 11px;
   cursor: pointer;
@@ -274,7 +283,7 @@ body {
   font-size: 10px;
   border-radius: 999px;
   margin-right: 4px;
-  color: #ffffff;
+  color: var(--surface);
   background-color: var(--accent);
   white-space: nowrap;
 }
@@ -346,7 +355,7 @@ body {
   padding: 1px 4px;
   border-radius: 999px;
   border: 1px solid var(--accent);
-  background: #ffffff;
+  background: var(--surface);
   color: var(--accent);
   cursor: pointer;
 }
@@ -400,7 +409,7 @@ body {
   right: 0;
   bottom: 0;
   height: 1.2em;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #ffffff);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--surface));
 }
 
 /* 本文下のフッター（折りたたみトグル＋返信/イイ） */
@@ -445,7 +454,7 @@ body {
   padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid var(--accent);
-  background-color: #ffffff;
+  background-color: var(--surface);
   color: var(--accent);
   cursor: pointer;
 }
@@ -492,7 +501,7 @@ body {
 }
 
 .footer-toggle {
-  background-color: #ffffff;
+  background-color: var(--surface);
   border-top: 1px solid var(--border);
   text-align: center;
   padding: 8px 8px;
@@ -501,7 +510,7 @@ body {
 }
 
 .footer-body {
-  background-color: #ffffff;
+  background-color: var(--surface);
   border-top: 1px solid var(--border);
   padding: 0 8px;
   max-height: 0;
@@ -533,7 +542,7 @@ body {
   border-radius: 999px;
   border: 1px solid var(--accent);
   color: var(--accent);
-  background-color: #ffffff;
+  background-color: var(--surface);
   cursor: pointer;
 }
 
@@ -577,7 +586,7 @@ body {
   padding: 5px 6px;
   border-radius: 999px;
   border: 1px solid var(--accent);
-  background-color: #ffffff;
+  background-color: var(--surface);
   color: var(--accent);
   cursor: pointer;
 }
@@ -614,7 +623,7 @@ body {
   border-radius: 999px;
   border: 1px solid var(--accent);
   background-color: var(--accent);
-  color: #ffffff;
+  color: var(--surface);
   font-size: 13px;
   cursor: pointer;
 }
@@ -647,7 +656,7 @@ body {
 }
 
 .ld-modal {
-  background-color: #ffffff;
+  background-color: var(--surface);
   border-radius: 8px;
   padding: 8px 8px 10px;
   max-width: 400px;
@@ -728,7 +737,7 @@ body {
   border-radius: 999px;
   border: 1px solid var(--accent);
   background-color: var(--accent);
-  color: #ffffff;
+  color: var(--surface);
   cursor: pointer;
 }
 
@@ -737,7 +746,7 @@ body {
   padding: 3px 8px;
   border-radius: 999px;
   border: 1px solid var(--danger);
-  background-color: #ffffff;
+  background-color: var(--surface);
   color: var(--danger);
   cursor: pointer;
 }
@@ -784,7 +793,7 @@ body {
 
 .toast {
   background-color: #333333;
-  color: #ffffff;
+  color: var(--surface);
   font-size: 11px;
   padding: 4px 8px;
   border-radius: 4px;
@@ -825,7 +834,7 @@ body {
   margin-left: 8px;
   border: 1px solid var(--border);
   border-radius: 16px;
-  background: #fff;
+  background: var(--surface);
   color: var(--text-sub);
   font-size: 18px;
   line-height: 30px;
@@ -840,7 +849,7 @@ body {
   height:32px;
   border-radius:16px;
   border:1px solid var(--border);
-  background:#fff;
+  background:var(--surface);
   color:var(--text-sub);
   font-size:18px;
   line-height:30px;
@@ -849,3 +858,5 @@ body {
   cursor:pointer;
 }
 .attach-chip-remove-btn--hidden{display:none;}
+
+a{color:var(--accent);} a:visited{color:var(--accent);} 

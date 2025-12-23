@@ -1,11 +1,222 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+/* ld_board.js (unified fetch edition)
+   build: 20251223a
+   Notes:
+   - Uses the same Supabase config source as common_header.js: supabase_config.js
+   - Guest posting is allowed; guest name is fixed to "名無しの傭兵"
+*/
+(() => {
+  'use strict';
 
-/** Supabase 接続設定 */
-const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioKc";
+  /** Supabase 接続設定（supabase_config.js 由来） */
+  const SUPABASE_URL = window.LD_SUPABASE_URL;
+  const SUPABASE_ANON_KEY = window.LD_SUPABASE_ANON_KEY;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error('[ld_board] Supabase config missing. Load supabase_config.js first.');
+  }
+
+  const AUTH_STORAGE_KEY = 'ld_auth_v1';
+
+  function readJsonLS(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  function getAuth() {
+    const a = readJsonLS(AUTH_STORAGE_KEY);
+    if (!a) return null;
+    if (a.loggedIn !== true) return null;
+    if (!a.username || !a.pass) return null;
+    return a;
+  }
+
+  function getOrCreateDeviceUUID() {
+    const key = 'ld_device_uuid_v1';
+    let v = localStorage.getItem(key);
+    if (v) return v;
+    v = (crypto && crypto.randomUUID) ? crypto.randomUUID() : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    );
+    try { localStorage.setItem(key, v); } catch (_e) {}
+    return v;
+  }
+
+  function getOrCreatePosterId(modeKey) {
+    const key = 'ld_poster_id_v1:' + modeKey;
+    let v = localStorage.getItem(key);
+    if (v && /^[0-9a-zA-Z]{8}$/.test(v)) return v;
+    // 8桁半角英数（hex）
+    v = '';
+    const bytes = crypto.getRandomValues(new Uint8Array(4));
+    for (const b of bytes) v += b.toString(16).padStart(2, '0');
+    try { localStorage.setItem(key, v); } catch (_e) {}
+    return v;
+  }
+
+  function getCurrentPosterInfo() {
+    const auth = getAuth();
+    const deviceUUID = getOrCreateDeviceUUID();
+    if (auth) {
+      const pid = getOrCreatePosterId('user:' + auth.username);
+      return {
+        isLoggedIn: true,
+        owner_name: auth.username,
+        owner_tag: pid, // 8桁ID（なりすまし/荒らし判定用）
+        poster_type: 'user',
+        guest_device_id: deviceUUID,
+      };
+    }
+    const pid = getOrCreatePosterId('guest');
+    return {
+      isLoggedIn: false,
+      owner_name: '名無しの傭兵',
+      owner_tag: pid, // 8桁ID
+      poster_type: 'guest',
+      guest_device_id: deviceUUID,
+    };
+  }
+
+  function buildQuery(params) {
+    const usp = new URLSearchParams();
+    for (const [k, v] of Object.entries(params || {})) {
+      if (v === undefined || v === null) continue;
+      usp.set(k, String(v));
+    }
+    return usp.toString();
+  }
+
+  async function sbFetch(path, { method='GET', query=null, body=null, prefer=null } = {}) {
+    const url = SUPABASE_URL + path + (query ? ('?' + query) : '');
+    const headers = {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+    };
+    if (body !== null) headers['Content-Type'] = 'application/json';
+    if (prefer) headers['Prefer'] = prefer;
+
+    const res = await fetch(url, {
+      method,
+      headers,
+      body: body === null ? null : JSON.stringify(body),
+    });
+
+    let data = null;
+    const text = await res.text();
+    if (text) {
+      try { data = JSON.parse(text); } catch (_e) { data = text; }
+    }
+
+    if (!res.ok) {
+      const err = new Error((data && data.message) ? data.message : ('HTTP ' + res.status));
+      err.status = res.status;
+      err.detail = data;
+      return { data: null, error: err };
+    }
+    return { data, error: null };
+  }
+
+  class PostgrestQuery {
+    constructor(table) {
+      this.table = table;
+      this._select = '*';
+      this._filters = [];
+      this._order = null;
+      this._limit = null;
+      this._method = 'GET';
+      this._body = null;
+      this._prefer = null;
+      this._single = false;
+    }
+
+    select(cols) { this._select = cols || '*'; return this; }
+    eq(col, val) { this._filters.push([col, 'eq', val]); return this; }
+    is(col, val) { this._filters.push([col, 'is', val]); return this; }
+    lt(col, val) { this._filters.push([col, 'lt', val]); return this; }
+    in(col, arr) {
+      const list = (arr || []).map(v => '"' + String(v).replace(/"/g, '\"') + '"').join(',');
+      this._filters.push([col, 'in', '(' + list + ')']);
+      return this;
+    }
+    order(col, opt={}) {
+      const asc = opt.ascending === false ? 'desc' : 'asc';
+      this._order = col + '.' + asc;
+      return this;
+    }
+    limit(n) { this._limit = n; return this; }
+
+    insert(payload) {
+      this._method = 'POST';
+      this._body = Array.isArray(payload) ? payload : [payload];
+      this._prefer = 'return=representation';
+      return this;
+    }
+    update(patch) {
+      this._method = 'PATCH';
+      this._body = patch;
+      this._prefer = 'return=representation';
+      return this;
+    }
+    delete() {
+      this._method = 'DELETE';
+      this._prefer = 'return=representation';
+      return this;
+    }
+    single() { this._single = true; return this; }
+
+    _buildQuery() {
+      const params = {
+        select: this._select,
+      };
+      if (this._order) params.order = this._order;
+      if (this._limit !== null && this._limit !== undefined) params.limit = this._limit;
+
+      const qp = new URLSearchParams(params);
+      for (const [col, op, val] of this._filters) {
+        qp.set(col, op + '.' + (val === null ? 'null' : String(val)));
+      }
+      return qp.toString();
+    }
+
+    async _execute() {
+      const path = '/rest/v1/' + this.table;
+      const query = this._buildQuery();
+      const result = await sbFetch(path, {
+        method: this._method,
+        query,
+        body: this._body,
+        prefer: this._prefer,
+      });
+
+      if (result.error) return result;
+
+      // POST/PATCH/DELETE returns array
+      if (this._single) {
+        if (Array.isArray(result.data)) {
+          return { data: result.data[0] || null, error: null };
+        }
+      }
+      return result;
+    }
+
+    then(resolve, reject) {
+      return this._execute().then(resolve, reject);
+    }
+  }
+
+  const supabase = {
+    from(table) { return new PostgrestQuery(table); },
+    async rpc(fn, args) {
+      return sbFetch('/rest/v1/rpc/' + fn, {
+        method: 'POST',
+        body: args || {},
+      });
+    }
+  };
 
 const BOARD_KIND = "info";
 const IMAGE_BUCKET = "ld_board_images";
@@ -64,10 +275,6 @@ window.addEventListener("DOMContentLoaded", async function () {
 });
 
 function cacheDom() {
-  dom.userNameInput = $("userNameInput");
-  dom.userTagInput = $("userTagInput");
-  dom.userStatusLabel = $("userStatusLabel");
-
   dom.filterToggleBtn = $("filterToggleBtn");
   dom.filterPanel = $("filterPanel");
   dom.keywordInput = $("keywordInput");
@@ -119,15 +326,6 @@ function setupBasicHandlers() {
     const collapsed = dom.filterPanel.classList.toggle("filter-panel--collapsed");
     dom.filterToggleBtn.textContent = collapsed ? "🔍 フィルターを開く" : "🔍 フィルターを閉じる";
   });
-
-  dom.userNameInput.addEventListener("input", function () {
-    updateNameTagEnabled();
-    saveUserInputsToLocalStorage();
-    updateUserStatusLabel();
-  });
-  dom.userTagInput.addEventListener("input", function () {
-    if (dom.userTagInput.value.length > 10) {
-      dom.userTagInput.value = dom.userTagInput.value.slice(0, 10);
     }
     saveUserInputsToLocalStorage();
     updateUserStatusLabel();
@@ -307,50 +505,18 @@ function saveLikeCache() {
   localStorage.setItem(key, JSON.stringify(arr));
 }
 
-function loadUserInputsFromLocalStorage() {
-  const raw = localStorage.getItem("ld_board_user");
-  if (!raw) return;
-  try {
-    const obj = JSON.parse(raw);
-    if (obj && typeof obj === "object") {
-      if (obj.name) dom.userNameInput.value = obj.name;
-      if (obj.tag) dom.userTagInput.value = obj.tag;
-    }
-  } catch (e) {
-    console.error("user local load error", e);
-  }
-}
+function loadUserInputsFromLocalStorage(){ /* removed: unified auth */ }
 
-function saveUserInputsToLocalStorage() {
-  const payload = {
-    name: dom.userNameInput.value.trim(),
-    tag: dom.userTagInput.value.trim(),
-  };
-  localStorage.setItem("ld_board_user", JSON.stringify(payload));
-}
+
+function saveUserInputsToLocalStorage(){ /* removed */ }
+
 
 /* =====================
  * ユーザー / 誤字ルール読み込み
  * ===================== */
 
-async function loadUsers() {
-  try {
-    const result = await supabase
-      .from("ld_users")
-      .select("id, name, tag, mis_input_count, vault_level, mythic_state")
-      .order("name", { ascending: true });
+async function loadUsers(){ state.users = []; }
 
-    if (result.error) {
-      console.error("ld_users fetch error", result.error);
-      state.users = [];
-      return;
-    }
-    state.users = result.data || [];
-  } catch (e) {
-    console.error("ld_users fetch error", e);
-    state.users = [];
-  }
-}
 
 async function loadAutofixRules() {
   try {
@@ -546,11 +712,8 @@ function handleFilterChange() {
 
 async function fetchLastOwnCommentTime() {
   const info = getCurrentUserInfo();
-  if (!info || !info.isRegistered) {
-    state.lastOwnCommentTime = null;
-    return;
-  }
-  try {
+  if (!info) { state.lastOwnCommentTime = null; return; }
+try {
     const result = await supabase
       .from("ld_board_comments")
       .select("created_at")
@@ -1029,182 +1192,43 @@ function initBodyCollapse(bodyEl, toggleEl) {
  * 名前表示 / プロフ
  * ===================== */
 
-function getDisplayNameForComment(comment) {
-  const guestId = comment.guest_daily_id || "--";
-  const ownerName = comment.owner_name || "";
-  const ownerTag = comment.owner_tag || null;
-
-  const base = {
-    text: "",
-    className: "",
-    showProfile: false,
-    userName: ownerName,
-    userTag: ownerTag,
-  };
-
-  if (!ownerName || ownerName === "名無し") {
-    base.text = "名無しの傭兵員 " + guestId;
-    return base;
-  }
-
-  const user = state.users.find(function (u) {
-    return u.name === ownerName;
-  });
-
-  if (ownerTag && user && user.tag === ownerTag) {
-    base.text = "★" + ownerName;
-    base.className = "registered";
-    base.showProfile = true;
-    return base;
-  }
-
-  if (!ownerTag && user) {
-    base.text = ownerName + "(騙りw " + guestId + ")";
-    base.className = "imposter";
-    base.showProfile = false;
-    return base;
-  }
-
-  base.text = ownerName + " " + guestId;
-  return base;
+function getDisplayNameForComment(comment){
+  const ownerName = (comment && comment.owner_name) ? comment.owner_name : "名無しの傭兵";
+  const tag = (comment && comment.owner_tag) ? String(comment.owner_tag) : "";
+  const suffix = tag ? (" " + tag) : "";
+  return { text: ownerName + suffix, className: "", showProfile: false };
 }
 
-async function openUserProfile(name, tag) {
-  if (!name) {
-    showToast("ユーザー名が不明です");
-    return;
-  }
 
-  const body = dom.profileModalBody;
-  body.innerHTML = "";
-
-  try {
-    let query = supabase.from("ld_users").select("name, tag, vault_level, mythic_state").eq("name", name);
-    if (tag) query = query.eq("tag", tag);
-    const { data, error } = await query.maybeSingle();
-
-    if (error || !data) {
-      const text = document.createElement("div");
-      text.className = "profile-meta";
-      text.textContent = "このユーザーはまだユーザーデータベースに登録されていません。";
-      body.appendChild(text);
-      showModalElement(dom.profileModal);
-      return;
-    }
-
-    const meta = document.createElement("div");
-    meta.className = "profile-meta";
-    meta.textContent = "★" + data.name + " / 金庫Lv" + (data.vault_level || "?");
-    body.appendChild(meta);
-
-    const note = document.createElement("div");
-    note.className = "profile-note";
-    note.textContent = "所持している神話ユニット（Lv・専用👑の有無）";
-    body.appendChild(note);
-
-    const mythicState = data.mythic_state || {};
-    const ids = Object.keys(mythicState).sort(function (a, b) {
-      return Number(a) - Number(b);
-    });
-
-    if (!ids.length) {
-      const t = document.createElement("div");
-      t.className = "profile-note";
-      t.textContent = "神話ユニットの登録はまだありません。";
-      body.appendChild(t);
-    } else {
-      const grid = document.createElement("div");
-      grid.className = "profile-grid";
-      ids.forEach(function (id) {
-        const info = mythicState[id] || {};
-        const cell = document.createElement("div");
-        cell.className = "profile-unit";
-        const crown = info.treasure ? "👑" : "";
-        cell.textContent = id.slice(-2) + crown;
-        cell.title = "ID:" + id + " Lv" + (info.level || "?") + " " + (info.form || "");
-        grid.appendChild(cell);
-      });
-      body.appendChild(grid);
-    }
-
-    showModalElement(dom.profileModal);
-  } catch (e) {
-    console.error("openUserProfile error", e);
-    const text = document.createElement("div");
-    text.className = "profile-meta";
-    text.textContent = "プロフィール情報の取得に失敗しました。";
-    body.appendChild(text);
-    showModalElement(dom.profileModal);
-  }
+async function openUserProfile(){
+  showToast("プロフィール表示は現在停止中です");
 }
+
 
 /* =====================
  * ユーザー入力の状態
  * ===================== */
 
-function getCurrentUserInfo() {
-  const name = dom.userNameInput.value.trim();
-  const tag = dom.userTagInput.value.trim();
-
-  if (!name) {
-    return {
-      mode: "anonymous",
-      label: "名無しとして投稿",
-      isRegistered: false,
-      name: "",
-      tag: "",
-    };
-  }
-
-  const user = state.users.find(function (u) {
-    return u.name === name;
-  });
-
-  if (!user) {
-    return {
-      mode: "unregistered",
-      label: "「" + name + "」として投稿",
-      isRegistered: false,
-      name: name,
-      tag: tag,
-    };
-  }
-
-  if (tag && tag === user.tag) {
-    return {
-      mode: "registered",
-      label: "「" + name + "」として投稿",
-      isRegistered: true,
-      name: name,
-      tag: tag,
-      user: user,
-    };
-  }
-
+function getCurrentUserInfo(){
+  const p = getCurrentPosterInfo();
   return {
-    mode: "imposter",
-    label: "「" + name + "」として投稿",
-    isRegistered: false,
-    name: name,
-    tag: tag,
-    user: user,
+    mode: p.isLoggedIn ? "login" : "guest",
+    label: p.isLoggedIn ? ("「"+p.owner_name+"」として投稿") : "名無しの傭兵として投稿",
+    isRegistered: p.isLoggedIn,
+    name: p.owner_name,
+    tag: p.owner_tag,
+    poster_type: p.poster_type,
+    guest_device_id: p.guest_device_id,
+    user: null,
   };
 }
 
-function updateUserStatusLabel() {
-  const info = getCurrentUserInfo();
-  dom.userStatusLabel.textContent = info.label;
-}
 
-function updateNameTagEnabled() {
-  const hasName = dom.userNameInput.value.trim().length > 0;
-  if (!hasName) {
-    dom.userTagInput.value = "";
-    dom.userTagInput.disabled = true;
-  } else {
-    dom.userTagInput.disabled = false;
-  }
-}
+function updateUserStatusLabel(){ /* removed */ }
+
+
+function updateNameTagEnabled(){ /* removed */ }
+
 
 /* =====================
  * 投稿処理
@@ -1227,11 +1251,8 @@ async function handleSubmit() {
   const genre = getSelectedGenre();
 
   let ownerName = info.name;
-  let ownerTag = null;
-  if (!ownerName) ownerName = "名無し";
-  if (info.mode === "registered" && info.user && info.user.tag) {
-    ownerTag = info.user.tag;
-  }
+  let ownerTag = info.tag || null;
+  if (!ownerName) ownerName = "名無しの傭兵";
 
   const guestDailyId = getGuestDailyId();
 
@@ -1243,7 +1264,9 @@ async function handleSubmit() {
     genre: genre,
     owner_name: ownerName,
     owner_tag: ownerTag,
+    poster_type: info.poster_type,
     guest_daily_id: guestDailyId,
+    guest_device_id: info.guest_device_id,
     body: finalBody,
     thread_title: null,
     parent_comment_id: state.replyState ? state.replyState.parentId : null,
@@ -1266,10 +1289,6 @@ async function handleSubmit() {
       console.error("insert error", insertResult.error);
       showToast("投稿に失敗しました。");
       return;
-    }
-
-    if (info.mode === "imposter" && info.user) {
-      incrementUserMisInput(info.user);
     }
 
     showToast("投稿しました。");
@@ -1989,3 +2008,5 @@ function scrollLatestThreadToCenter() {
     rect.top + window.scrollY - viewportHeight / 2 + rect.height / 2;
   window.scrollTo(0, offset);
 }
+
+})();
