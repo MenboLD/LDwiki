@@ -295,11 +295,10 @@
   const btnVaultPlus = $("btnVaultPlus");
   const lblVaultLevel = $("lblVaultLevel");
 
-  const btnEpic15Minus = $(\"btnEpic15Minus\");
-  const btnEpic15Plus  = $(\"btnEpic15Plus\");
-  const lblEpic15Count = $(\"lblEpic15Count\");
-
-  const btnOpenMythicSubmodal = $("btnOpenMythicSubmodal");
+    const btnEpic15Minus = $("btnEpic15Minus");
+  const btnEpic15Plus  = $("btnEpic15Plus");
+  const lblEpic15Count = $("lblEpic15Count");
+const btnOpenMythicSubmodal = $("btnOpenMythicSubmodal");
 
   const accOtherToggle = $("accOtherToggle");
   const accOtherBody = $("accOtherBody");
@@ -322,13 +321,13 @@
   // local working state (not yet saved)
   let currentUser = null; // server payload
   let draft = {
+    epic15_unit_count: 0,
     vault_level: 1,
     mythic_state: {},
     game_player_name: "",
     game_player_level: null,
     guild_name: "",
-    guild_code: "",
-    epic15_unit_count: 0
+    guild_code: ""
   };
   let dirty = false;
 
@@ -368,14 +367,12 @@
   }
 
 
-  function setEpic15Count(n, opts = {}) {
-    const silent = !!opts.silent;
+  function setEpic15UnitCount(n) {
     const v = Math.max(0, Math.min(5, Number(n) || 0));
     draft.epic15_unit_count = v;
     if (lblEpic15Count) lblEpic15Count.textContent = String(v);
-    if (!silent) setDirty(true);
+    setDirty(true);
   }
-
   function bindDraftToInputs() {
     if (inpGamePlayerName) inpGamePlayerName.value = draft.game_player_name || "";
     if (inpGuildName) inpGuildName.value = draft.guild_name || "";
@@ -467,12 +464,11 @@ const lvlRaw = safeTrim(inpGamePlayerLevel?.value || "");
     draft.guild_name = user.guild_name ?? "";
     draft.guild_code = user.guild_code ?? "";
 
-
-    draft.epic15_unit_count = Number(user.epic15_unit_count ?? 0) || 0;
-
     setVaultLevel(draft.vault_level);
     bindDraftToInputs();
-    setEpic15Count(draft.epic15_unit_count, { silent: true });
+
+    setEpic15UnitCount(draft.epic15_unit_count);
+
 
     if (lblCommentCount) lblCommentCount.textContent = String(user.comment_count ?? "-");
     if (lblLikeCount) lblLikeCount.textContent = String(user.like_count ?? "-");
@@ -1194,8 +1190,8 @@ function toggleTreasureOnSelection() {
       p_guild_name: draft.guild_name,
       p_guild_code: draft.guild_code,
     };
-      p_epic15_unit_count: draft.epic15_unit_count,
-    };
+    payload.p_epic15_unit_count = draft.epic15_unit_count;
+
 
     try {
       const res = await saveUserDataV2(payload);
@@ -1329,12 +1325,12 @@ function toggleTreasureOnSelection() {
     btnUserInfoSave?.addEventListener("click", onSaveAndClose);
 
     btnVaultMinus?.addEventListener("click", () => setVaultLevel((draft.vault_level || 1) - 1));
-    btnVaultPlus?.addEventListener("click", () => set
-    btnEpic15Minus?.addEventListener("click", () => setEpic15Count((draft.epic15_unit_count || 0) - 1));
-    btnEpic15Plus?.addEventListener("click", () => setEpic15Count((draft.epic15_unit_count || 0) + 1));
-VaultLevel((draft.vault_level || 1) + 1));
+    btnVaultPlus?.addEventListener("click", () => setVaultLevel((draft.vault_level || 1) + 1));
 
-    btnOpenMythicSubmodal?.addEventListener("click", openMythicSubmodal);
+    
+    btnEpic15Minus?.addEventListener("click", () => setEpic15UnitCount((draft.epic15_unit_count ?? 0) - 1));
+    btnEpic15Plus?.addEventListener("click", () => setEpic15UnitCount((draft.epic15_unit_count ?? 0) + 1));
+btnOpenMythicSubmodal?.addEventListener("click", openMythicSubmodal);
 
     accOtherToggle?.addEventListener("click", () => {
       const open = !accOtherBody.classList.contains("open");
