@@ -462,12 +462,14 @@ const lvlRaw = safeTrim(inpGamePlayerLevel?.value || "");
     draft.game_player_name = user.game_player_name ?? "";
     draft.game_player_level = user.game_player_level ?? null;
     draft.guild_name = user.guild_name ?? "";
-    draft.guild_code = user.guild_code ?? "";
+    draft\.guild_code = user\.guild_code \?\? "";
+
+    draft.epic15_unit_count = Math.max(0, Math.min(5, Number(user.epic15_unit_count) || 0)) ;
 
     setVaultLevel(draft.vault_level);
     bindDraftToInputs();
-
-    setEpic15UnitCount(draft.epic15_unit_count);
+    // init epic15 label without marking dirty
+    if (lblEpic15Count) lblEpic15Count.textContent = String(draft.epic15_unit_count ?? 0);
 
 
     if (lblCommentCount) lblCommentCount.textContent = String(user.comment_count ?? "-");
