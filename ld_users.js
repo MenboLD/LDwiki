@@ -320,7 +320,6 @@
   let draft = {
     vault_level: 1,
     mythic_state: {},
-    epic15_unit_count: 0,
     game_player_name: "",
     game_player_level: null,
     guild_name: "",
@@ -453,10 +452,6 @@ const lvlRaw = safeTrim(inpGamePlayerLevel?.value || "");
     draft.game_player_level = user.game_player_level ?? null;
     draft.guild_name = user.guild_name ?? "";
     draft.guild_code = user.guild_code ?? "";
-
-    draft.epic15_unit_count = Number(user.epic15_unit_count ?? 0) || 0;
-    setEpic15Count(draft.epic15_unit_count, false);
-
 
     setVaultLevel(draft.vault_level);
     bindDraftToInputs();
@@ -1180,7 +1175,6 @@ function toggleTreasureOnSelection() {
       p_game_player_level: draft.game_player_level,
       p_guild_name: draft.guild_name,
       p_guild_code: draft.guild_code,
-      p_epic15_unit_count: draft.epic15_unit_count,
     };
 
     try {
@@ -1353,31 +1347,20 @@ function toggleTreasureOnSelection() {
 
 
 // ===== Lv.15 エピックユニット数 (UI only; DB/RPC will be wired later) =====
-// ===== Epic15 stepper (0〜5) =====
-  const epic15State = { value: 0 };
-  function clampEpic15(v){ v = (v|0); return Math.max(0, Math.min(5, v)); }
-  function setEpic15Count(v, markDirty=true){
-    const lbl = document.getElementById("lblEpic15Count");
-    epic15State.value = clampEpic15(v);
-    if (lbl) lbl.textContent = String(epic15State.value);
-    // keep draft in sync
-    if (draft) draft.epic15_unit_count = epic15State.value;
-    if (markDirty) setDirty(true);
-  }
-  function getEpic15Count(){ return epic15State.value; }
+(function setupEpic15Stepper(){
+  const btnMinus = document.getElementById("btnEpic15Minus");
+  const btnPlus  = document.getElementById("btnEpic15Plus");
+  const lbl      = document.getElementById("lblEpic15Count");
+  if(!btnMinus || !btnPlus || !lbl) return;
 
-  (function setupEpic15Stepper(){
-    const btnMinus = document.getElementById("btnEpic15Minus");
-    const btnPlus  = document.getElementById("btnEpic15Plus");
-    if(!btnMinus || !btnPlus) return;
+  let epic15Count = 0;
+  const clamp = (v)=> Math.max(0, Math.min(5, v|0));
+  const render = ()=>{ lbl.textContent = String(epic15Count); };
 
-    btnMinus.addEventListener("click", ()=> setEpic15Count(getEpic15Count() - 1, true));
-    btnPlus.addEventListener("click",  ()=> setEpic15Count(getEpic15Count() + 1, true));
-    // initial render
-    setEpic15Count(0, false);
-  })();
-
-
+  btnMinus.addEventListener("click", ()=>{ epic15Count = clamp(epic15Count - 1); render(); });
+  btnPlus.addEventListener("click",  ()=>{ epic15Count = clamp(epic15Count + 1); render(); });
+  render();
+})();
 
 
 // ===== Home accordion setup =====
