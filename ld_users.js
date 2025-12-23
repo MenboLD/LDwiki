@@ -295,7 +295,10 @@
   const btnVaultPlus = $("btnVaultPlus");
   const lblVaultLevel = $("lblVaultLevel");
 
-  const btnOpenMythicSubmodal = $("btnOpenMythicSubmodal");
+    const btnEpic15Minus = $("btnEpic15Minus");
+  const btnEpic15Plus  = $("btnEpic15Plus");
+  const lblEpic15Count = $("lblEpic15Count");
+const btnOpenMythicSubmodal = $("btnOpenMythicSubmodal");
 
   const accOtherToggle = $("accOtherToggle");
   const accOtherBody = $("accOtherBody");
@@ -318,6 +321,7 @@
   // local working state (not yet saved)
   let currentUser = null; // server payload
   let draft = {
+    epic15_unit_count: 0,
     vault_level: 1,
     mythic_state: {},
     game_player_name: "",
@@ -362,6 +366,13 @@
     setDirty(true);
   }
 
+
+  function setEpic15UnitCount(n) {
+    const v = Math.max(0, Math.min(5, Number(n) || 0));
+    draft.epic15_unit_count = v;
+    if (lblEpic15Count) lblEpic15Count.textContent = String(v);
+    setDirty(true);
+  }
   function bindDraftToInputs() {
     if (inpGamePlayerName) inpGamePlayerName.value = draft.game_player_name || "";
     if (inpGuildName) inpGuildName.value = draft.guild_name || "";
@@ -455,6 +466,9 @@ const lvlRaw = safeTrim(inpGamePlayerLevel?.value || "");
 
     setVaultLevel(draft.vault_level);
     bindDraftToInputs();
+
+    setEpic15UnitCount(draft.epic15_unit_count);
+
 
     if (lblCommentCount) lblCommentCount.textContent = String(user.comment_count ?? "-");
     if (lblLikeCount) lblLikeCount.textContent = String(user.like_count ?? "-");
@@ -1176,6 +1190,8 @@ function toggleTreasureOnSelection() {
       p_guild_name: draft.guild_name,
       p_guild_code: draft.guild_code,
     };
+    payload.p_epic15_unit_count = draft.epic15_unit_count;
+
 
     try {
       const res = await saveUserDataV2(payload);
@@ -1311,7 +1327,10 @@ function toggleTreasureOnSelection() {
     btnVaultMinus?.addEventListener("click", () => setVaultLevel((draft.vault_level || 1) - 1));
     btnVaultPlus?.addEventListener("click", () => setVaultLevel((draft.vault_level || 1) + 1));
 
-    btnOpenMythicSubmodal?.addEventListener("click", openMythicSubmodal);
+    
+    btnEpic15Minus?.addEventListener("click", () => setEpic15UnitCount((draft.epic15_unit_count ?? 0) - 1));
+    btnEpic15Plus?.addEventListener("click", () => setEpic15UnitCount((draft.epic15_unit_count ?? 0) + 1));
+btnOpenMythicSubmodal?.addEventListener("click", openMythicSubmodal);
 
     accOtherToggle?.addEventListener("click", () => {
       const open = !accOtherBody.classList.contains("open");
@@ -1343,23 +1362,6 @@ function toggleTreasureOnSelection() {
   }
 
   document.addEventListener("DOMContentLoaded", init);
-})();
-
-
-// ===== Lv.15 エピックユニット数 (UI only; DB/RPC will be wired later) =====
-(function setupEpic15Stepper(){
-  const btnMinus = document.getElementById("btnEpic15Minus");
-  const btnPlus  = document.getElementById("btnEpic15Plus");
-  const lbl      = document.getElementById("lblEpic15Count");
-  if(!btnMinus || !btnPlus || !lbl) return;
-
-  let epic15Count = 0;
-  const clamp = (v)=> Math.max(0, Math.min(5, v|0));
-  const render = ()=>{ lbl.textContent = String(epic15Count); };
-
-  btnMinus.addEventListener("click", ()=>{ epic15Count = clamp(epic15Count - 1); render(); });
-  btnPlus.addEventListener("click",  ()=>{ epic15Count = clamp(epic15Count + 1); render(); });
-  render();
 })();
 
 
