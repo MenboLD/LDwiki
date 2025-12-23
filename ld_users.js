@@ -367,11 +367,12 @@ const btnOpenMythicSubmodal = $("btnOpenMythicSubmodal");
   }
 
 
-  function setEpic15UnitCount(n) {
+  function setEpic15UnitCount(n, opts = {}) {
+    const silent = !!opts.silent;
     const v = Math.max(0, Math.min(5, Number(n) || 0));
     draft.epic15_unit_count = v;
     if (lblEpic15Count) lblEpic15Count.textContent = String(v);
-    setDirty(true);
+    if (!silent) setDirty(true);
   }
   function bindDraftToInputs() {
     if (inpGamePlayerName) inpGamePlayerName.value = draft.game_player_name || "";
@@ -459,6 +460,7 @@ const lvlRaw = safeTrim(inpGamePlayerLevel?.value || "");
 
     draft.vault_level = Number(user.vault_level ?? 1) || 1;
     draft.mythic_state = (user.mythic_state && typeof user.mythic_state === "object") ? user.mythic_state : {};
+    draft.epic15_unit_count = Math.max(0, Math.min(5, Number(user.epic15_unit_count ?? 0) || 0));
     draft.game_player_name = user.game_player_name ?? "";
     draft.game_player_level = user.game_player_level ?? null;
     draft.guild_name = user.guild_name ?? "";
@@ -467,7 +469,7 @@ const lvlRaw = safeTrim(inpGamePlayerLevel?.value || "");
     setVaultLevel(draft.vault_level);
     bindDraftToInputs();
 
-    setEpic15UnitCount(draft.epic15_unit_count);
+    setEpic15UnitCount(draft.epic15_unit_count, { silent: true });
 
 
     if (lblCommentCount) lblCommentCount.textContent = String(user.comment_count ?? "-");
