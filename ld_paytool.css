@@ -192,13 +192,25 @@ body {
 
 
 
-/* Page-local: keep common header auth inputs from growing too wide on this page */
-#ldCommonTopbar .topbar-auth-field[aria-label="ユーザー名"],
-#ldCommonTopbar .topbar-auth-field[aria-label="パス"]{
-  flex: 0 1 132px;   /* fixed-ish width, shrinkable */
-  max-width: 132px;
-}
 #ldCommonTopbar .topbar-row--auth{
   flex-wrap: nowrap;
+}
+
+
+
+/* Page-local: clamp ONLY the username field in common header (fixes "ユーザー名(任意)" width drift) */
+#ldCommonTopbar #authForm { width: 100%; max-width: 100%; }
+#ldCommonTopbar label.topbar-auth-field[aria-label="ユーザー名"]{
+  flex: 0 0 128px !important;
+  max-width: 128px !important;
+}
+#ldCommonTopbar #authUserName{
+  width: 128px !important;
+  max-width: 128px !important;
+}
+/* Keep pass field flexible */
+#ldCommonTopbar label.topbar-auth-field[aria-label="パス"]{
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
 }
 
