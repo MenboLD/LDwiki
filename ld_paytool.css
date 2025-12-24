@@ -4,29 +4,15 @@ body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.page {
-  padding:12px;
-}
+.page { padding:12px; }
 
-.pt-head {
-  margin-bottom:10px;
-}
+.pt-head { margin-bottom:10px; }
 
-.pt-title {
-  font-size:18px;
-  font-weight:700;
-}
+.pt-title { font-size:18px; font-weight:700; }
 
-.pt-sub {
-  font-size:12px;
-  opacity:0.7;
-}
+.pt-sub { font-size:12px; opacity:0.7; }
 
-.pt-status {
-  font-size:12px;
-  opacity:0.7;
-  margin-top:4px;
-}
+.pt-status { font-size:12px; opacity:0.7; margin-top:4px; }
 
 .pt-card {
   background:#121826;
@@ -34,19 +20,14 @@ body {
   padding:8px;
 }
 
-.pt-table-wrap {
-  overflow:auto;
-}
+.pt-table-wrap { overflow:auto; }
 
-/* ------------------------------
-   Table: fixed layout so columns don't explode on long names
-   ------------------------------ */
+/* Fixed layout so columns don't expand with long names */
 .pt-table {
   border-collapse:collapse;
   width:100%;
   table-layout: fixed;
-  /* keep horizontal scrolling available for resource columns */
-  min-width: 900px;
+  min-width: 860px; /* allow horizontal scroll for resource columns */
 }
 
 .pt-table th,
@@ -60,78 +41,60 @@ body {
   text-overflow: ellipsis;
 }
 
-/* Column widths (tune for iPhone SE readability) */
+/* Sticky header row only */
+.pt-table thead th {
+  position: sticky;
+  top: 0;
+  background:#121826;
+  z-index: 5;
+}
+
+/* Sticky name column only */
 .pt-table th.name,
 .pt-table td.name {
-  width: 160px;           /* ~40% of previous feel */
+  width: 120px;           /* smaller (~40% feel on iPhone SE) */
   text-align:left;
 }
 
-/* Make name smaller + wrap */
-.pt-table td.name {
-  font-size: 11px;
-  line-height: 1.15;
-  white-space: normal;     /* allow wrap */
-  overflow: visible;
-  text-overflow: clip;
-  word-break: break-word;  /* JP/Latin mixed */
-  hyphens: auto;
-}
-
-/* Sticky header row */
-.pt-table th.sticky {
-  position:sticky;
-  top:0;
-  background:#121826;
-  z-index:2;
-}
-
-/* Sticky name column */
 .pt-table th.name {
+  left: 0;
+  z-index: 6;
+}
+
+.pt-table td.name {
   position: sticky;
   left: 0;
+  background:#121826;
   z-index: 4;
-  background:#121826;
+
+  /* name styling */
+  font-size: 10.5px;
+  line-height: 1.15;
+  white-space: normal;     /* wrap */
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+  hyphens: auto;
+  padding-right: 10px;
 }
 
-.pt-table td.name {
-  position:sticky;
-  left:0;
-  background:#121826;
-  z-index:3;
-}
-
-/* Sticky JPY column (second column) */
+/* JPY column (NOT sticky) */
 .pt-table th.jpy,
 .pt-table td.jpy {
-  width: 84px;
-}
-
-.pt-table th.jpy {
-  position: sticky;
-  left: 160px; /* must match name width */
-  z-index: 4;
-  background:#121826;
-}
-
-.pt-table td.jpy {
-  position: sticky;
-  left: 160px; /* must match name width */
-  z-index: 3;
-  background:#121826;
+  width: 72px;
 }
 
 /* Upper limit column */
 .pt-table th.limit,
 .pt-table td.limit {
-  width: 64px;
+  width: 56px;
   text-align:center;
 }
 
 /* Resource columns */
 .pt-table th.res,
 .pt-table td.res {
-  width: 56px;
+  width: 52px;
 }
 
 .pt-table th.res img {
@@ -141,7 +104,7 @@ body {
   margin: 0 auto;
 }
 
-/* Reduce header padding so icons fit nicely */
+/* Compact header cells for icons */
 .pt-table th.res {
   padding:4px 6px;
   text-align:center;
