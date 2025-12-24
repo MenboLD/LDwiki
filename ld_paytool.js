@@ -18,17 +18,17 @@
     tbody.innerHTML = rows.map(r => `
       <tr>
         <td class="name">${r.package_name}</td>
-        <td>${r.jpy}</td>
-        <td>${r.purchase_limit ?? '-'}</td>
-        <td>${r.gold}</td>
-        <td>${r.mine_key}</td>
-        <td>${r.churu}</td>
-        <td>${r.battery}</td>
-        <td>${r.pet_food}</td>
-        <td>${r.mythic_stone}</td>
-        <td>${r.immortal_stone}</td>
-        <td>${r.diamond}</td>
-        <td>${r.invite}</td>
+        <td class="jpy">${r.jpy}</td>
+        <td class="limit">${r.purchase_limit ?? '-'}</td>
+        <td class="res">${r.gold}</td>
+        <td class="res">${r.mine_key}</td>
+        <td class="res">${r.churu}</td>
+        <td class="res">${r.battery}</td>
+        <td class="res">${r.pet_food}</td>
+        <td class="res">${r.mythic_stone}</td>
+        <td class="res">${r.immortal_stone}</td>
+        <td class="res">${r.diamond}</td>
+        <td class="res">${r.invite}</td>
       </tr>
     `).join('');
 
