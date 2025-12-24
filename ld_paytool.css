@@ -427,3 +427,43 @@ body {
 /* Phase4v5: explicit card roles */
 .pt-card--settings{ margin-top: 10px; }
 .pt-card--tables{ margin-top: 10px; }
+
+
+/* Phase4v8: keep column widths identical across both tables + freeze first 2 cols */
+:root{
+  --pt-w-name: 32px;
+  --pt-w-limit: 40px; /* limit / purchase count column */
+}
+
+/* enforce widths for BOTH header + body cells */
+.pt-table th.name, .pt-table td.name{ width: var(--pt-w-name); }
+.pt-table th.limit, .pt-table td.limit{ width: var(--pt-w-limit); }
+
+/* Sticky first 2 columns (both tables) */
+.pt-table th.name,
+.pt-table td.name{
+  position: sticky;
+  left: 0;
+  z-index: 6;
+  background: #121826;
+  text-align: left;
+}
+.pt-table th.limit,
+.pt-table td.limit{
+  position: sticky;
+  left: var(--pt-w-name);
+  z-index: 6;
+  background: #121826;
+}
+
+/* Ensure sticky header cells stay on top */
+.pt-table thead th.name,
+.pt-table thead th.limit{
+  z-index: 9;
+}
+
+/* Body sticky cells should visually match row background */
+.pt-table tbody td.name,
+.pt-table tbody td.limit{
+  background: linear-gradient(180deg, rgba(18,24,38,0.98), rgba(18,24,38,0.98));
+}
