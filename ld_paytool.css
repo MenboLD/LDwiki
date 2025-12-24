@@ -481,3 +481,23 @@ z-index: 6;
 .pt-table thead th.limit{
   z-index: 10;
 }
+
+
+/* Phase4v12: Safari sticky-on-table fix (avoid border-collapse: collapse) */
+.pt-table{
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+/* ensure scroll containers are positioning context */
+.pt-table-scroll, .pt-summary-scroll{
+  position: relative;
+}
+
+/* help Safari paint sticky columns cleanly */
+.pt-table th.name, .pt-table td.name,
+.pt-table th.limit, .pt-table td.limit{
+  background-clip: padding-box;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
