@@ -34,7 +34,7 @@ body {
   border-collapse:collapse;
   width:100%;
   table-layout: fixed;
-  min-width: 710px; /* allow horizontal scroll for resource columns */
+  min-width: 860px; /* allow horizontal scroll for resource columns */
 }
 
 .pt-table th,
@@ -192,25 +192,18 @@ body {
 
 
 
-#ldCommonTopbar .topbar-row--auth{
-  flex-wrap: nowrap;
+/* Page-local common header fix:
+   common_header.css sets input padding; on this page the username field looked "long"
+   because width applied to content-box + padding/border. Force border-box so visual width matches. */
+#ldCommonTopbar .topbar-auth-field input {
+  box-sizing: border-box;
 }
-
-
-
-/* Page-local: clamp ONLY the username field in common header (fixes "ユーザー名(任意)" width drift) */
-#ldCommonTopbar #authForm { width: 100%; max-width: 100%; }
-#ldCommonTopbar label.topbar-auth-field[aria-label="ユーザー名"]{
-  flex: 0 0 128px !important;
-  max-width: 128px !important;
-}
-#ldCommonTopbar #authUserName{
+/* Clamp username field (visual width) */
+#ldCommonTopbar #authUserName {
   width: 128px !important;
   max-width: 128px !important;
 }
-/* Keep pass field flexible */
-#ldCommonTopbar label.topbar-auth-field[aria-label="パス"]{
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
+#ldCommonTopbar label.topbar-auth-field {
+  min-width: 0;
 }
 
