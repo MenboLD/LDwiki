@@ -34,7 +34,7 @@ body {
   border-collapse:collapse;
   width:100%;
   table-layout: fixed;
-  min-width: 926px; /* allow horizontal scroll for resource columns */
+  min-width: 860px; /* allow horizontal scroll for resource columns */
 }
 
 .pt-table th,
@@ -262,8 +262,47 @@ body {
 }
 
 /* calc columns */
-.pt-table th.calc, .pt-table td.calc{
-  width: 54px;
-  text-align:right;
+.pt-table th.calc, .pt-table td.calc{ width: 40px; text-align:right; }
+
+
+/* prevent package name wrapping */
+.pt-table td.name{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+.pt-table td.res, .pt-table td.jpy, .pt-table td.limit, .pt-table td.calc{
+  white-space: nowrap;
+}
+
+.pt-table th.calc{
+  font-size: 10px;
+}
+
+
+/* Phase2v4: per-price double availability toggles */
+.pt-double{
+  gap: 8px;
+}
+.pt-double .pt-double-item{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding: 4px 6px;
+  border-radius: 10px;
+  border: 1px solid #1f2636;
+  background:#0b0f16;
+  font-size: 12px;
+}
+.pt-double .pt-double-item .pt-badge{
+  font-size: 11px;
+  opacity: .85;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid #273044;
+}
+
+
+/* budget apply button */
+#btnBudgetApply{ white-space: nowrap; }
