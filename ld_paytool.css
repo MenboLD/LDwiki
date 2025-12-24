@@ -34,7 +34,7 @@ body {
   border-collapse:collapse;
   width:100%;
   table-layout: fixed;
-  min-width: 710px; /* allow horizontal scroll for resource columns */
+  min-width: 926px; /* allow horizontal scroll for resource columns */
 }
 
 .pt-table th,
