@@ -2,7 +2,14 @@
   const status = document.getElementById('ptStatus');
   const tbody = document.getElementById('payTableBody');
   
-  function fmtName(name){
+  
+  function fmtNum(v){
+    const n = Number(v ?? 0);
+    if(!Number.isFinite(n)) return String(v ?? 0);
+    // Display as integer with commas (e.g., 0,000). Decimals are not expected in phase A.
+    return Math.round(n).toLocaleString('ja-JP');
+  }
+function fmtName(name){
     const s = String(name ?? '');
     return s.replaceAll('パッケージ', 'P').replaceAll('スペシャル', 'SP');
   }
@@ -24,17 +31,17 @@
     tbody.innerHTML = rows.map(r => `
       <tr>
         <td class="name">${fmtName(r.package_name)}</td>
-        <td class="jpy">${r.jpy}</td>
-        <td class="limit">${r.purchase_limit ?? '-'}</td>
-        <td class="res">${r.gold}</td>
-        <td class="res">${r.mine_key}</td>
-        <td class="res">${r.churu}</td>
-        <td class="res">${r.battery}</td>
-        <td class="res">${r.pet_food}</td>
-        <td class="res">${r.mythic_stone}</td>
-        <td class="res">${r.immortal_stone}</td>
-        <td class="res">${r.diamond}</td>
-        <td class="res">${r.invite}</td>
+        <td class="jpy">${fmtNum(r.jpy)}</td>
+        <td class="limit">${(r.purchase_limit==null?'-':fmtNum(r.purchase_limit))}</td>
+        <td class="res">${fmtNum(r.gold)}</td>
+        <td class="res">${fmtNum(r.mine_key)}</td>
+        <td class="res">${fmtNum(r.churu)}</td>
+        <td class="res">${fmtNum(r.battery)}</td>
+        <td class="res">${fmtNum(r.pet_food)}</td>
+        <td class="res">${fmtNum(r.mythic_stone)}</td>
+        <td class="res">${fmtNum(r.immortal_stone)}</td>
+        <td class="res">${fmtNum(r.diamond)}</td>
+        <td class="res">${fmtNum(r.invite)}</td>
       </tr>
     `).join('');
 

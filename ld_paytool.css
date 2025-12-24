@@ -52,7 +52,7 @@ body {
 /* Sticky name column only */
 .pt-table th.name,
 .pt-table td.name {
-  width: 70px;           /* smaller (~40% feel on iPhone SE) */
+  width: 55px;           /* smaller (~40% feel on iPhone SE) */
   text-align:left;
   /* name text: compact, no-wrap */
   font-size: 10.5px;
@@ -90,20 +90,20 @@ body {
 /* JPY column (NOT sticky) */
 .pt-table th.jpy,
 .pt-table td.jpy {
-  width: 72px;
+  width: 60px;
 }
 
 /* Upper limit column */
 .pt-table th.limit,
 .pt-table td.limit {
-  width: 56px;
+  width: 44px;
   text-align:center;
 }
 
 /* Resource columns */
 .pt-table th.res,
 .pt-table td.res {
-  width: 52px;
+  width: 58px;
 }
 
 .pt-table th.res img {
@@ -117,4 +117,19 @@ body {
 .pt-table th.res {
   padding:4px 6px;
   text-align:center;
+}
+
+
+/* Compact numeric columns (JPY + resources) */
+.pt-table td.jpy,
+.pt-table td.limit,
+.pt-table td.res {
+  padding: 4px 6px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.pt-table th.jpy,
+.pt-table th.limit,
+.pt-table th.res {
+  padding: 4px 6px;
 }
