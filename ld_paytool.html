@@ -6,11 +6,11 @@
   <title>課金検討ツール | ラッキー傭兵団 攻略 wiki</title>
 
   <link rel="stylesheet" href="common_header.css">
-  <link rel="stylesheet" href="ld_paytool.css?v=20251224p3b">
+  <link rel="stylesheet" href="ld_paytool.css?v=20251224p3c">
 
   <script src="supabase_config.js"></script>
   <script defer src="common_header.js"></script>
-  <script defer src="ld_paytool.js?v=20251224p3b"></script>
+  <script defer src="ld_paytool.js?v=20251224p3c"></script>
 
 <!-- Paytool page-local: common header username width fix (override after common_header.css) -->
 <style>
@@ -75,6 +75,52 @@
 
         <div class="pt-kpis" id="kpiBaseline"></div>
       </div>
+
+    <div class="pt-summary-table-wrap" aria-label="合計表">
+      <table class="pt-table pt-table-summary" role="table">
+        <thead>
+          <tr>
+            <th class="name" scope="col">パッケージ</th>
+            <th class="limit" scope="col">購入数</th>
+            <th class="jpy" scope="col">JPY</th>
+
+            <th class="res res-gold" scope="col"><img class="pt-ico" alt="gold" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_01_gold_20x20px.png"></th>
+            <th class="res res-mine_key" scope="col"><img class="pt-ico" alt="key" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_02_key_20x20px.png"></th>
+            <th class="res res-churu" scope="col"><img class="pt-ico" alt="churu" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_03_chur_20x20px.png"></th>
+            <th class="res res-battery" scope="col"><img class="pt-ico" alt="battery" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_04_battery_20x20px.png"></th>
+            <th class="res res-pet_food" scope="col"><img class="pt-ico" alt="petfood" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_05_petfood_20x20px.png"></th>
+            <th class="res res-mythic_stone" scope="col"><img class="pt-ico" alt="myth" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_06_Mythstone_20x20px.png"></th>
+            <th class="res res-immortal_stone" scope="col"><img class="pt-ico" alt="imm" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_07_immotalstone_20x20px.png"></th>
+            <th class="res res-diamond" scope="col"><img class="pt-ico" alt="dia" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_08_dia_20x20px.png"></th>
+            <th class="res res-invite" scope="col"><img class="pt-ico" alt="invite" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_09_Scroll_20x20px.png"></th>
+
+            <th class="calc" scope="col">Σ</th>
+            <th class="calc" scope="col">D/¥</th>
+            <th class="calc" scope="col">比B</th>
+          </tr>
+        </thead>
+        <tbody id="summaryTableBody">
+          <tr>
+            <td class="name">合計</td>
+            <td class="limit">0</td>
+            <td class="jpy">0</td>
+            <td class="res res-gold">0</td>
+            <td class="res res-mine_key">0</td>
+            <td class="res res-churu">0</td>
+            <td class="res res-battery">0</td>
+            <td class="res res-pet_food">0</td>
+            <td class="res res-mythic_stone">0</td>
+            <td class="res res-immortal_stone">0</td>
+            <td class="res res-diamond">0</td>
+            <td class="res res-invite">0</td>
+            <td class="calc">0</td>
+            <td class="calc">-</td>
+            <td class="calc">-</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     </section>
 
     </header>
