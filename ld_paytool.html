@@ -6,11 +6,11 @@
   <title>課金検討ツール | ラッキー傭兵団 攻略 wiki</title>
 
   <link rel="stylesheet" href="common_header.css">
-  <link rel="stylesheet" href="ld_paytool.css?v=20251224p3a">
+  <link rel="stylesheet" href="ld_paytool.css?v=20251224p3b">
 
   <script src="supabase_config.js"></script>
   <script defer src="common_header.js"></script>
-  <script defer src="ld_paytool.js?v=20251224p3a"></script>
+  <script defer src="ld_paytool.js?v=20251224p3b"></script>
 
 <!-- Paytool page-local: common header username width fix (override after common_header.css) -->
 <style>
@@ -85,8 +85,8 @@
           <thead>
             <tr>
               <th class="sticky name">パッケージ</th>
-              <th class="sticky jpy">JPY</th>
               <th class="limit">上限</th>
+              <th class="jpy">JPY</th>
               <th class="res res-gold"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_01_gold_20x20px.png" alt="ゴールド"></th>
               <th class="res res-mine_key"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_02_key_20x20px.png" alt="鉱山の鍵"></th>
               <th class="res res-churu"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_03_chur_20x20px.png" alt="チュール"></th>
@@ -106,6 +106,17 @@
         </table>
       </div>
     </section>
+
+    <section id="cartSummary" class="pt-summary" aria-label="合計">
+      <div class="pt-summary-row">
+        <div class="pt-sum-item"><span class="pt-sum-label">合計JPY</span><span id="sumYen" class="pt-sum-val">0</span></div>
+        <div class="pt-sum-item"><span class="pt-sum-label">合計Σ</span><span id="sumDia" class="pt-sum-val">0</span></div>
+        <div class="pt-sum-item"><span class="pt-sum-label">合計D/¥</span><span id="sumDpy" class="pt-sum-val">-</span></div>
+        <div class="pt-sum-item"><span class="pt-sum-label">比B</span><span id="sumRatioB" class="pt-sum-val">-</span></div>
+      </div>
+      <div class="pt-summary-hint" id="sumHint"></div>
+    </section>
+
   </main>
 </body>
 </html>
