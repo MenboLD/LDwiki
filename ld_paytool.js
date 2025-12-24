@@ -492,6 +492,4 @@ window.addEventListener('load', () => {
   const sumX  = document.getElementById('summaryScroll') || document.querySelector('#summaryScroll');
   if(listX && sumX) syncHorizontalScroll(listX, sumX);
 }, { once:true });
-  const sumX  = document.getElementById('summaryScroll');
-  if(listX && sumX) syncHorizontalScroll(listX, sumX);
-}, { once:true });
+})();
