@@ -20,7 +20,7 @@ body {
   padding:8px;
 }
 
-.pt-table-wrap { overflow:auto; }
+.pt-table-wrap { overflow:auto; max-height: 360px; }
 
 /* Fixed layout so columns don't expand with long names */
 .pt-table {
@@ -52,7 +52,7 @@ body {
 /* Sticky name column only */
 .pt-table th.name,
 .pt-table td.name {
-  width: 60px;           /* smaller (~40% feel on iPhone SE) */
+  width: 48px;           /* smaller (~40% feel on iPhone SE) */
   text-align:left;
   /* name text: compact, no-wrap */
   font-size: 10.5px;
@@ -90,13 +90,13 @@ body {
 /* JPY column (NOT sticky) */
 .pt-table th.jpy,
 .pt-table td.jpy {
-  width: 60px;
+  width: 36px;
 }
 
 /* Upper limit column */
 .pt-table th.limit,
 .pt-table td.limit {
-  width: 44px;
+  width: 20px;
   text-align:center;
 }
 
@@ -136,15 +136,15 @@ body {
 
 
 /* Per-resource column widths (px) */
-.pt-table th.res-gold, .pt-table td.res-gold { width: 56px; }
-.pt-table th.res-mine_key, .pt-table td.res-mine_key { width: 19px; }
-.pt-table th.res-churu, .pt-table td.res-churu { width: 19px; }
-.pt-table th.res-battery, .pt-table td.res-battery { width: 30px; }
-.pt-table th.res-pet_food, .pt-table td.res-pet_food { width: 30px; }
-.pt-table th.res-mythic_stone, .pt-table td.res-mythic_stone { width: 30px; }
-.pt-table th.res-immortal_stone, .pt-table td.res-immortal_stone { width: 30px; }
-.pt-table th.res-diamond, .pt-table td.res-diamond { width: 56px; }
-.pt-table th.res-invite, .pt-table td.res-invite { width: 30px; }
+.pt-table th.res-gold, .pt-table td.res-gold { width:  36px; }
+.pt-table th.res-mine_key, .pt-table td.res-mine_key { width:  20px; }
+.pt-table th.res-churu, .pt-table td.res-churu { width:  20px; }
+.pt-table th.res-battery, .pt-table td.res-battery { width:  24px; }
+.pt-table th.res-pet_food, .pt-table td.res-pet_food { width:  24px; }
+.pt-table th.res-mythic_stone, .pt-table td.res-mythic_stone { width:  24px; }
+.pt-table th.res-immortal_stone, .pt-table td.res-immortal_stone { width:  24px; }
+.pt-table th.res-diamond, .pt-table td.res-diamond { width:  32px; }
+.pt-table th.res-invite, .pt-table td.res-invite { width:  28px; }
 
 
 
@@ -158,3 +158,10 @@ body {
   border-right: none;
 }
 
+
+/* Extra right breathing room from vertical grid line */
+.pt-table td.jpy,
+.pt-table td.limit,
+.pt-table td.res {
+  padding-right: 6px;
+}
