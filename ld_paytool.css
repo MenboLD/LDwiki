@@ -423,3 +423,7 @@ body {
   background: #0b0f16;
 }
 .pt-table-summary thead th.limit{ z-index: 6; }
+
+/* Phase4v5: explicit card roles */
+.pt-card--settings{ margin-top: 10px; }
+.pt-card--tables{ margin-top: 10px; }
