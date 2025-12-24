@@ -33,15 +33,15 @@ function fmtName(name){
         <td class="name">${fmtName(r.package_name)}</td>
         <td class="jpy">${fmtNum(r.jpy)}</td>
         <td class="limit">${(r.purchase_limit==null?'-':fmtNum(r.purchase_limit))}</td>
-        <td class="res res-gold">${fmtNum(r.gold)}</td>
-        <td class="res res-mine_key">${fmtNum(r.mine_key)}</td>
-        <td class="res res-churu">${fmtNum(r.churu)}</td>
-        <td class="res res-battery">${fmtNum(r.battery)}</td>
-        <td class="res res-pet_food">${fmtNum(r.pet_food)}</td>
-        <td class="res res-mythic_stone">${fmtNum(r.mythic_stone)}</td>
-        <td class="res res-immortal_stone">${fmtNum(r.immortal_stone)}</td>
-        <td class="res res-diamond">${fmtNum(r.diamond)}</td>
-        <td class="res res-invite">${fmtNum(r.invite)}</td>
+        <td class="res res-gold ${(Number(r.gold)||0)===0 ? "zero" : ""}">${fmtNum(r.gold)}</td>
+        <td class="res res-mine_key ${(Number(r.mine_key)||0)===0 ? "zero" : ""}">${fmtNum(r.mine_key)}</td>
+        <td class="res res-churu ${(Number(r.churu)||0)===0 ? "zero" : ""}">${fmtNum(r.churu)}</td>
+        <td class="res res-battery ${(Number(r.battery)||0)===0 ? "zero" : ""}">${fmtNum(r.battery)}</td>
+        <td class="res res-pet_food ${(Number(r.pet_food)||0)===0 ? "zero" : ""}">${fmtNum(r.pet_food)}</td>
+        <td class="res res-mythic_stone ${(Number(r.mythic_stone)||0)===0 ? "zero" : ""}">${fmtNum(r.mythic_stone)}</td>
+        <td class="res res-immortal_stone ${(Number(r.immortal_stone)||0)===0 ? "zero" : ""}">${fmtNum(r.immortal_stone)}</td>
+        <td class="res res-diamond ${(Number(r.diamond)||0)===0 ? "zero" : ""}">${fmtNum(r.diamond)}</td>
+        <td class="res res-invite ${(Number(r.invite)||0)===0 ? "zero" : ""}">${fmtNum(r.invite)}</td>
       </tr>
     `).join('');
 

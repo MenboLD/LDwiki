@@ -52,7 +52,7 @@ body {
 /* Sticky name column only */
 .pt-table th.name,
 .pt-table td.name {
-  width: 40px;           /* smaller (~40% feel on iPhone SE) */
+  width: 32px;           /* smaller (~40% feel on iPhone SE) */
   text-align:left;
   /* name text: compact, no-wrap */
   font-size: 10.5px;
@@ -90,7 +90,7 @@ body {
 /* JPY column (NOT sticky) */
 .pt-table th.jpy,
 .pt-table td.jpy {
-  width: 28px;
+  width: 22px;
 }
 
 /* Upper limit column */
@@ -136,15 +136,15 @@ body {
 
 
 /* Per-resource column widths (px) */
-.pt-table th.res-gold, .pt-table td.res-gold { width:  28px; }
-.pt-table th.res-mine_key, .pt-table td.res-mine_key { width:  16px; }
-.pt-table th.res-churu, .pt-table td.res-churu { width:  16px; }
-.pt-table th.res-battery, .pt-table td.res-battery { width:  20px; }
-.pt-table th.res-pet_food, .pt-table td.res-pet_food { width:  20px; }
-.pt-table th.res-mythic_stone, .pt-table td.res-mythic_stone { width:  20px; }
-.pt-table th.res-immortal_stone, .pt-table td.res-immortal_stone { width:  20px; }
-.pt-table th.res-diamond, .pt-table td.res-diamond { width:  28px; }
-.pt-table th.res-invite, .pt-table td.res-invite { width:  24px; }
+.pt-table th.res-gold, .pt-table td.res-gold { width:  22px; }
+.pt-table th.res-mine_key, .pt-table td.res-mine_key { width:  12px; }
+.pt-table th.res-churu, .pt-table td.res-churu { width:  12px; }
+.pt-table th.res-battery, .pt-table td.res-battery { width:  16px; }
+.pt-table th.res-pet_food, .pt-table td.res-pet_food { width:  16px; }
+.pt-table th.res-mythic_stone, .pt-table td.res-mythic_stone { width:  16px; }
+.pt-table th.res-immortal_stone, .pt-table td.res-immortal_stone { width:  16px; }
+.pt-table th.res-diamond, .pt-table td.res-diamond { width:  22px; }
+.pt-table th.res-invite, .pt-table td.res-invite { width:  18px; }
 
 
 
@@ -168,3 +168,12 @@ body {
 
 .pt-table thead th.name,
 .pt-table thead th.jpy { text-align: center; }
+
+/* Prevent table min-width from expanding the whole page (affects common header layout) */
+.pt-card { max-width: 100%; overflow: hidden; }
+.pt-table-wrap { width: 100%; max-width: 100%; overflow: auto; }
+
+/* Make zero values less prominent */
+.pt-table td.zero {
+  color: rgba(230,232,235,0.22);
+}
