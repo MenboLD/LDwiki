@@ -5,11 +5,16 @@
   const elMineKeyRate = document.getElementById('optMineKeyRate');
   const elBudgetYen = document.getElementById('optBudgetYen');
   const elBudgetApply = document.getElementById('btnBudgetApply');
-  const elFirstDouble = document.getElementById('optFirstDouble');
   const elToggles = document.getElementById('resourceToggles');
   const elDoubleToggles = document.getElementById('doubleToggles');
   const elSort = document.getElementById('optSort');
   const elKpi = document.getElementById('kpiBaseline');
+
+  const elSumYen = document.getElementById('sumYen');
+  const elSumDia = document.getElementById('sumDia');
+  const elSumDpy = document.getElementById('sumDpy');
+  const elSumRatioB = document.getElementById('sumRatioB');
+  const elSumHint = document.getElementById('sumHint');
 
   function fmtName(name){
     const s = String(name ?? '');
@@ -21,6 +26,14 @@
     const n = Number(String(v).replaceAll(',', '').trim());
     if(!Number.isFinite(n)) return String(v);
     return _nf.format(Math.round(n));
+  }
+  function fmtFloat2(v){
+    if(!Number.isFinite(v) || v <= 0) return '-';
+    return (Math.round(v * 100) / 100).toFixed(2);
+  }
+  function fmtPct1(v){
+    if(!Number.isFinite(v) || v <= 0) return '-';
+    return (Math.round(v * 1000) / 10).toFixed(1) + '%';
   }
   function clampInt(n, min, max){
     n = Math.floor(Number(n));
@@ -60,7 +73,28 @@
   let toggles = {};
   let baselinePacks = [];
   let doublePacks = [];
-  let doubleAvailability = {}; // price_yen -> bool (usable)
+  let doubleAvailability = {}; // price_yen -> bool
+  let cart = {}; // key -> qty
+
+  const CART_LS_KEY = "ld_paytool_cart_v1";
+
+  function rowKey(p){
+    // primary key is first column, but we don't know its name; try common ones then fallback
+    return String(p.id ?? p.package_id ?? p.pk ?? p.sort_order ?? p.package_name);
+  }
+  function loadCart(){
+    try{
+      const raw = localStorage.getItem(CART_LS_KEY);
+      if(!raw) return;
+      const obj = JSON.parse(raw);
+      if(obj && typeof obj === 'object') cart = obj;
+    }catch(_){}
+  }
+  function saveCart(){
+    try{
+      localStorage.setItem(CART_LS_KEY, JSON.stringify(cart));
+    }catch(_){}
+  }
 
   function buildResourceToggleUI(){
     elToggles.innerHTML = '';
@@ -86,7 +120,6 @@
     if(!elDoubleToggles) return;
     elDoubleToggles.innerHTML = '';
 
-    // Use baseline pack prices as the canonical "5 tiers"
     const tiers = baselinePacks
       .filter(p => p.is_active !== false)
       .map(p => Number(p.price_yen))
@@ -94,12 +127,10 @@
 
     const uniq = Array.from(new Set(tiers)).sort((a,b)=>a-b);
 
-    // Initialize defaults to true
     for(const price of uniq){
       if(!(price in doubleAvailability)) doubleAvailability[price] = true;
     }
 
-    // Render checkboxes
     for(const price of uniq){
       const row = document.createElement('label');
       row.className = 'pt-double-item';
@@ -139,7 +170,7 @@
     return sum;
   }
 
-  function baselineBudgetBestDia(budgetYen, useDouble){
+  function baselineBudgetBestDia(budgetYen){
     const gcd = 100;
     const B = Math.max(0, Math.floor(budgetYen / gcd));
     if(B <= 0) return 0;
@@ -149,7 +180,6 @@
       .map(p => ({ w: Math.floor(Number(p.price_yen)/gcd), v: Number(p.diamonds) }))
       .filter(it => it.w > 0 && it.v > 0);
 
-    // unbounded knapsack for baseline
     const dp = new Array(B + 1).fill(0);
     for(let b = 0; b <= B; b++){
       const cur = dp[b];
@@ -162,9 +192,6 @@
       }
     }
 
-    if(!useDouble) return dp[B];
-
-    // 0/1 knapsack for doubles, but only tiers that are available (checkbox)
     const dblItems = doublePacks
       .filter(p => p.is_active !== false)
       .filter(p => doubleAvailability[Number(p.price_yen)] !== false)
@@ -184,11 +211,27 @@
   function render(rows){
     tbody.innerHTML = rows.map(r => {
       const cls0 = (v) => ((Number(v)||0)===0 ? ' zero' : '');
+      const key = rowKey(r);
+      const max = (r.purchase_limit === null || r.purchase_limit === undefined || r.purchase_limit === '') ? '' : String(r.purchase_limit);
+      const maxNum = Number(max);
+      const qty = clampInt(cart[key] ?? 0, 0, Number.isFinite(maxNum) && maxNum > 0 ? maxNum : 999);
+      cart[key] = qty;
+
+      const maxDisp = (max === '' ? '∞' : fmtNum(max));
       return `
-      <tr>
-        <td class="name">${fmtName(r.package_name)}</td>
+      <tr data-key="${key}">
+        <td class="name" title="${r.package_name}">${fmtName(r.package_name)}</td>
+
+        <td class="limit">
+          <div class="pt-limit">
+            <button class="pt-minus" type="button" aria-label="minus">-</button>
+            <span class="pt-count">${qty}</span>
+            <button class="pt-plus" type="button" aria-label="plus">+</button>
+            <span class="pt-max">/${maxDisp}</span>
+          </div>
+        </td>
+
         <td class="jpy">${fmtNum(r.jpy)}</td>
-        <td class="limit">${r.purchase_limit ?? '-'}</td>
 
         <td class="res res-gold${cls0(r.gold)}">${fmtNum(r.gold)}</td>
         <td class="res res-mine_key${cls0(r.mine_key)}">${fmtNum(r.mine_key)}</td>
@@ -201,30 +244,26 @@
         <td class="res res-invite${cls0(r.invite)}">${fmtNum(r.invite)}</td>
 
         <td class="calc">${fmtNum(r._calc_dia)}</td>
-        <td class="calc">${(r._calc_dpy && r._calc_dpy>0) ? (Math.round(r._calc_dpy*100)/100).toFixed(2) : '-'}</td>
-        <td class="calc">${(r._calc_budget_ratio && r._calc_budget_ratio>0) ? (Math.round(r._calc_budget_ratio*1000)/10).toFixed(1)+'%' : '-'}</td>
+        <td class="calc">${(r._calc_dpy && r._calc_dpy>0) ? fmtFloat2(r._calc_dpy) : '-'}</td>
+        <td class="calc">${fmtPct1(r._calc_budget_ratio)}</td>
       </tr>`;
     }).join('');
   }
 
-  function applyCalcAndRender(){
+  function calcAndSort(){
     const rates = getEffectiveRates();
     const budget = clampInt(elBudgetYen.value, 0, 200000);
-    const useDouble = !!elFirstDouble.checked;
 
-    const budgetBestDia = baselineBudgetBestDia(budget, useDouble);
+    const budgetBestDia = baselineBudgetBestDia(budget);
     const budgetDiaPerYen = (budget > 0 && budgetBestDia > 0) ? (budgetBestDia / budget) : 0;
 
-    // show tiers status
     const tiers = baselinePacks
       .filter(p => p.is_active !== false)
       .map(p => Number(p.price_yen))
       .filter(n => Number.isFinite(n) && n > 0);
     const uniq = Array.from(new Set(tiers)).sort((a,b)=>a-b);
     const enabled = uniq.filter(p => doubleAvailability[p] !== false).length;
-    const dblText = useDouble ? `初回2倍: ${enabled}/${uniq.length}使用可` : `初回2倍: OFF`;
-
-    elKpi.textContent = `基準(予算${budget}) Dia/¥=${budgetDiaPerYen ? (Math.round(budgetDiaPerYen*1000)/1000).toFixed(3) : '-'} / ${dblText}`;
+    elKpi.textContent = `基準(予算${budget}) Dia/¥=${budgetDiaPerYen ? (Math.round(budgetDiaPerYen*1000)/1000).toFixed(3) : '-'} / 初回2倍: ${enabled}/${uniq.length}使用可`;
 
     const rows = packages.map(p => {
       const yen = Number(p.jpy) || 0;
@@ -244,12 +283,53 @@
       case 'jpy_desc': out.sort((a,b)=> (Number(b.jpy)||0) - (Number(a.jpy)||0)); break;
       default: out.sort((a,b)=> (a.sort_order||0)-(b.sort_order||0)); break;
     }
+    return { out, budgetDiaPerYen };
+  }
 
+  function updateSummary(rows, budgetDiaPerYen){
+    let sumY = 0;
+    let sumD = 0;
+    for(const r of rows){
+      const key = rowKey(r);
+      const max = (r.purchase_limit === null || r.purchase_limit === undefined || r.purchase_limit === '') ? 999 : Number(r.purchase_limit);
+      const qty = clampInt(cart[key] ?? 0, 0, Number.isFinite(max) && max > 0 ? max : 999);
+      if(qty <= 0) continue;
+      sumY += (Number(r.jpy) || 0) * qty;
+      sumD += (Number(r._calc_dia) || 0) * qty;
+    }
+    const dpy = sumY > 0 ? (sumD / sumY) : 0;
+    const ratioB = budgetDiaPerYen > 0 ? (dpy / budgetDiaPerYen) : 0;
+
+    elSumYen.textContent = fmtNum(sumY);
+    elSumDia.textContent = fmtNum(sumD);
+    elSumDpy.textContent = sumY > 0 ? fmtFloat2(dpy) : '-';
+    elSumRatioB.textContent = sumY > 0 ? fmtPct1(ratioB) : '-';
+
+    elSumHint.textContent = '購入数はブラウザに保存されます（同一端末/同一ブラウザ）。';
+  }
+
+  function applyAll(){
+    const { out, budgetDiaPerYen } = calcAndSort();
     render(out);
+    updateSummary(out, budgetDiaPerYen);
+    saveCart();
     status.textContent = `表示中：${out.length}件（計算反映）`;
   }
 
+  function bumpQty(key, delta){
+    const row = packages.find(p => rowKey(p) === key);
+    if(!row) return;
+    const maxRaw = row.purchase_limit;
+    const max = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
+    const cap = (Number.isFinite(max) && max > 0) ? max : 999;
+    const cur = clampInt(cart[key] ?? 0, 0, cap);
+    const next = clampInt(cur + delta, 0, cap);
+    cart[key] = next;
+  }
+
   try {
+    loadCart();
+
     const [pkgRows, rateRows, baseRows, dblRows] = await Promise.all([
       fetchTable('ld_pay_packages', 'sort_order.asc'),
       fetchTable('ld_pay_exchange_rates', 'resource_key.asc'),
@@ -277,17 +357,14 @@
     buildResourceToggleUI();
     buildDoubleAvailabilityUI();
 
-    applyCalcAndRender();    elSort.addEventListener('change', applyCalcAndRender);
+    // Auto recalcs
+    elMineKeyRate.addEventListener('change', applyAll);
+    elToggles.addEventListener('change', applyAll);
+    if(elDoubleToggles) elDoubleToggles.addEventListener('change', applyAll);
+    elSort.addEventListener('change', applyAll);
 
-    // Auto-recalc: select/checkbox changes
-    elMineKeyRate.addEventListener('change', applyCalcAndRender);
-    elFirstDouble.addEventListener('change', applyCalcAndRender);
-    // resource toggles / double toggles: we already update state on 'change', so recalc here too
-    elToggles.addEventListener('change', applyCalcAndRender);
-    if(elDoubleToggles) elDoubleToggles.addEventListener('change', applyCalcAndRender);
-
-    // Budget: do NOT recalc while typing. Recalc on blur / Enter / "予算反映".
-    const applyBudget = () => applyCalcAndRender();
+    // Budget: no live recalc while typing
+    const applyBudget = () => applyAll();
     elBudgetYen.addEventListener('blur', applyBudget);
     elBudgetYen.addEventListener('keydown', (e)=>{
       if(e.key === 'Enter'){
@@ -297,6 +374,25 @@
       }
     });
     if(elBudgetApply) elBudgetApply.addEventListener('click', applyBudget);
+
+    // +/- handlers (event delegation)
+    tbody.addEventListener('click', (e)=>{
+      const btn = e.target;
+      if(!(btn instanceof HTMLElement)) return;
+      const tr = btn.closest('tr[data-key]');
+      if(!tr) return;
+      const key = tr.getAttribute('data-key');
+      if(!key) return;
+      if(btn.classList.contains('pt-minus')){
+        bumpQty(key, -1);
+        applyAll();
+      } else if(btn.classList.contains('pt-plus')){
+        bumpQty(key, +1);
+        applyAll();
+      }
+    });
+
+    applyAll();
   } catch (e) {
     console.error(e);
     status.textContent = 'データの取得に失敗しました（Supabase接続/テーブル名を確認）';

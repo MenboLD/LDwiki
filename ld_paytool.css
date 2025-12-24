@@ -306,3 +306,71 @@ body {
 
 /* budget apply button */
 #btnBudgetApply{ white-space: nowrap; }
+
+/* Phase3: make limit column sticky (next to package name) */
+.pt-table th.limit, .pt-table td.limit{
+  position: sticky;
+  left: 32px; /* equals name column width */
+  z-index: 3;
+  background: #0b0f16;
+}
+.pt-table thead th.limit{ z-index: 6; }
+
+/* Phase3: limit cell contents */
+.pt-limit{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  white-space: nowrap;
+}
+.pt-limit button{
+  width: 16px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid #273044;
+  background:#121826;
+  color:#e6e8eb;
+  font-size: 12px;
+  line-height: 16px;
+  padding: 0;
+}
+.pt-limit .pt-count{
+  min-width: 12px;
+  text-align:center;
+  font-variant-numeric: tabular-nums;
+}
+.pt-limit .pt-max{
+  opacity: .65;
+  font-size: 11px;
+}
+
+/* Phase3: summary panel */
+.pt-summary{
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 3px double #2b3750;
+}
+.pt-summary-row{
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pt-sum-item{
+  display:flex;
+  gap: 6px;
+  align-items: baseline;
+}
+.pt-sum-label{
+  font-size: 11px;
+  opacity: .75;
+}
+.pt-sum-val{
+  font-size: 14px;
+  font-weight: 700;
+}
+.pt-summary-hint{
+  margin-top: 6px;
+  font-size: 11px;
+  opacity: .75;
+}
