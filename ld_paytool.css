@@ -1,0 +1,86 @@
+body {
+  background:#0b0f16;
+  color:#e6e8eb;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.page {
+  padding:12px;
+}
+
+.pt-head {
+  margin-bottom:10px;
+}
+
+.pt-title {
+  font-size:18px;
+  font-weight:700;
+}
+
+.pt-sub {
+  font-size:12px;
+  opacity:0.7;
+}
+
+.pt-status {
+  font-size:12px;
+  opacity:0.7;
+  margin-top:4px;
+}
+
+.pt-card {
+  background:#121826;
+  border-radius:12px;
+  padding:8px;
+}
+
+.pt-table-wrap {
+  overflow:auto;
+}
+
+.pt-table {
+  border-collapse:collapse;
+  min-width:900px;
+  width:100%;
+}
+
+.pt-table th,
+.pt-table td {
+  border-bottom:1px solid #1f2636;
+  padding:6px 8px;
+  text-align:right;
+  font-size:12px;
+}
+
+.pt-table th.name,
+.pt-table td.name {
+  text-align:left;
+}
+
+.pt-table th.sticky {
+  position:sticky;
+  top:0;
+  background:#121826;
+  z-index:2;
+}
+
+.pt-table th.name {
+  left:0;
+  z-index:3;
+}
+
+.pt-table th.jpa {
+  left:180px;
+}
+
+.pt-table td.name {
+  position:sticky;
+  left:0;
+  background:#121826;
+  z-index:1;
+}
+
+.pt-table th img {
+  width:20px;
+  height:20px;
+}
