@@ -11,6 +11,23 @@
   <script src="supabase_config.js"></script>
   <script defer src="common_header.js"></script>
   <script defer src="ld_paytool.js"></script>
+
+<!-- Paytool page-local: common header username width fix (override after common_header.css) -->
+<style>
+  #ldCommonTopbar input#authUserName{
+    box-sizing: border-box !important;
+    width: 128px !important;
+    max-width: 128px !important;
+    padding: 6px 8px !important; /* keep visual consistent */
+  }
+  #ldCommonTopbar label.topbar-auth-field[aria-label="ユーザー名"]{
+    flex: 0 0 auto !important;
+    width: 128px !important;
+    max-width: 128px !important;
+    min-width: 0 !important;
+  }
+</style>
+
 </head>
 
 <body data-page-name="課金検討ツール">

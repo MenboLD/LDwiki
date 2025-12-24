@@ -190,20 +190,3 @@ body {
   max-width: 100%;
 }
 
-
-
-/* Page-local common header fix:
-   common_header.css sets input padding; on this page the username field looked "long"
-   because width applied to content-box + padding/border. Force border-box so visual width matches. */
-#ldCommonTopbar .topbar-auth-field input {
-  box-sizing: border-box;
-}
-/* Clamp username field (visual width) */
-#ldCommonTopbar #authUserName {
-  width: 128px !important;
-  max-width: 128px !important;
-}
-#ldCommonTopbar label.topbar-auth-field {
-  min-width: 0;
-}
-
