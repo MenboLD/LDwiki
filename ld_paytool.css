@@ -52,7 +52,7 @@ body {
 /* Sticky name column only */
 .pt-table th.name,
 .pt-table td.name {
-  width: 48px;           /* smaller (~40% feel on iPhone SE) */
+  width: 40px;           /* smaller (~40% feel on iPhone SE) */
   text-align:left;
   /* name text: compact, no-wrap */
   font-size: 10.5px;
@@ -90,7 +90,7 @@ body {
 /* JPY column (NOT sticky) */
 .pt-table th.jpy,
 .pt-table td.jpy {
-  width: 36px;
+  width: 28px;
 }
 
 /* Upper limit column */
@@ -136,15 +136,15 @@ body {
 
 
 /* Per-resource column widths (px) */
-.pt-table th.res-gold, .pt-table td.res-gold { width:  36px; }
-.pt-table th.res-mine_key, .pt-table td.res-mine_key { width:  20px; }
-.pt-table th.res-churu, .pt-table td.res-churu { width:  20px; }
-.pt-table th.res-battery, .pt-table td.res-battery { width:  24px; }
-.pt-table th.res-pet_food, .pt-table td.res-pet_food { width:  24px; }
-.pt-table th.res-mythic_stone, .pt-table td.res-mythic_stone { width:  24px; }
-.pt-table th.res-immortal_stone, .pt-table td.res-immortal_stone { width:  24px; }
-.pt-table th.res-diamond, .pt-table td.res-diamond { width:  32px; }
-.pt-table th.res-invite, .pt-table td.res-invite { width:  28px; }
+.pt-table th.res-gold, .pt-table td.res-gold { width:  28px; }
+.pt-table th.res-mine_key, .pt-table td.res-mine_key { width:  16px; }
+.pt-table th.res-churu, .pt-table td.res-churu { width:  16px; }
+.pt-table th.res-battery, .pt-table td.res-battery { width:  20px; }
+.pt-table th.res-pet_food, .pt-table td.res-pet_food { width:  20px; }
+.pt-table th.res-mythic_stone, .pt-table td.res-mythic_stone { width:  20px; }
+.pt-table th.res-immortal_stone, .pt-table td.res-immortal_stone { width:  20px; }
+.pt-table th.res-diamond, .pt-table td.res-diamond { width:  28px; }
+.pt-table th.res-invite, .pt-table td.res-invite { width:  24px; }
 
 
 
@@ -165,3 +165,6 @@ body {
 .pt-table td.res {
   padding-right: 6px;
 }
+
+.pt-table thead th.name,
+.pt-table thead th.jpy { text-align: center; }
