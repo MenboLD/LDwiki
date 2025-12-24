@@ -52,7 +52,7 @@ body {
 /* Sticky name column only */
 .pt-table th.name,
 .pt-table td.name {
-  width: 55px;           /* smaller (~40% feel on iPhone SE) */
+  width: 60px;           /* smaller (~40% feel on iPhone SE) */
   text-align:left;
   /* name text: compact, no-wrap */
   font-size: 10.5px;
@@ -115,7 +115,7 @@ body {
 
 /* Compact header cells for icons */
 .pt-table th.res {
-  padding:4px 6px;
+  padding:2px 3px;
   text-align:center;
 }
 
@@ -124,12 +124,25 @@ body {
 .pt-table td.jpy,
 .pt-table td.limit,
 .pt-table td.res {
-  padding: 4px 6px;
+  padding: 2px 3px;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
 .pt-table th.jpy,
 .pt-table th.limit,
 .pt-table th.res {
-  padding: 4px 6px;
+  padding: 2px 3px;
 }
+
+
+/* Per-resource column widths (px) */
+.pt-table th.res-gold, .pt-table td.res-gold { width: 56px; }
+.pt-table th.res-mine_key, .pt-table td.res-mine_key { width: 19px; }
+.pt-table th.res-churu, .pt-table td.res-churu { width: 19px; }
+.pt-table th.res-battery, .pt-table td.res-battery { width: 30px; }
+.pt-table th.res-pet_food, .pt-table td.res-pet_food { width: 30px; }
+.pt-table th.res-mythic_stone, .pt-table td.res-mythic_stone { width: 30px; }
+.pt-table th.res-immortal_stone, .pt-table td.res-immortal_stone { width: 30px; }
+.pt-table th.res-diamond, .pt-table td.res-diamond { width: 56px; }
+.pt-table th.res-invite, .pt-table td.res-invite { width: 30px; }
+

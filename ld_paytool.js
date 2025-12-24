@@ -33,15 +33,15 @@ function fmtName(name){
         <td class="name">${fmtName(r.package_name)}</td>
         <td class="jpy">${fmtNum(r.jpy)}</td>
         <td class="limit">${(r.purchase_limit==null?'-':fmtNum(r.purchase_limit))}</td>
-        <td class="res">${fmtNum(r.gold)}</td>
-        <td class="res">${fmtNum(r.mine_key)}</td>
-        <td class="res">${fmtNum(r.churu)}</td>
-        <td class="res">${fmtNum(r.battery)}</td>
-        <td class="res">${fmtNum(r.pet_food)}</td>
-        <td class="res">${fmtNum(r.mythic_stone)}</td>
-        <td class="res">${fmtNum(r.immortal_stone)}</td>
-        <td class="res">${fmtNum(r.diamond)}</td>
-        <td class="res">${fmtNum(r.invite)}</td>
+        <td class="res res-gold">${fmtNum(r.gold)}</td>
+        <td class="res res-mine_key">${fmtNum(r.mine_key)}</td>
+        <td class="res res-churu">${fmtNum(r.churu)}</td>
+        <td class="res res-battery">${fmtNum(r.battery)}</td>
+        <td class="res res-pet_food">${fmtNum(r.pet_food)}</td>
+        <td class="res res-mythic_stone">${fmtNum(r.mythic_stone)}</td>
+        <td class="res res-immortal_stone">${fmtNum(r.immortal_stone)}</td>
+        <td class="res res-diamond">${fmtNum(r.diamond)}</td>
+        <td class="res res-invite">${fmtNum(r.invite)}</td>
       </tr>
     `).join('');
 
