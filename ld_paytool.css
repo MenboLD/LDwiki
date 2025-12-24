@@ -433,6 +433,8 @@ body {
 
 /* Phase4v9: sticky 2nd col drift fix (table-layout fixed + border-box + hard widths) */
 :root{
+  --pt-sticky-left2: 40px; /* runtime computed */
+
   --pt-w-name: 40px;  /* package col */
   --pt-w-limit: 40px; /* limit/purchase col (includes +/- UI) */
 }
@@ -469,8 +471,8 @@ body {
 .pt-table th.limit,
 .pt-table td.limit{
   position: sticky;
-  left: var(--pt-w-name);
-  z-index: 6;
+  left: var(--pt-sticky-left2);
+z-index: 6;
   background: #121826;
 }
 
