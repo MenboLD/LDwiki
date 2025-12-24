@@ -146,3 +146,15 @@ body {
 .pt-table th.res-diamond, .pt-table td.res-diamond { width: 56px; }
 .pt-table th.res-invite, .pt-table td.res-invite { width: 30px; }
 
+
+
+/* Grid lines: add vertical separators */
+.pt-table th,
+.pt-table td {
+  border-right: 1px solid #1f2636;
+}
+.pt-table th:last-child,
+.pt-table td:last-child {
+  border-right: none;
+}
+
