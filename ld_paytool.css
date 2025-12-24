@@ -411,3 +411,15 @@ body {
 .pt-limit.is-zero .pt-count{
   opacity: .7;
 }
+
+/* Phase4v2: separate cards */
+.pt-card--tables{ margin-top: 10px; }
+
+/* Phase4v2: sticky for limit column in summary table as well */
+.pt-table-summary th.limit, .pt-table-summary td.limit{
+  position: sticky;
+  left: 32px;
+  z-index: 3;
+  background: #0b0f16;
+}
+.pt-table-summary thead th.limit{ z-index: 6; }

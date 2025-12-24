@@ -488,7 +488,10 @@ function syncHorizontalScroll(a, b){
 }
 
 window.addEventListener('load', () => {
-  const listX = document.getElementById('tableScroll');
+  const listX = document.getElementById('tableScroll') || document.querySelector('#tableScroll');
+  const sumX  = document.getElementById('summaryScroll') || document.querySelector('#summaryScroll');
+  if(listX && sumX) syncHorizontalScroll(listX, sumX);
+}, { once:true });
   const sumX  = document.getElementById('summaryScroll');
   if(listX && sumX) syncHorizontalScroll(listX, sumX);
 }, { once:true });
