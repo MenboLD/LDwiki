@@ -387,3 +387,27 @@ body {
   border-top: 3px double #2b3750;
 }
 .pt-table-summary .pt-limit button{ display:none; }
+
+/* Phase3v5: summary table stacked under list table (same card) */
+.pt-summary-table-wrap{
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 3px double #2b3750;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.pt-summary-table-wrap .pt-table{
+  min-width: var(--pt-table-minw, 926px);
+}
+
+/* Phase4: limit reached / disabled buttons */
+.pt-limit button:disabled{
+  opacity: .35;
+  filter: grayscale(1);
+}
+.pt-limit.is-cap .pt-count{
+  color: #ffb86b;
+}
+.pt-limit.is-zero .pt-count{
+  opacity: .7;
+}

@@ -208,21 +208,28 @@
     tbody.innerHTML = rows.map(r => {
       const cls0 = (v) => ((Number(v)||0)===0 ? ' zero' : '');
       const key = rowKey(r);
-      const max = (r.purchase_limit === null || r.purchase_limit === undefined || r.purchase_limit === '') ? '' : String(r.purchase_limit);
-      const maxNum = Number(max);
-      const qty = clampInt(cart[key] ?? 0, 0, Number.isFinite(maxNum) && maxNum > 0 ? maxNum : 999);
+      const maxRaw = r.purchase_limit;
+      const max = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
+      const cap = (Number.isFinite(max) && max > 0) ? max : 999;
+
+      const qty = clampInt(cart[key] ?? 0, 0, cap);
       cart[key] = qty;
 
-      const maxDisp = (max === '' ? '∞' : fmtNum(max));
+      const maxDisp = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? '∞' : fmtNum(maxRaw);
+      const minusDis = qty <= 0;
+      const plusDis = qty >= cap;
+
+      const limitCls = `pt-limit ${qty<=0?'is-zero':''} ${qty>=cap?'is-cap':''}`;
+
       return `
       <tr data-key="${key}">
         <td class="name" title="${r.package_name}">${fmtName(r.package_name)}</td>
 
         <td class="limit">
-          <div class="pt-limit">
-            <button class="pt-minus" type="button" aria-label="minus">-</button>
+          <div class="${limitCls}">
+            <button class="pt-minus" type="button" aria-label="minus" ${minusDis?'disabled':''}>-</button>
             <span class="pt-count">${qty}</span>
-            <button class="pt-plus" type="button" aria-label="plus">+</button>
+            <button class="pt-plus" type="button" aria-label="plus" ${plusDis?'disabled':''}>+</button>
             <span class="pt-max">/${maxDisp}</span>
           </div>
         </td>
@@ -291,6 +298,7 @@
       mythic_stone:0, immortal_stone:0, diamond:0, invite:0
     };
 
+    const picked = [];
     for(const r of rows){
       const key = rowKey(r);
       const maxRaw = r.purchase_limit;
@@ -298,6 +306,8 @@
       const cap = (Number.isFinite(max) && max > 0) ? max : 999;
       const qty = clampInt(cart[key] ?? 0, 0, cap);
       if(qty <= 0) continue;
+
+      picked.push({ r, qty });
 
       sumQty += qty;
       sumY += (Number(r.jpy) || 0) * qty;
@@ -311,27 +321,60 @@
     const dpy = sumY > 0 ? (sumDia / sumY) : 0;
     const ratioB = (budgetDiaPerYen > 0 && dpy > 0) ? (dpy / budgetDiaPerYen) : 0;
 
+    const cls0 = (v) => ((Number(v)||0)===0 ? ' zero' : '');
+
+    const totalRow = `
+      <tr>
+        <td class="name">合計</td>
+        <td class="limit">${fmtNum(sumQty)}</td>
+        <td class="jpy">${fmtNum(sumY)}</td>
+
+        <td class="res res-gold${cls0(sumRes.gold)}">${fmtNum(sumRes.gold)}</td>
+        <td class="res res-mine_key${cls0(sumRes.mine_key)}">${fmtNum(sumRes.mine_key)}</td>
+        <td class="res res-churu${cls0(sumRes.churu)}">${fmtNum(sumRes.churu)}</td>
+        <td class="res res-battery${cls0(sumRes.battery)}">${fmtNum(sumRes.battery)}</td>
+        <td class="res res-pet_food${cls0(sumRes.pet_food)}">${fmtNum(sumRes.pet_food)}</td>
+        <td class="res res-mythic_stone${cls0(sumRes.mythic_stone)}">${fmtNum(sumRes.mythic_stone)}</td>
+        <td class="res res-immortal_stone${cls0(sumRes.immortal_stone)}">${fmtNum(sumRes.immortal_stone)}</td>
+        <td class="res res-diamond${cls0(sumRes.diamond)}">${fmtNum(sumRes.diamond)}</td>
+        <td class="res res-invite${cls0(sumRes.invite)}">${fmtNum(sumRes.invite)}</td>
+
+        <td class="calc">${fmtNum(sumDia)}</td>
+        <td class="calc">${(sumY>0)?fmtFloat2(dpy):'-'}</td>
+        <td class="calc">${fmtPct1(ratioB)}</td>
+      </tr>`;
+
+    const detailRows = picked.map(({r, qty}) => {
+      const yen = (Number(r.jpy)||0) * qty;
+      const dia = (Number(r._calc_dia)||0) * qty;
+      const dpy2 = yen > 0 ? (dia / yen) : 0;
+      const ratio2 = (budgetDiaPerYen > 0 && dpy2 > 0) ? (dpy2 / budgetDiaPerYen) : 0;
+      const resMul = (k) => (Number(r[k])||0) * qty;
+
+      return `
+      <tr>
+        <td class="name" title="${r.package_name}">${fmtName(r.package_name)}</td>
+        <td class="limit">${fmtNum(qty)}</td>
+        <td class="jpy">${fmtNum(yen)}</td>
+
+        <td class="res res-gold${cls0(resMul('gold'))}">${fmtNum(resMul('gold'))}</td>
+        <td class="res res-mine_key${cls0(resMul('mine_key'))}">${fmtNum(resMul('mine_key'))}</td>
+        <td class="res res-churu${cls0(resMul('churu'))}">${fmtNum(resMul('churu'))}</td>
+        <td class="res res-battery${cls0(resMul('battery'))}">${fmtNum(resMul('battery'))}</td>
+        <td class="res res-pet_food${cls0(resMul('pet_food'))}">${fmtNum(resMul('pet_food'))}</td>
+        <td class="res res-mythic_stone${cls0(resMul('mythic_stone'))}">${fmtNum(resMul('mythic_stone'))}</td>
+        <td class="res res-immortal_stone${cls0(resMul('immortal_stone'))}">${fmtNum(resMul('immortal_stone'))}</td>
+        <td class="res res-diamond${cls0(resMul('diamond'))}">${fmtNum(resMul('diamond'))}</td>
+        <td class="res res-invite${cls0(resMul('invite'))}">${fmtNum(resMul('invite'))}</td>
+
+        <td class="calc">${fmtNum(dia)}</td>
+        <td class="calc">${(yen>0)?fmtFloat2(dpy2):'-'}</td>
+        <td class="calc">${fmtPct1(ratio2)}</td>
+      </tr>`;
+    }).join('');
+
     if(elSummaryTbody){
-      elSummaryTbody.innerHTML = `
-        <tr>
-          <td class="name">合計</td>
-          <td class="limit">${fmtNum(sumQty)}</td>
-          <td class="jpy">${fmtNum(sumY)}</td>
-
-          <td class="res res-gold">${fmtNum(sumRes.gold)}</td>
-          <td class="res res-mine_key">${fmtNum(sumRes.mine_key)}</td>
-          <td class="res res-churu">${fmtNum(sumRes.churu)}</td>
-          <td class="res res-battery">${fmtNum(sumRes.battery)}</td>
-          <td class="res res-pet_food">${fmtNum(sumRes.pet_food)}</td>
-          <td class="res res-mythic_stone">${fmtNum(sumRes.mythic_stone)}</td>
-          <td class="res res-immortal_stone">${fmtNum(sumRes.immortal_stone)}</td>
-          <td class="res res-diamond">${fmtNum(sumRes.diamond)}</td>
-          <td class="res res-invite">${fmtNum(sumRes.invite)}</td>
-
-          <td class="calc">${fmtNum(sumDia)}</td>
-          <td class="calc">${(sumY>0)?fmtFloat2(dpy):'-'}</td>
-          <td class="calc">${fmtPct1(ratioB)}</td>
-        </tr>`;
+      elSummaryTbody.innerHTML = totalRow + detailRows;
     }
   }
 
@@ -425,3 +468,27 @@
     status.textContent = 'データの取得に失敗しました（Supabase接続/テーブル名を確認）';
   }
 })();
+/* Phase3v6: Horizontal scroll sync between list table and summary table */
+function syncHorizontalScroll(a, b){
+  let syncing = false;
+  const onA = () => {
+    if (syncing) return;
+    syncing = true;
+    b.scrollLeft = a.scrollLeft;
+    syncing = false;
+  };
+  const onB = () => {
+    if (syncing) return;
+    syncing = true;
+    a.scrollLeft = b.scrollLeft;
+    syncing = false;
+  };
+  a.addEventListener('scroll', onA, { passive: true });
+  b.addEventListener('scroll', onB, { passive: true });
+}
+
+window.addEventListener('load', () => {
+  const listX = document.getElementById('tableScroll');
+  const sumX  = document.getElementById('summaryScroll');
+  if(listX && sumX) syncHorizontalScroll(listX, sumX);
+}, { once:true });
