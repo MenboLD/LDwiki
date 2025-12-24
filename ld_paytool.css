@@ -262,7 +262,7 @@ body {
 }
 
 /* calc columns */
-.pt-table th.calc, .pt-table td.calc{ width: 40px; text-align:right; }
+.pt-table th.calc, .pt-table td.calc{ width: 20px; text-align:right; }
 
 
 /* prevent package name wrapping */
@@ -374,3 +374,15 @@ body {
   font-size: 11px;
   opacity: .75;
 }
+
+/* Phase3v3: column width overrides */
+.pt-table th.limit, .pt-table td.limit{ width: 36px; } /* +20px vs previous */
+.pt-table th.res-gold, .pt-table td.res-gold{ width: 28px; } /* +6px */
+
+/* Phase3v3: summary table under double line */
+.pt-summary-table-wrap{
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 3px double #2b3750;
+}
+.pt-table-summary .pt-limit button{ display:none; }

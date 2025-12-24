@@ -10,11 +10,7 @@
   const elSort = document.getElementById('optSort');
   const elKpi = document.getElementById('kpiBaseline');
 
-  const elSumYen = document.getElementById('sumYen');
-  const elSumDia = document.getElementById('sumDia');
-  const elSumDpy = document.getElementById('sumDpy');
-  const elSumRatioB = document.getElementById('sumRatioB');
-  const elSumHint = document.getElementById('sumHint');
+  const elSummaryTbody = document.getElementById('summaryTableBody');
 
   function fmtName(name){
     const s = String(name ?? '');
@@ -288,24 +284,55 @@
 
   function updateSummary(rows, budgetDiaPerYen){
     let sumY = 0;
-    let sumD = 0;
+    let sumDia = 0;
+    let sumQty = 0;
+    const sumRes = {
+      gold:0, mine_key:0, churu:0, battery:0, pet_food:0,
+      mythic_stone:0, immortal_stone:0, diamond:0, invite:0
+    };
+
     for(const r of rows){
       const key = rowKey(r);
-      const max = (r.purchase_limit === null || r.purchase_limit === undefined || r.purchase_limit === '') ? 999 : Number(r.purchase_limit);
-      const qty = clampInt(cart[key] ?? 0, 0, Number.isFinite(max) && max > 0 ? max : 999);
+      const maxRaw = r.purchase_limit;
+      const max = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
+      const cap = (Number.isFinite(max) && max > 0) ? max : 999;
+      const qty = clampInt(cart[key] ?? 0, 0, cap);
       if(qty <= 0) continue;
+
+      sumQty += qty;
       sumY += (Number(r.jpy) || 0) * qty;
-      sumD += (Number(r._calc_dia) || 0) * qty;
+      sumDia += (Number(r._calc_dia) || 0) * qty;
+
+      for(const k of RESOURCE_KEYS){
+        sumRes[k] += (Number(r[k]) || 0) * qty;
+      }
     }
-    const dpy = sumY > 0 ? (sumD / sumY) : 0;
-    const ratioB = budgetDiaPerYen > 0 ? (dpy / budgetDiaPerYen) : 0;
 
-    elSumYen.textContent = fmtNum(sumY);
-    elSumDia.textContent = fmtNum(sumD);
-    elSumDpy.textContent = sumY > 0 ? fmtFloat2(dpy) : '-';
-    elSumRatioB.textContent = sumY > 0 ? fmtPct1(ratioB) : '-';
+    const dpy = sumY > 0 ? (sumDia / sumY) : 0;
+    const ratioB = (budgetDiaPerYen > 0 && dpy > 0) ? (dpy / budgetDiaPerYen) : 0;
 
-    elSumHint.textContent = '購入数はブラウザに保存されます（同一端末/同一ブラウザ）。';
+    if(elSummaryTbody){
+      elSummaryTbody.innerHTML = `
+        <tr>
+          <td class="name">合計</td>
+          <td class="limit">${fmtNum(sumQty)}</td>
+          <td class="jpy">${fmtNum(sumY)}</td>
+
+          <td class="res res-gold">${fmtNum(sumRes.gold)}</td>
+          <td class="res res-mine_key">${fmtNum(sumRes.mine_key)}</td>
+          <td class="res res-churu">${fmtNum(sumRes.churu)}</td>
+          <td class="res res-battery">${fmtNum(sumRes.battery)}</td>
+          <td class="res res-pet_food">${fmtNum(sumRes.pet_food)}</td>
+          <td class="res res-mythic_stone">${fmtNum(sumRes.mythic_stone)}</td>
+          <td class="res res-immortal_stone">${fmtNum(sumRes.immortal_stone)}</td>
+          <td class="res res-diamond">${fmtNum(sumRes.diamond)}</td>
+          <td class="res res-invite">${fmtNum(sumRes.invite)}</td>
+
+          <td class="calc">${fmtNum(sumDia)}</td>
+          <td class="calc">${(sumY>0)?fmtFloat2(dpy):'-'}</td>
+          <td class="calc">${fmtPct1(ratioB)}</td>
+        </tr>`;
+    }
   }
 
   function applyAll(){
