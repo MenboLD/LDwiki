@@ -1,6 +1,12 @@
 (async () => {
   const status = document.getElementById('ptStatus');
   const tbody = document.getElementById('payTableBody');
+  
+  function fmtName(name){
+    const s = String(name ?? '');
+    return s.replaceAll('パッケージ', 'P').replaceAll('スペシャル', 'SP');
+  }
+
 
   try {
     const url = `${window.LD_SUPABASE_URL}/rest/v1/ld_pay_packages?select=*&order=sort_order.asc`;
@@ -17,7 +23,7 @@
 
     tbody.innerHTML = rows.map(r => `
       <tr>
-        <td class="name">${r.package_name}</td>
+        <td class="name">${fmtName(r.package_name)}</td>
         <td class="jpy">${r.jpy}</td>
         <td class="limit">${r.purchase_limit ?? '-'}</td>
         <td class="res">${r.gold}</td>

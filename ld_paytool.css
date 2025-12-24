@@ -52,8 +52,17 @@ body {
 /* Sticky name column only */
 .pt-table th.name,
 .pt-table td.name {
-  width: 120px;           /* smaller (~40% feel on iPhone SE) */
+  width: 70px;           /* smaller (~40% feel on iPhone SE) */
   text-align:left;
+  /* name text: compact, no-wrap */
+  font-size: 10.5px;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: normal;
+  hyphens: none;
+
 }
 
 .pt-table th.name {
