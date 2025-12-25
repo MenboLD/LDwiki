@@ -12,10 +12,7 @@
 
   const elSummaryTbody = document.getElementById('summaryTableBody');
 
-  function fmtName(name){
-    const s = String(name ?? '');
-    return s.replaceAll('パッケージ', 'P').replaceAll('スペシャル', 'SP');
-  }
+  function fmtName(name){ return name ?? ""; }
   const _nf = new Intl.NumberFormat('ja-JP');
   function fmtNum(v){
     if(v === null || v === undefined || v === '') return '0';
@@ -213,7 +210,8 @@
       const cap = (Number.isFinite(max) && max > 0) ? max : 999;
 
       const qty = clampInt(cart[key] ?? 0, 0, cap);
-      cart[key] = qty;
+      
+    totalQty += qty;cart[key] = qty;
 
       const maxDisp = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? '∞' : fmtNum(maxRaw);
 
@@ -338,7 +336,7 @@
 
       return `
       <tr>
-        <td class="name" title="${r.package_name}">${fmtName(r.package_name)}</td>
+        <td class="name pt-namecell" title="${r.package_name}"><span class="pt-nameText">${r.package_name}</span><span class="pt-nameMeta pt-qtyOnly">${fmtNum(qty)}</span></td>
         <td class="jpy">${fmtNum(yen)}</td>
 
         <td class="res res-gold${cls0(resMul('gold'))}">${fmtNum(resMul('gold'))}</td>

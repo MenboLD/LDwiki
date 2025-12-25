@@ -434,9 +434,9 @@ body {
 }
 .pt-namecell{
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 56px;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
 }
 .pt-nameText{
   min-width: 0;
@@ -444,7 +444,7 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.pt-nameMeta{
+.pt-nameMeta{ text-align:center; 
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   opacity: 0.9;
@@ -562,3 +562,5 @@ body {
   width: 120px !important;
   max-width: 120px !important;
 }
+
+.pt-qtyOnly{ text-align:center; }
