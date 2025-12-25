@@ -278,7 +278,7 @@ body {
 }
 
 .pt-table th.calc{
-  font-size: 10px;
+  font-size: 11px;
 }
 
 
@@ -581,7 +581,7 @@ body {
   list-style: none;
   cursor: pointer;
   padding: 7px 10px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: .02em;
   user-select: none;
@@ -684,13 +684,13 @@ body {
 }
 .pt-table tbody tr.pt-at-cap td{
   /* capped: brighten a bit for readability */
-  background: rgba(255, 180, 90, 0.22);
+  background: rgba(215, 110, 255, 0.24);
 }
 .pt-table tbody tr.pt-row-selected td{
   box-shadow: inset 0 0 0 2px rgba(70,220,140,0.70);
 }
 .pt-table tbody tr.pt-row-selected.pt-at-cap td{
-  box-shadow: inset 0 0 0 2px rgba(255,170,80,0.85);
+  box-shadow: inset 0 0 0 2px rgba(215,110,255,0.88);
 }
 
 /* prevent double-tap zoom-ish behaviors on interactive controls */
@@ -722,7 +722,7 @@ body {
   background: #0f2a21; /* opaque variant of qty-highlight (green) */
 }
 .pt-table tbody tr.pt-at-cap td.sticky-col{
-  background: #3a2518; /* opaque variant of cap-highlight (brighter) */
+  background: #2a1738; /* opaque variant of cap-highlight (purple/pink) */
 }
 .pt-table tbody tr.pt-row-selected td.sticky-col{
   /* keep current background; outline already drawn via box-shadow */
