@@ -235,6 +235,25 @@
     });
   }
 
+  function pullRatesFromUI(){
+    if(!elRateEditor) return;
+    // numeric inputs
+    const inputs = elRateEditor.querySelectorAll('input.pt-rate-input[data-key]');
+    inputs.forEach(inp=>{
+      const k = inp.getAttribute('data-key');
+      const v = Number(String(inp.value||'').replace(/,/g,''));
+      if(!k) return;
+      if(Number.isFinite(v)) rateBase[k] = v;
+    });
+    // mine_key select
+    const sel = elRateEditor.querySelector('#optMineKeyRate');
+    if(sel){
+      const v = Number(sel.value);
+      if(Number.isFinite(v)) rateBase.mine_key = v;
+    }
+  }
+
+
 function getEffectiveRates(){
     const r = {...rateBase};
     r.mine_key = Number(elMineKeyRate ? elMineKeyRate.value : (rateBase.mine_key ?? 0));
@@ -565,6 +584,7 @@ function updateRowStates(tableBodyEl, selectedKey){
   }
 
 function applyAll(){
+    pullRatesFromUI();
     const { out, budgetDiaPerYen } = calcAndSort();
     render(out);
     updateSummary(out, budgetDiaPerYen);
@@ -618,7 +638,10 @@ function applyAll(){
     buildRateEditorUI();
 
     // Auto recalcs
-    elMineKeyRate.addEventListener('change', applyAll);
+    if(elRateEditor){
+      elRateEditor.addEventListener('input', ()=>{ pullRatesFromUI(); applyAll(); });
+      elRateEditor.addEventListener('change', ()=>{ pullRatesFromUI(); applyAll(); });
+    }
     elToggles.addEventListener('change', applyAll);
     if(elDoubleToggles) elDoubleToggles.addEventListener('change', applyAll);
     elSort.addEventListener('change', applyAll);
