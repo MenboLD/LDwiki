@@ -267,12 +267,6 @@ body {
 
 
 /* prevent package name wrapping */
-.pt-table td.name{
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .pt-table td.res, .pt-table td.jpy, .pt-table td.limit, .pt-table td.calc{
   white-space: nowrap;
 }
@@ -429,14 +423,11 @@ body {
 .pt-card--tables{ margin-top: 10px; }
 
 /* Phase5: merge purchase UI into name column + popup controls */
-.pt-table td.name{
-  cursor: pointer;
-}
 .pt-namecell{
   display: grid;
-  grid-template-columns: 1fr 56px;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 .pt-nameText{
   min-width: 0;
@@ -444,7 +435,7 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.pt-nameMeta{ text-align:center; 
+.pt-nameMeta{
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   opacity: 0.9;
@@ -551,16 +542,38 @@ body {
 }
 
 /* v5d: keep header 'パッケージ' but prevent it from widening the name column */
-.pt-table thead th.name{
-  width: 120px !important;
-  max-width: 120px !important;
-  white-space: nowrap;
+
+/* === Phase5h: fixed widths are managed by colgroup === */
+.pt-col-name{ width: 88px; }
+.pt-col-jpy{ width: 46px; }
+.pt-col-gold{ width: 42px; }
+.pt-col-mine_key{ width: 26px; }
+.pt-col-churu{ width: 26px; }
+.pt-col-battery{ width: 30px; }
+.pt-col-pet_food{ width: 30px; }
+.pt-col-mythic_stone{ width: 30px; }
+.pt-col-immortal_stone{ width: 30px; }
+.pt-col-diamond{ width: 46px; }
+.pt-col-invite{ width: 34px; }
+.pt-col-sumdia{ width: 56px; }
+.pt-col-dia_per_yen{ width: 44px; }
+.pt-col-ratio_b{ width: 48px; }
+
+/* package cell: name + qty area (qty centered) */
+.pt-namecell{
+  display: grid;
+  grid-template-columns: 1fr 56px;
+  align-items: center;
+  gap: 4px;
+}
+.pt-nameText{
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.pt-table td.name{
-  width: 120px !important;
-  max-width: 120px !important;
+.pt-nameMeta{
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  opacity: .92;
 }
-
-.pt-qtyOnly{ text-align:center; }

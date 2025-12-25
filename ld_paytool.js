@@ -210,8 +210,7 @@
       const cap = (Number.isFinite(max) && max > 0) ? max : 999;
 
       const qty = clampInt(cart[key] ?? 0, 0, cap);
-      
-    totalQty += qty;cart[key] = qty;
+      cart[key] = qty;
 
       const maxDisp = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? '∞' : fmtNum(maxRaw);
 
@@ -336,7 +335,7 @@
 
       return `
       <tr>
-        <td class="name pt-namecell" title="${r.package_name}"><span class="pt-nameText">${r.package_name}</span><span class="pt-nameMeta pt-qtyOnly">${fmtNum(qty)}</span></td>
+        <td class="name pt-namecell" title="${r.package_name}"><span class="pt-nameText">${fmtName(r.package_name)}</span><span class="pt-nameMeta">${fmtNum(qty)}</span></td>
         <td class="jpy">${fmtNum(yen)}</td>
 
         <td class="res res-gold${cls0(resMul('gold'))}">${fmtNum(resMul('gold'))}</td>
