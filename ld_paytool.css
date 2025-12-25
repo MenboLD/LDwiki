@@ -817,3 +817,32 @@ body {
 
 .pt-note{ font-size:11px; color:var(--pt-muted,#b7c2d1); line-height:1.35; margin-top:8px; }
 .pt-note div{ margin:4px 0; }
+
+
+/* Phase6t: sort bar moved under selected info */
+.pt-sortbar{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:8px;
+  margin: 6px 0 10px;
+}
+.pt-sortbar .pt-field{
+  margin:0;
+}
+
+/* Phase6t: rate reset button */
+.pt-rate-actions{
+  display:flex;
+  justify-content:flex-end;
+  margin: 4px 0 8px;
+}
+.pt-btn-ghost{
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.92);
+}
+.pt-btn-ghost:active{ transform: translateY(1px); }
+
+/* Phase6t: center table calc headers */
+.pt-table thead th.calc{ text-align:center; }

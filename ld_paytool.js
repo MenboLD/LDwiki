@@ -8,13 +8,13 @@
   const elBudgetYen = document.getElementById('optBudgetYen');
   const elBudgetQuick = document.getElementById('btnBudgetQuick');
   const elRateEditor = document.getElementById('rateEditor');
+  const elRateReset = document.getElementById('btnRateReset');
   const elBtnResAll = document.getElementById('btnResAll');
   const elBtnDoubleAll = document.getElementById('btnDoubleAll');
     const elToggles = document.getElementById('resourceToggles');
   const elDoubleToggles = document.getElementById('doubleToggles');
   const elSort = document.getElementById('optSort');
-  const elKpi = document.getElementById('kpiBaseline');
-
+  const elKpi = null;
   const elSummaryTbody = document.getElementById('summaryTableBody');
 
   function fmtName(name){ return name ?? ""; }
@@ -68,6 +68,7 @@
 
   let packages = [];
   let rateBase = {};
+  let initialRateBase = null;
   let toggles = {};
   let baselinePacks = [];
   let doublePacks = [];
@@ -112,12 +113,6 @@
         <img src="${ICONS[k]}" alt="${k}">
       `;
       elToggles.appendChild(wrap);
-      if(k==='invite'){
-        const note = document.createElement('div');
-        note.className = 'pt-note pt-purpose-note';
-        note.textContent = "・ダイヤを使用することで交換してでも欲しいリソースがある場合、そのリソースとダイヤ、招待状のみにチェックを残すことで\"💎直買い比較\"がより目的にあった数値に変化します。";
-        elToggles.appendChild(note);
-      }
     }
     elToggles.addEventListener('change', (e)=>{
       const t = e.target;
@@ -366,8 +361,7 @@ function getEffectiveRates(){
       .filter(n => Number.isFinite(n) && n > 0);
     const uniq = Array.from(new Set(tiers)).sort((a,b)=>a-b);
     const enabled = uniq.filter(p => doubleAvailability[p] !== false).length;
-    elKpi.textContent = `基準(予算${budget}) Dia/¥=${budgetDiaPerYen ? (Math.round(budgetDiaPerYen*1000)/1000).toFixed(3) : '-'} / 初回2倍: ${enabled}/${uniq.length}使用可`;
-
+    // KPI baseline line removed per spec
     const rows = packages.map(p => {
       const yen = Number(p.jpy) || 0;
       const dia = calcPackageDiaValue(p, rates);
@@ -643,10 +637,23 @@ function applyAll(){
     buildDoubleAvailabilityUI();
     buildRateEditorUI();
 
+    // snapshot server/default rates for reset
+    if(!initialRateBase) initialRateBase = JSON.parse(JSON.stringify(rateBase));
+
+
     // Auto recalcs
     if(elRateEditor){
       elRateEditor.addEventListener('input', ()=>{ pullRatesFromUI(); applyAll(); });
       elRateEditor.addEventListener('change', ()=>{ pullRatesFromUI(); applyAll(); });
+    }
+    if(elRateReset){
+      elRateReset.addEventListener('click', ()=>{
+        if(!initialRateBase) return;
+        rateBase = JSON.parse(JSON.stringify(initialRateBase));
+        buildRateEditorUI();
+        pullRatesFromUI();
+        applyAll();
+      });
     }
     elToggles.addEventListener('change', applyAll);
     if(elDoubleToggles) elDoubleToggles.addEventListener('change', applyAll);
