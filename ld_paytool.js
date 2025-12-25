@@ -418,6 +418,8 @@ function applyAll(){
     const { out, budgetDiaPerYen } = calcAndSort();
     render(out);
     updateSummary(out, budgetDiaPerYen);
+    // 量に応じた行背景色/上限到達色/選択枠などの状態は、描画のたび必ず反映する
+    applyRowClasses();
     saveCart();
     status.textContent = `表示中：${out.length}件（計算反映）`;
   }
@@ -730,7 +732,23 @@ function syncHorizontalScroll(a, b){
 }
 
 window.addEventListener('load', () => {
-  const listX = document.getElementById('tableScroll') || document.querySelector('#tableScroll');
+  const listX = document.querySelector('.pt-table-wrap') || document.getElementById('tableScroll') || document.querySelector('#tableScroll');
   const sumX  = document.getElementById('summaryScroll') || document.querySelector('#summaryScroll');
+
+  // 疑似 sticky: scrollLeft を CSS 変数へ
+  const setVar = (el) => {
+    if(!el) return;
+    el.style.setProperty('--scrollLeft', (el.scrollLeft || 0) + 'px');
+  };
+  if(listX){
+    setVar(listX);
+    listX.addEventListener('scroll', () => setVar(listX), { passive:true });
+  }
+  if(sumX){
+    setVar(sumX);
+    sumX.addEventListener('scroll', () => setVar(sumX), { passive:true });
+  }
+
+  // 横スクロール同期（任意）。両方存在する場合のみ有効化。
   if(listX && sumX) syncHorizontalScroll(listX, sumX);
 }, { once:true });

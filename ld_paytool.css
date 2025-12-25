@@ -57,6 +57,13 @@ body {
   z-index: 5;
 }
 
+/* iOS Safari 対策: 横スクロールで 1列目の sticky が途中から崩れることがあるため、
+   scrollLeft を CSS 変数に流し込み、セル内ラッパーを scrollLeft 分だけ右へ戻す方式にする */
+.pt-table-wrap,
+.pt-summary-table-wrap {
+  --scrollLeft: 0px;
+}
+
 /* Sticky name column only */
 .pt-table th.name,
 .pt-table td.name {
@@ -71,28 +78,33 @@ body {
   word-break: normal;
   hyphens: none;
 
+  /* sticky はセルではなく内側ラッパーで疑似対応 */
+  padding: 0;
+  overflow: visible;
 }
 
-.pt-table th.name {
-  left: 0;
-  z-index: 6;
-}
+.pt-table th.name { z-index: 6; }
+.pt-table td.name { z-index: 4; }
 
-.pt-table td.name {
-  position: sticky;
-  left: 0;
+/* パッケージ列の見た目は中のラッパーに持たせる */
+.pt-sticky1 {
+  position: relative;
+  transform: translateX(var(--scrollLeft));
   background:#121826;
-  z-index: 4;
+  height: 100%;
+  padding: 6px 10px 6px 8px;
+  box-sizing: border-box;
+  border-right: 1px solid rgba(255,255,255,0.07);
+}
 
-  /* name styling */
+.pt-sticky1 .pt-pkg-name{
   font-size: 10.5px;
   line-height: 1.15;
-  white-space: normal;     /* wrap */
+  white-space: normal;
   overflow: visible;
   text-overflow: clip;
   word-break: break-word;
   hyphens: auto;
-  padding-right: 10px;
 }
 
 /* JPY column (NOT sticky) */
@@ -725,18 +737,19 @@ body {
 }
 
 
-/* --- Sticky first column stabilization (iOS Safari) ---
-   Use an inner wrapper (div) for sticky instead of table-cell itself. */
+/* --- 1列目(パッケージ) 疑似固定 ---
+   scrollLeft を JS から CSS 変数に流し込み、セル内ラッパーを右へ戻す。
+   これで iOS Safari の sticky 破綻を回避する。 */
 .pt-table th.name,
 .pt-table td.name{
   position: relative;
   padding: 0;
   background: transparent;
+  overflow: visible;
 }
 .pt-table .pt-sticky1{
-  position: -webkit-sticky;
-  position: sticky;
-  left: 0;
+  position: relative;
+  transform: translateX(var(--scrollLeft, 0px));
   z-index: 8;
   display: block;
   width: var(--w-pkg);
@@ -747,6 +760,7 @@ body {
   background: rgba(12,16,24,.94);
   border-right: 1px solid rgba(255,255,255,.06);
   background-clip: padding-box;
+  will-change: transform;
 }
 
 /* Gridlines alignment: draw horizontal rules at row level so sticky/non-sticky don't drift */
@@ -771,49 +785,11 @@ body {
               inset 2px 0 0 rgba(255,170,90,.65);
 }
 
+/* 購入数に応じた行背景 */
+.pt-row-hasqty td{ background: rgba(130, 80, 200, .18); }
+.pt-row-full  td{ background: rgba(250, 150, 80, .22); }
 
-/* --- Sticky first column stabilization (iOS Safari) ---
-   Use an inner wrapper (div) for sticky instead of table-cell itself. */
-.pt-table th.name,
-.pt-table td.name{
-  position: relative;
-  padding: 0;
-  background: transparent;
-}
-.pt-table .pt-sticky1{
-  position: -webkit-sticky;
-  position: sticky;
-  left: 0;
-  z-index: 8;
-  display: block;
-  width: var(--w-pkg);
-  min-width: var(--w-pkg);
-  max-width: var(--w-pkg);
-  padding: var(--cell-pad-y) var(--cell-pad-x);
-  padding-right: var(--cell-pad-r);
-  background: rgba(12,16,24,.94);
-  border-right: 1px solid rgba(255,255,255,.06);
-  background-clip: padding-box;
-}
+/* 疑似 sticky の背景も行色に追従 */
+.pt-row-hasqty td.name .pt-sticky1{ background: rgba(130, 80, 200, .18); }
+.pt-row-full  td.name .pt-sticky1{ background: rgba(250, 150, 80, .22); }
 
-/* Gridlines alignment: draw horizontal rules at row level so sticky/non-sticky don't drift */
-.pt-table tbody tr{ box-shadow: inset 0 1px 0 rgba(255,255,255,.06); }
-.pt-table tbody tr > td{ border-top: none; }
-
-/* Selection outline: mostly top/bottom, plus left edge (pkg) and right edge (last col) */
-.pt-row-selected td{
-  box-shadow: inset 0 2px 0 rgba(255,170,90,.65),
-              inset 0 -2px 0 rgba(255,170,90,.65);
-}
-.pt-row-selected td:last-child{
-  box-shadow: inset 0 2px 0 rgba(255,170,90,.65),
-              inset 0 -2px 0 rgba(255,170,90,.65),
-              inset -2px 0 0 rgba(255,170,90,.65);
-}
-/* pkg column uses wrapper */
-.pt-row-selected td.name{ box-shadow:none; }
-.pt-row-selected td.name .pt-sticky1{
-  box-shadow: inset 0 2px 0 rgba(255,170,90,.65),
-              inset 0 -2px 0 rgba(255,170,90,.65),
-              inset 2px 0 0 rgba(255,170,90,.65);
-}
