@@ -112,6 +112,12 @@
         <img src="${ICONS[k]}" alt="${k}">
       `;
       elToggles.appendChild(wrap);
+      if(k==='invite'){
+        const note = document.createElement('div');
+        note.className = 'pt-note pt-purpose-note';
+        note.textContent = "・ダイヤを使用することで交換してでも欲しいリソースがある場合、そのリソースとダイヤ、招待状のみにチェックを残すことで\"💎直買い比較\"がより目的にあった数値に変化します。";
+        elToggles.appendChild(note);
+      }
     }
     elToggles.addEventListener('change', (e)=>{
       const t = e.target;
