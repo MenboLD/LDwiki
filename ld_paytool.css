@@ -35,7 +35,7 @@ body {
   border-spacing: 0;
   width:100%;
   table-layout: fixed;
-  min-width: 860px; /* allow horizontal scroll for resource columns */
+  min-width: 940px; /* allow horizontal scroll for resource columns */
 }
 
 .pt-table th,
@@ -57,47 +57,41 @@ body {
   z-index: 5;
 }
 
-/* iOS Safari 対策: 横スクロールで 1列目の sticky が途中から崩れることがあるため、
-   scrollLeft を CSS 変数に流し込み、セル内ラッパーを scrollLeft 分だけ右へ戻す方式にする */
-.pt-table-wrap,
-.pt-summary-table-wrap {
-  --scrollLeft: 0px;
+/* Sticky columns (パッケージ名 + 購入数) */
+:root{
+  --pt-col-name: 152px;
+  --pt-col-count: 86px;
 }
+.pt-col-name{ width: var(--pt-col-name) !important; }
+.pt-col-count{ width: var(--pt-col-count) !important; }
+.pt-col-jpy{ width: 76px !important; }
 
-/* Sticky name column only */
 .pt-table th.name,
-.pt-table td.name {
-  width: 120px;
-  padding: 0;
-  overflow: hidden; /* prevent bleed-through under sticky */
-  position: relative;
-  background: #0c1018; /* solid layer for Safari */
-  z-index: 8;
+.pt-table td.name{
+  text-align: left;
+}
+.pt-table th.count,
+.pt-table td.count{
+  text-align: left;
 }
 
-.pt-table th.name { z-index: 9; background: #0c1018; }
-.pt-table td.name { z-index: 4; }
-
-/* パッケージ列の見た目は中のラッパーに持たせる */
-.pt-sticky1 {
-  position: relative;
-  transform: translateX(var(--scrollLeft));
-  background:#121826;
-  height: 100%;
-  padding: 6px 10px 6px 8px;
-  box-sizing: border-box;
-  border-right: 1px solid rgba(255,255,255,0.07);
+.pt-table th.sticky-col,
+.pt-table td.sticky-col{
+  position: sticky;
+  background: #0c1018; /* must be opaque to prevent bleed-through */
+  background-clip: padding-box;
+  z-index: 20;
 }
+.pt-table .sticky-col1{ left: 0; z-index: 21; }
+.pt-table .sticky-col2{ left: var(--pt-col-name); z-index: 22; }
 
-.pt-sticky1 .pt-pkg-name{
-  font-size: 10.5px;
-  line-height: 1.15;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  word-break: break-word;
-  hyphens: auto;
-}
+/* Header row is above body, and top-left intersections are highest */
+.pt-table thead th{ z-index: 50; }
+.pt-table thead th.sticky-col{ background:#121826; z-index: 60; }
+.pt-table thead th.sticky-col1{ z-index: 70; }
+.pt-table thead th.sticky-col2{ z-index: 71; }
+
+
 
 /* JPY column (NOT sticky) */
 .pt-table th.jpy,
@@ -427,25 +421,17 @@ body {
 .pt-card--tables{ margin-top: 10px; }
 
 /* Phase5: merge purchase UI into name column + popup controls */
-.pt-namecell{
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 2px;
-}
+.pt-namecell{ display:block; }
 .pt-nameText{
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.pt-nameMeta{
+.pt-countText{
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  opacity: 0.9;
-
-  width: 38px;
-  text-align: right;
+  opacity: 0.95;
 }
 
 /* Popup */
@@ -548,8 +534,8 @@ body {
 /* v5d: keep header 'パッケージ' but prevent it from widening the name column */
 
 /* === Phase5h: fixed widths are managed by colgroup === */
-.pt-col-name{ width: 88px; }
-.pt-col-jpy{ width: 46px; }
+.pt-col-name{ width: var(--pt-col-name); }
+.pt-col-jpy{ width: 76px; }
 .pt-col-gold{ width: 42px; }
 .pt-col-mine_key{ width: 26px; }
 .pt-col-churu{ width: 26px; }
@@ -739,29 +725,6 @@ body {
   background: transparent;
   overflow: visible;
 }
-.pt-table .pt-sticky1{
-  position: relative;
-  transform: translateX(var(--scrollLeft, 0px));
-  z-index: 8;
-  display: block;
-  width: var(--w-pkg);
-  min-width: var(--w-pkg);
-  max-width: var(--w-pkg);
-  padding: var(--cell-pad-y) var(--cell-pad-x);
-  padding-right: var(--cell-pad-r);
-  background: rgba(12,16,24,.94);
-  border-right: 1px solid rgba(255,255,255,.06);
-  background-clip: padding-box;
-  will-change: transform;
-}
-
-/* row state colors must also apply to the pseudo-sticky wrapper (otherwise name column looks "unchanged") */
-.pt-table tbody tr.pt-has-qty td.name .pt-sticky1{
-  background: rgba(110, 160, 255, 0.14);
-}
-.pt-table tbody tr.pt-at-cap td.name .pt-sticky1{
-  background: rgba(255, 170, 80, 0.20);
-}
 
 /* Gridlines alignment: draw horizontal rules at row level so sticky/non-sticky don't drift */
 .pt-table tbody tr{ box-shadow: inset 0 1px 0 rgba(255,255,255,.06); }
@@ -779,17 +742,8 @@ body {
 }
 /* pkg column uses wrapper */
 .pt-row-selected td.name{ box-shadow:none; }
-.pt-row-selected td.name .pt-sticky1{
-  box-shadow: inset 0 2px 0 rgba(255,170,90,.65),
-              inset 0 -2px 0 rgba(255,170,90,.65),
-              inset 2px 0 0 rgba(255,170,90,.65);
-}
 
 /* 購入数に応じた行背景 */
 .pt-row-hasqty td{ background: rgba(130, 80, 200, .18); }
 .pt-row-full  td{ background: rgba(250, 150, 80, .22); }
-
-/* 疑似 sticky の背景も行色に追従 */
-.pt-row-hasqty td.name .pt-sticky1{ background: rgba(130, 80, 200, .18); }
-.pt-row-full  td.name .pt-sticky1{ background: rgba(250, 150, 80, .22); }
 

@@ -6,11 +6,11 @@
   <title>課金検討ツール | ラッキー傭兵団 攻略 wiki</title>
 
   <link rel="stylesheet" href="common_header.css">
-  <link rel="stylesheet" href="ld_paytool.css?v=20251225p6b">
+  <link rel="stylesheet" href="ld_paytool.css?v=20251225p6c">
 
   <script src="supabase_config.js"></script>
   <script defer src="common_header.js"></script>
-  <script defer src="ld_paytool.js?v=20251225p6b"></script>
+  <script defer src="ld_paytool.js?v=20251225p6c"></script>
 
 <!-- Paytool page-local: common header username width fix (override after common_header.css) -->
 <style>
@@ -129,6 +129,7 @@
 
 <colgroup>
   <col class="pt-col-name">
+  <col class="pt-col-count">
   <col class="pt-col-jpy">
   <col class="pt-col-gold">
   <col class="pt-col-mine_key">
@@ -146,8 +147,9 @@
 
           <thead>
             <tr>
-              <th class="sticky name"><div class="pt-sticky1">パッケージ</div></th>
-              <th class="jpy">JPY</th>
+              <th class="name sticky-col sticky-col1" scope="col">パッケージ</th>
+              <th class="count sticky-col sticky-col2" scope="col">購入数</th>
+              <th class="jpy" scope="col">JPY</th>
               <th class="res res-gold"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_01_gold_20x20px.png" alt="ゴールド"></th>
               <th class="res res-mine_key"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_02_key_20x20px.png" alt="鉱山の鍵"></th>
               <th class="res res-churu"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_03_chur_20x20px.png" alt="チュール"></th>
@@ -171,6 +173,7 @@
 
 <colgroup>
   <col class="pt-col-name">
+  <col class="pt-col-count">
   <col class="pt-col-jpy">
   <col class="pt-col-gold">
   <col class="pt-col-mine_key">
@@ -188,7 +191,8 @@
 
         <thead>
           <tr>
-            <th class="name" scope="col"><div class="pt-sticky1">パッケージ</div></th>
+            <th class="name sticky-col sticky-col1" scope="col">パッケージ</th>
+            <th class="count sticky-col sticky-col2" scope="col">購入数</th>
             <th class="jpy" scope="col">JPY</th>
 
             <th class="res res-gold" scope="col"><img class="pt-ico" alt="gold" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_01_gold_20x20px.png"></th>
