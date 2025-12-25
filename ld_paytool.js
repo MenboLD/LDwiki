@@ -265,7 +265,7 @@ function getEffectiveRates(){
       return `
       <tr data-key="${key}">
         <td class="name sticky-col sticky-col1" title="${r.package_name}"><span class="pt-nameText">${fmtName(r.package_name)}</span></td>
-        <td class="count sticky-col sticky-col2"><span class="pt-countText">：${qty}/${maxDisp}</span></td>
+        <td class="count sticky-col sticky-col2"><span class="pt-countText">${qty}/${maxDisp}</span></td>
         <td class="jpy">${fmtNum(r.jpy)}</td>
 
         <td class="res res-gold${cls0(r.gold)}">${fmtNum(r.gold)}</td>
@@ -446,7 +446,7 @@ const mode = elSort.value;
     // prefer main selection, fallback to summary selection
     if(selectedKeyMain){
       const row = (lastRowsMain || []).find(r => rowKey(r) === selectedKeyMain);
-      const qty = Number(qtyByKey[selectedKeyMain] || 0);
+      const qty = Number(cart[selectedKeyMain] || 0);
       if(row && qty > 0){
         const yen = (Number(row.jpy)||0) * qty;
         const limit = (row.purchase_limit ?? '-');
@@ -523,7 +523,7 @@ function updateRowStates(tableBodyEl, selectedKey){
       const maxNum = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
       const cap = (Number.isFinite(maxNum) && maxNum > 0) ? maxNum : 999;
       tr.classList.toggle('pt-has-qty', qty > 0);
-      tr.classList.toggle('pt-at-cap', qty > 0 && qty >= cap);
+      tr.classList.toggle('pt-at-cap', qty > 0 && popTempQty >= popCap);
       tr.classList.toggle('pt-row-selected', !!selectedKey && key === selectedKey);
     }
     updateSelectedInfo();
@@ -697,20 +697,27 @@ function applyAll(){
     const popup = document.getElementById('ptPkgPopup');
     const popTitle = document.getElementById('ptPopupTitle');
     const popClose = document.getElementById('ptPopupClose');
+    const popClear = document.getElementById('ptPopupClear');
     const popMinus = document.getElementById('ptPopupMinus');
     const popPlus  = document.getElementById('ptPopupPlus');
     const popMaxBtn = document.getElementById('ptPopupMaxBtn');
     const popQty   = document.getElementById('ptPopupQty');
     const popMax   = document.getElementById('ptPopupMax');
     const popSum   = document.getElementById('ptPopupSum');
+    const popOk    = document.getElementById('ptPopupOk');
 
     let popKey = null;
+    let popTempQty = 0;
+    let popCap = 0;
+    let popDirty = false;
+
 
     function closePopup(){
       if(!overlay || !popup) return;
       overlay.hidden = true;
       popup.hidden = true;
       popKey = null;
+      popDirty = false;
     }
 
     function openPopupFor(key, clientY){
@@ -722,26 +729,33 @@ function applyAll(){
       const max = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
       const cap = (Number.isFinite(max) && max > 0) ? max : 999;
 
-      const qty = clampInt(cart[key] ?? 0, 0, cap);
+      popCap = cap;
+      popTempQty = clampInt(cart[key] ?? 0, 0, cap);
+      popDirty = false;
       const maxDisp = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? '∞' : fmtNum(maxRaw);
 
       popTitle.textContent = row.package_name ?? '';
-      popQty.textContent = String(qty);
+      popQty.textContent = String(popTempQty);
       popMax.textContent = String(maxDisp);
-      popSum.textContent = fmtNum((Number(row.jpy)||0) * qty);
+      popSum.textContent = fmtNum((Number(row.jpy)||0) * popTempQty);
 
-      popMinus.disabled = qty <= 0;
-      popPlus.disabled  = qty >= cap;
+      popMinus.disabled = popTempQty <= 0;
+      popPlus.disabled  = popTempQty >= popCap;
+      if(popClear){
+        const showClear = popTempQty >= 2;
+        popClear.hidden = !showClear;
+        popMinus.classList.toggle('pt-popup-btn--solo', !showClear);
+      }
       if(popMaxBtn){
-        const showMax = (cap - qty) >= 2;
+        const showMax = (popCap - popTempQty) >= 2;
         popMaxBtn.hidden = !showMax;
-        popMaxBtn.disabled = qty >= cap;
+        popMaxBtn.disabled = popTempQty >= popCap;
         popPlus.classList.toggle('pt-popup-btn--solo', !showMax);
       }
       if(popMaxBtn){
-        const showMax = (cap - qty) >= 2;
+        const showMax = (popCap - popTempQty) >= 2;
         popMaxBtn.hidden = !showMax;
-        popMaxBtn.disabled = qty >= cap;
+        popMaxBtn.disabled = popTempQty >= popCap;
         // layout: if no MAX, plus spans both columns
         popPlus.classList.toggle('pt-popup-btn--solo', !showMax);
       }
@@ -764,20 +778,20 @@ function applyAll(){
       const max = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
       const cap = (Number.isFinite(max) && max > 0) ? max : 999;
       const qty = clampInt(cart[popKey] ?? 0, 0, cap);
-      popQty.textContent = String(qty);
-      popSum.textContent = fmtNum((Number(row.jpy)||0) * qty);
-      popMinus.disabled = qty <= 0;
-      popPlus.disabled  = qty >= cap;
+      popQty.textContent = String(popTempQty);
+      popSum.textContent = fmtNum((Number(row.jpy)||0) * popTempQty);
+      popMinus.disabled = popTempQty <= 0;
+      popPlus.disabled  = popTempQty >= popCap;
       if(popMaxBtn){
-        const showMax = (cap - qty) >= 2;
+        const showMax = (popCap - popTempQty) >= 2;
         popMaxBtn.hidden = !showMax;
-        popMaxBtn.disabled = qty >= cap;
+        popMaxBtn.disabled = popTempQty >= popCap;
         popPlus.classList.toggle('pt-popup-btn--solo', !showMax);
       }
       if(popMaxBtn){
-        const showMax = (cap - qty) >= 2;
+        const showMax = (popCap - popTempQty) >= 2;
         popMaxBtn.hidden = !showMax;
-        popMaxBtn.disabled = qty >= cap;
+        popMaxBtn.disabled = popTempQty >= popCap;
         // layout: if no MAX, plus spans both columns
         popPlus.classList.toggle('pt-popup-btn--solo', !showMax);
       }
@@ -788,18 +802,37 @@ function applyAll(){
       document.addEventListener('dblclick', (e)=>{ e.preventDefault(); }, {passive:false}); // prevent double-tap zoom
 document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closePopup(); });
 
-    if(popMinus) popMinus.addEventListener('click', ()=>{
+    function setPopupQty(next){
+  if(popKey === null) return;
+  popTempQty = clampInt(next, 0, popCap || 999);
+  popDirty = true;
+  updatePopup();
+}
+if(popMinus) popMinus.addEventListener('click', ()=>{
       if(!popKey) return;
-      bumpQty(popKey, -1);
-      applyAll();
-      updatePopup();
+      setPopupQty(popTempQty - 1);
     });
     if(popPlus) popPlus.addEventListener('click', ()=>{
       if(!popKey) return;
-      bumpQty(popKey, +1);
-      applyAll();
-      updatePopup();
+      setPopupQty(popTempQty + 1);
     });
+
+if(popMaxBtn) popMaxBtn.addEventListener('click', ()=>{
+  if(popKey === null) return;
+  setPopupQty(popCap);
+});
+if(popClear) popClear.addEventListener('click', ()=>{
+  if(popKey === null) return;
+  setPopupQty(0);
+});
+if(popOk) popOk.addEventListener('click', ()=>{
+  if(popKey === null) return;
+  const committed = clampInt(popTempQty, 0, popCap || 999);
+  cart[popKey] = committed;
+  saveCart();
+  applyAll();
+  closePopup();
+});
 
     
     // Row selection + popup rule:
