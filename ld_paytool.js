@@ -72,6 +72,10 @@
   let doubleAvailability = {}; // price_yen -> bool
   let cart = {}; // key -> qty
 
+  // Row selection state (must be function-scope; do NOT declare inside try{} blocks)
+  let selectedKeyMain = null;
+  let selectedKeySummary = null;
+
   const CART_LS_KEY = "ld_paytool_cart_v1";
 
   function rowKey(p){
@@ -367,15 +371,13 @@ function getEffectiveRates(){
     const detailRows = picked.map(({r, qty}) => {
       const yen = (Number(r.jpy)||0) * qty;
       const dia = (Number(r._calc_dia)||0) * qty;
-            const maxRaw = r.purchase_limit;
-      const maxDisp = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? '∞' : fmtNum(maxRaw);
-const dpy2 = yen > 0 ? (dia / yen) : 0;
+      const dpy2 = yen > 0 ? (dia / yen) : 0;
       const ratio2 = (budgetDiaPerYen > 0 && dpy2 > 0) ? (dpy2 / budgetDiaPerYen) : 0;
       const resMul = (k) => (Number(r[k])||0) * qty;
 
       return `
       <tr data-key="${rowKey(r)}">
-        <td class="name pt-namecell" title="${r.package_name}"><div class="pt-sticky1"><span class="pt-nameText">${fmtName(r.package_name)}</span><span class="pt-nameMeta">${fmtNum(qty)}/${maxDisp}</span></div></td>
+        <td class="name pt-namecell" title="${r.package_name}"><div class="pt-sticky1"><span class="pt-nameText">${fmtName(r.package_name)}</span><span class="pt-nameMeta">${fmtNum(qty)}</span></div></td>
         <td class="jpy">${fmtNum(yen)}</td>
 
         <td class="res res-gold${cls0(resMul('gold'))}">${fmtNum(resMul('gold'))}</td>
@@ -416,26 +418,30 @@ const dpy2 = yen > 0 ? (dia / yen) : 0;
     }
   }
 
+
+  function isKeyInTable(tableBodyEl, key){
+    if(!tableBodyEl || !key) return false;
+    for(const tr of tableBodyEl.querySelectorAll('tr[data-key]')){
+      if((tr.getAttribute('data-key') || '') === key) return true;
+    }
+    return false;
+  }
+
+  function applyRowClasses(){
+    // If a selected row disappeared (e.g. summary rows removed when qty becomes 0), clear safely
+    if(selectedKeyMain && !isKeyInTable(tbody, selectedKeyMain)) selectedKeyMain = null;
+    if(selectedKeySummary && !isKeyInTable(elSummaryTbody, selectedKeySummary)) selectedKeySummary = null;
+
+    updateRowStates(tbody, selectedKeyMain);
+    updateRowStates(elSummaryTbody, selectedKeySummary);
+  }
+
 function applyAll(){
     const { out, budgetDiaPerYen } = calcAndSort();
     render(out);
     updateSummary(out, budgetDiaPerYen);
-
-    // 購入数0化で合計表から行が消えるケースに備えて整合を取る
-    if(selectedKeySummary && (clampInt(cart[selectedKeySummary] ?? 0, 0, 999999) <= 0)){
-      selectedKeySummary = null;
-    }
-
-    // 行状態（背景/上限/選択枠）は、必ず描画直後に即時反映する
-    updateRowStates(tbody, selectedKeyMain);
-    updateRowStates(elSummaryTbody, selectedKeySummary);
-
-    // 合計表由来のポップアップで 0 化された場合、破綻回避のため閉じる
-    if(popSource === 'summary' && popKey){
-      const q = clampInt(cart[popKey] ?? 0, 0, 999999);
-      if(q <= 0) closePopup();
-    }
-
+    // 量に応じた行背景色/上限到達色/選択枠などの状態は、描画のたび必ず反映する
+    applyRowClasses();
     saveCart();
     status.textContent = `表示中：${out.length}件（計算反映）`;
   }
@@ -564,22 +570,15 @@ function applyAll(){
     });
 
     // purchase popup handlers (open only from 1st column)
-    let lastTap = {x:0,y:0,moved:false, source:'main'};
-
-    // スクロール中の誤タップ判定（pointermoveが一定以上ズレたら click 無視）
-    const attachTapTracker = (el, source) => {
-      if(!el) return;
-      el.addEventListener('pointerdown', (e)=>{
-        lastTap = {x:e.clientX,y:e.clientY,moved:false, source};
-      }, {passive:true});
-      el.addEventListener('pointermove', (e)=>{
-        if(Math.abs(e.clientX-lastTap.x)+Math.abs(e.clientY-lastTap.y) > 6){
-          lastTap.moved = true;
-        }
-      }, {passive:true});
-    };
-    attachTapTracker(tbody, 'main');
-    attachTapTracker(elSummaryTbody, 'summary');
+    let lastTap = {x:0,y:0,moved:false};
+    tbody.addEventListener('pointerdown', (e)=>{
+      lastTap = {x:e.clientX,y:e.clientY,moved:false};
+    }, {passive:true});
+    tbody.addEventListener('pointermove', (e)=>{
+      if(Math.abs(e.clientX-lastTap.x)+Math.abs(e.clientY-lastTap.y) > 6){
+        lastTap.moved = true;
+      }
+    }, {passive:true});
 
     const overlay = document.getElementById('ptPopupOverlay');
     const popup = document.getElementById('ptPkgPopup');
@@ -593,9 +592,6 @@ function applyAll(){
     const popSum   = document.getElementById('ptPopupSum');
 
     let popKey = null;
-    let popSource = 'main';
-    let selectedKeyMain = null;
-    let selectedKeySummary = null;
 
     function closePopup(){
       if(!overlay || !popup) return;
@@ -604,12 +600,11 @@ function applyAll(){
       popKey = null;
     }
 
-    function openPopupFor(key, clientY, source){
+    function openPopupFor(key, clientY){
       const row = packages.find(p => rowKey(p) === key);
       if(!row || !overlay || !popup) return;
 
       popKey = key;
-      popSource = source || 'main';
       const maxRaw = row.purchase_limit;
       const max = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
       const cap = (Number.isFinite(max) && max > 0) ? max : 999;
@@ -666,7 +661,13 @@ function applyAll(){
         popMaxBtn.disabled = qty >= cap;
         popPlus.classList.toggle('pt-popup-btn--solo', !showMax);
       }
-      
+      if(popMaxBtn){
+        const showMax = (cap - qty) >= 2;
+        popMaxBtn.hidden = !showMax;
+        popMaxBtn.disabled = qty >= cap;
+        // layout: if no MAX, plus spans both columns
+        popPlus.classList.toggle('pt-popup-btn--solo', !showMax);
+      }
     }
 
     if(overlay) overlay.addEventListener('click', closePopup);
@@ -688,86 +689,101 @@ document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closePopup();
     });
 
     
-    
-    if(popMaxBtn) popMaxBtn.addEventListener('click', ()=>{
-      if(!popKey) return;
-      const row = packages.find(p => rowKey(p) === popKey);
-      if(!row) return;
-      const maxRaw = row.purchase_limit;
-      const max = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
-      const cap = (Number.isFinite(max) && max > 0) ? max : 999;
-      cart[popKey] = cap;
-      applyAll();
-      updatePopup();
-    });
-// Row selection + popup rule:
-    // - row tap => select (outline)
-    // - when selected: tap name cell => open purchase popup
-    // - when selected: tap other cell => unselect
-    const applySelectionStates = ()=>{
-      updateRowStates(tbody, selectedKeyMain);
-      updateRowStates(elSummaryTbody, selectedKeySummary);
-    };
+        // Row selection + popup rule (LIST table)
+        // - tap row -> select
+        // - when selected: tap name cell -> open popup
+        // - when selected: tap non-name cell -> unselect
+        // - tap empty area -> clear selection
+        tbody.addEventListener('click', (e)=>{
+          if(lastTap.moved) return;
+          const el = e.target instanceof HTMLElement ? e.target : null;
+          if(!el) return;
 
-    const clearSelection = ()=>{
-      selectedKeyMain = null;
-      selectedKeySummary = null;
-      applySelectionStates();
-    };
+          const tr = el.closest('tr[data-key]');
+          const tdName = el.closest('td.name');
 
-    const selectKey = (table, key)=>{
-      if(table === 'main'){
-        selectedKeyMain = key;
-        selectedKeySummary = null;
-      }else{
-        selectedKeySummary = key;
-        selectedKeyMain = null;
-      }
-      applySelectionStates();
-    };
+          if(!tr){
+            selectedKeyMain = null;
+            applyRowClasses();
+            return;
+          }
 
-    const handleRowClick = (table, e)=>{
-      if(lastTap.moved) return;
-      const el = e.target instanceof HTMLElement ? e.target : null;
-      if(!el) return;
+          const key = tr.getAttribute('data-key');
+          if(!key) return;
 
-      const tr = el.closest('tr[data-key]');
-      const tdName = el.closest('td.name');
+          if(tdName){
+            if(selectedKeyMain === key){
+              openPopupFor(key, lastTap.y || e.clientY);
+            }else{
+              selectedKeyMain = key;
+              selectedKeySummary = null;
+              applyRowClasses();
+            }
+            return;
+          }
 
-      if(!tr){
-        // click on empty area => clear selection
-        clearSelection();
-        return;
-      }
+          // non-name cell
+          if(selectedKeyMain === key){
+            selectedKeyMain = null;
+          }else{
+            selectedKeyMain = key;
+            selectedKeySummary = null;
+          }
+          applyRowClasses();
+        });
 
-      const key = tr.getAttribute('data-key');
-      if(!key){
-        // (e.g. 合計行)
-        clearSelection();
-        return;
-      }
+        // Row selection + popup rule (SUMMARY table)
+        if(elSummaryTbody){
+          const sumScroll = document.getElementById('summaryScroll') || elSummaryTbody;
+          let lastTapS = {x:0,y:0,moved:false};
 
-      const isSelected = (table === 'main') ? (selectedKeyMain === key) : (selectedKeySummary === key);
+          sumScroll.addEventListener('pointerdown', (e)=>{
+            lastTapS = {x:e.clientX,y:e.clientY,moved:false};
+          }, {passive:true});
+          sumScroll.addEventListener('pointermove', (e)=>{
+            if(Math.abs(e.clientX-lastTapS.x)+Math.abs(e.clientY-lastTapS.y) > 6){
+              lastTapS.moved = true;
+            }
+          }, {passive:true});
 
-      if(tdName){
-        if(isSelected){
-          openPopupFor(key, lastTap.y || e.clientY, table);
-        }else{
-          selectKey(table, key);
+          elSummaryTbody.addEventListener('click', (e)=>{
+            if(lastTapS.moved) return;
+            const el = e.target instanceof HTMLElement ? e.target : null;
+            if(!el) return;
+
+            const tr = el.closest('tr[data-key]');
+            const tdName = el.closest('td.name');
+
+            if(!tr){
+              selectedKeySummary = null;
+              applyRowClasses();
+              return;
+            }
+
+            const key = tr.getAttribute('data-key');
+            if(!key) return;
+
+            if(tdName){
+              if(selectedKeySummary === key){
+                openPopupFor(key, lastTapS.y || e.clientY);
+              }else{
+                selectedKeySummary = key;
+                selectedKeyMain = null;
+                applyRowClasses();
+              }
+              return;
+            }
+
+            // non-name cell
+            if(selectedKeySummary === key){
+              selectedKeySummary = null;
+            }else{
+              selectedKeySummary = key;
+              selectedKeyMain = null;
+            }
+            applyRowClasses();
+          });
         }
-        return;
-      }
-
-      // non-name cell
-      if(isSelected){
-        clearSelection();
-      }else{
-        selectKey(table, key);
-      }
-    };
-
-    tbody.addEventListener('click', (e)=> handleRowClick('main', e));
-    elSummaryTbody?.addEventListener('click', (e)=> handleRowClick('summary', e));
 applyAll();
   } catch (e) {
     console.error(e);
