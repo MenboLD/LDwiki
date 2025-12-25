@@ -72,6 +72,10 @@
   let doubleAvailability = {}; // price_yen -> bool
   let cart = {}; // key -> qty
 
+
+  // row selection state (main + summary)
+  let selectedKeyMain = null;
+  let selectedKeySummary = null;
   const CART_LS_KEY = "ld_paytool_cart_v1";
 
   function rowKey(p){
@@ -592,8 +596,6 @@ function applyAll(){
     const popSum   = document.getElementById('ptPopupSum');
 
     let popKey = null;
-    let selectedKeyMain = null;
-    let selectedKeySummary = null;
 
     function closePopup(){
       if(!overlay || !popup) return;

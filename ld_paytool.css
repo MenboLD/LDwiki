@@ -581,7 +581,8 @@ body {
 .pt-acc-sum{
   list-style: none;
   cursor: pointer;
-  padding: 10px 12px;
+  padding: 8px 10px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .02em;
   user-select: none;
