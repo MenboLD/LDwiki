@@ -462,14 +462,14 @@ const mode = elSort.value;
 
     const RES = [
       {k:'gold', alt:'ゴールド',  icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_01_gold_20x20px.png'},
-      {k:'mine_key', alt:'鉱山の鍵', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_04_mine_key_20x20px.png'},
-      {k:'churu', alt:'チュール',   icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_03_churu_20x20px.png'},
-      {k:'battery', alt:'バッテリー', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_05_battery_20x20px.png'},
-      {k:'pet_food', alt:'ペットフード', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_06_pet_food_20x20px.png'},
-      {k:'mythic_stone', alt:'神話石', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_07_mythic_stone_20x20px.png'},
-      {k:'immortal_stone', alt:'不滅石', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_08_immortal_stone_20x20px.png'},
-      {k:'diamond', alt:'ダイヤ', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_02_diamond_20x20px.png'},
-      {k:'invite', alt:'招待状', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_09_invite_20x20px.png'},
+      {k:'mine_key', alt:'鉱山の鍵', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_02_key_20x20px.png'},
+      {k:'churu', alt:'チュール',   icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_03_chur_20x20px.png'},
+      {k:'battery', alt:'バッテリー', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_04_battery_20x20px.png'},
+      {k:'pet_food', alt:'ペットフード', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_05_petfood_20x20px.png'},
+      {k:'mythic_stone', alt:'神話石', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_06_Mythstone_20x20px.png'},
+      {k:'immortal_stone', alt:'不滅石', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_07_immotalstone_20x20px.png'},
+      {k:'diamond', alt:'ダイヤ', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_08_dia_20x20px.png'},
+      {k:'invite', alt:'招待状', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_09_Scroll_20x20px.png'},
     ];
 
     const parts = [];
