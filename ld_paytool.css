@@ -526,3 +526,26 @@ body {
   margin-top: 10px;
   font-weight: 700;
 }
+
+
+/* --- Phase5: package cell layout (name + qty) --- */
+.pt-table td.name.pt-namecell{
+  display: grid;
+  grid-template-columns: 1fr 44px;
+  column-gap: 6px;
+  align-items: center;
+}
+.pt-nameText{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pt-nameMeta{
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+/* Header label center (パ / JPY) */
+.pt-table thead th.name,
+.pt-table thead th.jpy{
+  text-align: center;
+}
