@@ -201,11 +201,11 @@ body {
 
 /* ---------- Phase2: settings panel ---------- */
 .pt-settings{
-  margin: 10px 0 10px;
-  padding: 8px;
-  border-radius: 12px;
-  background: #0f1624;
-  border: 1px solid #1f2636;
+  /* NOTE: .pt-card already provides the outer card. Avoid double borders here. */
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
 }
 .pt-settings-row{
   display:flex;
@@ -581,7 +581,7 @@ body {
   list-style: none;
   cursor: pointer;
   padding: 7px 10px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: .02em;
   user-select: none;
@@ -679,13 +679,15 @@ body {
 
 /* === Phase6b: row states & anti-zoom === */
 .pt-table tbody tr.pt-has-qty td{
-  background: rgba(110, 160, 255, 0.08);
+  /* qty>=1 & not capped: make it clearly visible (green-ish) */
+  background: rgba(70, 220, 140, 0.14);
 }
 .pt-table tbody tr.pt-at-cap td{
-  background: rgba(255, 170, 80, 0.14);
+  /* capped: brighten a bit for readability */
+  background: rgba(255, 180, 90, 0.22);
 }
 .pt-table tbody tr.pt-row-selected td{
-  box-shadow: inset 0 0 0 2px rgba(110,160,255,0.75);
+  box-shadow: inset 0 0 0 2px rgba(70,220,140,0.70);
 }
 .pt-table tbody tr.pt-row-selected.pt-at-cap td{
   box-shadow: inset 0 0 0 2px rgba(255,170,80,0.85);
@@ -717,10 +719,10 @@ body {
 
 /* Phase6e: keep sticky columns opaque AND reflect row state backgrounds */
 .pt-table tbody tr.pt-has-qty td.sticky-col{
-  background: #142338; /* opaque variant of qty-highlight */
+  background: #0f2a21; /* opaque variant of qty-highlight (green) */
 }
 .pt-table tbody tr.pt-at-cap td.sticky-col{
-  background: #2a1c14; /* opaque variant of cap-highlight */
+  background: #3a2518; /* opaque variant of cap-highlight (brighter) */
 }
 .pt-table tbody tr.pt-row-selected td.sticky-col{
   /* keep current background; outline already drawn via box-shadow */
