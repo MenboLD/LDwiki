@@ -513,8 +513,6 @@ function updateStickyLeft2(){
     }
   }catch(e){}
 }
-  }catch(e){}
-}
 
 
 window.addEventListener('resize', () => { updateStickyLeft2(); });
