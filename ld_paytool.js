@@ -4,11 +4,8 @@
 
   const elMineKeyRate = document.getElementById('optMineKeyRate');
   const elBudgetYen = document.getElementById('optBudgetYen');
-  const elBudgetQuick = document.getElementById('btnBudgetQuick');
-  const elRateEditor = document.getElementById('rateEditor');
-  const elBtnResAll = document.getElementById('btnResAll');
-  const elBtnDoubleAll = document.getElementById('btnDoubleAll');
-    const elToggles = document.getElementById('resourceToggles');
+  const elBudgetApply = document.getElementById('btnBudgetApply');
+  const elToggles = document.getElementById('resourceToggles');
   const elDoubleToggles = document.getElementById('doubleToggles');
   const elSort = document.getElementById('optSort');
   const elKpi = document.getElementById('kpiBaseline');
@@ -147,42 +144,7 @@
     });
   }
 
-  
-  function buildRateEditorUI(){
-    if(!elRateEditor) return;
-    const items = [
-      { key:'gold', name:'ゴールド', icon:'Resource_01_gold_20x20px.png' },
-      { key:'battery', name:'バッテリー', icon:'Resource_04_battery_20x20px.png' },
-      { key:'pet_food', name:'ペットフード', icon:'Resource_05_petfood_20x20px.png' },
-      { key:'mythic_stone', name:'神話石', icon:'Resource_06_Mythstone_20x20px.png' },
-      { key:'immortal_stone', name:'不滅石', icon:'Resource_07_immotalstone_20x20px.png' },
-      { key:'churu', name:'チュール', icon:'Resource_03_chur_20x20px.png' },
-      { key:'diamond', name:'ダイヤ', icon:'Resource_08_dia_20x20px.png' },
-      { key:'invite', name:'招待状', icon:'Resource_09_Scroll_20x20px.png' },
-    ];
-    const baseUrl = 'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/';
-    elRateEditor.innerHTML = '';
-    for(const it of items){
-      const row = document.createElement('div');
-      row.className = 'pt-rate-item';
-      row.innerHTML = `
-        <img class="pt-rate-icon" src="${baseUrl}${it.icon}" alt="${it.name}">
-        <div class="pt-rate-name">${it.name}</div>
-        <input class="pt-rate-input" type="number" inputmode="decimal" step="0.01" min="0" data-key="${it.key}" value="${String(rateBase[it.key] ?? 0)}" aria-label="${it.name}のレート">
-      `;
-      elRateEditor.appendChild(row);
-    }
-    elRateEditor.addEventListener('change', (e)=>{
-      const t = e.target;
-      if(!(t instanceof HTMLInputElement)) return;
-      const k = t.dataset.key;
-      if(!k) return;
-      rateBase[k] = Number(t.value) || 0;
-      applyAll();
-    });
-  }
-
-function getEffectiveRates(){
+  function getEffectiveRates(){
     const r = {...rateBase};
     r.mine_key = Number(elMineKeyRate.value);
     for(const k of RESOURCE_KEYS){
@@ -445,32 +407,12 @@ function getEffectiveRates(){
 
     buildResourceToggleUI();
     buildDoubleAvailabilityUI();
-    buildRateEditorUI();
 
     // Auto recalcs
     elMineKeyRate.addEventListener('change', applyAll);
     elToggles.addEventListener('change', applyAll);
     if(elDoubleToggles) elDoubleToggles.addEventListener('change', applyAll);
     elSort.addEventListener('change', applyAll);
-
-    // All toggle buttons
-    if(elBtnResAll){
-      elBtnResAll.addEventListener('click', ()=>{
-        const allOn = RESOURCE_KEYS.every(k => toggles[k] === true);
-        for(const k of RESOURCE_KEYS) toggles[k] = !allOn;
-        buildResourceToggleUI();
-        applyAll();
-      });
-    }
-    if(elBtnDoubleAll){
-      elBtnDoubleAll.addEventListener('click', ()=>{
-        const tiers = Object.keys(doubleAvailability).map(n=>Number(n)).filter(n=>Number.isFinite(n));
-        const allOn = tiers.length>0 && tiers.every(p => doubleAvailability[p] === true);
-        for(const p of tiers) doubleAvailability[p] = !allOn;
-        buildDoubleAvailabilityUI();
-        applyAll();
-      });
-    }
 
     // Budget: no live recalc while typing
     const applyBudget = () => applyAll();
@@ -482,51 +424,7 @@ function getEffectiveRates(){
         applyBudget();
       }
     });
-
-    // Budget quick input popup
-    const bOverlay = document.getElementById('ptBudgetOverlay');
-    const bPopup   = document.getElementById('ptBudgetPopup');
-    const bClose   = document.getElementById('ptBudgetClose');
-    const bValue   = document.getElementById('ptBudgetValue');
-    const bBack    = document.getElementById('ptBudgetBack');
-    const bClear   = document.getElementById('ptBudgetClear');
-
-    function getBudgetVal(){ return clampInt(elBudgetYen.value, 0, 200000); }
-    function setBudgetVal(v){
-      const nv = clampInt(v, 0, 200000);
-      elBudgetYen.value = String(nv);
-      if(bValue) bValue.textContent = fmtNum(nv);
-      applyAll();
-    }
-    function openBudgetPopup(){
-      if(!bOverlay || !bPopup) return;
-      const v = getBudgetVal();
-      if(bValue) bValue.textContent = fmtNum(v);
-      bOverlay.hidden = false; bPopup.hidden = false;
-      // show slightly above center
-      const h = bPopup.getBoundingClientRect().height || 260;
-      const y = Math.max(8, Math.min(window.innerHeight - h - 8, window.innerHeight*0.25));
-      bPopup.style.top = y + 'px';
-    }
-    function closeBudgetPopup(){
-      if(!bOverlay || !bPopup) return;
-      bOverlay.hidden = true; bPopup.hidden = true;
-    }
-    if(elBudgetQuick) elBudgetQuick.addEventListener('click', openBudgetPopup);
-    if(bOverlay) bOverlay.addEventListener('click', closeBudgetPopup);
-    if(bClose) bClose.addEventListener('click', closeBudgetPopup);
-    if(bBack) bBack.addEventListener('click', closeBudgetPopup);
-    if(bClear) bClear.addEventListener('click', ()=> setBudgetVal(0));
-
-    bPopup?.addEventListener('click', (e)=>{
-      const t = e.target;
-      if(!(t instanceof HTMLElement)) return;
-      const btn = t.closest('[data-delta]');
-      if(!btn) return;
-      const delta = Number(btn.getAttribute('data-delta'));
-      if(!Number.isFinite(delta)) return;
-      setBudgetVal(getBudgetVal() + delta);
-    });
+    if(elBudgetApply) elBudgetApply.addEventListener('click', applyBudget);
 
     // purchase popup handlers (open only from 1st column)
     let lastTap = {x:0,y:0,moved:false};

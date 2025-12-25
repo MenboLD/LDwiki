@@ -6,11 +6,11 @@
   <title>課金検討ツール | ラッキー傭兵団 攻略 wiki</title>
 
   <link rel="stylesheet" href="common_header.css">
-  <link rel="stylesheet" href="ld_paytool.css?v=20251225p6a">
+  <link rel="stylesheet" href="ld_paytool.css?v=20251225p5h">
 
   <script src="supabase_config.js"></script>
   <script defer src="common_header.js"></script>
-  <script defer src="ld_paytool.js?v=20251225p6a"></script>
+  <script defer src="ld_paytool.js?v=20251225p5h"></script>
 
 <!-- Paytool page-local: common header username width fix (override after common_header.css) -->
 <style>
@@ -46,82 +46,50 @@
 
 
     </header>
+    <section class="pt-card pt-card--settings">
+      <section class="pt-settings" aria-label="計算設定">
+      <div class="pt-settings-row">
+        <label class="pt-field">
+          <span class="pt-field-label">鍵レート</span>
+          <select id="optMineKeyRate" class="pt-select">
+            <option value="420">420</option>
+            <option value="500">500</option>
+            <option value="600">600</option>
+          </select>
+        </label>
+
+        <label class="pt-field pt-field-wide">
+          <span class="pt-field-label">比較予算(円)</span>
+          <input id="optBudgetYen" class="pt-input" type="number" inputmode="numeric" min="0" step="100" value="8000">
+          <button id="btnBudgetApply" class="pt-btn">予算反映</button>
+        </label>
+
+        </div>
+
+      <div class="pt-settings-row pt-toggles" id="resourceToggles"></div>
+      <div class="pt-settings-row pt-double" id="doubleToggles" aria-label="初回2倍の購入可否"></div>
+
+
+      <div class="pt-settings-row">
+        <label class="pt-field">
+          <span class="pt-field-label">ソート</span>
+          <select id="optSort" class="pt-select">
+            <option value="default">デフォルト</option>
+            <option value="dpy_desc">Dia/¥ 降順</option>
+<option value="budget_desc">基準(予算)比 降順</option>
+            <option value="dia_desc">ΣDia 降順</option>
+            <option value="jpy_asc">JPY 昇順</option>
+            <option value="jpy_desc">JPY 降順</option>
+          </select>
+        </label>
+
+        <div class="pt-kpis" id="kpiBaseline"></div>
+      </div>
+
     
-<section class="pt-card pt-card--settings">
-  <section class="pt-settings" aria-label="計算設定">
 
-    <details class="pt-acc" open>
-      <summary class="pt-acc-sum">▼リソースのレート設定</summary>
-      <div class="pt-acc-body">
-
-        <div class="pt-settings-row">
-          <label class="pt-field">
-            <span class="pt-field-label">鍵レート</span>
-            <select id="optMineKeyRate" class="pt-select">
-              <option value="420">420</option>
-              <option value="500">500</option>
-              <option value="600">600</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="pt-rate-list" id="rateEditor" aria-label="レート編集"></div>
-
-      </div>
-    </details>
-
-    <details class="pt-acc">
-      <summary class="pt-acc-sum">▼取扱いリソースの設定</summary>
-      <div class="pt-acc-body">
-        <div class="pt-settings-row pt-row-tools">
-          <button id="btnResAll" class="pt-mini-btn" type="button" aria-label="取扱いリソース 全ON/全OFF">全</button>
-        </div>
-        <div class="pt-settings-row pt-toggles" id="resourceToggles"></div>
-      </div>
-    </details>
-
-    <details class="pt-acc">
-      <summary class="pt-acc-sum">▼初回ダイヤの設定</summary>
-      <div class="pt-acc-body">
-        <div class="pt-settings-row pt-row-tools">
-          <button id="btnDoubleAll" class="pt-mini-btn" type="button" aria-label="初回2倍 全ON/全OFF">全</button>
-        </div>
-        <div class="pt-settings-row pt-double" id="doubleToggles" aria-label="初回2倍の購入可否"></div>
-      </div>
-    </details>
-
-    <div class="pt-settings-row pt-budget-row">
-      <label class="pt-field pt-field-budget">
-        <span class="pt-field-label">比較予算(円)</span>
-        <input id="optBudgetYen" class="pt-input pt-input-budget" type="number" inputmode="numeric" min="0" step="100" value="8000" aria-label="比較予算(円)">
-      </label>
-      <button id="btnBudgetQuick" class="pt-btn" type="button">簡単入力</button>
-    </div>
-
-    <div class="pt-settings-row">
-      <label class="pt-field">
-        <span class="pt-field-label">ソート</span>
-        <select id="optSort" class="pt-select">
-          <option value="default">デフォルト</option>
-          <option value="dpy_desc">Dia/¥ 降順</option>
-          <option value="budget_desc">基準(予算)比 降順</option>
-          <option value="dia_desc">ΣDia 降順</option>
-          <option value="jpy_asc">JPY 昇順</option>
-          <option value="jpy_desc">JPY 降順</option>
-        </select>
-      </label>
-
-      <div class="pt-kpi">
-        <div class="pt-kpi-item">
-          <div class="pt-kpi-label">基準(予算最適) Dia/¥</div>
-          <div class="pt-kpi-val" id="kpiBaseline">-</div>
-        </div>
-      </div>
-    </div>
-
-  </section>
-</section>
-
+    </section>
+    </section>
 
     <section class="pt-card pt-card--tables">
       <div class="pt-table-wrap">
@@ -251,40 +219,5 @@
     </div>
   </div>
 
-
-  <!-- budget quick input popup -->
-  <div id="ptBudgetOverlay" class="pt-popup-overlay" hidden></div>
-  <div id="ptBudgetPopup" class="pt-popup pt-popup--budget" hidden role="dialog" aria-modal="true" aria-label="比較予算の簡単入力">
-    <div class="pt-popup-head">
-      <div class="pt-popup-title">比較予算</div>
-      <button id="ptBudgetClose" class="pt-popup-close" type="button" aria-label="閉じる">×</button>
-    </div>
-    <div class="pt-popup-body">
-      <div class="pt-budget-value">￥<span id="ptBudgetValue">0</span></div>
-
-      <div class="pt-budget-grid" role="group" aria-label="予算の増減">
-        <button class="pt-budget-btn" type="button" data-delta="-100">−100</button>
-        <button class="pt-budget-btn" type="button" data-delta="100">＋100</button>
-
-        <button class="pt-budget-btn" type="button" data-delta="-500">−500</button>
-        <button class="pt-budget-btn" type="button" data-delta="500">＋500</button>
-
-        <button class="pt-budget-btn" type="button" data-delta="-1000">−1000</button>
-        <button class="pt-budget-btn" type="button" data-delta="1000">＋1000</button>
-
-        <button class="pt-budget-btn" type="button" data-delta="-5000">−5000</button>
-        <button class="pt-budget-btn" type="button" data-delta="5000">＋5000</button>
-
-        <button class="pt-budget-btn" type="button" data-delta="-10000">−10000</button>
-        <button class="pt-budget-btn" type="button" data-delta="10000">＋10000</button>
-      </div>
-
-      <div class="pt-budget-foot">
-        <button id="ptBudgetBack" class="pt-popup-btn" type="button">戻る</button>
-        <button id="ptBudgetClear" class="pt-popup-btn" type="button">クリア</button>
-      </div>
-    </div>
-  </div>
 </body>
-
 </html>
