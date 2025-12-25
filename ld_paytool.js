@@ -342,7 +342,7 @@ function getEffectiveRates(){
         <td class="res res-invite${cls0(r.invite)}">${fmtNum(r.invite)}</td>
 
         <td class="calc">${fmtNum(r._calc_dia)}</td>
-        <td class="calc">${(r._calc_dpy && r._calc_dpy>0) ? fmtFloat2(r._calc_dpy) : '-'}</td>
+        <td class="calc">${(r._calc_dpy && r._calc_dpy>0) ? fmtInt(Math.round(r._calc_dpy*100)) : '-'}</td>
         <td class="calc">${fmtPct1(r._calc_budget_ratio)}</td>
       </tr>`;
     }).join('');
@@ -437,7 +437,7 @@ const mode = elSort.value;
         <td class="res res-invite${cls0(sumRes.invite)}">${fmtNum(sumRes.invite)}</td>
 
         <td class="calc">${fmtNum(sumDia)}</td>
-        <td class="calc">${(sumY>0)?fmtFloat2(dpy):'-'}</td>
+        <td class="calc">${(sumY>0)?fmtInt(Math.round(dpy*100)):'-'}</td>
         <td class="calc">${fmtPct1(ratioB)}</td>
       </tr>`;
 
@@ -887,6 +887,13 @@ document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closePopup();
   popDirty = true;
   updatePopup();
 }
+
+  function fmtInt(n){
+    const v = Number(n);
+    if(!Number.isFinite(v)) return '-';
+    return String(Math.trunc(v));
+  }
+
 if(popMinus) popMinus.addEventListener('click', ()=>{
       if(!popKey) return;
       setPopupQty(popTempQty - 1);
