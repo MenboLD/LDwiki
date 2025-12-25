@@ -549,3 +549,16 @@ body {
 .pt-table thead th.jpy{
   text-align: center;
 }
+
+/* v5d: keep header 'パッケージ' but prevent it from widening the name column */
+.pt-table thead th.name{
+  width: 120px !important;
+  max-width: 120px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pt-table td.name{
+  width: 120px !important;
+  max-width: 120px !important;
+}
