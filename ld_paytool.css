@@ -407,15 +407,6 @@ body {
 /* Phase4v2: separate cards */
 .pt-card--tables{ margin-top: 10px; }
 
-/* Phase4v2: sticky for limit column in summary table as well */
-.pt-table-summary th.limit, .pt-table-summary td.limit{
-  position: sticky;
-  left: 32px;
-  z-index: 3;
-  background: #0b0f16;
-}
-.pt-table-summary thead th.limit{ z-index: 6; }
-
 /* Phase4v5: explicit card roles */
 .pt-card--settings{ margin-top: 10px; }
 .pt-card--tables{ margin-top: 10px; }
@@ -716,35 +707,28 @@ body {
 }
 
 
-/* --- 1列目(パッケージ) 疑似固定 ---
-   scrollLeft を JS から CSS 変数に流し込み、セル内ラッパーを右へ戻す。
-   これで iOS Safari の sticky 破綻を回避する。 */
-.pt-table th.name,
-.pt-table td.name{
-  position: relative;
-  padding: 0;
-  background: transparent;
-  overflow: visible;
+/* Phase6e: keep sticky columns opaque AND reflect row state backgrounds */
+.pt-table tbody tr.pt-has-qty td.sticky-col{
+  background: #142338; /* opaque variant of qty-highlight */
+}
+.pt-table tbody tr.pt-at-cap td.sticky-col{
+  background: #2a1c14; /* opaque variant of cap-highlight */
+}
+.pt-table tbody tr.pt-row-selected td.sticky-col{
+  /* keep current background; outline already drawn via box-shadow */
+  background-clip: padding-box;
 }
 
-/* Gridlines alignment: draw horizontal rules at row level so sticky/non-sticky don't drift */
-.pt-table tbody tr{ box-shadow: inset 0 1px 0 rgba(255,255,255,.06); }
-.pt-table tbody tr > td{ border-top: none; }
-
-/* Selection outline: mostly top/bottom, plus left edge (pkg) and right edge (last col) */
-.pt-row-selected td{
-  box-shadow: inset 0 2px 0 rgba(255,170,90,.65),
-              inset 0 -2px 0 rgba(255,170,90,.65);
+/* Ensure sticky columns are not overridden by legacy rules */
+.pt-table th.name.sticky-col,
+.pt-table td.name.sticky-col,
+.pt-table th.count.sticky-col,
+.pt-table td.count.sticky-col{
+  padding: 6px 8px; /* unify height */
 }
-.pt-row-selected td:last-child{
-  box-shadow: inset 0 2px 0 rgba(255,170,90,.65),
-              inset 0 -2px 0 rgba(255,170,90,.65),
-              inset -2px 0 0 rgba(255,170,90,.65);
+
+/* Add subtle divider to the right of sticky columns */
+.pt-table td.sticky-col2,
+.pt-table th.sticky-col2{
+  box-shadow: 1px 0 0 #1f2636;
 }
-/* pkg column uses wrapper */
-.pt-row-selected td.name{ box-shadow:none; }
-
-/* 購入数に応じた行背景 */
-.pt-row-hasqty td{ background: rgba(130, 80, 200, .18); }
-.pt-row-full  td{ background: rgba(250, 150, 80, .22); }
-
