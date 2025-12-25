@@ -40,7 +40,7 @@ body {
   border-spacing: 0;
   width:100%;
   table-layout: fixed;
-  min-width: 940px; /* allow horizontal scroll for resource columns */
+  min-width: 900px; /* allow horizontal scroll for resource columns */
 }
 
 .pt-table th,
@@ -64,12 +64,12 @@ body {
 
 /* Sticky columns (パッケージ名 + 購入数) */
 :root{
-  --pt-col-name: 152px;
-  --pt-col-count: 86px;
+  --pt-col-name: 126px;
+  --pt-col-count: 44px;
 }
 .pt-col-name{ width: var(--pt-col-name) !important; }
 .pt-col-count{ width: var(--pt-col-count) !important; }
-.pt-col-jpy{ width: 76px !important; }
+.pt-col-jpy{ width: 62px !important; }
 
 .pt-table th.name,
 .pt-table td.name{
@@ -278,7 +278,7 @@ body {
 }
 
 .pt-table th.calc{
-  font-size: 11px;
+  font-size: 10px;
 }
 
 
@@ -534,19 +534,19 @@ body {
 
 /* === Phase5h: fixed widths are managed by colgroup === */
 .pt-col-name{ width: var(--pt-col-name); }
-.pt-col-jpy{ width: 76px; }
-.pt-col-gold{ width: 42px; }
-.pt-col-mine_key{ width: 26px; }
-.pt-col-churu{ width: 26px; }
-.pt-col-battery{ width: 30px; }
-.pt-col-pet_food{ width: 30px; }
-.pt-col-mythic_stone{ width: 30px; }
-.pt-col-immortal_stone{ width: 30px; }
-.pt-col-diamond{ width: 46px; }
-.pt-col-invite{ width: 34px; }
-.pt-col-sumdia{ width: 56px; }
-.pt-col-dia_per_yen{ width: 44px; }
-.pt-col-ratio_b{ width: 48px; }
+.pt-col-jpy{ width: 62px !important; }
+.pt-col-gold{ width: 62px !important; }
+.pt-col-mine_key{ width: 44px !important; }
+.pt-col-churu{ width: 34px !important; }
+.pt-col-battery{ width: 54px !important; }
+.pt-col-pet_food{ width: 54px !important; }
+.pt-col-mythic_stone{ width: 54px !important; }
+.pt-col-immortal_stone{ width: 54px !important; }
+.pt-col-diamond{ width: 58px !important; }
+.pt-col-invite{ width: 44px !important; }
+.pt-col-sumdia{ width: 74px !important; }
+.pt-col-dia_per_yen{ width: 50px !important; }
+.pt-col-ratio_b{ width: 74px !important; }
 
 /* package cell: name + qty area (qty centered) */
 .pt-namecell{
@@ -680,17 +680,17 @@ body {
 /* === Phase6b: row states & anti-zoom === */
 .pt-table tbody tr.pt-has-qty td{
   /* qty>=1 & not capped: make it clearly visible (green-ish) */
-  background: rgba(70, 220, 140, 0.14);
+  background: rgba(60, 255, 160, 0.22);
 }
 .pt-table tbody tr.pt-at-cap td{
   /* capped: brighten a bit for readability */
-  background: rgba(215, 110, 255, 0.24);
+  background: rgba(210, 120, 255, 0.24);
 }
 .pt-table tbody tr.pt-row-selected td{
   box-shadow: inset 0 0 0 2px rgba(70,220,140,0.70);
 }
 .pt-table tbody tr.pt-row-selected.pt-at-cap td{
-  box-shadow: inset 0 0 0 2px rgba(215,110,255,0.88);
+  box-shadow: inset 0 0 0 2px rgba(235, 170, 255, 0.92);
 }
 
 /* prevent double-tap zoom-ish behaviors on interactive controls */
@@ -719,10 +719,9 @@ body {
 
 /* Phase6e: keep sticky columns opaque AND reflect row state backgrounds */
 .pt-table tbody tr.pt-has-qty td.sticky-col{
-  background: #0f2a21; /* opaque variant of qty-highlight (green) */
-}
+  background: #123a2a; /* opaque variant */}
 .pt-table tbody tr.pt-at-cap td.sticky-col{
-  background: #2a1738; /* opaque variant of cap-highlight (purple/pink) */
+  background: #2b1636; /* opaque variant of cap-highlight (brighter) */
 }
 .pt-table tbody tr.pt-row-selected td.sticky-col{
   /* keep current background; outline already drawn via box-shadow */
