@@ -29,6 +29,11 @@ body {
 
 .pt-table-wrap { overflow:auto; max-height: 360px; }
 
+/* iOS Safari: stabilize momentum scrolling within the scroll container */
+.pt-table-wrap{
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Fixed layout so columns don't expand with long names */
 .pt-table {
   border-collapse: separate;
@@ -81,6 +86,9 @@ body {
   background: #0c1018; /* must be opaque to prevent bleed-through */
   background-clip: padding-box;
   z-index: 20;
+  /* iOS Safari: reduce sticky jitter / 1px shifts during scroll */
+  transform: translateZ(0);
+  will-change: transform;
 }
 .pt-table .sticky-col1{ left: 0; z-index: 21; }
 .pt-table .sticky-col2{ left: var(--pt-col-name); z-index: 22; }
@@ -572,8 +580,8 @@ body {
 .pt-acc-sum{
   list-style: none;
   cursor: pointer;
-  padding: 8px 10px;
-  font-size: 12px;
+  padding: 7px 10px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: .02em;
   user-select: none;

@@ -815,9 +815,57 @@ function syncHorizontalScroll(a, b){
   b.addEventListener('scroll', onB, { passive: true });
 }
 
+/* iOS Safari: prevent tiny accidental horizontal drift while the user is clearly vertical-scrolling */
+function installVerticalScrollXLock(scroller){
+  if(!scroller) return;
+  let startX = 0;
+  let startY = 0;
+  let startLeft = 0;
+  let mode = null; // 'h' | 'v'
+
+  scroller.addEventListener('touchstart', (e) => {
+    if(!e.touches || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+    startLeft = scroller.scrollLeft;
+    mode = null;
+  }, { passive: true });
+
+  scroller.addEventListener('touchmove', (e) => {
+    if(!e.touches || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+    const adx = Math.abs(dx);
+    const ady = Math.abs(dy);
+
+    // Decide gesture direction a bit earlier, but avoid misclassifying slight diagonal drags.
+    if(!mode){
+      const TH = 6;
+      const R  = 1.2;
+      if(ady > TH && ady >= adx * R) mode = 'v';
+      else if(adx > TH && adx >= ady * R) mode = 'h';
+    }
+
+    if(mode === 'v'){
+      // keep X fixed; allow normal Y scrolling (no preventDefault)
+      if(scroller.scrollLeft !== startLeft) scroller.scrollLeft = startLeft;
+    }
+  }, { passive: true });
+
+  scroller.addEventListener('touchend', () => { mode = null; }, { passive: true });
+}
+
 window.addEventListener('load', () => {
   const listX = document.querySelector('.pt-table-wrap') || document.getElementById('tableScroll') || document.querySelector('#tableScroll');
   const sumX  = document.getElementById('summaryScroll') || document.querySelector('#summaryScroll');
+
+  const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if(isIOS){
+    installVerticalScrollXLock(listX);
+    installVerticalScrollXLock(sumX);
+  }
 
   // 横スクロール同期（任意）。両方存在する場合のみ有効化。
   if(listX && sumX) syncHorizontalScroll(listX, sumX);
