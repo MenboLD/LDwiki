@@ -64,10 +64,40 @@ body {
 
 /* Sticky columns (パッケージ名 + 購入数) */
 :root{
-  --pt-col-name: 126px;
-  --pt-col-count: 44px;
+  --pt-col-name: 96px;
+  --pt-col-count: 58px;
 }
 .pt-col-name{ width: var(--pt-col-name) !important; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.pt-col-ratio_b{ width: 74px; }
+.pt-col-dia_per_yen{ width: 50px; }
+.pt-col-sumdia{ width: 74px; }
+.pt-col-invite{ width: 44px; }
+.pt-col-diamond{ width: 58px; }
+.pt-col-immortal_stone{ width: 54px; }
+.pt-col-mythic_stone{ width: 54px; }
+.pt-col-pet_food{ width: 54px; }
+.pt-col-battery{ width: 54px; }
+.pt-col-churu{ width: 34px; }
+.pt-col-mine_key{ width: 44px; }
+.pt-col-gold{ width: 62px; }
+.pt-col-jpy{ width: 62px; }
+.pt-col-count{ width: 58px; }
+.pt-col-name{ width: 96px; }
 .pt-col-count{ width: var(--pt-col-count) !important; }
 .pt-col-jpy{ width: 62px !important; }
 
@@ -397,7 +427,7 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 .pt-summary-table-wrap .pt-table{
-  min-width: var(--pt-table-minw, 926px);
+  min-width: var(--pt-table-minw, 884px);
 }
 
 /* Phase4: limit reached / disabled buttons */
@@ -422,6 +452,7 @@ body {
 /* Phase5: merge purchase UI into name column + popup controls */
 .pt-namecell{ display:block; }
 .pt-nameText{
+  font-size: 13px;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;

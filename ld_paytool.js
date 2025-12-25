@@ -352,7 +352,7 @@ function getEffectiveRates(){
     const totalRow = `
       <tr>
         <td class="name sticky-col sticky-col1 pt-summary-total-label">合計</td>
-        <td class="count sticky-col sticky-col2 pt-summary-total-qty"><span class="pt-countText">：${sumQty}</span></td>
+        <td class="count sticky-col sticky-col2 pt-summary-total-qty"><span class="pt-countText">${sumQty}</span></td>
         <td class="jpy">${fmtNum(sumY)}</td>
 
         <td class="res res-gold${cls0(sumRes.gold)}">${fmtNum(sumRes.gold)}</td>
@@ -380,7 +380,7 @@ function getEffectiveRates(){
       return `
       <tr data-key="${rowKey(r)}">
          <td class="name sticky-col sticky-col1" title="${r.package_name}"><span class="pt-nameText">${fmtName(r.package_name)}</span></td>
-         <td class="count sticky-col sticky-col2"><span class="pt-countText">：${fmtNum(qty)}</span></td>
+         <td class="count sticky-col sticky-col2"><span class="pt-countText">${fmtNum(qty)}</span></td>
          <td class="jpy">${fmtNum(yen)}</td>
 
         <td class="res res-gold${cls0(resMul('gold'))}">${fmtNum(resMul('gold'))}</td>
