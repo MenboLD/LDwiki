@@ -802,3 +802,12 @@ body {
 
 /* Slightly smaller package name text (values only) */
 .pt-table td.name .pt-nameText{font-size:12.5px;}
+
+
+/* Phase6: 購入数列の見た目調整 */
+.pt-table thead th.count{
+  font-size: 12px; /* ほんの少し小さく */
+}
+.pt-table tbody td.count{
+  text-align: center;
+}

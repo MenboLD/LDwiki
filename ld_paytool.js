@@ -523,7 +523,7 @@ function updateRowStates(tableBodyEl, selectedKey){
       const maxNum = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
       const cap = (Number.isFinite(maxNum) && maxNum > 0) ? maxNum : 999;
       tr.classList.toggle('pt-has-qty', qty > 0);
-      tr.classList.toggle('pt-at-cap', qty > 0 && popTempQty >= popCap);
+      tr.classList.toggle('pt-at-cap', qty > 0 && qty >= cap);
       tr.classList.toggle('pt-row-selected', !!selectedKey && key === selectedKey);
     }
     updateSelectedInfo();
