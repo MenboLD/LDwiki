@@ -6,11 +6,11 @@
   <title>課金検討ツール | ラッキー傭兵団 攻略 wiki</title>
 
   <link rel="stylesheet" href="common_header.css">
-  <link rel="stylesheet" href="ld_paytool.css?v=20251225p4n">
+  <link rel="stylesheet" href="ld_paytool.css?v=20251225p5a">
 
   <script src="supabase_config.js"></script>
   <script defer src="common_header.js"></script>
-  <script defer src="ld_paytool.js?v=20251225p4n"></script>
+  <script defer src="ld_paytool.js?v=20251225p5a"></script>
 
 <!-- Paytool page-local: common header username width fix (override after common_header.css) -->
 <style>
@@ -97,7 +97,6 @@
           <thead>
             <tr>
               <th class="sticky name">パッケージ</th>
-              <th class="limit">上限</th>
               <th class="jpy">JPY</th>
               <th class="res res-gold"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_01_gold_20x20px.png" alt="ゴールド"></th>
               <th class="res res-mine_key"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_02_key_20x20px.png" alt="鉱山の鍵"></th>
@@ -122,7 +121,6 @@
         <thead>
           <tr>
             <th class="name" scope="col">パッケージ</th>
-            <th class="limit" scope="col">購入数</th>
             <th class="jpy" scope="col">JPY</th>
 
             <th class="res res-gold" scope="col"><img class="pt-ico" alt="gold" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_01_gold_20x20px.png"></th>
@@ -167,5 +165,23 @@
     
 
     </main>
+
+  <!-- purchase popup -->
+  <div id="ptPopupOverlay" class="pt-popup-overlay" hidden></div>
+  <div id="ptPkgPopup" class="pt-popup" hidden role="dialog" aria-modal="true" aria-label="購入数の変更">
+    <div class="pt-popup-head">
+      <div id="ptPopupTitle" class="pt-popup-title"></div>
+      <button id="ptPopupClose" class="pt-popup-close" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="pt-popup-body">
+      <div class="pt-popup-qtyrow">
+        <button id="ptPopupMinus" class="pt-popup-btn" type="button">−</button>
+        <div class="pt-popup-qty"><span id="ptPopupQty">0</span> / <span id="ptPopupMax">0</span></div>
+        <button id="ptPopupPlus" class="pt-popup-btn" type="button">＋</button>
+      </div>
+      <div class="pt-popup-sum">合計：￥<span id="ptPopupSum">0</span></div>
+    </div>
+  </div>
+
 </body>
 </html>

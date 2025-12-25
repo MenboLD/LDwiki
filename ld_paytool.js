@@ -216,24 +216,10 @@
       cart[key] = qty;
 
       const maxDisp = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? '∞' : fmtNum(maxRaw);
-      const minusDis = qty <= 0;
-      const plusDis = qty >= cap;
-
-      const limitCls = `pt-limit ${qty<=0?'is-zero':''} ${qty>=cap?'is-cap':''}`;
 
       return `
       <tr data-key="${key}">
-        <td class="name" title="${r.package_name}">${fmtName(r.package_name)}</td>
-
-        <td class="limit">
-          <div class="${limitCls}">
-            <button class="pt-minus" type="button" aria-label="minus" ${minusDis?'disabled':''}>-</button>
-            <span class="pt-count">${qty}</span>
-            <button class="pt-plus" type="button" aria-label="plus" ${plusDis?'disabled':''}>+</button>
-            <span class="pt-max">/${maxDisp}</span>
-          </div>
-        </td>
-
+        <td class="name pt-namecell" title="${r.package_name}"><span class="pt-nameText">${fmtName(r.package_name)}</span><span class="pt-nameMeta">：${qty} / ${maxDisp}</span></td>
         <td class="jpy">${fmtNum(r.jpy)}</td>
 
         <td class="res res-gold${cls0(r.gold)}">${fmtNum(r.gold)}</td>
@@ -326,7 +312,6 @@
     const totalRow = `
       <tr>
         <td class="name">合計</td>
-        <td class="limit">${fmtNum(sumQty)}</td>
         <td class="jpy">${fmtNum(sumY)}</td>
 
         <td class="res res-gold${cls0(sumRes.gold)}">${fmtNum(sumRes.gold)}</td>
@@ -354,7 +339,6 @@
       return `
       <tr>
         <td class="name" title="${r.package_name}">${fmtName(r.package_name)}</td>
-        <td class="limit">${fmtNum(qty)}</td>
         <td class="jpy">${fmtNum(yen)}</td>
 
         <td class="res res-gold${cls0(resMul('gold'))}">${fmtNum(resMul('gold'))}</td>
@@ -445,21 +429,108 @@
     });
     if(elBudgetApply) elBudgetApply.addEventListener('click', applyBudget);
 
-    // +/- handlers (event delegation)
+    // purchase popup handlers (open only from 1st column)
+    let lastTap = {x:0,y:0,moved:false};
+    tbody.addEventListener('pointerdown', (e)=>{
+      lastTap = {x:e.clientX,y:e.clientY,moved:false};
+    }, {passive:true});
+    tbody.addEventListener('pointermove', (e)=>{
+      if(Math.abs(e.clientX-lastTap.x)+Math.abs(e.clientY-lastTap.y) > 6){
+        lastTap.moved = true;
+      }
+    }, {passive:true});
+
+    const overlay = document.getElementById('ptPopupOverlay');
+    const popup = document.getElementById('ptPkgPopup');
+    const popTitle = document.getElementById('ptPopupTitle');
+    const popClose = document.getElementById('ptPopupClose');
+    const popMinus = document.getElementById('ptPopupMinus');
+    const popPlus  = document.getElementById('ptPopupPlus');
+    const popQty   = document.getElementById('ptPopupQty');
+    const popMax   = document.getElementById('ptPopupMax');
+    const popSum   = document.getElementById('ptPopupSum');
+
+    let popKey = null;
+
+    function closePopup(){
+      if(!overlay || !popup) return;
+      overlay.hidden = true;
+      popup.hidden = true;
+      popKey = null;
+    }
+
+    function openPopupFor(key, clientY){
+      const row = packages.find(p => rowKey(p) === key);
+      if(!row || !overlay || !popup) return;
+
+      popKey = key;
+      const maxRaw = row.purchase_limit;
+      const max = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
+      const cap = (Number.isFinite(max) && max > 0) ? max : 999;
+
+      const qty = clampInt(cart[key] ?? 0, 0, cap);
+      const maxDisp = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? '∞' : fmtNum(maxRaw);
+
+      popTitle.textContent = row.package_name ?? '';
+      popQty.textContent = String(qty);
+      popMax.textContent = String(maxDisp);
+      popSum.textContent = fmtNum((Number(row.jpy)||0) * qty);
+
+      popMinus.disabled = qty <= 0;
+      popPlus.disabled  = qty >= cap;
+
+      overlay.hidden = false;
+      popup.hidden = false;
+
+      // position slightly above tap
+      popup.style.top = '8px';
+      const h = popup.getBoundingClientRect().height || 140;
+      const y = Math.max(8, Math.min(window.innerHeight - h - 8, (clientY || (window.innerHeight*0.5)) - h - 10));
+      popup.style.top = y + 'px';
+    }
+
+    function updatePopup(){
+      if(!popKey) return;
+      const row = packages.find(p => rowKey(p) === popKey);
+      if(!row) return;
+      const maxRaw = row.purchase_limit;
+      const max = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
+      const cap = (Number.isFinite(max) && max > 0) ? max : 999;
+      const qty = clampInt(cart[popKey] ?? 0, 0, cap);
+      popQty.textContent = String(qty);
+      popSum.textContent = fmtNum((Number(row.jpy)||0) * qty);
+      popMinus.disabled = qty <= 0;
+      popPlus.disabled  = qty >= cap;
+    }
+
+    if(overlay) overlay.addEventListener('click', closePopup);
+    if(popClose) popClose.addEventListener('click', closePopup);
+    document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closePopup(); });
+
+    if(popMinus) popMinus.addEventListener('click', ()=>{
+      if(!popKey) return;
+      bumpQty(popKey, -1);
+      applyAll();
+      updatePopup();
+    });
+    if(popPlus) popPlus.addEventListener('click', ()=>{
+      if(!popKey) return;
+      bumpQty(popKey, +1);
+      applyAll();
+      updatePopup();
+    });
+
     tbody.addEventListener('click', (e)=>{
-      const btn = e.target;
-      if(!(btn instanceof HTMLElement)) return;
-      const tr = btn.closest('tr[data-key]');
+      if(lastTap.moved) return;
+      const el = e.target instanceof HTMLElement ? e.target : null;
+      if(!el) return;
+      const td = el.closest('td.name');
+      if(!td) return;
+      const tr = td.closest('tr[data-key]');
       if(!tr) return;
       const key = tr.getAttribute('data-key');
       if(!key) return;
-      if(btn.classList.contains('pt-minus')){
-        bumpQty(key, -1);
-        applyAll();
-      } else if(btn.classList.contains('pt-plus')){
-        bumpQty(key, +1);
-        applyAll();
-      }
+      openPopupFor(key, lastTap.y || e.clientY);
     });
 
     applyAll();
@@ -492,27 +563,3 @@ window.addEventListener('load', () => {
   const sumX  = document.getElementById('summaryScroll') || document.querySelector('#summaryScroll');
   if(listX && sumX) syncHorizontalScroll(listX, sumX);
 }, { once:true });
-
-
-
-function updateStickyLeft2(){
-  try{
-    const tables = document.querySelectorAll('.pt-table');
-    let best = 0;
-    tables.forEach(t => {
-      const thName = t.querySelector('thead th.name');
-      const thLimit = t.querySelector('thead th.limit');
-      if(!thName || !thLimit) return;
-      // Column start of 2nd column inside the table (includes separators)
-      const left2 = thLimit.offsetLeft;
-      const wName = thName.getBoundingClientRect().width;
-      best = Math.max(best, Math.ceil(left2 || wName || 0));
-    });
-    if(best > 0){
-      document.documentElement.style.setProperty('--pt-sticky-left2', best + 'px');
-    }
-  }catch(e){}
-}
-
-
-window.addEventListener('resize', () => { updateStickyLeft2(); });

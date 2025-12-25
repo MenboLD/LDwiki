@@ -428,76 +428,97 @@ body {
 .pt-card--settings{ margin-top: 10px; }
 .pt-card--tables{ margin-top: 10px; }
 
-
-
-
-/* Phase4v9: sticky 2nd col drift fix (table-layout fixed + border-box + hard widths) */
-:root{
-  --pt-sticky-left2: 40px; /* runtime computed */
-
-  --pt-w-name: 40px;  /* package col */
-  --pt-w-limit: 40px; /* limit/purchase col (includes +/- UI) */
-}
-
-.pt-table{
-  table-layout: fixed;
-}
-
-.pt-table th, .pt-table td{
-  box-sizing: border-box;
-}
-
-/* hard clamp widths so left offset stays exact */
-.pt-table th.name, .pt-table td.name{
-  width: var(--pt-w-name) !important;
-  min-width: var(--pt-w-name) !important;
-  max-width: var(--pt-w-name) !important;
-}
-.pt-table th.limit, .pt-table td.limit{
-  width: var(--pt-w-limit) !important;
-  min-width: var(--pt-w-limit) !important;
-  max-width: var(--pt-w-limit) !important;
-}
-
-/* Sticky first 2 columns (both tables) */
-.pt-table th.name,
+/* Phase5: merge purchase UI into name column + popup controls */
 .pt-table td.name{
-  position: sticky;
-  left: 0;
-  z-index: 6;
+  cursor: pointer;
+}
+.pt-namecell{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px;
+}
+.pt-nameText{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pt-nameMeta{
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  opacity: 0.9;
+}
+
+/* Popup */
+.pt-popup-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+  z-index: 9998;
+}
+.pt-popup{
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(320px, calc(100vw - 16px));
   background: #121826;
-  text-align: left;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 10px;
+  box-shadow: 0 10px 26px rgba(0,0,0,.45);
+  z-index: 9999;
 }
-.pt-table th.limit,
-.pt-table td.limit{
-  position: sticky;
-  left: var(--pt-sticky-left2);
-z-index: 6;
-  background: #121826;
+.pt-popup-head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.10);
 }
-
-/* Keep header above body */
-.pt-table thead th.name,
-.pt-table thead th.limit{
-  z-index: 10;
+.pt-popup-title{
+  font-size: 13px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 8px;
 }
-
-
-/* Phase4v12: Safari sticky-on-table fix (avoid border-collapse: collapse) */
-.pt-table{
-  border-collapse: separate !important;
-  border-spacing: 0 !important;
+.pt-popup-close{
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: #e8eefc;
+  font-size: 18px;
+  line-height: 24px;
 }
-
-/* ensure scroll containers are positioning context */
-.pt-table-scroll, .pt-summary-scroll{
-  position: relative;
+.pt-popup-body{
+  padding: 10px;
 }
-
-/* help Safari paint sticky columns cleanly */
-.pt-table th.name, .pt-table td.name,
-.pt-table th.limit, .pt-table td.limit{
-  background-clip: padding-box;
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
+.pt-popup-qtyrow{
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+.pt-popup-btn{
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: #e8eefc;
+  font-size: 18px;
+  font-weight: 800;
+}
+.pt-popup-btn:disabled{
+  opacity: .35;
+}
+.pt-popup-qty{
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.pt-popup-sum{
+  margin-top: 10px;
+  font-weight: 700;
 }
