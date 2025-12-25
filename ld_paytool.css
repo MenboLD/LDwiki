@@ -67,23 +67,15 @@ body {
 /* Sticky name column only */
 .pt-table th.name,
 .pt-table td.name {
-  width: 120px;           /* smaller (~40% feel on iPhone SE) */
-  text-align:left;
-  /* name text: compact, no-wrap */
-  font-size: 10.5px;
-  line-height: 1.15;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  word-break: normal;
-  hyphens: none;
-
-  /* sticky はセルではなく内側ラッパーで疑似対応 */
+  width: 120px;
   padding: 0;
-  overflow: visible;
+  overflow: hidden; /* prevent bleed-through under sticky */
+  position: relative;
+  background: #0c1018; /* solid layer for Safari */
+  z-index: 8;
 }
 
-.pt-table th.name { z-index: 6; }
+.pt-table th.name { z-index: 9; background: #0c1018; }
 .pt-table td.name { z-index: 4; }
 
 /* パッケージ列の見た目は中のラッパーに持たせる */
