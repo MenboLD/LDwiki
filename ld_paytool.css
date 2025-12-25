@@ -723,3 +723,34 @@ body {
 .pt-popup-btn--solo{
   grid-column: 1 / span 2;
 }
+
+
+/* === Phase6c: sticky first column for all rows (main & summary) === */
+.pt-table thead th.name,
+.pt-table tbody td.name{
+  position: sticky;
+  left: 0;
+  z-index: 3;
+}
+.pt-table tbody td.name{
+  background: #0f1420; /* base background so it doesn't show underneath while sticky */
+}
+.pt-table thead th.name{
+  z-index: 6;
+}
+.pt-table tbody tr.pt-has-qty td.name{
+  background: rgba(110, 160, 255, 0.10);
+}
+.pt-table tbody tr.pt-at-cap td.name{
+  background: rgba(255, 170, 80, 0.16);
+}
+.pt-table tbody tr.pt-row-selected td.name{
+  background: rgba(110,160,255,0.12);
+}
+
+/* keep borders crisp for sticky column */
+.pt-table tbody td.name,
+.pt-table thead th.name{
+  border-right: 1px solid rgba(255,255,255,.10);
+}
+
