@@ -40,7 +40,7 @@ body {
   border-spacing: 0;
   width:100%;
   table-layout: fixed;
-  min-width: 942px; /* allow horizontal scroll for resource columns */
+  min-width: 952px; /* allow horizontal scroll for resource columns */
 }
 
 .pt-table th,
@@ -84,7 +84,7 @@ body {
 
 
 .pt-col-ratio_b{ width: 84px; }
-.pt-col-dia_per_yen{ width: 82px; }
+.pt-col-dia_per_yen{ width: 92px; }
 .pt-col-sumdia{ width: 74px; }
 .pt-col-invite{ width: 52px; }
 .pt-col-diamond{ width: 58px; }
