@@ -254,7 +254,7 @@ function getEffectiveRates(){
 
       return `
       <tr data-key="${key}">
-        <td class="name pt-namecell" title="${r.package_name}"><span class="pt-nameText">${fmtName(r.package_name)}</span><span class="pt-nameMeta">：${qty}/${maxDisp}</span></td>
+        <td class="name pt-namecell" title="${r.package_name}"><div class="pt-sticky1"><span class="pt-nameText">${fmtName(r.package_name)}</span><span class="pt-nameMeta">：${qty}/${maxDisp}</span></div></td>
         <td class="jpy">${fmtNum(r.jpy)}</td>
 
         <td class="res res-gold${cls0(r.gold)}">${fmtNum(r.gold)}</td>
@@ -346,7 +346,7 @@ function getEffectiveRates(){
 
     const totalRow = `
       <tr>
-        <td class="name pt-namecell"><span class="pt-nameText">合計</span><span class="pt-nameMeta">${sumQty}</span></td>
+        <td class="name pt-namecell"><div class="pt-sticky1"><span class="pt-nameText">合計</span><span class="pt-nameMeta">${sumQty}</span></div></td>
         <td class="jpy">${fmtNum(sumY)}</td>
 
         <td class="res res-gold${cls0(sumRes.gold)}">${fmtNum(sumRes.gold)}</td>
@@ -373,7 +373,7 @@ function getEffectiveRates(){
 
       return `
       <tr>
-        <td class="name pt-namecell" title="${r.package_name}"><span class="pt-nameText">${fmtName(r.package_name)}</span><span class="pt-nameMeta">${fmtNum(qty)}</span></td>
+        <td class="name pt-namecell" title="${r.package_name}"><div class="pt-sticky1"><span class="pt-nameText">${fmtName(r.package_name)}</span><span class="pt-nameMeta">${fmtNum(qty)}</span></div></td>
         <td class="jpy">${fmtNum(yen)}</td>
 
         <td class="res res-gold${cls0(resMul('gold'))}">${fmtNum(resMul('gold'))}</td>
