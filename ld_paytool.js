@@ -441,76 +441,49 @@ const mode = elSort.value;
   
   
   function updateSelectedInfo(){
-    if(!elSelectedInfo || !elSelectedInfoText) return;
+    if(!elSelectedInfoText) return;
 
-    // prefer main selection, fallback to summary selection
-    if(selectedKeyMain){
-      const row = (lastRowsMain || []).find(r => rowKey(r) === selectedKeyMain);
-      const qty = Number(cart[selectedKeyMain] || 0);
-      if(row && qty > 0){
-        const yen = (Number(row.jpy)||0) * qty;
-        const limit = (row.purchase_limit ?? '-');
-        const dia = (Number(row._calc_dia)||0) * qty;
-        const dpy = yen>0 ? (dia/yen) : 0;
-        const parts = [];
-        parts.push(`${row.package_name} ×${qty}/${limit}`);
-        parts.push(`¥${fmtNum(yen)}`);
-        parts.push(`💎換算 ${fmtNum(dia)}`);
-        if(dpy>0) parts.push(`💎1個/¥ ${(dpy/1000).toFixed(3)}`);
-        const resKeys = [
-          ['gold','ゴールド'],
-          ['mine_key','鉱山鍵'],
-          ['churu','チュール'],
-          ['battery','バッテリー'],
-          ['pet_food','ペット餌'],
-          ['mythic_stone','神話石'],
-          ['immortal_stone','不滅石'],
-          ['diamond','ダイヤ'],
-          ['invite','招待状'],
-        ];
-        for(const [k,label] of resKeys){
-          const v = (Number(row[k])||0) * qty;
-          if(v) parts.push(`${label} ${fmtNum(v)}`);
-        }
-        elSelectedInfoText.textContent = parts.join(' / ');
-        elSelectedInfo.hidden = false;
-        return;
-      }
+    const key = selectedKeyMain || selectedKeySummary;
+    if(!key){
+      elSelectedInfoText.classList.add('pt-selected-placeholder');
+      elSelectedInfoText.textContent = '選択された行の商品内容がここに表示されます';
+      return;
     }
 
-    if(selectedKeySummary){
-      const it = (lastSummaryDetail || []).find(x => x.key === selectedKeySummary);
-      if(it && it.qty > 0){
-        const limit = (it.purchase_limit ?? '-');
-        const parts = [];
-        parts.push(`${it.package_name} ×${it.qty}/${limit}`);
-        parts.push(`¥${fmtNum(it.yen)}`);
-        parts.push(`💎換算 ${fmtNum(it.dia)}`);
-        if(it.dpy>0) parts.push(`💎1個/¥ ${((it.dpy)/1000).toFixed(3)}`);
-        const map = [
-          ['gold','ゴールド'],
-          ['mine_key','鉱山鍵'],
-          ['churu','チュール'],
-          ['battery','バッテリー'],
-          ['pet_food','ペット餌'],
-          ['mythic_stone','神話石'],
-          ['immortal_stone','不滅石'],
-          ['diamond','ダイヤ'],
-          ['invite','招待状'],
-        ];
-        for(const [k,label] of map){
-          const v = Number(it.res?.[k] || 0);
-          if(v) parts.push(`${label} ${fmtNum(v)}`);
-        }
-        elSelectedInfoText.textContent = parts.join(' / ');
-        elSelectedInfo.hidden = false;
-        return;
-      }
+    const row = packages.find(p => rowKey(p) === key) || (lastRowsMain||[]).find(r=>rowKey(r)===key);
+    if(!row){
+      elSelectedInfoText.classList.add('pt-selected-placeholder');
+      elSelectedInfoText.textContent = '選択された行の商品内容がここに表示されます';
+      return;
     }
 
-    elSelectedInfo.hidden = true;
-    elSelectedInfoText.textContent = '';
+    // Show raw package content (NOT multiplied by purchase qty)
+    const yen = Number(row.jpy)||0;
+
+    const RES = [
+      {k:'gold', alt:'ゴールド',  icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_01_gold_20x20px.png'},
+      {k:'mine_key', alt:'鉱山の鍵', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_04_mine_key_20x20px.png'},
+      {k:'churu', alt:'チュール',   icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_03_churu_20x20px.png'},
+      {k:'battery', alt:'バッテリー', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_05_battery_20x20px.png'},
+      {k:'pet_food', alt:'ペットフード', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_06_pet_food_20x20px.png'},
+      {k:'mythic_stone', alt:'神話石', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_07_mythic_stone_20x20px.png'},
+      {k:'immortal_stone', alt:'不滅石', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_08_immortal_stone_20x20px.png'},
+      {k:'diamond', alt:'ダイヤ', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_02_diamond_20x20px.png'},
+      {k:'invite', alt:'招待状', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_09_invite_20x20px.png'},
+    ];
+
+    const parts = [];
+    parts.push(`<span class="pt-sel-price">¥${fmtNum(yen)}</span>`);
+    for(const r of RES){
+      const v = Number(row[r.k]||0);
+      if(!v) continue;
+      parts.push(`<span class="pt-sel-item"><img class="pt-sel-ico" src="${r.icon}" alt="${r.alt}"><span class="pt-sel-val">${fmtNum(v)}</span></span>`);
+    }
+
+    elSelectedInfoText.classList.remove('pt-selected-placeholder');
+    elSelectedInfoText.innerHTML = `<div class="pt-sel-items">${parts.join('')}</div>`;
   }
+
 
 function updateRowStates(tableBodyEl, selectedKey){
     if(!tableBodyEl) return;
@@ -642,35 +615,60 @@ function applyAll(){
     const bPopup   = document.getElementById('ptBudgetPopup');
     const bClose   = document.getElementById('ptBudgetClose');
     const bValue   = document.getElementById('ptBudgetValue');
-    const bBack    = document.getElementById('ptBudgetBack');
+    const bPurchased = document.getElementById('ptBudgetPurchased');
     const bClear   = document.getElementById('ptBudgetClear');
+    const bOk      = document.getElementById('ptBudgetOk');
 
     function getBudgetVal(){ return clampInt(elBudgetYen.value, 0, 200000); }
-    function setBudgetVal(v){
-      const nv = clampInt(v, 0, 200000);
-      elBudgetYen.value = String(nv);
-      if(bValue) bValue.textContent = fmtNum(nv);
-      applyAll();
+
+    // decision-style temp value (only applied on OK)
+    let bTemp = 0;
+
+    function calcPurchasedYen(){
+      let sum = 0;
+      for(const p of (packages||[])){
+        const key = rowKey(p);
+        const qty = clampInt(cart[key] ?? 0, 0, 999999);
+        if(qty <= 0) continue;
+        sum += (Number(p.jpy)||0) * qty;
+      }
+      return sum;
     }
+
+    function refreshBudgetPopupUI(){
+      if(bValue) bValue.textContent = fmtNum(bTemp);
+      if(bPurchased) bPurchased.textContent = fmtNum(calcPurchasedYen());
+    }
+
     function openBudgetPopup(){
       if(!bOverlay || !bPopup) return;
-      const v = getBudgetVal();
-      if(bValue) bValue.textContent = fmtNum(v);
+      bTemp = getBudgetVal();
+      refreshBudgetPopupUI();
       bOverlay.hidden = false; bPopup.hidden = false;
+
       // show slightly above center
       const h = bPopup.getBoundingClientRect().height || 260;
       const y = Math.max(8, Math.min(window.innerHeight - h - 8, window.innerHeight*0.25));
       bPopup.style.top = y + 'px';
     }
+
     function closeBudgetPopup(){
       if(!bOverlay || !bPopup) return;
       bOverlay.hidden = true; bPopup.hidden = true;
     }
+
+    function commitBudget(){
+      const nv = clampInt(bTemp, 0, 200000);
+      elBudgetYen.value = String(nv);
+      applyAll();
+      closeBudgetPopup();
+    }
+
     if(elBudgetQuick) elBudgetQuick.addEventListener('click', openBudgetPopup);
     if(bOverlay) bOverlay.addEventListener('click', closeBudgetPopup);
     if(bClose) bClose.addEventListener('click', closeBudgetPopup);
-    if(bBack) bBack.addEventListener('click', closeBudgetPopup);
-    if(bClear) bClear.addEventListener('click', ()=> setBudgetVal(0));
+    if(bClear) bClear.addEventListener('click', ()=>{ bTemp = 0; refreshBudgetPopupUI(); });
+    if(bOk) bOk.addEventListener('click', commitBudget);
 
     bPopup?.addEventListener('click', (e)=>{
       const t = e.target;
@@ -679,8 +677,10 @@ function applyAll(){
       if(!btn) return;
       const delta = Number(btn.getAttribute('data-delta'));
       if(!Number.isFinite(delta)) return;
-      setBudgetVal(getBudgetVal() + delta);
+      bTemp = clampInt(bTemp + delta, 0, 200000);
+      refreshBudgetPopupUI();
     });
+
 
     // purchase popup handlers (open only from 1st column)
     let lastTap = {x:0,y:0,moved:false};

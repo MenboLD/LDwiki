@@ -796,9 +796,14 @@ body {
 
 
 /* Selected row info bar (shown when a row is selected) */
-.pt-selected-info{display:flex;gap:8px;align-items:flex-start;margin:6px 0 10px 0;padding:8px 10px;border:1px solid rgba(255,255,255,0.10);border-radius:10px;background:rgba(255,255,255,0.04);}
-.pt-selected-title{font-size:11px;opacity:0.8;white-space:nowrap;}
-.pt-selected-text{font-size:12px;line-height:1.35;overflow:auto;}
+.pt-selected-info{margin:6px 0 10px 0;padding:8px 10px;border:1px solid rgba(255,255,255,0.10);border-radius:10px;background:rgba(255,255,255,0.04);}
+.pt-selected-text{font-size:12px;line-height:1.35;}
+.pt-selected-placeholder{opacity:0.7;}
+.pt-sel-items{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.pt-sel-price{font-variant-numeric:tabular-nums;opacity:0.95;margin-right:2px;}
+.pt-sel-item{display:inline-flex;align-items:center;gap:4px;}
+.pt-sel-ico{width:16px;height:16px;display:inline-block;}
+.pt-sel-val{font-variant-numeric:tabular-nums;}
 
 /* Slightly smaller package name text (values only) */
 .pt-table td.name .pt-nameText{font-size:12.5px;}
@@ -811,3 +816,8 @@ body {
 .pt-table tbody td.count{
   text-align: center;
 }
+
+
+.pt-budget-meta{margin:6px 0 10px 0;font-size:11px;opacity:0.8;text-align:center;}
+.pt-budget-foot{display:flex;justify-content:center;gap:10px;margin-top:10px;}
+.pt-popup-btn--ok{border-color:rgba(180,220,255,0.35);}
