@@ -4,7 +4,7 @@
   const elSelectedInfo = document.getElementById('selectedRowInfo');
   const elSelectedInfoText = document.getElementById('selectedRowInfoText');
 
-  const elMineKeyRate = document.getElementById('optMineKeyRate');
+  let elMineKeyRate = null;
   const elBudgetYen = document.getElementById('optBudgetYen');
   const elBudgetQuick = document.getElementById('btnBudgetQuick');
   const elRateEditor = document.getElementById('rateEditor');
@@ -115,6 +115,11 @@
     }
     elToggles.addEventListener('change', (e)=>{
       const t = e.target;
+      if(t instanceof HTMLSelectElement && t.id==='optMineKeyRate'){
+        rateBase.mine_key = Number(t.value)||0;
+        applyAll();
+        return;
+      }
       if(!(t instanceof HTMLInputElement)) return;
       const k = t.dataset.key;
       if(!k) return;
@@ -162,6 +167,7 @@
     if(!elRateEditor) return;
     const items = [
       { key:'gold', name:'ゴールド', icon:'Resource_01_gold_20x20px.png' },
+      { key:'mine_key', name:'鍵', icon:'Resource_02_key_20x20px.png', kind:'select' },
       { key:'battery', name:'バッテリー', icon:'Resource_04_battery_20x20px.png' },
       { key:'pet_food', name:'ペットフード', icon:'Resource_05_petfood_20x20px.png' },
       { key:'mythic_stone', name:'神話石', icon:'Resource_06_Mythstone_20x20px.png' },
@@ -175,15 +181,52 @@
     for(const it of items){
       const row = document.createElement('div');
       row.className = 'pt-rate-item';
-      row.innerHTML = `
-        <img class="pt-rate-icon" src="${baseUrl}${it.icon}" alt="${it.name}">
-        <div class="pt-rate-name">${it.name}</div>
-        <input class="pt-rate-input" type="number" inputmode="decimal" step="0.01" min="0" data-key="${it.key}" value="${String(rateBase[it.key] ?? 0)}" aria-label="${it.name}のレート">
-      `;
+      // icon
+      const img = document.createElement('img');
+      img.className = 'pt-rate-icon';
+      img.src = `${baseUrl}${it.icon}`;
+      img.alt = it.name;
+      row.appendChild(img);
+
+      const nm = document.createElement('div');
+      nm.className = 'pt-rate-name';
+      nm.textContent = it.name;
+      row.appendChild(nm);
+
+      if(it.kind === 'select' && it.key === 'mine_key'){
+        const sel = document.createElement('select');
+        sel.id = 'optMineKeyRate';
+        sel.className = 'pt-rate-input';
+        ['420','500','600'].forEach(v=>{
+          const opt=document.createElement('option');
+          opt.value=v; opt.textContent=v;
+          sel.appendChild(opt);
+        });
+        sel.value = String(rateBase.mine_key ?? 420);
+        sel.setAttribute('aria-label', `${it.name}のレート`);
+        row.appendChild(sel);
+        elMineKeyRate = sel;
+      }else{
+        const inp = document.createElement('input');
+        inp.className = 'pt-rate-input';
+        inp.type = 'number';
+        inp.inputMode = 'decimal';
+        inp.min = '0';
+        inp.step = '1';
+        inp.value = String(rateBase[it.key] ?? 0);
+        inp.setAttribute('data-key', it.key);
+        inp.setAttribute('aria-label', `${it.name}のレート`);
+        row.appendChild(inp);
+      }
       elRateEditor.appendChild(row);
     }
     elRateEditor.addEventListener('change', (e)=>{
       const t = e.target;
+      if(t instanceof HTMLSelectElement && t.id==='optMineKeyRate'){
+        rateBase.mine_key = Number(t.value)||0;
+        applyAll();
+        return;
+      }
       if(!(t instanceof HTMLInputElement)) return;
       const k = t.dataset.key;
       if(!k) return;
@@ -194,7 +237,7 @@
 
 function getEffectiveRates(){
     const r = {...rateBase};
-    r.mine_key = Number(elMineKeyRate.value);
+    r.mine_key = Number(elMineKeyRate ? elMineKeyRate.value : (rateBase.mine_key ?? 0));
     for(const k of RESOURCE_KEYS){
       if(!toggles[k]) r[k] = 0;
     }

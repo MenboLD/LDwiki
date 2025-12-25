@@ -40,7 +40,7 @@ body {
   border-spacing: 0;
   width:100%;
   table-layout: fixed;
-  min-width: 876px; /* allow horizontal scroll for resource columns */
+  min-width: 926px; /* allow horizontal scroll for resource columns */
 }
 
 .pt-table th,
@@ -83,10 +83,10 @@ body {
 
 
 
-.pt-col-ratio_b{ width: 74px; }
-.pt-col-dia_per_yen{ width: 50px; }
+.pt-col-ratio_b{ width: 84px; }
+.pt-col-dia_per_yen{ width: 66px; }
 .pt-col-sumdia{ width: 74px; }
-.pt-col-invite{ width: 44px; }
+.pt-col-invite{ width: 52px; }
 .pt-col-diamond{ width: 58px; }
 .pt-col-immortal_stone{ width: 54px; }
 .pt-col-mythic_stone{ width: 54px; }
@@ -94,9 +94,9 @@ body {
 .pt-col-battery{ width: 54px; }
 .pt-col-churu{ width: 34px; }
 .pt-col-mine_key{ width: 44px; }
-.pt-col-gold{ width: 62px; }
+.pt-col-gold{ width: 70px; }
 .pt-col-jpy{ width: 62px; }
-.pt-col-count{ width: 50px; }
+.pt-col-count{ width: 58px; }
 .pt-col-name{ width: 96px; }
 .pt-col-count{ width: var(--pt-col-count) !important; }
 .pt-col-jpy{ width: 62px !important; }
@@ -642,12 +642,7 @@ body {
   gap: 8px;
   margin-top: 8px;
 }
-.pt-rate-item{
-  display: grid;
-  grid-template-columns: 24px 1fr 92px;
-  gap: 8px;
-  align-items: center;
-}
+.pt-rate-item{ display:grid; grid-template-columns: 22px 1fr 96px; align-items:center; column-gap:10px; padding:6px 6px; }
 .pt-rate-icon{
   width: 20px;
   height: 20px;
@@ -657,15 +652,7 @@ body {
   font-size: 12px;
   opacity: .92;
 }
-.pt-rate-input{
-  width: 92px;
-  padding: 6px 8px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.25);
-  color: #e8eefc;
-  font-variant-numeric: tabular-nums;
-}
+.pt-rate-input{ width:96px; box-sizing:border-box; }
 
 .pt-budget-row{
   align-items: end;
@@ -821,3 +808,12 @@ body {
 .pt-budget-meta{margin:6px 0 10px 0;font-size:11px;opacity:0.8;text-align:center;}
 .pt-budget-foot{display:flex;justify-content:center;gap:10px;margin-top:10px;}
 .pt-popup-btn--ok{border-color:rgba(180,220,255,0.35);}
+
+
+/* calc columns header center */
+.pt-table thead th.calc{ text-align:center; }
+
+.pt-rate-item select.pt-rate-input{ width:96px; }
+
+.pt-note{ font-size:11px; color:var(--pt-muted,#b7c2d1); line-height:1.35; margin-top:8px; }
+.pt-note div{ margin:4px 0; }
