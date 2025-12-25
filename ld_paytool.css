@@ -40,7 +40,7 @@ body {
   border-spacing: 0;
   width:100%;
   table-layout: fixed;
-  min-width: 952px; /* allow horizontal scroll for resource columns */
+  min-width: 962px; /* allow horizontal scroll for resource columns */
 }
 
 .pt-table th,
@@ -84,7 +84,7 @@ body {
 
 
 .pt-col-ratio_b{ width: 84px; }
-.pt-col-dia_per_yen{ width: 92px; }
+.pt-col-dia_per_yen{ width: 102px; }
 .pt-col-sumdia{ width: 74px; }
 .pt-col-invite{ width: 52px; }
 .pt-col-diamond{ width: 58px; }
@@ -576,7 +576,7 @@ body {
 .pt-col-diamond{ width: 58px !important; }
 .pt-col-invite{ width: 44px !important; }
 .pt-col-sumdia{ width: 74px !important; }
-.pt-col-dia_per_yen{ width: 50px !important; }
+.pt-col-dia_per_yen{ width: 102px !important; }
 .pt-col-ratio_b{ width: 74px !important; }
 
 /* package cell: name + qty area (qty centered) */
