@@ -1,23 +1,20 @@
 (async () => {
   const status = document.getElementById('ptStatus');
   const tbody = document.getElementById('payTableBody');
+  const elSelectedInfo = document.getElementById('selectedRowInfo');
+  const elSelectedInfoText = document.getElementById('selectedRowInfoText');
 
-  const elMineKeyRate = document.getElementById('optMineKeyRate');
+  let elMineKeyRate = null;
   const elBudgetYen = document.getElementById('optBudgetYen');
   const elBudgetQuick = document.getElementById('btnBudgetQuick');
   const elRateEditor = document.getElementById('rateEditor');
+  const elRateReset = document.getElementById('btnRateReset');
   const elBtnResAll = document.getElementById('btnResAll');
   const elBtnDoubleAll = document.getElementById('btnDoubleAll');
     const elToggles = document.getElementById('resourceToggles');
   const elDoubleToggles = document.getElementById('doubleToggles');
   const elSort = document.getElementById('optSort');
-  const elKpi = document.getElementById('kpiBaseline');
-
-  const elBtnOptimize = document.getElementById('btnOptimize');
-  const elBtnOptimizeApply = document.getElementById('btnOptimizeApply');
-  const elOptimizeResult = document.getElementById('optimizeResult');
-  let lastOptimizePlan = null;
-
+  const elKpi = null;
   const elSummaryTbody = document.getElementById('summaryTableBody');
 
   function fmtName(name){ return name ?? ""; }
@@ -71,12 +68,21 @@
 
   let packages = [];
   let rateBase = {};
+  let initialRateBase = null;
   let toggles = {};
   let baselinePacks = [];
   let doublePacks = [];
   let doubleAvailability = {}; // price_yen -> bool
   let cart = {}; // key -> qty
 
+
+  // row selection state (main + summary)
+  let selectedKeyMain = null;
+  let selectedKeySummary = null;
+
+  // last computed rows (for selected-row info)
+  let lastRowsMain = [];
+  let lastSummaryDetail = [];
   const CART_LS_KEY = "ld_paytool_cart_v1";
 
   function rowKey(p){
@@ -110,6 +116,11 @@
     }
     elToggles.addEventListener('change', (e)=>{
       const t = e.target;
+      if(t instanceof HTMLSelectElement && t.id==='optMineKeyRate'){
+        rateBase.mine_key = Number(t.value)||0;
+        applyAll();
+        return;
+      }
       if(!(t instanceof HTMLInputElement)) return;
       const k = t.dataset.key;
       if(!k) return;
@@ -157,6 +168,7 @@
     if(!elRateEditor) return;
     const items = [
       { key:'gold', name:'ゴールド', icon:'Resource_01_gold_20x20px.png' },
+      { key:'mine_key', name:'鍵', icon:'Resource_02_key_20x20px.png', kind:'select' },
       { key:'battery', name:'バッテリー', icon:'Resource_04_battery_20x20px.png' },
       { key:'pet_food', name:'ペットフード', icon:'Resource_05_petfood_20x20px.png' },
       { key:'mythic_stone', name:'神話石', icon:'Resource_06_Mythstone_20x20px.png' },
@@ -170,15 +182,52 @@
     for(const it of items){
       const row = document.createElement('div');
       row.className = 'pt-rate-item';
-      row.innerHTML = `
-        <img class="pt-rate-icon" src="${baseUrl}${it.icon}" alt="${it.name}">
-        <div class="pt-rate-name">${it.name}</div>
-        <input class="pt-rate-input" type="number" inputmode="decimal" step="0.01" min="0" data-key="${it.key}" value="${String(rateBase[it.key] ?? 0)}" aria-label="${it.name}のレート">
-      `;
+      // icon
+      const img = document.createElement('img');
+      img.className = 'pt-rate-icon';
+      img.src = `${baseUrl}${it.icon}`;
+      img.alt = it.name;
+      row.appendChild(img);
+
+      const nm = document.createElement('div');
+      nm.className = 'pt-rate-name';
+      nm.textContent = it.name;
+      row.appendChild(nm);
+
+      if(it.kind === 'select' && it.key === 'mine_key'){
+        const sel = document.createElement('select');
+        sel.id = 'optMineKeyRate';
+        sel.className = 'pt-rate-input';
+        ['420','500','600'].forEach(v=>{
+          const opt=document.createElement('option');
+          opt.value=v; opt.textContent=v;
+          sel.appendChild(opt);
+        });
+        sel.value = String(rateBase.mine_key ?? 420);
+        sel.setAttribute('aria-label', `${it.name}のレート`);
+        row.appendChild(sel);
+        elMineKeyRate = sel;
+      }else{
+        const inp = document.createElement('input');
+        inp.className = 'pt-rate-input';
+        inp.type = 'number';
+        inp.inputMode = 'decimal';
+        inp.min = '0';
+        inp.step = '1';
+        inp.value = String(rateBase[it.key] ?? 0);
+        inp.setAttribute('data-key', it.key);
+        inp.setAttribute('aria-label', `${it.name}のレート`);
+        row.appendChild(inp);
+      }
       elRateEditor.appendChild(row);
     }
     elRateEditor.addEventListener('change', (e)=>{
       const t = e.target;
+      if(t instanceof HTMLSelectElement && t.id==='optMineKeyRate'){
+        rateBase.mine_key = Number(t.value)||0;
+        applyAll();
+        return;
+      }
       if(!(t instanceof HTMLInputElement)) return;
       const k = t.dataset.key;
       if(!k) return;
@@ -187,9 +236,28 @@
     });
   }
 
+  function pullRatesFromUI(){
+    if(!elRateEditor) return;
+    // numeric inputs
+    const inputs = elRateEditor.querySelectorAll('input.pt-rate-input[data-key]');
+    inputs.forEach(inp=>{
+      const k = inp.getAttribute('data-key');
+      const v = Number(String(inp.value||'').replace(/,/g,''));
+      if(!k) return;
+      if(Number.isFinite(v)) rateBase[k] = v;
+    });
+    // mine_key select
+    const sel = elRateEditor.querySelector('#optMineKeyRate');
+    if(sel){
+      const v = Number(sel.value);
+      if(Number.isFinite(v)) rateBase.mine_key = v;
+    }
+  }
+
+
 function getEffectiveRates(){
     const r = {...rateBase};
-    r.mine_key = Number(elMineKeyRate.value);
+    r.mine_key = Number(elMineKeyRate ? elMineKeyRate.value : (rateBase.mine_key ?? 0));
     for(const k of RESOURCE_KEYS){
       if(!toggles[k]) r[k] = 0;
     }
@@ -259,7 +327,8 @@ function getEffectiveRates(){
 
       return `
       <tr data-key="${key}">
-        <td class="name pt-namecell" title="${r.package_name}"><div class="pt-sticky1"><span class="pt-nameText">${fmtName(r.package_name)}</span><span class="pt-nameMeta">：${qty}/${maxDisp}</span></div></td>
+        <td class="name sticky-col sticky-col1" title="${r.package_name}"><span class="pt-nameText">${fmtName(r.package_name)}</span></td>
+        <td class="count sticky-col sticky-col2"><span class="pt-countText">${qty}/${maxDisp}</span></td>
         <td class="jpy">${fmtNum(r.jpy)}</td>
 
         <td class="res res-gold${cls0(r.gold)}">${fmtNum(r.gold)}</td>
@@ -273,7 +342,7 @@ function getEffectiveRates(){
         <td class="res res-invite${cls0(r.invite)}">${fmtNum(r.invite)}</td>
 
         <td class="calc">${fmtNum(r._calc_dia)}</td>
-        <td class="calc">${(r._calc_dpy && r._calc_dpy>0) ? fmtFloat2(r._calc_dpy) : '-'}</td>
+        <td class="calc">${(r._calc_dpy && r._calc_dpy>0) ? fmtInt(Math.round(r._calc_dpy*100)) : '-'}</td>
         <td class="calc">${fmtPct1(r._calc_budget_ratio)}</td>
       </tr>`;
     }).join('');
@@ -292,8 +361,7 @@ function getEffectiveRates(){
       .filter(n => Number.isFinite(n) && n > 0);
     const uniq = Array.from(new Set(tiers)).sort((a,b)=>a-b);
     const enabled = uniq.filter(p => doubleAvailability[p] !== false).length;
-    elKpi.textContent = `基準(予算${budget}) Dia/¥=${budgetDiaPerYen ? (Math.round(budgetDiaPerYen*1000)/1000).toFixed(3) : '-'} / 初回2倍: ${enabled}/${uniq.length}使用可`;
-
+    // KPI baseline line removed per spec
     const rows = packages.map(p => {
       const yen = Number(p.jpy) || 0;
       const dia = calcPackageDiaValue(p, rates);
@@ -302,7 +370,8 @@ function getEffectiveRates(){
       return { ...p, _calc_dia: dia, _calc_dpy: dpy, _calc_budget_ratio: budgetRatio };
     });
 
-    const mode = elSort.value;
+        lastRowsMain = rows;
+const mode = elSort.value;
     let out = rows.slice();
     switch(mode){
       case 'dpy_desc': out.sort((a,b)=> (b._calc_dpy||0) - (a._calc_dpy||0)); break;
@@ -313,154 +382,6 @@ function getEffectiveRates(){
       default: out.sort((a,b)=> (a.sort_order||0)-(b.sort_order||0)); break;
     }
     return { out, budgetDiaPerYen };
-
-  function gcd2(a,b){ while(b){ const t=a%b; a=b; b=t; } return Math.abs(a); }
-  function chooseStep(budgetYen, prices){
-    let g = 0;
-    for(const p of prices){
-      const n = Math.round(Number(p)||0);
-      if(n<=0) continue;
-      g = g===0 ? n : gcd2(g,n);
-    }
-    if(!g) g = 100;
-    // keep step not too small (DP size control)
-    let step = g;
-    if(step < 10) step = 10;
-    let states = Math.floor(budgetYen / step);
-    while(states > 4000){
-      step *= 2;
-      states = Math.floor(budgetYen / step);
-    }
-    return step;
-  }
-
-  function computeOptimalPlan(budgetYen){
-    const rates = getEffectiveRates();
-    const rows = packages
-      .filter(p => p.is_active !== false)
-      .map(p => {
-        const price = Math.round(Number(p.jpy)||0);
-        const val = calcPackageDiaValue(p, rates);
-        const maxRaw = p.purchase_limit;
-        const max = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
-        const cap = (Number.isFinite(max) && max > 0) ? max : 999;
-        return { key: rowKey(p), name: p.package_name, price, val, cap, raw: p };
-      })
-      .filter(it => it.price > 0 && it.val > 0 && it.cap > 0);
-
-    if(budgetYen <= 0 || rows.length === 0) return null;
-
-    const step = chooseStep(budgetYen, rows.map(r=>r.price));
-    const B = Math.floor(budgetYen / step);
-    if(B<=0) return null;
-
-    // bounded knapsack via binary split -> 0/1 items
-    const items = [];
-    for(const r of rows){
-      let c = Math.min(r.cap, 999);
-      let k = 1;
-      while(c > 0){
-        const take = Math.min(k, c);
-        items.push({
-          key: r.key,
-          name: r.name,
-          w: Math.floor(r.price * take / step),
-          cost: r.price * take,
-          v: r.val * take,
-          qty: take,
-        });
-        c -= take;
-        k <<= 1;
-      }
-    }
-
-    const dp = new Array(B+1).fill(-Infinity);
-    const prevB = new Array(B+1).fill(-1);
-    const prevI = new Array(B+1).fill(-1);
-    dp[0]=0;
-
-    for(let i=0;i<items.length;i++){
-      const it=items[i];
-      if(it.w<=0) continue;
-      for(let b=B;b>=it.w;b--){
-        const cand = dp[b-it.w] + it.v;
-        if(cand > dp[b]){
-          dp[b]=cand;
-          prevB[b]=b-it.w;
-          prevI[b]=i;
-        }
-      }
-    }
-
-    // pick best dp[b] for b<=B (not necessarily exact)
-    let bestB=0, bestV=0;
-    for(let b=0;b<=B;b++){
-      if(dp[b] > bestV){
-        bestV=dp[b]; bestB=b;
-      }
-    }
-    if(bestV<=0) return null;
-
-    const counts = {};
-    let b=bestB;
-    while(b>0 && prevI[b]!==-1){
-      const it=items[prevI[b]];
-      counts[it.key] = (counts[it.key]||0) + it.qty;
-      b = prevB[b];
-    }
-
-    // totals
-    let sumY=0,sumDia=0;
-    const chosen=[];
-    for(const r of rows){
-      const q=counts[r.key]||0;
-      if(q<=0) continue;
-      const y=r.price*q;
-      const d=r.val*q;
-      sumY+=y; sumDia+=d;
-      chosen.push({ key:r.key, name:r.name, qty:q, y, d });
-    }
-    chosen.sort((a,b)=>b.d-a.d);
-
-    return { step, budgetYen, usedYen: sumY, dia: sumDia, counts, chosen };
-  }
-
-  function renderOptimize(plan){
-    if(!elOptimizeResult) return;
-    if(!plan){
-      elOptimizeResult.innerHTML = '<div class="pt-opt-meta">おすすめ購入を計算できませんでした（予算やレート設定を確認してください）</div>';
-      return;
-    }
-    const dpy = plan.usedYen>0 ? (plan.dia/plan.usedYen) : 0;
-    const title = 'おすすめ購入（予算内で💎換算が最大）';
-    const meta = `合計: ¥${fmtNum(plan.usedYen)} / 💎換算: ${fmtNum(plan.dia)} / 100円💎: ${fmtNum(Math.round(dpy*100))}`;
-    const list = plan.chosen.slice(0,8).map(it => 
-      `<div class="pt-opt-item"><div class="name">${fmtName(it.name)}</div><div class="qty">×${fmtNum(it.qty)}</div></div>`
-    ).join('');
-    const more = plan.chosen.length>8 ? `<div class="pt-opt-meta">他 ${plan.chosen.length-8} 件</div>` : '';
-    elOptimizeResult.innerHTML = `<div class="pt-opt-title">${title}</div><div class="pt-opt-meta">${meta}</div><div class="pt-opt-list">${list}</div>${more}`;
-  }
-
-  function applyOptimizePlan(plan){
-    if(!plan) return;
-    // overwrite cart counts, clamp with caps
-    const next = {};
-    for(const p of packages){
-      const key = rowKey(p);
-      const maxRaw = p.purchase_limit;
-      const max = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
-      const cap = (Number.isFinite(max) && max > 0) ? max : 999;
-      const q = clampInt(plan.counts[key] || 0, 0, cap);
-      if(q>0) next[key]=q;
-    }
-    // clear others
-    for(const k of Object.keys(cart)) delete cart[k];
-    Object.assign(cart, next);
-    saveCart();
-    applyAll();
-  }
-
-
   }
 
   function updateSummary(rows, budgetDiaPerYen){
@@ -471,6 +392,8 @@ function getEffectiveRates(){
       gold:0, mine_key:0, churu:0, battery:0, pet_food:0,
       mythic_stone:0, immortal_stone:0, diamond:0, invite:0
     };
+    const detailItems = [];
+
 
     const picked = [];
     for(const r of rows){
@@ -499,7 +422,8 @@ function getEffectiveRates(){
 
     const totalRow = `
       <tr>
-        <td class="name pt-namecell"><div class="pt-sticky1"><span class="pt-nameText">合計</span><span class="pt-nameMeta">${sumQty}</span></div></td>
+        <td class="name sticky-col sticky-col1 pt-summary-total-label">合計</td>
+        <td class="count sticky-col sticky-col2 pt-summary-total-qty"><span class="pt-countText">${sumQty}</span></td>
         <td class="jpy">${fmtNum(sumY)}</td>
 
         <td class="res res-gold${cls0(sumRes.gold)}">${fmtNum(sumRes.gold)}</td>
@@ -513,7 +437,7 @@ function getEffectiveRates(){
         <td class="res res-invite${cls0(sumRes.invite)}">${fmtNum(sumRes.invite)}</td>
 
         <td class="calc">${fmtNum(sumDia)}</td>
-        <td class="calc">${(sumY>0)?fmtFloat2(dpy):'-'}</td>
+        <td class="calc">${(sumY>0)?fmtInt(Math.round(dpy*100)):'-'}</td>
         <td class="calc">${fmtPct1(ratioB)}</td>
       </tr>`;
 
@@ -524,10 +448,34 @@ function getEffectiveRates(){
       const ratio2 = (budgetDiaPerYen > 0 && dpy2 > 0) ? (dpy2 / budgetDiaPerYen) : 0;
       const resMul = (k) => (Number(r[k])||0) * qty;
 
+      const key = rowKey(r);
+      detailItems.push({
+        key,
+        package_name: r.package_name,
+        qty,
+        purchase_limit: r.purchase_limit,
+        yen,
+        dia,
+        dpy: dpy2,
+        ratio: ratio2,
+        res: {
+          gold: resMul('gold'),
+          mine_key: resMul('mine_key'),
+          churu: resMul('churu'),
+          battery: resMul('battery'),
+          pet_food: resMul('pet_food'),
+          mythic_stone: resMul('mythic_stone'),
+          immortal_stone: resMul('immortal_stone'),
+          diamond: resMul('diamond'),
+          invite: resMul('invite'),
+        }
+      });
+
       return `
-      <tr>
-        <td class="name pt-namecell" title="${r.package_name}"><div class="pt-sticky1"><span class="pt-nameText">${fmtName(r.package_name)}</span><span class="pt-nameMeta">${fmtNum(qty)}</span></div></td>
-        <td class="jpy">${fmtNum(yen)}</td>
+      <tr data-key="${rowKey(r)}">
+         <td class="name sticky-col sticky-col1" title="${r.package_name}"><span class="pt-nameText">${fmtName(r.package_name)}</span></td>
+         <td class="count sticky-col sticky-col2"><span class="pt-countText">${fmtNum(qty)}</span></td>
+         <td class="jpy">${fmtNum(yen)}</td>
 
         <td class="res res-gold${cls0(resMul('gold'))}">${fmtNum(resMul('gold'))}</td>
         <td class="res res-mine_key${cls0(resMul('mine_key'))}">${fmtNum(resMul('mine_key'))}</td>
@@ -548,10 +496,58 @@ function getEffectiveRates(){
     if(elSummaryTbody){
       elSummaryTbody.innerHTML = totalRow + detailRows;
     }
+    lastSummaryDetail = detailItems;
+    updateSelectedInfo();
   }
 
   
-  function updateRowStates(tableBodyEl, selectedKey){
+  
+  function updateSelectedInfo(){
+    if(!elSelectedInfoText) return;
+
+    const key = selectedKeyMain || selectedKeySummary;
+    if(!key){
+      elSelectedInfoText.classList.add('pt-selected-placeholder');
+      elSelectedInfoText.textContent = '選択された行の商品内容がここに表示されます';
+      return;
+    }
+
+    const row = packages.find(p => rowKey(p) === key) || (lastRowsMain||[]).find(r=>rowKey(r)===key);
+    if(!row){
+      elSelectedInfoText.classList.add('pt-selected-placeholder');
+      elSelectedInfoText.textContent = '選択された行の商品内容がここに表示されます';
+      return;
+    }
+
+    // Show raw package content (NOT multiplied by purchase qty)
+    const yen = Number(row.jpy)||0;
+
+    const RES = [
+      {k:'gold', alt:'ゴールド',  icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_01_gold_20x20px.png'},
+      {k:'mine_key', alt:'鉱山の鍵', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_02_key_20x20px.png'},
+      {k:'churu', alt:'チュール',   icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_03_chur_20x20px.png'},
+      {k:'battery', alt:'バッテリー', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_04_battery_20x20px.png'},
+      {k:'pet_food', alt:'ペットフード', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_05_petfood_20x20px.png'},
+      {k:'mythic_stone', alt:'神話石', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_06_Mythstone_20x20px.png'},
+      {k:'immortal_stone', alt:'不滅石', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_07_immotalstone_20x20px.png'},
+      {k:'diamond', alt:'ダイヤ', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_08_dia_20x20px.png'},
+      {k:'invite', alt:'招待状', icon:'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_09_Scroll_20x20px.png'},
+    ];
+
+    const parts = [];
+    parts.push(`<span class="pt-sel-price">¥${fmtNum(yen)}</span>`);
+    for(const r of RES){
+      const v = Number(row[r.k]||0);
+      if(!v) continue;
+      parts.push(`<span class="pt-sel-item"><img class="pt-sel-ico" src="${r.icon}" alt="${r.alt}"><span class="pt-sel-val">${fmtNum(v)}</span></span>`);
+    }
+
+    elSelectedInfoText.classList.remove('pt-selected-placeholder');
+    elSelectedInfoText.innerHTML = `<div class="pt-sel-items">${parts.join('')}</div>`;
+  }
+
+
+function updateRowStates(tableBodyEl, selectedKey){
     if(!tableBodyEl) return;
     const rows = tableBodyEl.querySelectorAll('tr[data-key]');
     for(const tr of rows){
@@ -565,14 +561,36 @@ function getEffectiveRates(){
       tr.classList.toggle('pt-at-cap', qty > 0 && qty >= cap);
       tr.classList.toggle('pt-row-selected', !!selectedKey && key === selectedKey);
     }
+    updateSelectedInfo();
+  }
+
+
+  function normalizeSelection(){
+    // 選択キーがDOMから消えていたら解除（合計テーブルの0化など）
+    if(selectedKeyMain){
+      const exists = !!tbody?.querySelector(`tr[data-key="${CSS.escape(selectedKeyMain)}"]`);
+      if(!exists) selectedKeyMain = null;
+    }
+    if(selectedKeySummary){
+      const exists = !!elSummaryTbody?.querySelector(`tr[data-key="${CSS.escape(selectedKeySummary)}"]`);
+      if(!exists) selectedKeySummary = null;
+    }
+  }
+
+  function applyRowClasses(){
+    normalizeSelection();
+    updateRowStates(tbody, selectedKeyMain);
+    if(elSummaryTbody) updateRowStates(elSummaryTbody, selectedKeySummary);
   }
 
 function applyAll(){
+    pullRatesFromUI();
     const { out, budgetDiaPerYen } = calcAndSort();
     render(out);
     updateSummary(out, budgetDiaPerYen);
     // 量に応じた行背景色/上限到達色/選択枠などの状態は、描画のたび必ず反映する
     applyRowClasses();
+    updateSelectedInfo();
     saveCart();
     status.textContent = `表示中：${out.length}件（計算反映）`;
   }
@@ -619,8 +637,24 @@ function applyAll(){
     buildDoubleAvailabilityUI();
     buildRateEditorUI();
 
+    // snapshot server/default rates for reset
+    if(!initialRateBase) initialRateBase = JSON.parse(JSON.stringify(rateBase));
+
+
     // Auto recalcs
-    elMineKeyRate.addEventListener('change', applyAll);
+    if(elRateEditor){
+      elRateEditor.addEventListener('input', ()=>{ pullRatesFromUI(); applyAll(); });
+      elRateEditor.addEventListener('change', ()=>{ pullRatesFromUI(); applyAll(); });
+    }
+    if(elRateReset){
+      elRateReset.addEventListener('click', ()=>{
+        if(!initialRateBase) return;
+        rateBase = JSON.parse(JSON.stringify(initialRateBase));
+        buildRateEditorUI();
+        pullRatesFromUI();
+        applyAll();
+      });
+    }
     elToggles.addEventListener('change', applyAll);
     if(elDoubleToggles) elDoubleToggles.addEventListener('change', applyAll);
     elSort.addEventListener('change', applyAll);
@@ -660,53 +694,60 @@ function applyAll(){
     const bPopup   = document.getElementById('ptBudgetPopup');
     const bClose   = document.getElementById('ptBudgetClose');
     const bValue   = document.getElementById('ptBudgetValue');
-    const bBack    = document.getElementById('ptBudgetBack');
+    const bPurchased = document.getElementById('ptBudgetPurchased');
     const bClear   = document.getElementById('ptBudgetClear');
+    const bOk      = document.getElementById('ptBudgetOk');
 
     function getBudgetVal(){ return clampInt(elBudgetYen.value, 0, 200000); }
-    function setBudgetVal(v){
-      const nv = clampInt(v, 0, 200000);
-      elBudgetYen.value = String(nv);
-      if(bValue) bValue.textContent = fmtNum(nv);
-      applyAll();
+
+    // decision-style temp value (only applied on OK)
+    let bTemp = 0;
+
+    function calcPurchasedYen(){
+      let sum = 0;
+      for(const p of (packages||[])){
+        const key = rowKey(p);
+        const qty = clampInt(cart[key] ?? 0, 0, 999999);
+        if(qty <= 0) continue;
+        sum += (Number(p.jpy)||0) * qty;
+      }
+      return sum;
     }
+
+    function refreshBudgetPopupUI(){
+      if(bValue) bValue.textContent = fmtNum(bTemp);
+      if(bPurchased) bPurchased.textContent = fmtNum(calcPurchasedYen());
+    }
+
     function openBudgetPopup(){
       if(!bOverlay || !bPopup) return;
-      const v = getBudgetVal();
-      if(bValue) bValue.textContent = fmtNum(v);
+      bTemp = getBudgetVal();
+      refreshBudgetPopupUI();
       bOverlay.hidden = false; bPopup.hidden = false;
+
       // show slightly above center
       const h = bPopup.getBoundingClientRect().height || 260;
       const y = Math.max(8, Math.min(window.innerHeight - h - 8, window.innerHeight*0.25));
       bPopup.style.top = y + 'px';
     }
+
     function closeBudgetPopup(){
       if(!bOverlay || !bPopup) return;
       bOverlay.hidden = true; bPopup.hidden = true;
     }
+
+    function commitBudget(){
+      const nv = clampInt(bTemp, 0, 200000);
+      elBudgetYen.value = String(nv);
+      applyAll();
+      closeBudgetPopup();
+    }
+
     if(elBudgetQuick) elBudgetQuick.addEventListener('click', openBudgetPopup);
-
-    // --- おすすめ購入（最適化） ---
-    if(elBtnOptimize){
-      elBtnOptimize.addEventListener('click', ()=>{
-        const budget = clampInt(elBudgetYen?.value, 0, 200000);
-        lastOptimizePlan = computeOptimalPlan(budget);
-        renderOptimize(lastOptimizePlan);
-        if(elBtnOptimizeApply) elBtnOptimizeApply.disabled = !lastOptimizePlan;
-      });
-    }
-    if(elBtnOptimizeApply){
-      elBtnOptimizeApply.addEventListener('click', ()=>{
-        if(!lastOptimizePlan) return;
-        applyOptimizePlan(lastOptimizePlan);
-        elBtnOptimizeApply.disabled = true;
-      });
-    }
-
     if(bOverlay) bOverlay.addEventListener('click', closeBudgetPopup);
     if(bClose) bClose.addEventListener('click', closeBudgetPopup);
-    if(bBack) bBack.addEventListener('click', closeBudgetPopup);
-    if(bClear) bClear.addEventListener('click', ()=> setBudgetVal(0));
+    if(bClear) bClear.addEventListener('click', ()=>{ bTemp = 0; refreshBudgetPopupUI(); });
+    if(bOk) bOk.addEventListener('click', commitBudget);
 
     bPopup?.addEventListener('click', (e)=>{
       const t = e.target;
@@ -715,8 +756,10 @@ function applyAll(){
       if(!btn) return;
       const delta = Number(btn.getAttribute('data-delta'));
       if(!Number.isFinite(delta)) return;
-      setBudgetVal(getBudgetVal() + delta);
+      bTemp = clampInt(bTemp + delta, 0, 200000);
+      refreshBudgetPopupUI();
     });
+
 
     // purchase popup handlers (open only from 1st column)
     let lastTap = {x:0,y:0,moved:false};
@@ -733,22 +776,27 @@ function applyAll(){
     const popup = document.getElementById('ptPkgPopup');
     const popTitle = document.getElementById('ptPopupTitle');
     const popClose = document.getElementById('ptPopupClose');
+    const popClear = document.getElementById('ptPopupClear');
     const popMinus = document.getElementById('ptPopupMinus');
     const popPlus  = document.getElementById('ptPopupPlus');
     const popMaxBtn = document.getElementById('ptPopupMaxBtn');
     const popQty   = document.getElementById('ptPopupQty');
     const popMax   = document.getElementById('ptPopupMax');
     const popSum   = document.getElementById('ptPopupSum');
+    const popOk    = document.getElementById('ptPopupOk');
 
     let popKey = null;
-    let selectedKeyMain = null;
-    let selectedKeySummary = null;
+    let popTempQty = 0;
+    let popCap = 0;
+    let popDirty = false;
+
 
     function closePopup(){
       if(!overlay || !popup) return;
       overlay.hidden = true;
       popup.hidden = true;
       popKey = null;
+      popDirty = false;
     }
 
     function openPopupFor(key, clientY){
@@ -760,26 +808,33 @@ function applyAll(){
       const max = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
       const cap = (Number.isFinite(max) && max > 0) ? max : 999;
 
-      const qty = clampInt(cart[key] ?? 0, 0, cap);
+      popCap = cap;
+      popTempQty = clampInt(cart[key] ?? 0, 0, cap);
+      popDirty = false;
       const maxDisp = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? '∞' : fmtNum(maxRaw);
 
       popTitle.textContent = row.package_name ?? '';
-      popQty.textContent = String(qty);
+      popQty.textContent = String(popTempQty);
       popMax.textContent = String(maxDisp);
-      popSum.textContent = fmtNum((Number(row.jpy)||0) * qty);
+      popSum.textContent = fmtNum((Number(row.jpy)||0) * popTempQty);
 
-      popMinus.disabled = qty <= 0;
-      popPlus.disabled  = qty >= cap;
+      popMinus.disabled = popTempQty <= 0;
+      popPlus.disabled  = popTempQty >= popCap;
+      if(popClear){
+        const showClear = popTempQty >= 2;
+        popClear.hidden = !showClear;
+        popMinus.classList.toggle('pt-popup-btn--solo', !showClear);
+      }
       if(popMaxBtn){
-        const showMax = (cap - qty) >= 2;
+        const showMax = (popCap - popTempQty) >= 2;
         popMaxBtn.hidden = !showMax;
-        popMaxBtn.disabled = qty >= cap;
+        popMaxBtn.disabled = popTempQty >= popCap;
         popPlus.classList.toggle('pt-popup-btn--solo', !showMax);
       }
       if(popMaxBtn){
-        const showMax = (cap - qty) >= 2;
+        const showMax = (popCap - popTempQty) >= 2;
         popMaxBtn.hidden = !showMax;
-        popMaxBtn.disabled = qty >= cap;
+        popMaxBtn.disabled = popTempQty >= popCap;
         // layout: if no MAX, plus spans both columns
         popPlus.classList.toggle('pt-popup-btn--solo', !showMax);
       }
@@ -802,20 +857,20 @@ function applyAll(){
       const max = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
       const cap = (Number.isFinite(max) && max > 0) ? max : 999;
       const qty = clampInt(cart[popKey] ?? 0, 0, cap);
-      popQty.textContent = String(qty);
-      popSum.textContent = fmtNum((Number(row.jpy)||0) * qty);
-      popMinus.disabled = qty <= 0;
-      popPlus.disabled  = qty >= cap;
+      popQty.textContent = String(popTempQty);
+      popSum.textContent = fmtNum((Number(row.jpy)||0) * popTempQty);
+      popMinus.disabled = popTempQty <= 0;
+      popPlus.disabled  = popTempQty >= popCap;
       if(popMaxBtn){
-        const showMax = (cap - qty) >= 2;
+        const showMax = (popCap - popTempQty) >= 2;
         popMaxBtn.hidden = !showMax;
-        popMaxBtn.disabled = qty >= cap;
+        popMaxBtn.disabled = popTempQty >= popCap;
         popPlus.classList.toggle('pt-popup-btn--solo', !showMax);
       }
       if(popMaxBtn){
-        const showMax = (cap - qty) >= 2;
+        const showMax = (popCap - popTempQty) >= 2;
         popMaxBtn.hidden = !showMax;
-        popMaxBtn.disabled = qty >= cap;
+        popMaxBtn.disabled = popTempQty >= popCap;
         // layout: if no MAX, plus spans both columns
         popPlus.classList.toggle('pt-popup-btn--solo', !showMax);
       }
@@ -826,18 +881,44 @@ function applyAll(){
       document.addEventListener('dblclick', (e)=>{ e.preventDefault(); }, {passive:false}); // prevent double-tap zoom
 document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closePopup(); });
 
-    if(popMinus) popMinus.addEventListener('click', ()=>{
+    function setPopupQty(next){
+  if(popKey === null) return;
+  popTempQty = clampInt(next, 0, popCap || 999);
+  popDirty = true;
+  updatePopup();
+}
+
+  function fmtInt(n){
+    const v = Number(n);
+    if(!Number.isFinite(v)) return '-';
+    return String(Math.trunc(v));
+  }
+
+if(popMinus) popMinus.addEventListener('click', ()=>{
       if(!popKey) return;
-      bumpQty(popKey, -1);
-      applyAll();
-      updatePopup();
+      setPopupQty(popTempQty - 1);
     });
     if(popPlus) popPlus.addEventListener('click', ()=>{
       if(!popKey) return;
-      bumpQty(popKey, +1);
-      applyAll();
-      updatePopup();
+      setPopupQty(popTempQty + 1);
     });
+
+if(popMaxBtn) popMaxBtn.addEventListener('click', ()=>{
+  if(popKey === null) return;
+  setPopupQty(popCap);
+});
+if(popClear) popClear.addEventListener('click', ()=>{
+  if(popKey === null) return;
+  setPopupQty(0);
+});
+if(popOk) popOk.addEventListener('click', ()=>{
+  if(popKey === null) return;
+  const committed = clampInt(popTempQty, 0, popCap || 999);
+  cart[popKey] = committed;
+  saveCart();
+  applyAll();
+  closePopup();
+});
 
     
     // Row selection + popup rule:
@@ -850,7 +931,7 @@ document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closePopup();
       if(!el) return;
 
       const tr = el.closest('tr[data-key]');
-      const tdName = el.closest('td.name');
+      const tdPkg = el.closest('td.name, td.count');
 
       if(!tr){
         // click on empty area => clear selection
@@ -862,21 +943,81 @@ document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closePopup();
       const key = tr.getAttribute('data-key');
       if(!key) return;
 
-      if(tdName){
+      // パッケージ列（名前/購入数）タップ
+      if(tdPkg){
         if(selectedKeyMain === key){
           openPopupFor(key, lastTap.y || e.clientY);
         }else{
-          // tapping name when not selected => just select
           selectedKeyMain = key;
+          selectedKeySummary = null; // mutual exclusive selection
+          updateRowStates(elSummaryTbody, selectedKeySummary);
           updateRowStates(tbody, selectedKeyMain);
         }
         return;
       }
 
-      // non-name cell => select
-      selectedKeyMain = key;
+      // それ以外をタップ：選択中の同一行なら解除、別行なら選択
+      if(selectedKeyMain === key){
+        selectedKeyMain = null;
+      }else{
+        selectedKeyMain = key;
+        selectedKeySummary = null;
+        updateRowStates(elSummaryTbody, selectedKeySummary);
+      }
       updateRowStates(tbody, selectedKeyMain);
     });
+
+    if(elSummaryTbody){
+      // pointer tracking for tap vs scroll on summary table
+      elSummaryTbody.addEventListener('pointerdown', (e)=>{
+        lastTap.x = e.clientX; lastTap.y = e.clientY; lastTap.moved = false;
+      }, { passive:true });
+      elSummaryTbody.addEventListener('pointermove', (e)=>{
+        const dx = Math.abs(e.clientX - lastTap.x);
+        const dy = Math.abs(e.clientY - lastTap.y);
+        if(dx > 8 || dy > 8) lastTap.moved = true;
+      }, { passive:true });
+
+      elSummaryTbody.addEventListener('click', (e)=>{
+        if(lastTap.moved) return;
+        const el = e.target instanceof HTMLElement ? e.target : null;
+        if(!el) return;
+
+        const tr = el.closest('tr[data-key]');
+        const tdPkg = el.closest('td.name, td.count');
+
+        if(!tr){
+          selectedKeySummary = null;
+          updateRowStates(elSummaryTbody, selectedKeySummary);
+          return;
+        }
+
+        const key = tr.getAttribute('data-key');
+        if(!key) return;
+
+        if(tdPkg){
+          if(selectedKeySummary === key){
+            openPopupFor(key, lastTap.y || e.clientY);
+          }else{
+            selectedKeySummary = key;
+            selectedKeyMain = null;
+            updateRowStates(tbody, selectedKeyMain);
+            updateRowStates(elSummaryTbody, selectedKeySummary);
+          }
+          return;
+        }
+
+        if(selectedKeySummary === key){
+          selectedKeySummary = null;
+        }else{
+          selectedKeySummary = key;
+          selectedKeyMain = null;
+          updateRowStates(tbody, selectedKeyMain);
+        }
+        updateRowStates(elSummaryTbody, selectedKeySummary);
+      });
+    }
+
 applyAll();
   } catch (e) {
     console.error(e);
@@ -902,22 +1043,56 @@ function syncHorizontalScroll(a, b){
   b.addEventListener('scroll', onB, { passive: true });
 }
 
+/* iOS Safari: prevent tiny accidental horizontal drift while the user is clearly vertical-scrolling */
+function installVerticalScrollXLock(scroller){
+  if(!scroller) return;
+  let startX = 0;
+  let startY = 0;
+  let startLeft = 0;
+  let mode = null; // 'h' | 'v'
+
+  scroller.addEventListener('touchstart', (e) => {
+    if(!e.touches || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+    startLeft = scroller.scrollLeft;
+    mode = null;
+  }, { passive: true });
+
+  scroller.addEventListener('touchmove', (e) => {
+    if(!e.touches || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+    const adx = Math.abs(dx);
+    const ady = Math.abs(dy);
+
+    // Decide gesture direction a bit earlier, but avoid misclassifying slight diagonal drags.
+    if(!mode){
+      const TH = 6;
+      const R  = 1.2;
+      if(ady > TH && ady >= adx * R) mode = 'v';
+      else if(adx > TH && adx >= ady * R) mode = 'h';
+    }
+
+    if(mode === 'v'){
+      // keep X fixed; allow normal Y scrolling (no preventDefault)
+      if(scroller.scrollLeft !== startLeft) scroller.scrollLeft = startLeft;
+    }
+  }, { passive: true });
+
+  scroller.addEventListener('touchend', () => { mode = null; }, { passive: true });
+}
+
 window.addEventListener('load', () => {
   const listX = document.querySelector('.pt-table-wrap') || document.getElementById('tableScroll') || document.querySelector('#tableScroll');
   const sumX  = document.getElementById('summaryScroll') || document.querySelector('#summaryScroll');
 
-  // 疑似 sticky: scrollLeft を CSS 変数へ
-  const setVar = (el) => {
-    if(!el) return;
-    el.style.setProperty('--scrollLeft', (el.scrollLeft || 0) + 'px');
-  };
-  if(listX){
-    setVar(listX);
-    listX.addEventListener('scroll', () => setVar(listX), { passive:true });
-  }
-  if(sumX){
-    setVar(sumX);
-    sumX.addEventListener('scroll', () => setVar(sumX), { passive:true });
+  const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if(isIOS){
+    installVerticalScrollXLock(listX);
+    installVerticalScrollXLock(sumX);
   }
 
   // 横スクロール同期（任意）。両方存在する場合のみ有効化。
