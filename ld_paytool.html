@@ -125,7 +125,12 @@
 
 
     <section class="pt-card pt-card--tables">
-      <div class="pt-table-wrap">
+      
+      <div id="selectedRowInfo" class="pt-selected-info" hidden>
+        <div class="pt-selected-title">選択中:</div>
+        <div id="selectedRowInfoText" class="pt-selected-text"></div>
+      </div>
+<div class="pt-table-wrap">
         <table class="pt-table">
 
 <colgroup>
@@ -161,9 +166,9 @@
               <th class="res res-diamond"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_08_dia_20x20px.png" alt="ダイヤ"></th>
               <th class="res res-invite"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_09_Scroll_20x20px.png" alt="招待状"></th>
 
-              <th class="calc" scope="col">Σ</th>
-              <th class="calc" scope="col">D/¥</th>
-                            <th class="calc" scope="col">比B</th>
+              <th class="calc" scope="col">💎換算</th>
+              <th class="calc" scope="col">💎1個/¥</th>
+                            <th class="calc" scope="col">💎直買い比較</th>
             </tr>
           </thead>
           <tbody id="payTableBody"></tbody>
@@ -206,9 +211,9 @@
             <th class="res res-diamond" scope="col"><img class="pt-ico" alt="dia" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_08_dia_20x20px.png"></th>
             <th class="res res-invite" scope="col"><img class="pt-ico" alt="invite" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_09_Scroll_20x20px.png"></th>
 
-            <th class="calc" scope="col">Σ</th>
-            <th class="calc" scope="col">D/¥</th>
-            <th class="calc" scope="col">比B</th>
+            <th class="calc" scope="col">💎換算</th>
+            <th class="calc" scope="col">💎1個/¥</th>
+            <th class="calc" scope="col">💎直買い比較</th>
           </tr>
         </thead>
         <tbody id="summaryTableBody">

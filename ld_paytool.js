@@ -1,6 +1,8 @@
 (async () => {
   const status = document.getElementById('ptStatus');
   const tbody = document.getElementById('payTableBody');
+  const elSelectedInfo = document.getElementById('selectedRowInfo');
+  const elSelectedInfoText = document.getElementById('selectedRowInfoText');
 
   const elMineKeyRate = document.getElementById('optMineKeyRate');
   const elBudgetYen = document.getElementById('optBudgetYen');
@@ -76,6 +78,10 @@
   // row selection state (main + summary)
   let selectedKeyMain = null;
   let selectedKeySummary = null;
+
+  // last computed rows (for selected-row info)
+  let lastRowsMain = [];
+  let lastSummaryDetail = [];
   const CART_LS_KEY = "ld_paytool_cart_v1";
 
   function rowKey(p){
@@ -302,7 +308,8 @@ function getEffectiveRates(){
       return { ...p, _calc_dia: dia, _calc_dpy: dpy, _calc_budget_ratio: budgetRatio };
     });
 
-    const mode = elSort.value;
+        lastRowsMain = rows;
+const mode = elSort.value;
     let out = rows.slice();
     switch(mode){
       case 'dpy_desc': out.sort((a,b)=> (b._calc_dpy||0) - (a._calc_dpy||0)); break;
@@ -323,6 +330,8 @@ function getEffectiveRates(){
       gold:0, mine_key:0, churu:0, battery:0, pet_food:0,
       mythic_stone:0, immortal_stone:0, diamond:0, invite:0
     };
+    const detailItems = [];
+
 
     const picked = [];
     for(const r of rows){
@@ -377,6 +386,29 @@ function getEffectiveRates(){
       const ratio2 = (budgetDiaPerYen > 0 && dpy2 > 0) ? (dpy2 / budgetDiaPerYen) : 0;
       const resMul = (k) => (Number(r[k])||0) * qty;
 
+      const key = rowKey(r);
+      detailItems.push({
+        key,
+        package_name: r.package_name,
+        qty,
+        purchase_limit: r.purchase_limit,
+        yen,
+        dia,
+        dpy: dpy2,
+        ratio: ratio2,
+        res: {
+          gold: resMul('gold'),
+          mine_key: resMul('mine_key'),
+          churu: resMul('churu'),
+          battery: resMul('battery'),
+          pet_food: resMul('pet_food'),
+          mythic_stone: resMul('mythic_stone'),
+          immortal_stone: resMul('immortal_stone'),
+          diamond: resMul('diamond'),
+          invite: resMul('invite'),
+        }
+      });
+
       return `
       <tr data-key="${rowKey(r)}">
          <td class="name sticky-col sticky-col1" title="${r.package_name}"><span class="pt-nameText">${fmtName(r.package_name)}</span></td>
@@ -402,10 +434,85 @@ function getEffectiveRates(){
     if(elSummaryTbody){
       elSummaryTbody.innerHTML = totalRow + detailRows;
     }
+    lastSummaryDetail = detailItems;
+    updateSelectedInfo();
   }
 
   
-  function updateRowStates(tableBodyEl, selectedKey){
+  
+  function updateSelectedInfo(){
+    if(!elSelectedInfo || !elSelectedInfoText) return;
+
+    // prefer main selection, fallback to summary selection
+    if(selectedKeyMain){
+      const row = (lastRowsMain || []).find(r => rowKey(r) === selectedKeyMain);
+      const qty = Number(qtyByKey[selectedKeyMain] || 0);
+      if(row && qty > 0){
+        const yen = (Number(row.jpy)||0) * qty;
+        const limit = (row.purchase_limit ?? '-');
+        const dia = (Number(row._calc_dia)||0) * qty;
+        const dpy = yen>0 ? (dia/yen) : 0;
+        const parts = [];
+        parts.push(`${row.package_name} ×${qty}/${limit}`);
+        parts.push(`¥${fmtNum(yen)}`);
+        parts.push(`💎換算 ${fmtNum(dia)}`);
+        if(dpy>0) parts.push(`💎1個/¥ ${(dpy/1000).toFixed(3)}`);
+        const resKeys = [
+          ['gold','ゴールド'],
+          ['mine_key','鉱山鍵'],
+          ['churu','チュール'],
+          ['battery','バッテリー'],
+          ['pet_food','ペット餌'],
+          ['mythic_stone','神話石'],
+          ['immortal_stone','不滅石'],
+          ['diamond','ダイヤ'],
+          ['invite','招待状'],
+        ];
+        for(const [k,label] of resKeys){
+          const v = (Number(row[k])||0) * qty;
+          if(v) parts.push(`${label} ${fmtNum(v)}`);
+        }
+        elSelectedInfoText.textContent = parts.join(' / ');
+        elSelectedInfo.hidden = false;
+        return;
+      }
+    }
+
+    if(selectedKeySummary){
+      const it = (lastSummaryDetail || []).find(x => x.key === selectedKeySummary);
+      if(it && it.qty > 0){
+        const limit = (it.purchase_limit ?? '-');
+        const parts = [];
+        parts.push(`${it.package_name} ×${it.qty}/${limit}`);
+        parts.push(`¥${fmtNum(it.yen)}`);
+        parts.push(`💎換算 ${fmtNum(it.dia)}`);
+        if(it.dpy>0) parts.push(`💎1個/¥ ${((it.dpy)/1000).toFixed(3)}`);
+        const map = [
+          ['gold','ゴールド'],
+          ['mine_key','鉱山鍵'],
+          ['churu','チュール'],
+          ['battery','バッテリー'],
+          ['pet_food','ペット餌'],
+          ['mythic_stone','神話石'],
+          ['immortal_stone','不滅石'],
+          ['diamond','ダイヤ'],
+          ['invite','招待状'],
+        ];
+        for(const [k,label] of map){
+          const v = Number(it.res?.[k] || 0);
+          if(v) parts.push(`${label} ${fmtNum(v)}`);
+        }
+        elSelectedInfoText.textContent = parts.join(' / ');
+        elSelectedInfo.hidden = false;
+        return;
+      }
+    }
+
+    elSelectedInfo.hidden = true;
+    elSelectedInfoText.textContent = '';
+  }
+
+function updateRowStates(tableBodyEl, selectedKey){
     if(!tableBodyEl) return;
     const rows = tableBodyEl.querySelectorAll('tr[data-key]');
     for(const tr of rows){
@@ -419,6 +526,7 @@ function getEffectiveRates(){
       tr.classList.toggle('pt-at-cap', qty > 0 && qty >= cap);
       tr.classList.toggle('pt-row-selected', !!selectedKey && key === selectedKey);
     }
+    updateSelectedInfo();
   }
 
 
@@ -446,6 +554,7 @@ function applyAll(){
     updateSummary(out, budgetDiaPerYen);
     // 量に応じた行背景色/上限到達色/選択枠などの状態は、描画のたび必ず反映する
     applyRowClasses();
+    updateSelectedInfo();
     saveCart();
     status.textContent = `表示中：${out.length}件（計算反映）`;
   }
