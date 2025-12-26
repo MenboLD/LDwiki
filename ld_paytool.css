@@ -40,7 +40,7 @@ body {
   border-spacing: 0;
   width:100%;
   table-layout: fixed;
-  min-width: 942px; /* allow horizontal scroll for resource columns */
+  min-width: 912px; /* allow horizontal scroll for resource columns */
 }
 
 .pt-table th,
@@ -64,10 +64,10 @@ body {
 
 /* Sticky columns (パッケージ名 + 購入数) */
 :root{
-  --pt-col-name: 96px;
-  --pt-col-count: 50px;
+  --pt-col-name: 98px;
+  --pt-col-count: 56px;
 }
-.pt-col-name{ width: var(--pt-col-name) !important; }
+.pt-col-name{ width: 98px !important; }
 
 
 
@@ -83,23 +83,23 @@ body {
 
 
 
-.pt-col-ratio_b{ width: 84px; }
-.pt-col-dia_per_yen{ width: 82px; }
-.pt-col-sumdia{ width: 74px; }
-.pt-col-invite{ width: 52px; }
-.pt-col-diamond{ width: 58px; }
-.pt-col-immortal_stone{ width: 54px; }
-.pt-col-mythic_stone{ width: 54px; }
-.pt-col-pet_food{ width: 54px; }
-.pt-col-battery{ width: 54px; }
-.pt-col-churu{ width: 34px; }
-.pt-col-mine_key{ width: 44px; }
-.pt-col-gold{ width: 70px; }
-.pt-col-jpy{ width: 62px; }
-.pt-col-count{ width: 58px; }
-.pt-col-name{ width: 96px; }
-.pt-col-count{ width: var(--pt-col-count) !important; }
-.pt-col-jpy{ width: 62px !important; }
+.pt-col-ratio_b{ width: 68px !important; }
+.pt-col-dia_per_yen{ width: 56px !important; }
+.pt-col-sumdia{ width: 76px !important; }
+.pt-col-invite{ width: 46px !important; }
+.pt-col-diamond{ width: 68px !important; }
+.pt-col-immortal_stone{ width: 56px !important; }
+.pt-col-mythic_stone{ width: 56px !important; }
+.pt-col-pet_food{ width: 56px !important; }
+.pt-col-battery{ width: 56px !important; }
+.pt-col-churu{ width: 38px !important; }
+.pt-col-mine_key{ width: 46px !important; }
+.pt-col-gold{ width: 68px !important; }
+.pt-col-jpy{ width: 68px !important; }
+.pt-col-count{ width: 56px !important; }
+.pt-col-name{ width: 98px !important; }
+.pt-col-count{ width: 56px !important; }
+.pt-col-jpy{ width: 68px !important; }
 
 .pt-table th.name,
 .pt-table td.name{
@@ -564,20 +564,20 @@ body {
 /* v5d: keep header 'パッケージ' but prevent it from widening the name column */
 
 /* === Phase5h: fixed widths are managed by colgroup === */
-.pt-col-name{ width: var(--pt-col-name); }
-.pt-col-jpy{ width: 62px !important; }
-.pt-col-gold{ width: 62px !important; }
-.pt-col-mine_key{ width: 44px !important; }
-.pt-col-churu{ width: 34px !important; }
-.pt-col-battery{ width: 54px !important; }
-.pt-col-pet_food{ width: 54px !important; }
-.pt-col-mythic_stone{ width: 54px !important; }
-.pt-col-immortal_stone{ width: 54px !important; }
-.pt-col-diamond{ width: 58px !important; }
-.pt-col-invite{ width: 44px !important; }
-.pt-col-sumdia{ width: 74px !important; }
-.pt-col-dia_per_yen{ width: 50px !important; }
-.pt-col-ratio_b{ width: 74px !important; }
+.pt-col-name{ width: 98px !important; }
+.pt-col-jpy{ width: 68px !important; }
+.pt-col-gold{ width: 68px !important; }
+.pt-col-mine_key{ width: 46px !important; }
+.pt-col-churu{ width: 38px !important; }
+.pt-col-battery{ width: 56px !important; }
+.pt-col-pet_food{ width: 56px !important; }
+.pt-col-mythic_stone{ width: 56px !important; }
+.pt-col-immortal_stone{ width: 56px !important; }
+.pt-col-diamond{ width: 68px !important; }
+.pt-col-invite{ width: 46px !important; }
+.pt-col-sumdia{ width: 76px !important; }
+.pt-col-dia_per_yen{ width: 56px !important; }
+.pt-col-ratio_b{ width: 68px !important; }
 
 /* package cell: name + qty area (qty centered) */
 .pt-namecell{
