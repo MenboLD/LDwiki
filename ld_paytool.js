@@ -184,7 +184,12 @@
 
 function getEffectiveRates(){
     const r = {...rateBase};
-    r.mine_key = Number(elMineKeyRate.value);
+	    // mine_key rate may be provided via a dedicated select (legacy) or via the unified rate editor.
+	    if(elMineKeyRate){
+	      r.mine_key = Number(elMineKeyRate.value);
+	    }else{
+	      r.mine_key = Number(rateBase.mine_key) || 0;
+	    }
     for(const k of RESOURCE_KEYS){
       if(!toggles[k]) r[k] = 0;
     }
@@ -467,10 +472,11 @@ function applyAll(){
     buildRateEditorUI();
 
     // Auto recalcs
-    elMineKeyRate.addEventListener('change', applyAll);
-    elToggles.addEventListener('change', applyAll);
+    // Some UI blocks can be moved/removed by Phase updates. Never crash on missing nodes.
+    if(elMineKeyRate) elMineKeyRate.addEventListener('change', applyAll);
+    if(elToggles) elToggles.addEventListener('change', applyAll);
     if(elDoubleToggles) elDoubleToggles.addEventListener('change', applyAll);
-    elSort.addEventListener('change', applyAll);
+    if(elSort) elSort.addEventListener('change', applyAll);
 
     // All toggle buttons
     if(elBtnResAll){
@@ -493,8 +499,8 @@ function applyAll(){
 
     // Budget: no live recalc while typing
     const applyBudget = () => applyAll();
-    elBudgetYen.addEventListener('blur', applyBudget);
-    elBudgetYen.addEventListener('keydown', (e)=>{
+    if(elBudgetYen) elBudgetYen.addEventListener('blur', applyBudget);
+    if(elBudgetYen) elBudgetYen.addEventListener('keydown', (e)=>{
       if(e.key === 'Enter'){
         e.preventDefault();
         elBudgetYen.blur();
@@ -510,8 +516,9 @@ function applyAll(){
     const bBack    = document.getElementById('ptBudgetBack');
     const bClear   = document.getElementById('ptBudgetClear');
 
-    function getBudgetVal(){ return clampInt(elBudgetYen.value, 0, 200000); }
+    function getBudgetVal(){ return elBudgetYen ? clampInt(elBudgetYen.value, 0, 200000) : 0; }
     function setBudgetVal(v){
+      if(!elBudgetYen) return;
       const nv = clampInt(v, 0, 200000);
       elBudgetYen.value = String(nv);
       if(bValue) bValue.textContent = fmtNum(nv);
