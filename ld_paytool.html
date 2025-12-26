@@ -1,16 +1,17 @@
-<!DOCTYPE html>
-
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
-<title>課金検討ツール | ラッキー傭兵団 攻略 wiki</title>
-<link href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230b0f16%22/%3E%3Cpath%20d%3D%22M14%2044V20h14c10%200%2018%208%2018%2018s-8%2018-18%2018H14zm10-8h4c6%200%2010-4%2010-10s-4-10-10-10h-4v20z%22%20fill%3D%22%237c3aed%22/%3E%3C/svg%3E" rel="icon"/>
-<link href="common_header.css" rel="stylesheet"/>
-<link href="ld_paytool.css?v=20251225p6u" rel="stylesheet"/>
-<script src="supabase_config.js"></script>
-<script defer="" src="common_header.js"></script>
-<script defer="" src="ld_paytool.js?v=20251225p6u"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>課金検討ツール | ラッキー傭兵団 攻略 wiki</title>
+
+  <link rel="stylesheet" href="common_header.css">
+  <link rel="stylesheet" href="ld_paytool.css?v=20251225p6b">
+
+  <script src="supabase_config.js"></script>
+  <script defer src="common_header.js"></script>
+  <script defer src="ld_paytool.js?v=20251225p6b"></script>
+
 <!-- Paytool page-local: common header username width fix (override after common_header.css) -->
 <style>
   #ldCommonTopbar input#authUserName{
@@ -26,225 +27,225 @@
     min-width: 0 !important;
   }
 </style>
+
 </head>
+
 <body data-page-name="課金検討ツール">
+  
+    
+
+    
 <main class="page">
-<header class="pt-head">
-<h1 class="pt-title">課金検討ツール</h1>
-<p class="pt-sub">課金パッケージ一覧（表示専用 / フェーズA）</p>
-<div class="pt-status" id="ptStatus"></div>
-</header>
+    <header class="pt-head">
+      <h1 class="pt-title">課金検討ツール</h1>
+<div id="ptStatus" class="pt-status"></div>
+    
+
+    
+
+
+    </header>
+    
 <section class="pt-card pt-card--settings">
-<section aria-label="計算設定" class="pt-settings">
-<details class="pt-acc">
-<summary class="pt-acc-sum">▼リソースのレート設定</summary>
-<div class="pt-acc-body">
-<div class="pt-settings-row">
-<div class="pt-rate-actions"><button class="pt-btn pt-btn-ghost" id="btnRateReset" type="button">デフォルト値に戻す</button></div><div aria-label="リソースのレート設定" class="pt-rate-list" id="rateEditor"></div>
-</div>
-</div>
-</details>
-<details class="pt-acc">
-<summary class="pt-acc-sum">▼目的リソースの設定</summary>
-<div class="pt-acc-body">
-<div class="pt-settings-row pt-row-tools">
-<button aria-label="取扱いリソース 全ON/全OFF" class="pt-mini-btn" id="btnResAll" type="button">全</button>
-</div>
-<div class="pt-settings-row pt-toggles" id="resourceToggles"></div>
-</div>
-</details>
-<details class="pt-acc">
-<summary class="pt-acc-sum">▼初回ダイヤの設定</summary>
-<div class="pt-acc-body">
-<div class="pt-settings-row pt-row-tools">
-<button aria-label="初回2倍 全ON/全OFF" class="pt-mini-btn" id="btnDoubleAll" type="button">全</button>
-</div>
-<div aria-label="初回2倍の購入可否" class="pt-settings-row pt-double" id="doubleToggles"></div>
-</div>
-</details>
-<div class="pt-settings-row pt-budget-row">
-<label class="pt-field pt-field-budget">
-<span class="pt-field-label">比較予算(円)</span>
-<input aria-label="比較予算(円)" class="pt-input pt-input-budget" id="optBudgetYen" inputmode="numeric" min="0" step="100" type="number" value="8000"/>
-</label>
-<button class="pt-btn" id="btnBudgetQuick" type="button">簡単入力</button>
-</div>
-<div class="pt-settings-row">
+  <section class="pt-settings" aria-label="計算設定">
 
-<div class="pt-kpi">
+    
+    <div class="pt-settings-label">設定エリア</div>
+<details class="pt-acc" open>
+      <summary class="pt-acc-sum">▼リソースのレート設定</summary>
+      <div class="pt-acc-body">
+</div>
+      </div>
+    </div>
 
-</div>
-</div>
+  </section>
 </section>
-</section>
-<section class="pt-card pt-card--tables">
-<div class="pt-selected-info" id="selectedRowInfo">
-<div class="pt-selected-text pt-selected-placeholder" id="selectedRowInfoText">選択された行の商品内容がここに表示されます</div>
-</div><div class="pt-sortbar"><label class="pt-field">
-<span class="pt-field-label">ソート</span>
-<select class="pt-select" id="optSort">
-<option value="default">デフォルト</option>
-<option value="dpy_desc">💎/100円 降順</option>
-<option value="budget_desc">💎直買い比較 降順</option>
-<option value="dia_desc">💎換算 降順</option>
-<option value="jpy_asc">JPY 昇順</option>
-<option value="jpy_desc">JPY 降順</option>
-</select>
-</label></div>
-<div class="pt-table-wrap">
-<table class="pt-table">
+
+
+    <section class="pt-card pt-card--tables">
+    <div class="pt-viewbar" aria-label="閲覧操作">
+      <label class="pt-field pt-field-budget-inline">
+        <span class="pt-field-label">予算</span>
+        <input id="optBudgetYen" class="pt-input pt-input-budget" type="number" inputmode="numeric" min="0" step="100" value="8000" aria-label="予算(円)">
+      </label>
+      <button id="btnBudgetQuick" class="pt-btn" type="button">簡単入力</button>
+      <label class="pt-field pt-field-sort-inline">
+        <span class="pt-field-label">ソート</span>
+        <select id="optSort" class="pt-select pt-select-sort" aria-label="ソート">
+          <option value="dpy_desc">💎100円</option>
+          <option value="budget_desc">💎直買い比</option>
+          <option value="dia_desc">💎換算</option>
+          <option value="jpy_asc">円 昇順</option>
+          <option value="jpy_desc">円 降順</option>
+        </select>
+      </label>
+    </div>
+    <div id="kpiBaseline" style="display:none"></div>
+
+    <div class="pt-table-wrap">
+        <table class="pt-table">
+
 <colgroup>
-<col class="pt-col-name"/>
-<col class="pt-col-count"/>
-<col class="pt-col-jpy"/>
-<col class="pt-col-gold"/>
-<col class="pt-col-mine_key"/>
-<col class="pt-col-churu"/>
-<col class="pt-col-battery"/>
-<col class="pt-col-pet_food"/>
-<col class="pt-col-mythic_stone"/>
-<col class="pt-col-immortal_stone"/>
-<col class="pt-col-diamond"/>
-<col class="pt-col-invite"/>
-<col class="pt-col-sumdia"/>
-<col class="pt-col-dia_per_yen"/>
-<col class="pt-col-ratio_b"/>
+  <col class="pt-col-name">
+            <col class="pt-col-count">
+            <col class="pt-col-jpy">
+  <col class="pt-col-gold">
+  <col class="pt-col-mine_key">
+  <col class="pt-col-churu">
+  <col class="pt-col-battery">
+  <col class="pt-col-pet_food">
+  <col class="pt-col-mythic_stone">
+  <col class="pt-col-immortal_stone">
+  <col class="pt-col-diamond">
+  <col class="pt-col-invite">
+  <col class="pt-col-sumdia">
+  <col class="pt-col-dia_per_yen">
+  <col class="pt-col-ratio_b">
 </colgroup>
-<thead>
-<tr>
-<th class="name sticky-col sticky-col1" scope="col">パッケージ</th>
-<th class="count sticky-col sticky-col2" scope="col">購入数</th>
-<th class="jpy" scope="col">JPY</th>
-<th class="res res-gold"><img alt="ゴールド" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_01_gold_20x20px.png"/></th>
-<th class="res res-mine_key"><img alt="鉱山の鍵" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_02_key_20x20px.png"/></th>
-<th class="res res-churu"><img alt="チュール" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_03_chur_20x20px.png"/></th>
-<th class="res res-battery"><img alt="バッテリー" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_04_battery_20x20px.png"/></th>
-<th class="res res-pet_food"><img alt="ペットフード" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_05_petfood_20x20px.png"/></th>
-<th class="res res-mythic_stone"><img alt="神話石" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_06_Mythstone_20x20px.png"/></th>
-<th class="res res-immortal_stone"><img alt="不滅石" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_07_immotalstone_20x20px.png"/></th>
-<th class="res res-diamond"><img alt="ダイヤ" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_08_dia_20x20px.png"/></th>
-<th class="res res-invite"><img alt="招待状" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_09_Scroll_20x20px.png"/></th>
-<th class="calc" scope="col">💎換算</th>
-<th class="calc" scope="col">💎/100円</th>
-<th class="calc" scope="col">💎直買い比較</th>
-</tr>
-</thead>
-<tbody id="payTableBody"></tbody>
-</table>
-</div>
-<div aria-label="合計表" class="pt-summary-table-wrap" id="summaryScroll">
-<table class="pt-table pt-table-summary" role="table">
+
+          <thead>
+            <tr>
+              <th class="sticky name"><div class="pt-sticky1">パッケージ</div></th>
+              <th class="sticky count"><div class="pt-sticky2">購入数</div></th>
+              <th class="jpy">JPY</th>
+              <th class="res res-gold"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_01_gold_20x20px.png" alt="ゴールド"></th>
+              <th class="res res-mine_key"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_02_key_20x20px.png" alt="鉱山の鍵"></th>
+              <th class="res res-churu"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_03_chur_20x20px.png" alt="チュール"></th>
+              <th class="res res-battery"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_04_battery_20x20px.png" alt="バッテリー"></th>
+              <th class="res res-pet_food"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_05_petfood_20x20px.png" alt="ペットフード"></th>
+              <th class="res res-mythic_stone"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_06_Mythstone_20x20px.png" alt="神話石"></th>
+              <th class="res res-immortal_stone"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_07_immotalstone_20x20px.png" alt="不滅石"></th>
+              <th class="res res-diamond"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_08_dia_20x20px.png" alt="ダイヤ"></th>
+              <th class="res res-invite"><img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_09_Scroll_20x20px.png" alt="招待状"></th>
+
+              <th class="calc" scope="col">💎換算</th>
+              <th class="calc" scope="col">💎100円</th>
+                            <th class="calc" scope="col">💎直買い比</th>
+            </tr>
+          </thead>
+          <tbody id="payTableBody"></tbody>
+        </table>
+      </div>
+      <div class="pt-summary-table-wrap" id="summaryScroll" aria-label="合計表">
+      <table class="pt-table pt-table-summary" role="table">
+
 <colgroup>
-<col class="pt-col-name"/>
-<col class="pt-col-count"/>
-<col class="pt-col-jpy"/>
-<col class="pt-col-gold"/>
-<col class="pt-col-mine_key"/>
-<col class="pt-col-churu"/>
-<col class="pt-col-battery"/>
-<col class="pt-col-pet_food"/>
-<col class="pt-col-mythic_stone"/>
-<col class="pt-col-immortal_stone"/>
-<col class="pt-col-diamond"/>
-<col class="pt-col-invite"/>
-<col class="pt-col-sumdia"/>
-<col class="pt-col-dia_per_yen"/>
-<col class="pt-col-ratio_b"/>
+  <col class="pt-col-name">
+            <col class="pt-col-count">
+            <col class="pt-col-jpy">
+  <col class="pt-col-gold">
+  <col class="pt-col-mine_key">
+  <col class="pt-col-churu">
+  <col class="pt-col-battery">
+  <col class="pt-col-pet_food">
+  <col class="pt-col-mythic_stone">
+  <col class="pt-col-immortal_stone">
+  <col class="pt-col-diamond">
+  <col class="pt-col-invite">
+  <col class="pt-col-sumdia">
+  <col class="pt-col-dia_per_yen">
+  <col class="pt-col-ratio_b">
 </colgroup>
-<thead>
-<tr>
-<th class="name sticky-col sticky-col1" scope="col">パッケージ</th>
-<th class="count sticky-col sticky-col2" scope="col">購入数</th>
-<th class="jpy" scope="col">JPY</th>
-<th class="res res-gold" scope="col"><img alt="gold" class="pt-ico" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_01_gold_20x20px.png"/></th>
-<th class="res res-mine_key" scope="col"><img alt="key" class="pt-ico" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_02_key_20x20px.png"/></th>
-<th class="res res-churu" scope="col"><img alt="churu" class="pt-ico" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_03_chur_20x20px.png"/></th>
-<th class="res res-battery" scope="col"><img alt="battery" class="pt-ico" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_04_battery_20x20px.png"/></th>
-<th class="res res-pet_food" scope="col"><img alt="petfood" class="pt-ico" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_05_petfood_20x20px.png"/></th>
-<th class="res res-mythic_stone" scope="col"><img alt="myth" class="pt-ico" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_06_Mythstone_20x20px.png"/></th>
-<th class="res res-immortal_stone" scope="col"><img alt="imm" class="pt-ico" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_07_immotalstone_20x20px.png"/></th>
-<th class="res res-diamond" scope="col"><img alt="dia" class="pt-ico" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_08_dia_20x20px.png"/></th>
-<th class="res res-invite" scope="col"><img alt="invite" class="pt-ico" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_09_Scroll_20x20px.png"/></th>
-<th class="calc" scope="col">💎換算</th>
-<th class="calc" scope="col">💎/100円</th>
-<th class="calc" scope="col">💎直買い比較</th>
-</tr>
-</thead>
-<tbody id="summaryTableBody">
-<tr>
-<td class="name">合計</td>
-<td class="limit">0</td>
-<td class="jpy">0</td>
-<td class="res res-gold">0</td>
-<td class="res res-mine_key">0</td>
-<td class="res res-churu">0</td>
-<td class="res res-battery">0</td>
-<td class="res res-pet_food">0</td>
-<td class="res res-mythic_stone">0</td>
-<td class="res res-immortal_stone">0</td>
-<td class="res res-diamond">0</td>
-<td class="res res-invite">0</td>
-<td class="calc">0</td>
-<td class="calc">-</td>
-<td class="calc">-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</section>
-</main>
-<!-- purchase popup -->
-<div class="pt-popup-overlay" hidden="" id="ptPopupOverlay"></div>
-<div aria-label="購入数の変更" aria-modal="true" class="pt-popup" hidden="" id="ptPkgPopup" role="dialog">
-<div class="pt-popup-head">
-<div class="pt-popup-title" id="ptPopupTitle"></div>
-<button aria-label="閉じる" class="pt-popup-close" id="ptPopupClose" type="button">×</button>
-</div>
-<div class="pt-popup-body">
-<div class="pt-popup-qtyrow">
-<div class="pt-popup-minuswrap">
-<button class="pt-popup-btn pt-popup-btn--half" hidden="" id="ptPopupClear" type="button">CLR</button>
-<button class="pt-popup-btn pt-popup-btn--half" id="ptPopupMinus" type="button">−</button>
-</div>
-<div class="pt-popup-qty"><span id="ptPopupQty">0</span> / <span id="ptPopupMax">0</span></div>
-<div class="pt-popup-pluswrap">
-<button class="pt-popup-btn pt-popup-btn--half" id="ptPopupPlus" type="button">＋</button>
-<button class="pt-popup-btn pt-popup-btn--half" id="ptPopupMaxBtn" type="button">MAX</button>
-</div>
-</div>
-<div class="pt-popup-sum">合計：￥<span id="ptPopupSum">0</span></div>
-<div class="pt-popup-actions">
-<button class="pt-popup-ok" id="ptPopupOk" type="button">決定</button>
-</div>
-</div>
-</div>
-<!-- budget quick input popup -->
-<div class="pt-popup-overlay" hidden="" id="ptBudgetOverlay"></div>
-<div aria-label="比較予算の簡単入力" aria-modal="true" class="pt-popup pt-popup--budget" hidden="" id="ptBudgetPopup" role="dialog">
-<div class="pt-popup-head">
-<div class="pt-popup-title">比較予算</div>
-<button aria-label="閉じる" class="pt-popup-close" id="ptBudgetClose" type="button">×</button>
-</div>
-<div class="pt-popup-body">
-<div class="pt-budget-value">￥<span id="ptBudgetValue">0</span></div>
-<div class="pt-budget-meta">購入済み合計：￥<span id="ptBudgetPurchased">0</span></div>
-<div aria-label="予算の増減" class="pt-budget-grid" role="group">
-<button class="pt-budget-btn" data-delta="-100" type="button">−100</button>
-<button class="pt-budget-btn" data-delta="100" type="button">＋100</button>
-<button class="pt-budget-btn" data-delta="-500" type="button">−500</button>
-<button class="pt-budget-btn" data-delta="500" type="button">＋500</button>
-<button class="pt-budget-btn" data-delta="-1000" type="button">−1000</button>
-<button class="pt-budget-btn" data-delta="1000" type="button">＋1000</button>
-<button class="pt-budget-btn" data-delta="-5000" type="button">−5000</button>
-<button class="pt-budget-btn" data-delta="5000" type="button">＋5000</button>
-<button class="pt-budget-btn" data-delta="-10000" type="button">−10000</button>
-<button class="pt-budget-btn" data-delta="10000" type="button">＋10000</button>
-</div>
-<div class="pt-budget-foot">
-<button class="pt-popup-btn" id="ptBudgetClear" type="button">クリア</button>
-<button class="pt-popup-btn pt-popup-btn--ok" id="ptBudgetOk" type="button">決定</button>
-</div>
-</div>
-</div>
+
+        <thead>
+          <tr>
+            <th class="name" scope="col"><div class="pt-sticky1">パッケージ</div></th>
+            <th class="jpy" scope="col">JPY</th>
+
+            <th class="res res-gold" scope="col"><img class="pt-ico" alt="gold" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_01_gold_20x20px.png"></th>
+            <th class="res res-mine_key" scope="col"><img class="pt-ico" alt="key" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_02_key_20x20px.png"></th>
+            <th class="res res-churu" scope="col"><img class="pt-ico" alt="churu" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_03_chur_20x20px.png"></th>
+            <th class="res res-battery" scope="col"><img class="pt-ico" alt="battery" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_04_battery_20x20px.png"></th>
+            <th class="res res-pet_food" scope="col"><img class="pt-ico" alt="petfood" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_05_petfood_20x20px.png"></th>
+            <th class="res res-mythic_stone" scope="col"><img class="pt-ico" alt="myth" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_06_Mythstone_20x20px.png"></th>
+            <th class="res res-immortal_stone" scope="col"><img class="pt-ico" alt="imm" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_07_immotalstone_20x20px.png"></th>
+            <th class="res res-diamond" scope="col"><img class="pt-ico" alt="dia" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_08_dia_20x20px.png"></th>
+            <th class="res res-invite" scope="col"><img class="pt-ico" alt="invite" src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/Resource_09_Scroll_20x20px.png"></th>
+
+            <th class="calc" scope="col">💎換算</th>
+            <th class="calc" scope="col">💎100円</th>
+            <th class="calc" scope="col">💎直買い比</th>
+          </tr>
+        </thead>
+        <tbody id="summaryTableBody">
+          <tr>
+            <td class="name"><div class="pt-sticky1">合計</div></td>
+            <td class="count"><div class="pt-sticky2">0</div></td>
+            <td class="jpy">0</td>
+            <td class="res res-gold">0</td>
+            <td class="res res-mine_key">0</td>
+            <td class="res res-churu">0</td>
+            <td class="res res-battery">0</td>
+            <td class="res res-pet_food">0</td>
+            <td class="res res-mythic_stone">0</td>
+            <td class="res res-immortal_stone">0</td>
+            <td class="res res-diamond">0</td>
+            <td class="res res-invite">0</td>
+            <td class="calc">0</td>
+            <td class="calc">-</td>
+            <td class="calc">-</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    </section>
+
+
+    
+
+    </main>
+
+  <!-- purchase popup -->
+  <div id="ptPopupOverlay" class="pt-popup-overlay" hidden></div>
+  <div id="ptPkgPopup" class="pt-popup" hidden role="dialog" aria-modal="true" aria-label="購入数の変更">
+    <div class="pt-popup-head">
+      <div id="ptPopupTitle" class="pt-popup-title"></div>
+      <button id="ptPopupClose" class="pt-popup-close" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="pt-popup-body">
+      <div class="pt-popup-qtyrow">
+        <button id="ptPopupMinus" class="pt-popup-btn" type="button">−</button>
+        <div class="pt-popup-qty"><span id="ptPopupQty">0</span> / <span id="ptPopupMax">0</span></div>
+        <div class="pt-popup-pluswrap"><button id="ptPopupPlus" class="pt-popup-btn pt-popup-btn--half" type="button">＋</button><button id="ptPopupMaxBtn" class="pt-popup-btn pt-popup-btn--half" type="button">MAX</button></div>
+      </div>
+      <div class="pt-popup-sum">合計：￥<span id="ptPopupSum">0</span></div>
+    </div>
+  </div>
+
+
+  <!-- budget quick input popup -->
+  <div id="ptBudgetOverlay" class="pt-popup-overlay" hidden></div>
+  <div id="ptBudgetPopup" class="pt-popup pt-popup--budget" hidden role="dialog" aria-modal="true" aria-label="比較予算の簡単入力">
+    <div class="pt-popup-head">
+      <div class="pt-popup-title">比較予算</div>
+      <button id="ptBudgetClose" class="pt-popup-close" type="button" aria-label="閉じる">×</button>
+    </div>
+    <div class="pt-popup-body">
+      <div class="pt-budget-value">￥<span id="ptBudgetValue">0</span></div>
+
+      <div class="pt-budget-grid" role="group" aria-label="予算の増減">
+        <button class="pt-budget-btn" type="button" data-delta="-100">−100</button>
+        <button class="pt-budget-btn" type="button" data-delta="100">＋100</button>
+
+        <button class="pt-budget-btn" type="button" data-delta="-500">−500</button>
+        <button class="pt-budget-btn" type="button" data-delta="500">＋500</button>
+
+        <button class="pt-budget-btn" type="button" data-delta="-1000">−1000</button>
+        <button class="pt-budget-btn" type="button" data-delta="1000">＋1000</button>
+
+        <button class="pt-budget-btn" type="button" data-delta="-5000">−5000</button>
+        <button class="pt-budget-btn" type="button" data-delta="5000">＋5000</button>
+
+        <button class="pt-budget-btn" type="button" data-delta="-10000">−10000</button>
+        <button class="pt-budget-btn" type="button" data-delta="10000">＋10000</button>
+      </div>
+
+      <div class="pt-budget-foot">
+        <button id="ptBudgetBack" class="pt-popup-btn" type="button">戻る</button>
+        <button id="ptBudgetClear" class="pt-popup-btn" type="button">クリア</button>
+      </div>
+    </div>
+  </div>
 </body>
+
 </html>
