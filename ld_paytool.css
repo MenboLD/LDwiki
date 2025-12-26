@@ -652,7 +652,23 @@ body {
   font-size: 12px;
   opacity: .92;
 }
-.pt-rate-input{ width:96px; box-sizing:border-box; }
+/* StepE: rate inputs/selects should match dark-theme form controls */
+.pt-rate-input{
+  width:96px;
+  box-sizing:border-box;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid #273044;
+  background: #0b0f16;
+  color:#e6e8eb;
+  font-size: 12px;
+}
+
+/* Safari: keep select text vertically centered */
+select.pt-rate-input{
+  line-height: 28px;
+}
 
 .pt-budget-row{
   align-items: end;
