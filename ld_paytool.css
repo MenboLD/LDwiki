@@ -28,6 +28,18 @@ body {
   border-radius:12px;
   padding:8px;
 }
+/* Step1-③: table-top toolbar (budget / quick / sort) */
+.pt-topbar{
+  display:flex;
+  gap:8px;
+  align-items:flex-end;
+  flex-wrap:wrap;
+  margin: 6px 0 8px;
+}
+.pt-topbar .pt-field{ margin:0; }
+.pt-topbar .pt-input-budget{ width: 120px; max-width: 120px; } /* short budget input */
+.pt-topbar .pt-field-sort .pt-select{ width: 60%; min-width: 120px; max-width: 200px; }
+
 
 .pt-table-wrap { overflow:auto; max-height: 360px; }
 
@@ -202,10 +214,10 @@ body {
 /* ---------- Phase2: settings panel ---------- */
 .pt-settings{
   margin: 10px 0 10px;
-  padding: 8px;
-  border-radius: 12px;
-  background: #0f1624;
-  border: 1px solid #1f2636;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: none;
 }
 .pt-settings-row{
   display:flex;
@@ -598,6 +610,7 @@ body {
   list-style: none;
   cursor: pointer;
   padding: 10px 12px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: .02em;
   user-select: none;
@@ -615,6 +628,7 @@ body {
   height: 32px;
   min-width: 44px;
   padding: 0 10px;
+  font-size: 11px;
   border-radius: 10px;
   border: 1px solid rgba(255,255,255,.14);
   background: rgba(255,255,255,.06);
@@ -643,6 +657,8 @@ body {
   opacity: .92;
 }
 .pt-rate-input{
+  height: 32px;
+  box-sizing: border-box;
   width: 92px;
   padding: 6px 8px;
   border-radius: 10px;
@@ -787,3 +803,6 @@ body {
 .pt-row-hasqty td.name .pt-sticky1{ background: rgba(130, 80, 200, .18); }
 .pt-row-full  td.name .pt-sticky1{ background: rgba(250, 150, 80, .22); }
 
+
+/* mine_key select should visually match rate inputs */
+#optMineKeyRate.pt-rate-input{ height: 32px; line-height: 32px; box-sizing: border-box; -webkit-appearance: none; appearance: none; }
