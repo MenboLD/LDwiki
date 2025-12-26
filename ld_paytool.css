@@ -29,13 +29,18 @@ body {
 
 .pt-table-wrap { overflow:auto; max-height: 360px; }
 
+/* iOS Safari: stabilize momentum scrolling within the scroll container */
+.pt-table-wrap{
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Fixed layout so columns don't expand with long names */
 .pt-table {
   border-collapse: separate;
   border-spacing: 0;
   width:100%;
   table-layout: fixed;
-  min-width: 860px; /* allow horizontal scroll for resource columns */
+  min-width: 942px; /* allow horizontal scroll for resource columns */
 }
 
 .pt-table th,
@@ -57,47 +62,74 @@ body {
   z-index: 5;
 }
 
-/* iOS Safari 対策: 横スクロールで 1列目の sticky が途中から崩れることがあるため、
-   scrollLeft を CSS 変数に流し込み、セル内ラッパーを scrollLeft 分だけ右へ戻す方式にする */
-.pt-table-wrap,
-.pt-summary-table-wrap {
-  --scrollLeft: 0px;
+/* Sticky columns (パッケージ名 + 購入数) */
+:root{
+  --pt-col-name: 96px;
+  --pt-col-count: 50px;
 }
+.pt-col-name{ width: var(--pt-col-name) !important; }
 
-/* Sticky name column only */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.pt-col-ratio_b{ width: 84px; }
+.pt-col-dia_per_yen{ width: 82px; }
+.pt-col-sumdia{ width: 74px; }
+.pt-col-invite{ width: 52px; }
+.pt-col-diamond{ width: 58px; }
+.pt-col-immortal_stone{ width: 54px; }
+.pt-col-mythic_stone{ width: 54px; }
+.pt-col-pet_food{ width: 54px; }
+.pt-col-battery{ width: 54px; }
+.pt-col-churu{ width: 34px; }
+.pt-col-mine_key{ width: 44px; }
+.pt-col-gold{ width: 70px; }
+.pt-col-jpy{ width: 62px; }
+.pt-col-count{ width: 58px; }
+.pt-col-name{ width: 96px; }
+.pt-col-count{ width: var(--pt-col-count) !important; }
+.pt-col-jpy{ width: 62px !important; }
+
 .pt-table th.name,
-.pt-table td.name {
-  width: 120px;
-  padding: 0;
-  overflow: hidden; /* prevent bleed-through under sticky */
-  position: relative;
-  background: #0c1018; /* solid layer for Safari */
-  z-index: 8;
+.pt-table td.name{
+  text-align: left;
+}
+.pt-table th.count,
+.pt-table td.count{
+  text-align: left;
 }
 
-.pt-table th.name { z-index: 9; background: #0c1018; }
-.pt-table td.name { z-index: 4; }
-
-/* パッケージ列の見た目は中のラッパーに持たせる */
-.pt-sticky1 {
-  position: relative;
-  transform: translateX(var(--scrollLeft));
-  background:#121826;
-  height: 100%;
-  padding: 6px 10px 6px 8px;
-  box-sizing: border-box;
-  border-right: 1px solid rgba(255,255,255,0.07);
+.pt-table th.sticky-col,
+.pt-table td.sticky-col{
+  position: sticky;
+  background: #0c1018; /* must be opaque to prevent bleed-through */
+  background-clip: padding-box;
+  z-index: 20;
+  /* iOS Safari: reduce sticky jitter / 1px shifts during scroll */
+  transform: translateZ(0);
+  will-change: transform;
 }
+.pt-table .sticky-col1{ left: 0; z-index: 21; }
+.pt-table .sticky-col2{ left: var(--pt-col-name); z-index: 22; }
 
-.pt-sticky1 .pt-pkg-name{
-  font-size: 10.5px;
-  line-height: 1.15;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  word-break: break-word;
-  hyphens: auto;
-}
+/* Header row is above body, and top-left intersections are highest */
+.pt-table thead th{ z-index: 50; }
+.pt-table thead th.sticky-col{ background:#121826; z-index: 60; }
+.pt-table thead th.sticky-col1{ z-index: 70; }
+.pt-table thead th.sticky-col2{ z-index: 71; }
+
+
 
 /* JPY column (NOT sticky) */
 .pt-table th.jpy,
@@ -199,11 +231,11 @@ body {
 
 /* ---------- Phase2: settings panel ---------- */
 .pt-settings{
-  margin: 10px 0 10px;
-  padding: 8px;
-  border-radius: 12px;
-  background: #0f1624;
-  border: 1px solid #1f2636;
+  /* NOTE: .pt-card already provides the outer card. Avoid double borders here. */
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
 }
 .pt-settings-row{
   display:flex;
@@ -395,7 +427,7 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 .pt-summary-table-wrap .pt-table{
-  min-width: var(--pt-table-minw, 926px);
+  min-width: var(--pt-table-minw, 884px);
 }
 
 /* Phase4: limit reached / disabled buttons */
@@ -413,39 +445,23 @@ body {
 /* Phase4v2: separate cards */
 .pt-card--tables{ margin-top: 10px; }
 
-/* Phase4v2: sticky for limit column in summary table as well */
-.pt-table-summary th.limit, .pt-table-summary td.limit{
-  position: sticky;
-  left: 32px;
-  z-index: 3;
-  background: #0b0f16;
-}
-.pt-table-summary thead th.limit{ z-index: 6; }
-
 /* Phase4v5: explicit card roles */
 .pt-card--settings{ margin-top: 10px; }
 .pt-card--tables{ margin-top: 10px; }
 
 /* Phase5: merge purchase UI into name column + popup controls */
-.pt-namecell{
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 2px;
-}
+.pt-namecell{ display:block; }
 .pt-nameText{
+  font-size: 13px;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.pt-nameMeta{
+.pt-countText{
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  opacity: 0.9;
-
-  width: 38px;
-  text-align: right;
+  opacity: 0.95;
 }
 
 /* Popup */
@@ -548,20 +564,20 @@ body {
 /* v5d: keep header 'パッケージ' but prevent it from widening the name column */
 
 /* === Phase5h: fixed widths are managed by colgroup === */
-.pt-col-name{ width: 88px; }
-.pt-col-jpy{ width: 46px; }
-.pt-col-gold{ width: 42px; }
-.pt-col-mine_key{ width: 26px; }
-.pt-col-churu{ width: 26px; }
-.pt-col-battery{ width: 30px; }
-.pt-col-pet_food{ width: 30px; }
-.pt-col-mythic_stone{ width: 30px; }
-.pt-col-immortal_stone{ width: 30px; }
-.pt-col-diamond{ width: 46px; }
-.pt-col-invite{ width: 34px; }
-.pt-col-sumdia{ width: 56px; }
-.pt-col-dia_per_yen{ width: 44px; }
-.pt-col-ratio_b{ width: 48px; }
+.pt-col-name{ width: var(--pt-col-name); }
+.pt-col-jpy{ width: 62px !important; }
+.pt-col-gold{ width: 62px !important; }
+.pt-col-mine_key{ width: 44px !important; }
+.pt-col-churu{ width: 34px !important; }
+.pt-col-battery{ width: 54px !important; }
+.pt-col-pet_food{ width: 54px !important; }
+.pt-col-mythic_stone{ width: 54px !important; }
+.pt-col-immortal_stone{ width: 54px !important; }
+.pt-col-diamond{ width: 58px !important; }
+.pt-col-invite{ width: 44px !important; }
+.pt-col-sumdia{ width: 74px !important; }
+.pt-col-dia_per_yen{ width: 50px !important; }
+.pt-col-ratio_b{ width: 74px !important; }
 
 /* package cell: name + qty area (qty centered) */
 .pt-namecell{
@@ -595,7 +611,8 @@ body {
 .pt-acc-sum{
   list-style: none;
   cursor: pointer;
-  padding: 10px 12px;
+  padding: 7px 10px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: .02em;
   user-select: none;
@@ -625,12 +642,7 @@ body {
   gap: 8px;
   margin-top: 8px;
 }
-.pt-rate-item{
-  display: grid;
-  grid-template-columns: 24px 1fr 92px;
-  gap: 8px;
-  align-items: center;
-}
+.pt-rate-item{ display:grid; grid-template-columns: 22px 1fr 96px; align-items:center; column-gap:10px; padding:6px 6px; }
 .pt-rate-icon{
   width: 20px;
   height: 20px;
@@ -640,15 +652,7 @@ body {
   font-size: 12px;
   opacity: .92;
 }
-.pt-rate-input{
-  width: 92px;
-  padding: 6px 8px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.25);
-  color: #e8eefc;
-  font-variant-numeric: tabular-nums;
-}
+.pt-rate-input{ width:96px; box-sizing:border-box; }
 
 .pt-budget-row{
   align-items: end;
@@ -693,16 +697,18 @@ body {
 
 /* === Phase6b: row states & anti-zoom === */
 .pt-table tbody tr.pt-has-qty td{
-  background: rgba(110, 160, 255, 0.08);
+  /* qty>=1 & not capped: make it clearly visible (green-ish) */
+  background: rgba(60, 255, 160, 0.22);
 }
 .pt-table tbody tr.pt-at-cap td{
-  background: rgba(255, 170, 80, 0.14);
+  /* capped: brighten a bit for readability */
+  background: rgba(210, 120, 255, 0.24);
 }
 .pt-table tbody tr.pt-row-selected td{
-  box-shadow: inset 0 0 0 2px rgba(110,160,255,0.75);
+  box-shadow: inset 0 0 0 2px rgba(70,220,140,0.70);
 }
 .pt-table tbody tr.pt-row-selected.pt-at-cap td{
-  box-shadow: inset 0 0 0 2px rgba(255,170,80,0.85);
+  box-shadow: inset 0 0 0 2px rgba(235, 170, 255, 0.92);
 }
 
 /* prevent double-tap zoom-ish behaviors on interactive controls */
@@ -715,6 +721,27 @@ body {
   -webkit-user-select: none;
 }
 
+
+/* popup minus/clear layout */
+.pt-popup-minuswrap{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.pt-popup-actions{
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+.pt-popup-ok{
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.10);
+  color: #e8eefc;
+  font-weight: 800;
+}
 /* popup plus/max layout */
 .pt-popup-pluswrap{
   display: grid;
@@ -729,67 +756,118 @@ body {
 }
 
 
-/* --- 1列目(パッケージ) 疑似固定 ---
-   scrollLeft を JS から CSS 変数に流し込み、セル内ラッパーを右へ戻す。
-   これで iOS Safari の sticky 破綻を回避する。 */
-.pt-table th.name,
-.pt-table td.name{
-  position: relative;
-  padding: 0;
-  background: transparent;
-  overflow: visible;
+/* Phase6e: keep sticky columns opaque AND reflect row state backgrounds */
+.pt-table tbody tr.pt-has-qty td.sticky-col{
+  background: #123a2a; /* opaque variant */}
+.pt-table tbody tr.pt-at-cap td.sticky-col{
+  background: #2b1636; /* opaque variant of cap-highlight (brighter) */
 }
-.pt-table .pt-sticky1{
-  position: relative;
-  transform: translateX(var(--scrollLeft, 0px));
-  z-index: 8;
-  display: block;
-  width: var(--w-pkg);
-  min-width: var(--w-pkg);
-  max-width: var(--w-pkg);
-  padding: var(--cell-pad-y) var(--cell-pad-x);
-  padding-right: var(--cell-pad-r);
-  background: rgba(12,16,24,.94);
-  border-right: 1px solid rgba(255,255,255,.06);
+.pt-table tbody tr.pt-row-selected td.sticky-col{
+  /* keep current background; outline already drawn via box-shadow */
   background-clip: padding-box;
-  will-change: transform;
 }
 
-/* Gridlines alignment: draw horizontal rules at row level so sticky/non-sticky don't drift */
-.pt-table tbody tr{ box-shadow: inset 0 1px 0 rgba(255,255,255,.06); }
-.pt-table tbody tr > td{ border-top: none; }
-
-/* Selection outline: mostly top/bottom, plus left edge (pkg) and right edge (last col) */
-.pt-row-selected td{
-  box-shadow: inset 0 2px 0 rgba(255,170,90,.65),
-              inset 0 -2px 0 rgba(255,170,90,.65);
-}
-.pt-row-selected td:last-child{
-  box-shadow: inset 0 2px 0 rgba(255,170,90,.65),
-              inset 0 -2px 0 rgba(255,170,90,.65),
-              inset -2px 0 0 rgba(255,170,90,.65);
-}
-/* pkg column uses wrapper */
-.pt-row-selected td.name{ box-shadow:none; }
-.pt-row-selected td.name .pt-sticky1{
-  box-shadow: inset 0 2px 0 rgba(255,170,90,.65),
-              inset 0 -2px 0 rgba(255,170,90,.65),
-              inset 2px 0 0 rgba(255,170,90,.65);
+/* Ensure sticky columns are not overridden by legacy rules */
+.pt-table th.name.sticky-col,
+.pt-table td.name.sticky-col,
+.pt-table th.count.sticky-col,
+.pt-table td.count.sticky-col{
+  padding: 6px 8px; /* unify height */
 }
 
-/* 購入数に応じた行背景 */
-.pt-row-hasqty td{ background: rgba(130, 80, 200, .18); }
-.pt-row-full  td{ background: rgba(250, 150, 80, .22); }
-
-/* 疑似 sticky の背景も行色に追従 */
-.pt-row-hasqty td.name .pt-sticky1{ background: rgba(130, 80, 200, .18); }
-.pt-row-full  td.name .pt-sticky1{ background: rgba(250, 150, 80, .22); }
-
-
-
-/* pt-select align tweak (iOS Safari) */
-.pt-select{
-  line-height: 28px;
-  -webkit-appearance: none;
-  appearance: none;
+/* Add subtle divider to the right of sticky columns */
+.pt-table td.sticky-col2,
+.pt-table th.sticky-col2{
+  box-shadow: 1px 0 0 #1f2636;
 }
+
+
+/* Selected row info bar (shown when a row is selected) */
+.pt-selected-info{margin:6px 0 10px 0;padding:8px 10px;border:1px solid rgba(255,255,255,0.10);border-radius:10px;background:rgba(255,255,255,0.04);}
+.pt-selected-text{font-size:12px;line-height:1.35;}
+.pt-selected-placeholder{opacity:0.7;}
+.pt-sel-items{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.pt-sel-price{font-variant-numeric:tabular-nums;opacity:0.95;margin-right:2px;}
+.pt-sel-item{display:inline-flex;align-items:center;gap:4px;}
+.pt-sel-ico{width:16px;height:16px;display:inline-block;}
+.pt-sel-val{font-variant-numeric:tabular-nums;}
+
+/* Slightly smaller package name text (values only) */
+.pt-table td.name .pt-nameText{font-size:12.5px;}
+
+
+/* Phase6: 購入数列の見た目調整 */
+.pt-table thead th.count{
+  font-size: 12px; /* ほんの少し小さく */
+}
+.pt-table tbody td.count{
+  text-align: center;
+}
+
+
+.pt-budget-meta{margin:6px 0 10px 0;font-size:11px;opacity:0.8;text-align:center;}
+.pt-budget-foot{display:flex;justify-content:center;gap:10px;margin-top:10px;}
+.pt-popup-btn--ok{border-color:rgba(180,220,255,0.35);}
+
+
+/* calc columns header center */
+.pt-table thead th.calc{ text-align:center; }
+
+.pt-rate-item select.pt-rate-input{ width:96px; }
+
+.pt-note{ font-size:11px; color:var(--pt-muted,#b7c2d1); line-height:1.35; margin-top:8px; }
+.pt-note div{ margin:4px 0; }
+
+
+/* Phase6t: sort bar moved under selected info */
+.pt-sortbar{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:8px;
+  margin: 6px 0 10px;
+}
+.pt-sortbar .pt-field{
+  margin:0;
+}
+
+/* Phase6t: rate reset button */
+.pt-rate-actions{
+  display:flex;
+  justify-content:flex-end;
+  margin: 4px 0 8px;
+}
+.pt-btn-ghost{
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.92);
+}
+.pt-btn-ghost:active{ transform: translateY(1px); }
+
+/* Phase6t: center table calc headers */
+.pt-table thead th.calc{ text-align:center; }
+
+
+/* Step1-③ (A-D): toolbar moved to table area; keep IDs unchanged */
+.pt-status{display:none;}
+.pt-card-label{
+  font-size: 12px;
+  letter-spacing: .08em;
+  color: rgba(255,255,255,.72);
+  margin: 0 0 8px 0;
+}
+.pt-toolbar{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  margin: 8px 0 10px;
+}
+.pt-toolbar .pt-field-budget{flex: 0 0 45%;}
+.pt-toolbar .pt-field-budget .pt-input-budget{width:100%;}
+.pt-toolbar #btnBudgetQuick{flex:0 0 auto; white-space:nowrap;}
+.pt-toolbar .pt-field-sort{flex: 0 0 auto;}
+.pt-toolbar .pt-field-sort .pt-select{width:120px;}
