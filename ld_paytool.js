@@ -114,6 +114,11 @@
       `;
       elToggles.appendChild(wrap);
     }
+
+    const note = document.createElement('div');
+    note.className = 'pt-note pt-note--purpose';
+    note.textContent = `※パッケージの価値をダイヤ換算した場合の値に影響します。\n\n例：神話ユニットが全てLv.15 → 神話石のチェックを外す\n例：デイリーショップの鉱山の鍵とは別に鍵が欲しい → 鉱山の鍵以外のチェックを外す\n\n上記のように自分にとっての価値を正確にし、必要物リースを絞れます。`;
+    elToggles.appendChild(note);
     elToggles.addEventListener('change', (e)=>{
       const t = e.target;
       if(t instanceof HTMLSelectElement && t.id==='optMineKeyRate'){
@@ -154,6 +159,11 @@
       elDoubleToggles.appendChild(row);
     }
 
+
+    const note = document.createElement('div');
+    note.className = 'pt-note pt-note--double';
+    note.textContent = `※すでに過去に購入した初回２倍ダイヤの項目は外してください。`;
+    elDoubleToggles.appendChild(note);
     elDoubleToggles.addEventListener('change', (e)=>{
       const t = e.target;
       if(!(t instanceof HTMLInputElement)) return;
@@ -221,6 +231,12 @@
       }
       elRateEditor.appendChild(row);
     }
+
+    // note about invite handling
+    const note = document.createElement('div');
+    note.className = 'pt-note pt-note--rate';
+    note.textContent = `※招待状の扱いについて\nそれ１枚のユニット募集における期待値は\n　・ゴールド≒7.24枚\n　・神話石≒0.019個\n　・ダイヤ≒0.238個\n以上のようになっています。\n商品リストへ反映しても良かったのですが、商品内容に実際との相違が生じてしまいます。\nそのため、すべてをダイヤ換算した場合の値として扱う方式を採用しました。\nつまり、デフォルトの招待状レートはこれらの合計値になっています。`;
+    elRateEditor.appendChild(note);
     elRateEditor.addEventListener('change', (e)=>{
       const t = e.target;
       if(t instanceof HTMLSelectElement && t.id==='optMineKeyRate'){
@@ -593,6 +609,7 @@ function applyAll(){
     updateSelectedInfo();
     saveCart();
     status.textContent = `表示中：${out.length}件（計算反映）`;
+    updateBudgetInputWarning();
   }
 
   function bumpQty(key, delta){
@@ -655,6 +672,11 @@ function applyAll(){
         applyAll();
       });
     }
+
+    const note = document.createElement('div');
+    note.className = 'pt-note pt-note--purpose';
+    note.textContent = `※パッケージの価値をダイヤ換算した場合の値に影響します。\n\n例：神話ユニットが全てLv.15 → 神話石のチェックを外す\n例：デイリーショップの鉱山の鍵とは別に鍵が欲しい → 鉱山の鍵以外のチェックを外す\n\n上記のように自分にとっての価値を正確にし、必要物リースを絞れます。`;
+    elToggles.appendChild(note);
     elToggles.addEventListener('change', applyAll);
     if(elDoubleToggles) elDoubleToggles.addEventListener('change', applyAll);
     elSort.addEventListener('change', applyAll);
@@ -698,12 +720,17 @@ function applyAll(){
     const bClear   = document.getElementById('ptBudgetClear');
     const bOk      = document.getElementById('ptBudgetOk');
 
-    function getBudgetVal(){ return clampInt(elBudgetYen.value, 0, 200000); }
+        const bMatch = document.getElementById('ptBudgetMatchPlanned');
+    const bConfirm = document.getElementById('ptBudgetConfirm');
+    const bConfirmYes = document.getElementById('ptBudgetConfirmYes');
+    const bConfirmNo  = document.getElementById('ptBudgetConfirmNo');
+function getBudgetVal(){ return clampInt(elBudgetYen.value, 0, 200000); }
 
     // decision-style temp value (only applied on OK)
     let bTemp = 0;
+    let bInitial = 0; // value when popup opened
 
-    function calcPurchasedYen(){
+    function calcPlannedYen(){
       let sum = 0;
       for(const p of (packages||[])){
         const key = rowKey(p);
@@ -714,14 +741,24 @@ function applyAll(){
       return sum;
     }
 
-    function refreshBudgetPopupUI(){
+    
+    function updateBudgetInputWarning(){
+      if(!elBudgetYen) return;
+      const budget = getBudgetVal();
+      const planned = calcPlannedYen();
+      const over = planned > budget;
+      elBudgetYen.classList.toggle('pt-input--over', over);
+    }
+
+function refreshBudgetPopupUI(){
       if(bValue) bValue.textContent = fmtNum(bTemp);
-      if(bPurchased) bPurchased.textContent = fmtNum(calcPurchasedYen());
+      if(bPurchased) bPurchased.textContent = fmtNum(calcPlannedYen());
     }
 
     function openBudgetPopup(){
       if(!bOverlay || !bPopup) return;
       bTemp = getBudgetVal();
+      bInitial = bTemp;
       refreshBudgetPopupUI();
       bOverlay.hidden = false; bPopup.hidden = false;
 
@@ -731,9 +768,23 @@ function applyAll(){
       bPopup.style.top = y + 'px';
     }
 
-    function closeBudgetPopup(){
+    function closeBudgetPopup(discard=false){
       if(!bOverlay || !bPopup) return;
-      bOverlay.hidden = true; bPopup.hidden = true;
+      if(bConfirm) bConfirm.hidden = true;
+      bOverlay.hidden = true;
+      bPopup.hidden = true;
+      if(discard){
+        bTemp = bInitial;
+      }
+    }
+
+    function requestCloseBudgetPopup(){
+      // If temp changed, confirm discard
+      if(bTemp !== bInitial){
+        if(bConfirm){ bConfirm.hidden = false; }
+        return;
+      }
+      closeBudgetPopup(false);
     }
 
     function commitBudget(){
@@ -744,12 +795,14 @@ function applyAll(){
     }
 
     if(elBudgetQuick) elBudgetQuick.addEventListener('click', openBudgetPopup);
-    if(bOverlay) bOverlay.addEventListener('click', closeBudgetPopup);
-    if(bClose) bClose.addEventListener('click', closeBudgetPopup);
+    if(bOverlay) bOverlay.addEventListener('click', requestCloseBudgetPopup);
+    if(bClose) bClose.addEventListener('click', requestCloseBudgetPopup);
     if(bClear) bClear.addEventListener('click', ()=>{ bTemp = 0; refreshBudgetPopupUI(); });
     if(bOk) bOk.addEventListener('click', commitBudget);
-
-    bPopup?.addEventListener('click', (e)=>{
+    if(bMatch) bMatch.addEventListener('click', ()=>{ bTemp = clampInt(calcPlannedYen(),0,200000); refreshBudgetPopupUI(); });
+    if(bConfirmNo) bConfirmNo.addEventListener('click', ()=>{ if(bConfirm) bConfirm.hidden = true; });
+    if(bConfirmYes) bConfirmYes.addEventListener('click', ()=>{ if(bConfirm) bConfirm.hidden = true; closeBudgetPopup(true); });
+bPopup?.addEventListener('click', (e)=>{
       const t = e.target;
       if(!(t instanceof HTMLElement)) return;
       const btn = t.closest('[data-delta]');

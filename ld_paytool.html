@@ -228,7 +228,7 @@
 </div>
 <div class="pt-popup-body">
 <div class="pt-budget-value">￥<span id="ptBudgetValue">0</span></div>
-<div class="pt-budget-meta">購入済み合計：￥<span id="ptBudgetPurchased">0</span></div>
+<div class="pt-budget-meta">購入予定合計：￥<span id="ptBudgetPurchased">0</span></div>
 <div aria-label="予算の増減" class="pt-budget-grid" role="group">
 <button class="pt-budget-btn" data-delta="-100" type="button">−100</button>
 <button class="pt-budget-btn" data-delta="100" type="button">＋100</button>
@@ -245,6 +245,18 @@
 <button class="pt-popup-btn" id="ptBudgetClear" type="button">クリア</button>
 <button class="pt-popup-btn pt-popup-btn--ok" id="ptBudgetOk" type="button">決定</button>
 </div>
+<div class="pt-budget-foot2">
+  <button class="pt-popup-btn pt-popup-btn--ghost" id="ptBudgetMatchPlanned" type="button">購入予定に合わせる</button>
+</div>
+</div>
+<div class="pt-submodal" id="ptBudgetConfirm" hidden>
+  <div class="pt-submodal-box" role="dialog" aria-modal="true" aria-label="確認">
+    <div class="pt-submodal-text">変更した内容は破棄されますがよろしいですか？</div>
+    <div class="pt-submodal-actions">
+      <button class="pt-popup-btn" id="ptBudgetConfirmNo" type="button">いいえ</button>
+      <button class="pt-popup-btn pt-popup-btn--ok" id="ptBudgetConfirmYes" type="button">はい</button>
+    </div>
+  </div>
 </div>
 </div>
 </body>
