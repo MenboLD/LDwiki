@@ -73,12 +73,16 @@
 </section>
 <section class="pt-card pt-card--tables">
 <div class="pt-toolbar">
-  <label class="pt-field pt-field-budget">
+  <div class="pt-toolbar-row">
+    <label class="pt-field pt-field-budget">
     <span class="pt-field-label">予算</span>
     <input aria-label="予算" class="pt-input pt-input-budget" id="optBudgetYen" inputmode="numeric" min="0" step="100" type="number" value="15000"/>
   </label>
-  <button class="pt-btn" id="btnBudgetQuick" type="button">簡単入力</button>
-  <label class="pt-field pt-field-sort">
+    <button class="pt-btn" id="btnBudgetQuick" type="button">簡単入力</button>
+    <button class="pt-btn" id="btnBulkBuy" type="button">一括購入</button>
+  </div>
+  <div class="pt-toolbar-row">
+    <label class="pt-field pt-field-sort">
     <span class="pt-field-label">ソート</span>
     <select class="pt-select" id="optSort">
 <option value="default">デフォルト</option>
@@ -89,8 +93,9 @@
 <option value="jpy_desc">円 降順</option>
 </select>
   </label>
-  <button class="pt-btn" id="btnCategoryFilter" type="button">カテゴリ</button>
-  <label class="pt-check pt-check-qtysort"><input id="optQtySort" type="checkbox"><span>購入金額優先</span></label>
+    <label class="pt-check pt-check-qtysort"><input id="optQtySort" type="checkbox"><span>購入額順</span></label>
+    <button class="pt-btn" id="btnCategoryFilter" type="button">カテゴリ</button>
+  </div>
 </div>
 <div class="pt-selected-info" id="selectedRowInfo">
 <div class="pt-selected-text pt-selected-placeholder" id="selectedRowInfoText">選択された行の商品内容がここに表示されます</div>
@@ -138,6 +143,7 @@
 </div>
 <div aria-label="合計表" class="pt-summary-table-wrap" id="summaryScroll">
 <div class="pt-selected-info pt-planned-summary" id="ptPlannedSummary">
+  <div class="pt-planned-title">購入選択中の合計金額とリソース量</div>
   <div class="pt-selected-text" id="ptPlannedSummaryText">¥0</div>
 </div>
 <table class="pt-table pt-table-summary" role="table">
@@ -306,6 +312,29 @@
   </div>
 </div>
 
+
+
+<!-- Bulk buy popup -->
+<div class="pt-popup-overlay" hidden id="ptBulkOverlay"></div>
+<div class="pt-popup pt-popup--bulk" hidden id="ptBulkPopup" role="dialog" aria-modal="true">
+  <div class="pt-popup-head">
+    <div class="pt-popup-title">一括購入</div>
+    <button aria-label="閉じる" class="pt-popup-close" id="ptBulkClose" type="button">×</button>
+  </div>
+  <div class="pt-popup-body">
+    <div class="pt-bulk-sum" id="ptBulkSum">下記パッケージの総合計金額：¥0</div>
+    <div class="pt-bulk-list" id="ptBulkList"></div>
+
+    <div class="pt-bulk-actions">
+      <button class="pt-popup-btn" id="ptBulkAllClear" type="button">ALL CLR</button>
+      <button class="pt-popup-btn" id="ptBulkAllMax" type="button">ALL MAX</button>
+    </div>
+
+    <div class="pt-bulk-foot">
+      <button class="pt-popup-btn pt-popup-btn--ok" id="ptBulkOk" type="button">決定</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>

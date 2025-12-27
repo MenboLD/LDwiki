@@ -29,6 +29,7 @@
     if(!Number.isFinite(n)) return String(v);
     return _nf.format(Math.round(n));
   }
+  function fmtYen(n){ return `¥${fmtNum(n)}`; }
   function fmtFloat2(v){
     if(!Number.isFinite(v) || v <= 0) return '-';
     return (Math.round(v * 100) / 100).toFixed(2);
@@ -1287,7 +1288,201 @@ bPopup?.addEventListener('click', (e)=>{
     });
 
 
-    // purchase popup handlers (open only from 1st column)
+    
+    // === Bulk buy popup ===
+    const bulkBtn = document.getElementById('btnBulkBuy');
+    const bulkOverlay = document.getElementById('ptBulkOverlay');
+    const bulkPopup   = document.getElementById('ptBulkPopup');
+    const bulkClose   = document.getElementById('ptBulkClose');
+    const bulkOk      = document.getElementById('ptBulkOk');
+    const bulkSumEl   = document.getElementById('ptBulkSum');
+    const bulkListEl  = document.getElementById('ptBulkList');
+    const bulkAllClr  = document.getElementById('ptBulkAllClear');
+    const bulkAllMax  = document.getElementById('ptBulkAllMax');
+
+    let bulkTemp = null;     // key -> qty (working copy)
+    let bulkTargets = [];    // package rows in weekly/monthly
+
+    function getBulkTargets(){
+      const out = [];
+      for(const p of (packages || [])){
+        if(!p) continue;
+        if(p.is_active === false) continue;
+        const cat = normalizeCategoryKey(p.category_key);
+        if(cat !== 'weekly' && cat !== 'monthly') continue;
+        out.push(p);
+      }
+      out.sort((a,b)=>{
+        const sa = Number(a.sort_order ?? 0);
+        const sb = Number(b.sort_order ?? 0);
+        if(Number.isFinite(sa) && Number.isFinite(sb) && sa !== sb) return sa - sb;
+        return String(a.package_name||'').localeCompare(String(b.package_name||''), 'ja');
+      });
+      return out;
+    }
+
+    function closeBulkPopup(){
+      if(bulkOverlay) bulkOverlay.hidden = true;
+      if(bulkPopup) bulkPopup.hidden = true;
+      bulkTemp = null;
+      bulkTargets = [];
+    }
+
+    function calcBulkSumYen(){
+      let sum = 0;
+      for(const p of bulkTargets){
+        const key = rowKey(p);
+        const qty = bulkTemp ? (bulkTemp[key] ?? 0) : 0;
+        const jpy = Number(p.jpy ?? p.price_yen ?? 0);
+        if(!Number.isFinite(jpy)) continue;
+        sum += jpy * qty;
+      }
+      return sum;
+    }
+
+    function renderBulkPopup(){
+      if(!bulkListEl || !bulkSumEl) return;
+
+      bulkSumEl.textContent = `下記パッケージの総合計金額：${fmtYen(calcBulkSumYen())}`;
+
+      const frag = document.createDocumentFragment();
+      let lastGroup = null;
+
+      for(const p of bulkTargets){
+        const cat = normalizeCategoryKey(p.category_key);
+        const groupLabel = (cat === 'weekly') ? '週間' : '月間';
+        if(groupLabel !== lastGroup){
+          const gh = document.createElement('div');
+          gh.className = 'pt-bulk-group';
+          gh.textContent = groupLabel;
+          frag.appendChild(gh);
+          lastGroup = groupLabel;
+        }
+
+        const key = rowKey(p);
+        const cap = getPurchaseCap(p);
+        const capText = (cap >= 999999) ? '∞' : String(cap);
+        const qty = bulkTemp ? (bulkTemp[key] ?? 0) : 0;
+
+        const jpy = Number(p.jpy ?? p.price_yen ?? 0);
+        const lineSum = (Number.isFinite(jpy) ? jpy : 0) * qty;
+
+        const item = document.createElement('div');
+        item.className = 'pt-bulk-item';
+        item.dataset.key = key;
+
+        const name = document.createElement('div');
+        name.className = 'pt-bulk-name';
+        name.textContent = String(p.package_name || '');
+
+        const btnClr = document.createElement('button');
+        btnClr.type = 'button';
+        btnClr.className = 'pt-bulk-mini';
+        btnClr.dataset.act = 'clr';
+        btnClr.textContent = 'CLR';
+
+        const qtyEl = document.createElement('div');
+        qtyEl.className = 'pt-bulk-qty';
+        qtyEl.textContent = `${qty}/${capText}`;
+
+        const btnMax = document.createElement('button');
+        btnMax.type = 'button';
+        btnMax.className = 'pt-bulk-mini';
+        btnMax.dataset.act = 'max';
+        btnMax.textContent = 'MAX';
+
+        const sumEl = document.createElement('div');
+        sumEl.className = 'pt-bulk-line-sum';
+        sumEl.textContent = fmtYen(lineSum);
+
+        item.append(name, btnClr, qtyEl, btnMax, sumEl);
+        frag.appendChild(item);
+      }
+
+      bulkListEl.innerHTML = '';
+      bulkListEl.appendChild(frag);
+    }
+
+    function openBulkPopup(){
+      if(!bulkOverlay || !bulkPopup || !bulkListEl) return;
+      bulkTargets = getBulkTargets();
+      bulkTemp = {};
+      for(const p of bulkTargets){
+        const key = rowKey(p);
+        const cap = getPurchaseCap(p);
+        bulkTemp[key] = clampInt(cart[key] ?? 0, 0, cap);
+      }
+      bulkOverlay.hidden = false;
+      bulkPopup.hidden = false;
+
+      // position inside viewport (fixed without top can end up off-screen)
+      try{
+        const h = bulkPopup.getBoundingClientRect().height || 520;
+        const y = Math.max(8, Math.min(window.innerHeight - h - 8, Math.floor(window.innerHeight * 0.08)));
+        bulkPopup.style.top = y + 'px';
+      }catch(_){}
+
+      renderBulkPopup();
+    }
+
+    function applyBulkAction(key, act){
+      if(!bulkTemp) return;
+      const p = bulkTargets.find(r => rowKey(r) === key);
+      if(!p) return;
+      const cap = getPurchaseCap(p);
+      if(act === 'clr') bulkTemp[key] = 0;
+      if(act === 'max') bulkTemp[key] = clampInt(cap, 0, cap);
+      renderBulkPopup();
+    }
+
+    function setBulkAll(act){
+      if(!bulkTemp) return;
+      for(const p of bulkTargets){
+        const key = rowKey(p);
+        const cap = getPurchaseCap(p);
+        bulkTemp[key] = (act === 'clr') ? 0 : clampInt(cap, 0, cap);
+      }
+      renderBulkPopup();
+    }
+
+    function commitBulkPopup(){
+      if(!bulkTemp){
+        closeBulkPopup();
+        return;
+      }
+      for(const p of bulkTargets){
+        const key = rowKey(p);
+        cart[key] = bulkTemp[key] ?? 0;
+      }
+      applyAll();
+      closeBulkPopup();
+    }
+
+    if(bulkBtn) bulkBtn.addEventListener('click', openBulkPopup);
+    if(bulkOverlay) bulkOverlay.addEventListener('click', (e)=>{ e.stopPropagation(); }); // do not close by overlay
+    if(bulkClose) bulkClose.addEventListener('click', closeBulkPopup);
+    if(bulkOk) bulkOk.addEventListener('click', commitBulkPopup);
+    if(bulkAllClr) bulkAllClr.addEventListener('click', ()=>setBulkAll('clr'));
+    if(bulkAllMax) bulkAllMax.addEventListener('click', ()=>setBulkAll('max'));
+
+    if(bulkListEl){
+      bulkListEl.addEventListener('click', (e)=>{
+        const t = e.target;
+        if(!(t instanceof HTMLElement)) return;
+        const btn = t.closest('button[data-act]');
+        if(!btn) return;
+        const act = btn.getAttribute('data-act');
+        if(!act) return;
+        const item = btn.closest('.pt-bulk-item');
+        if(!item) return;
+        const key = item.getAttribute('data-key');
+        if(!key) return;
+        applyBulkAction(key, act);
+      });
+    }
+
+
+// purchase popup handlers (open only from 1st column)
     let lastTap = {x:0,y:0,moved:false};
     tbody.addEventListener('pointerdown', (e)=>{
       lastTap = {x:e.clientX,y:e.clientY,moved:false};
