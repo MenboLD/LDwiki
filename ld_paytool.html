@@ -7,10 +7,10 @@
 <title>課金検討ツール | ラッキー傭兵団 攻略 wiki</title>
 <link href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230b0f16%22/%3E%3Cpath%20d%3D%22M14%2044V20h14c10%200%2018%208%2018%2018s-8%2018-18%2018H14zm10-8h4c6%200%2010-4%2010-10s-4-10-10-10h-4v20z%22%20fill%3D%22%237c3aed%22/%3E%3C/svg%3E" rel="icon"/>
 <link href="common_header.css" rel="stylesheet"/>
-<link href="ld_paytool.css?v=20251227j1" rel="stylesheet"/>
+<link href="ld_paytool.css?v=20251227k1" rel="stylesheet"/>
 <script src="supabase_config.js"></script>
 <script defer="" src="common_header.js"></script>
-<script defer="" src="ld_paytool.js?v=20251227j1"></script>
+<script defer="" src="ld_paytool.js?v=20251227k1"></script>
 <!-- Paytool page-local: common header username width fix (override after common_header.css) -->
 <style>
   #ldCommonTopbar input#authUserName{
@@ -72,9 +72,7 @@
 </section>
 </section>
 <section class="pt-card pt-card--tables">
-<div class="pt-selected-info" id="selectedRowInfo">
-<div class="pt-selected-text pt-selected-placeholder" id="selectedRowInfoText">選択された行の商品内容がここに表示されます</div>
-</div><div class="pt-toolbar">
+<div class="pt-toolbar">
   <label class="pt-field pt-field-budget">
     <span class="pt-field-label">予算</span>
     <input aria-label="予算" class="pt-input pt-input-budget" id="optBudgetYen" inputmode="numeric" min="0" step="100" type="number" value="15000"/>
@@ -91,6 +89,9 @@
 <option value="jpy_desc">円 降順</option>
 </select>
   </label>
+</div>
+<div class="pt-selected-info" id="selectedRowInfo">
+<div class="pt-selected-text pt-selected-placeholder" id="selectedRowInfoText">選択された行の商品内容がここに表示されます</div>
 </div>
 <div class="pt-table-wrap">
 <table class="pt-table">

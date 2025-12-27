@@ -730,7 +730,8 @@ function getBudgetVal(){ return clampInt(elBudgetYen.value, 0, 200000); }
 
     // decision-style temp value (only applied on OK)
     let bTemp = 0;
-    let bInitial = 0; // value when popup opened
+    let bInitial = 0; // value when popup open
+    let bJustOpened = false; // prevent same-tap overlay closeed
 
     function calcPlannedYen(){
       let sum = 0;
@@ -764,6 +765,9 @@ function refreshBudgetPopupUI(){
       bInitial = bTemp;
       refreshBudgetPopupUI();
       bOverlay.hidden = false; bPopup.hidden = false;
+      // On mobile, the same tap that opens the popup can also hit the overlay. Ignore it.
+      bJustOpened = true;
+      setTimeout(()=>{ bJustOpened = false; }, 0);
 
       // show slightly above center
       const h = bPopup.getBoundingClientRect().height || 260;
@@ -782,6 +786,7 @@ function refreshBudgetPopupUI(){
     }
 
     function requestCloseBudgetPopup(){
+      if(bJustOpened) return;
       // If temp changed, confirm discard
       if(bTemp !== bInitial){
         if(bConfirm){ bConfirm.hidden = false; }
@@ -797,7 +802,7 @@ function refreshBudgetPopupUI(){
       closeBudgetPopup();
     }
 
-    if(elBudgetQuick) elBudgetQuick.addEventListener('click', openBudgetPopup);
+    if(elBudgetQuick) elBudgetQuick.addEventListener('click', (e)=>{ e.stopPropagation(); openBudgetPopup(); });
     if(bOverlay) bOverlay.addEventListener('click', requestCloseBudgetPopup);
     if(bClose) bClose.addEventListener('click', requestCloseBudgetPopup);
     if(bClear) bClear.addEventListener('click', ()=>{ bTemp = 0; refreshBudgetPopupUI(); });

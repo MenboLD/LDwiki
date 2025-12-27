@@ -875,14 +875,14 @@ select.pt-rate-input{
 .pt-toolbar{
   display:flex;
   align-items:center;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: 8px;
+  padding: 8px 8px;
   border-radius: 12px;
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
   margin: 8px 0 10px;
 }
-.pt-toolbar .pt-field-budget{flex: 0 0 45%;}
+.pt-toolbar .pt-field-budget{flex: 0 0 auto;}
 .pt-toolbar .pt-field-budget .pt-input-budget{width:60px;}
 .pt-toolbar #btnBudgetQuick{flex:0 0 auto; white-space:nowrap;}
 .pt-toolbar .pt-field-sort{flex: 0 0 auto;}
