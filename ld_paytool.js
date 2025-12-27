@@ -16,6 +16,7 @@
     const elToggles = document.getElementById('resourceToggles');
   const elDoubleToggles = document.getElementById('doubleToggles');
   const elSort = document.getElementById('optSort');
+  const elQtySort = document.getElementById('optQtySort');
   const elKpi = null;
   const elSummaryTbody = document.getElementById('summaryTableBody');
 
@@ -74,6 +75,120 @@
   let rateBase = {};
   let initialRateBase = null;
   let toggles = {};
+
+  // ---------- Sort State (base / icon / qty) ----------
+  const ICON_SORT_KEYS = ['mine_key','churu','battery','pet_food','mythic_stone','immortal_stone','diamond','invite'];
+  let sortStamp = 3;
+  const sortState = {
+    base: { mode: (elSort && elSort.value) ? elSort.value : 'default', lastChanged: 3 },
+    icon: { key: null, dir: 'desc', lastChanged: 2 },
+    qty:  { enabled: false, lastChanged: 1 },
+  };
+  function bumpSort(which){
+    sortStamp += 1;
+    if(sortState[which]) sortState[which].lastChanged = sortStamp;
+  }
+  function getActiveSorts(){
+    const out = [];
+    out.push({ type:'base', lastChanged: sortState.base.lastChanged });
+    if(sortState.icon.key && ICON_SORT_KEYS.includes(sortState.icon.key) && (toggles[sortState.icon.key] !== false)){
+      out.push({ type:'icon', key: sortState.icon.key, dir: sortState.icon.dir, lastChanged: sortState.icon.lastChanged });
+    }
+    if(sortState.qty.enabled){
+      out.push({ type:'qty', lastChanged: sortState.qty.lastChanged });
+    }
+    out.sort((a,b)=> (b.lastChanged||0) - (a.lastChanged||0));
+    return out;
+  }
+  function cmpNumber(va, vb, dir){
+    const a = Number.isFinite(va) ? va : (Number(va) || 0);
+    const b = Number.isFinite(vb) ? vb : (Number(vb) || 0);
+    return (dir === 'asc') ? (a - b) : (b - a);
+  }
+  function cmpBase(a,b,mode){
+    switch(mode){
+      case 'dpy_desc': return cmpNumber(a._calc_dpy||0, b._calc_dpy||0, 'desc');
+      case 'budget_desc': return cmpNumber(a._calc_budget_ratio||0, b._calc_budget_ratio||0, 'desc');
+      case 'dia_desc': return cmpNumber(a._calc_dia||0, b._calc_dia||0, 'desc');
+      case 'jpy_asc': return cmpNumber(Number(a.jpy)||0, Number(b.jpy)||0, 'asc');
+      case 'jpy_desc': return cmpNumber(Number(a.jpy)||0, Number(b.jpy)||0, 'desc');
+      default: return cmpNumber(a.sort_order||0, b.sort_order||0, 'asc');
+    }
+  }
+  function cmpIcon(a,b,key,dir){
+    return cmpNumber(Number(a[key])||0, Number(b[key])||0, dir);
+  }
+  function cmpQty(a,b){
+    const qa = (a._effQty||0) > 0 ? 1 : 0;
+    const qb = (b._effQty||0) > 0 ? 1 : 0;
+    if(qb !== qa) return qb - qa;
+    const da = (a._effQty||0);
+    const db = (b._effQty||0);
+    if(db !== da) return db - da;
+    return 0;
+  }
+  function cmpStableKey(a,b){
+    const ka = String(a._key ?? rowKey(a));
+    const kb = String(b._key ?? rowKey(b));
+    if(ka < kb) return -1;
+    if(ka > kb) return 1;
+    return 0;
+  }
+  function multiCompare(a,b,activeSorts){
+    for(const s of activeSorts){
+      let d = 0;
+      if(s.type === 'base') d = cmpBase(a,b, sortState.base.mode);
+      else if(s.type === 'icon') d = cmpIcon(a,b, s.key, s.dir);
+      else if(s.type === 'qty') d = cmpQty(a,b);
+      if(d !== 0) return d;
+    }
+    return cmpStableKey(a,b);
+  }
+
+  function setIconSort(key){
+    if(!ICON_SORT_KEYS.includes(key)) return;
+    if(sortState.icon.key === key){
+      sortState.icon.dir = (sortState.icon.dir === 'desc') ? 'asc' : 'desc';
+    }else{
+      sortState.icon.key = key;
+      sortState.icon.dir = 'desc';
+    }
+    bumpSort('icon');
+    updateIconSortAria();
+    applyAll();
+  }
+
+  function updateIconSortAria(){
+    const table = document.querySelector('.pt-table:not(.pt-table-summary)');
+    if(!table) return;
+    const ths = Array.from(table.querySelectorAll('thead th.res'));
+    for(const th of ths){
+      th.removeAttribute('aria-sort');
+    }
+    if(!sortState.icon.key) return;
+    const activeTh = table.querySelector(`thead th.res-${sortState.icon.key}`);
+    if(activeTh){
+      activeTh.setAttribute('aria-sort', sortState.icon.dir === 'asc' ? 'ascending' : 'descending');
+    }
+  }
+
+  function installIconSortHandlers(){
+    const table = document.querySelector('.pt-table:not(.pt-table-summary)');
+    if(!table) return;
+    const ths = Array.from(table.querySelectorAll('thead th.res'));
+    for(const th of ths){
+      const cls = Array.from(th.classList).find(c => c.startsWith('res-'));
+      if(!cls) continue;
+      const key = cls.replace('res-','');
+      if(!ICON_SORT_KEYS.includes(key)) continue;
+      th.classList.add('pt-icon-sortable');
+      th.addEventListener('click', (e)=>{
+        e.preventDefault();
+        setIconSort(key);
+      });
+    }
+  }
+
   let baselinePacks = [];
   let doublePacks = [];
   let doubleAvailability = {}; // price_yen -> bool
@@ -514,25 +629,23 @@ function getEffectiveRates(){
     const uniq = Array.from(new Set(tiers)).sort((a,b)=>a-b);
     const enabled = uniq.filter(p => doubleAvailability[p] !== false).length;
     // KPI baseline line removed per spec
-    const rows = (packages||[]).filter(p => isRowVisibleByCategory(p)).map(p => {
-      const yen = Number(p.jpy) || 0;
-      const dia = calcPackageDiaValue(p, rates);
-      const dpy = yen > 0 ? (dia / yen) : 0;
-      const budgetRatio = (budgetDiaPerYen > 0) ? (dpy / budgetDiaPerYen) : 0;
-      return { ...p, _calc_dia: dia, _calc_dpy: dpy, _calc_budget_ratio: budgetRatio };
-    });
+    const rows = (packages||[])
+      .filter(p => isRowVisibleByCategory(p))
+      .map(p => {
+        const key = rowKey(p);
+        const yen = Number(p.jpy) || 0;
+        const dia = calcPackageDiaValue(p, rates);
+        const dpy = yen > 0 ? (dia / yen) : 0;
+        const budgetRatio = (budgetDiaPerYen > 0) ? (dpy / budgetDiaPerYen) : 0;
+        const cap = getPurchaseCap(p);
+        const effQty = getEffectiveQty(key, p, cap);
+        return { ...p, _key: key, _effQty: effQty, _calc_dia: dia, _calc_dpy: dpy, _calc_budget_ratio: budgetRatio };
+      });
 
-        lastRowsMain = rows;
-const mode = elSort.value;
+    const activeSorts = getActiveSorts();
     let out = rows.slice();
-    switch(mode){
-      case 'dpy_desc': out.sort((a,b)=> (b._calc_dpy||0) - (a._calc_dpy||0)); break;
-      case 'budget_desc': out.sort((a,b)=> (b._calc_budget_ratio||0) - (a._calc_budget_ratio||0)); break;
-      case 'dia_desc': out.sort((a,b)=> (b._calc_dia||0) - (a._calc_dia||0)); break;
-      case 'jpy_asc': out.sort((a,b)=> (Number(a.jpy)||0) - (Number(b.jpy)||0)); break;
-      case 'jpy_desc': out.sort((a,b)=> (Number(b.jpy)||0) - (Number(a.jpy)||0)); break;
-      default: out.sort((a,b)=> (a.sort_order||0)-(b.sort_order||0)); break;
-    }
+    out.sort((a,b)=> multiCompare(a,b,activeSorts));
+    lastRowsMain = out;
     return { out, budgetDiaPerYen };
   }
 
@@ -849,7 +962,21 @@ function applyAll(){
     }
     elToggles.addEventListener('change', applyAll);
     if(elDoubleToggles) elDoubleToggles.addEventListener('change', applyAll);
-    elSort.addEventListener('change', applyAll);
+    elSort.addEventListener('change', ()=>{
+      sortState.base.mode = elSort.value;
+      bumpSort('base');
+      applyAll();
+    });
+
+    if(elQtySort){
+      sortState.qty.enabled = !!elQtySort.checked;
+      elQtySort.addEventListener('change', ()=>{
+        sortState.qty.enabled = !!elQtySort.checked;
+        bumpSort('qty');
+        applyAll();
+      });
+    }
+
 
     // All toggle buttons
     if(elBtnResAll){
@@ -1376,6 +1503,8 @@ if(popOk) popOk.addEventListener('click', ()=>{
       });
     }
 
+installIconSortHandlers();
+updateIconSortAria();
 applyAll();
   } catch (e) {
     console.error(e);
