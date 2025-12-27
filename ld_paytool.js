@@ -22,6 +22,9 @@
   const elSummaryTbody = document.getElementById('summaryTableBody');
 
   function fmtName(name){ return name ?? ""; }
+  function escHtml(s){
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
   const _nf = new Intl.NumberFormat('ja-JP');
   function fmtNum(v){
     if(v === null || v === undefined || v === '') return '0';
@@ -74,6 +77,8 @@
   const RESOURCE_KEYS = ["gold","mine_key","churu","battery","pet_food","mythic_stone","immortal_stone","diamond","invite"];
 
   let packages = [];
+  let originalPackages = []; // local-only editable packages (max 6)
+
   let rateBase = {};
   let initialRateBase = null;
   let toggles = {};
@@ -240,6 +245,7 @@
       cart[key] = 0;
     }
     saveCart();
+    requestSaveUnifiedState();
   }
 
   function applyFirstDoubleSettingToCartAll(){
@@ -307,6 +313,7 @@
       limited_pass: true,
       normal_diamond: true,
       limited_diamond: true,
+      original: true,
       badge: {
         vvip: true,
         vvip_cont: true,
@@ -362,6 +369,98 @@
     try{
       localStorage.setItem(DOUBLE_AVAIL_LS_KEY, JSON.stringify(doubleAvailability));
     }catch(_e){}
+  }
+
+
+  // ---------- Unified Local State (v2) ----------
+  function defaultOriginalPackages(){
+    // Initial values are placeholders; user can edit. Keep exactly 6 slots.
+    const base = {
+      category_key: 'original',
+      purchase_limit: 4,
+      jpy: 1000,
+      gold: 0, mine_key: 0, battery: 0, pet_food: 0, mythic_stone: 0, immortal_stone: 0, churu: 0, diamond: 0, invite: 0,
+      is_active: true,
+      _is_original: true,
+    };
+    return Array.from({length: 6}, (_,i)=>({
+      ...base,
+      id: `orig_${i+1}`,
+      package_name: `オリジナル${i+1}`,
+      sort_order: 900000 + i,
+    }));
+  }
+
+  function loadUnifiedState(){
+    try{
+      const raw = localStorage.getItem(STATE_LS_KEY);
+      if(!raw) return null;
+      const st = JSON.parse(raw);
+      if(!st || typeof st !== 'object') return null;
+      return st;
+    }catch(_e){
+      return null;
+    }
+  }
+
+  function saveUnifiedState(){
+    const st = {
+      v: 2,
+      budget_yen: String(elBudgetYen?.value ?? ''),
+      rateBase,
+      toggles,
+      cart,
+      categoryFilter,
+      doubleAvailability,
+      sortState,
+      originalPackages,
+      // keep open/close state out (optional)
+    };
+    try{
+      localStorage.setItem(STATE_LS_KEY, JSON.stringify(st));
+    }catch(_e){}
+  }
+
+  let _saveTimer = null;
+  function requestSaveUnifiedState(){
+    if(_saveTimer) clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(()=>{ _saveTimer=null; saveUnifiedState(); }, 200);
+  }
+
+  function applyUnifiedState(st){
+    if(!st || typeof st !== 'object') return;
+    if(st.budget_yen !== undefined && elBudgetYen) elBudgetYen.value = String(st.budget_yen ?? elBudgetYen.value);
+    if(st.rateBase && typeof st.rateBase === 'object') rateBase = {...rateBase, ...st.rateBase};
+    if(st.toggles && typeof st.toggles === 'object') toggles = {...toggles, ...st.toggles};
+    if(st.cart && typeof st.cart === 'object') cart = {...cart, ...st.cart};
+    if(st.categoryFilter && typeof st.categoryFilter === 'object') categoryFilter = {...categoryFilter, ...st.categoryFilter};
+    if(st.doubleAvailability && typeof st.doubleAvailability === 'object') doubleAvailability = {...doubleAvailability, ...st.doubleAvailability};
+    if(st.sortState && typeof st.sortState === 'object'){
+      // keep defaults but accept saved fields
+      sortState.base = {...sortState.base, ...(st.sortState.base||{})};
+      sortState.icon = {...sortState.icon, ...(st.sortState.icon||{})};
+      sortState.qty  = {...sortState.qty,  ...(st.sortState.qty ||{})};
+    }
+    if(Array.isArray(st.originalPackages)) originalPackages = st.originalPackages;
+  }
+
+  function ensureOriginalPackages(){
+    if(!Array.isArray(originalPackages) || originalPackages.length !== 6){
+      originalPackages = defaultOriginalPackages();
+    }else{
+      // Ensure ids/names exist
+      for(let i=0;i<6;i++){
+        originalPackages[i] = {
+          ...defaultOriginalPackages()[i],
+          ...(originalPackages[i]||{}),
+          id: `orig_${i+1}`,
+          package_name: originalPackages[i]?.package_name || `オリジナル${i+1}`,
+          category_key: 'original',
+          _is_original: true,
+          sort_order: 900000 + i,
+        };
+      }
+    }
   }
 function normalizeCategoryKey(raw){
     if(raw === null || raw === undefined || raw === '') return null;
@@ -998,6 +1097,7 @@ function applyAll(){
     applyRowClasses();
     updateSelectedInfo();
     saveCart();
+    requestSaveUnifiedState();
     status.textContent = `表示中：${out.length}件（計算反映）`;
     updateCategoryFilterSummary();
     updateBudgetInputWarning();
@@ -1019,6 +1119,11 @@ function applyAll(){
     loadCategoryFilter();
     loadDoubleAvailability();
 
+    const _st = loadUnifiedState();
+    // apply after base data is loaded (rates/toggles/packages initialized)
+    const _unifiedState = _st;
+    ensureOriginalPackages();
+
     const [pkgRows, rateRows, baseRows, dblRows] = await Promise.all([
       fetchTable('ld_pay_packages', 'sort_order.asc'),
       fetchTable('ld_pay_exchange_rates', 'resource_key.asc'),
@@ -1027,6 +1132,9 @@ function applyAll(){
     ]);
 
     packages = (pkgRows || []).filter(r => r.is_active !== false);
+    // append local-only original packages
+    ensureOriginalPackages();
+    packages = packages.concat(originalPackages);
     baselinePacks = baseRows || [];
     doublePacks = dblRows || [];
     rebuildDoublePackIndex();
@@ -1043,6 +1151,13 @@ function applyAll(){
       if(!(k in rateBase)) rateBase[k] = 0;
       if(!(k in toggles)) toggles[k] = true;
     }
+
+    // apply unified local state (after defaults are ready)
+    if(typeof _unifiedState !== 'undefined' && _unifiedState){
+      applyUnifiedState(_unifiedState);
+    }
+    ensureOriginalPackages();
+    packages = (packages || []).filter(p => !p._is_original).concat(originalPackages);
 
     buildResourceToggleUI();
     buildDoubleAvailabilityUI();
@@ -1238,6 +1353,15 @@ function refreshBudgetPopupUI(){
     const cOk      = document.getElementById('ptCatOk');
     const cAllOn   = document.getElementById('ptCatAllOn');
     const cAllOff  = document.getElementById('ptCatAllOff');
+    const cOpenOrig = document.getElementById('ptOpenOriginal');
+
+    // Original packages editor modal
+    const oOverlay = document.getElementById('ptOrigOverlay');
+    const oPopup   = document.getElementById('ptOrigPopup');
+    const oClose   = document.getElementById('ptOrigClose');
+    const oOk      = document.getElementById('ptOrigOk');
+    const oReset   = document.getElementById('ptOrigReset');
+    const oList    = document.getElementById('ptOrigList');
 
     const cChecks = {
       weekly: document.getElementById('ptCat_weekly'),
@@ -1246,6 +1370,7 @@ function refreshBudgetPopupUI(){
       limited_pass: document.getElementById('ptCat_limited_pass'),
       normal_diamond: document.getElementById('ptCat_normal_diamond'),
       limited_diamond: document.getElementById('ptCat_limited_diamond'),
+      original: document.getElementById('ptCat_original'),
       badge_vvip: document.getElementById('ptCat_badge_vvip'),
       badge_vvip_cont: document.getElementById('ptCat_badge_vvip_cont'),
       badge_vip: document.getElementById('ptCat_badge_vip'),
@@ -1263,6 +1388,7 @@ function refreshBudgetPopupUI(){
       if(cChecks.limited_pass) cChecks.limited_pass.checked = (cTemp.limited_pass !== false);
       if(cChecks.normal_diamond) cChecks.normal_diamond.checked = (cTemp.normal_diamond !== false);
       if(cChecks.limited_diamond) cChecks.limited_diamond.checked = (cTemp.limited_diamond !== false);
+      if(cChecks.original) cChecks.original.checked = (cTemp.original !== false);
 
       if(cChecks.badge_vvip) cChecks.badge_vvip.checked = (b.vvip !== false);
       if(cChecks.badge_vvip_cont) cChecks.badge_vvip_cont.checked = (b.vvip_cont !== false);
@@ -1278,6 +1404,7 @@ function refreshBudgetPopupUI(){
       cTemp.limited_pass = !!(cChecks.limited_pass && cChecks.limited_pass.checked);
       cTemp.normal_diamond = !!(cChecks.normal_diamond && cChecks.normal_diamond.checked);
       cTemp.limited_diamond = !!(cChecks.limited_diamond && cChecks.limited_diamond.checked);
+      cTemp.original = !!(cChecks.original && cChecks.original.checked);
       cTemp.badge = cTemp.badge || {};
       cTemp.badge.vvip = !!(cChecks.badge_vvip && cChecks.badge_vvip.checked);
       cTemp.badge.vvip_cont = !!(cChecks.badge_vvip_cont && cChecks.badge_vvip_cont.checked);
@@ -1328,7 +1455,151 @@ function closeCategoryPopup(){
       closeCategoryPopup();
     }
 
-    function setAllCats(on){
+    
+    // ---------- Original Packages Editor ----------
+    let oTemp = null;
+
+    function iconMetaForKey(k){
+      const baseUrl = 'https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_Resource_20px/';
+      const map = {
+        gold: 'Resource_01_gold_20x20px.png',
+        mine_key: 'Resource_02_key_20x20px.png',
+        churu: 'Resource_03_churu_20x20px.png',
+        battery: 'Resource_04_battery_20x20px.png',
+        pet_food: 'Resource_05_petfood_20x20px.png',
+        mythic_stone: 'Resource_06_Mythstone_20x20px.png',
+        immortal_stone: 'Resource_07_immotalstone_20x20px.png',
+        diamond: 'Resource_08_dia_20x20px.png',
+        invite: 'Resource_09_Scroll_20x20px.png',
+      };
+      const nameMap = {
+        gold:'ゴールド', mine_key:'鍵', churu:'チュール', battery:'バッテリー', pet_food:'ペットフード',
+        mythic_stone:'神話石', immortal_stone:'不滅石', diamond:'ダイヤ', invite:'招待状'
+      };
+      return { src: baseUrl + (map[k]||map.gold), name: nameMap[k]||k };
+    }
+
+    function buildOriginalEditorUI(){
+      if(!oList) return;
+      ensureOriginalPackages();
+      if(!oTemp) oTemp = JSON.parse(JSON.stringify(originalPackages));
+      oList.innerHTML = '';
+      for(let i=0;i<oTemp.length;i++){
+        const p = oTemp[i];
+        const box = document.createElement('div');
+        box.className = 'pt-orig-item';
+        box.setAttribute('data-idx', String(i));
+
+        const top = document.createElement('div');
+        top.className = 'pt-orig-row';
+        top.innerHTML = `
+          <span class="pt-orig-label">名称</span>
+          <input class="pt-input pt-orig-input pt-orig-input--name" data-f="name" value="${escHtml(p.package_name||'')}" />
+          <span class="pt-orig-label">最大</span>
+          <input class="pt-input pt-orig-input" data-f="max" type="number" min="0" step="1" value="${Number(p.purchase_limit||0)}" />
+          <span class="pt-orig-label">価格(円)</span>
+          <input class="pt-input pt-orig-input" data-f="jpy" type="number" min="0" step="1" value="${Number(p.jpy||0)}" />
+        `;
+        box.appendChild(top);
+
+        const wrap = document.createElement('div');
+        wrap.className = 'pt-orig-res-wrap';
+
+        const grid = document.createElement('div');
+        grid.className = 'pt-orig-res-grid';
+
+        for(const k of RESOURCE_KEYS){
+          const meta = iconMetaForKey(k);
+          const cell = document.createElement('div');
+          cell.className = 'pt-orig-res-cell';
+          cell.innerHTML = `
+            <div class="pt-orig-res-head"><img src="${meta.src}" alt="${meta.name}"><span>${meta.name}</span></div>
+            <input class="pt-input pt-orig-input" data-f="res" data-k="${k}" type="number" min="0" step="1" value="${Number(p[k]||0)}" />
+          `;
+          grid.appendChild(cell);
+        }
+
+        wrap.appendChild(grid);
+        box.appendChild(wrap);
+
+        oList.appendChild(box);
+      }
+
+      // event delegation
+      oList.oninput = (e)=>{
+        const t = e.target;
+        if(!(t instanceof HTMLInputElement)) return;
+        const item = t.closest('.pt-orig-item');
+        if(!item) return;
+        const idx = Number(item.getAttribute('data-idx'));
+        if(!Number.isFinite(idx) || !oTemp[idx]) return;
+
+        const f = t.dataset.f;
+        if(f === 'name'){
+          oTemp[idx].package_name = t.value;
+        }else if(f === 'max'){
+          oTemp[idx].purchase_limit = clampInt(t.value, 0, 999);
+        }else if(f === 'jpy'){
+          oTemp[idx].jpy = clampInt(t.value, 0, 999999999);
+        }else if(f === 'res'){
+          const k = t.dataset.k;
+          if(!k) return;
+          oTemp[idx][k] = clampInt(t.value, 0, 999999999);
+        }
+        requestSaveUnifiedState();
+      };
+    }
+
+    function openOriginalPopup(){
+      if(!oOverlay || !oPopup) return;
+      ensureOriginalPackages();
+      oTemp = JSON.parse(JSON.stringify(originalPackages));
+      buildOriginalEditorUI();
+      oOverlay.hidden = false;
+      oPopup.hidden = false;
+    }
+
+    function closeOriginalPopup(){
+      if(!oOverlay || !oPopup) return;
+      oOverlay.hidden = true;
+      oPopup.hidden = true;
+      oTemp = null;
+    }
+
+    function commitOriginalPopup(){
+      if(!oTemp) return;
+      // normalize + clamp
+      ensureOriginalPackages();
+      for(let i=0;i<6;i++){
+        const base = defaultOriginalPackages()[i];
+        const cur = oTemp[i] || {};
+        const merged = {...base, ...cur};
+        merged.id = `orig_${i+1}`;
+        merged.category_key = 'original';
+        merged._is_original = true;
+        merged.sort_order = 900000 + i;
+        merged.package_name = String(merged.package_name || `オリジナル${i+1}`).slice(0, 40);
+        merged.purchase_limit = clampInt(merged.purchase_limit, 0, 999);
+        merged.jpy = clampInt(merged.jpy, 0, 999999999);
+        for(const k of RESOURCE_KEYS){
+          merged[k] = clampInt(merged[k], 0, 999999999);
+        }
+        originalPackages[i] = merged;
+      }
+
+      // ensure packages includes originals (update in place)
+      packages = (packages || []).filter(p => !p._is_original).concat(originalPackages);
+
+      requestSaveUnifiedState();
+      applyAll();
+      closeOriginalPopup();
+    }
+
+    function resetOriginalPopup(){
+      oTemp = defaultOriginalPackages();
+      buildOriginalEditorUI();
+    }
+function setAllCats(on){
       if(!cTemp) cTemp = JSON.parse(JSON.stringify(categoryFilter));
       // main categories
       cTemp.weekly = on;
@@ -1337,6 +1608,7 @@ function closeCategoryPopup(){
       cTemp.limited_pass = on;
       cTemp.normal_diamond = on;
       cTemp.limited_diamond = on;
+      cTemp.original = on;
       cTemp.badge = cTemp.badge || {};
       cTemp.badge.vvip = on;
       cTemp.badge.vvip_cont = on;
@@ -1351,6 +1623,17 @@ function closeCategoryPopup(){
     if(cOk) cOk.addEventListener('click', commitCategoryPopup);
     if(cAllOn) cAllOn.addEventListener('click', ()=>setAllCats(true));
     if(cAllOff) cAllOff.addEventListener('click', ()=>setAllCats(false));
+
+    // Original packages editor handlers
+    if(cOpenOrig) cOpenOrig.addEventListener('click', ()=>{
+      // keep category popup open, open editor on top
+      openOriginalPopup();
+    });
+    if(oOverlay) oOverlay.addEventListener('click', (e)=>{ e.stopPropagation(); });
+    if(oClose) oClose.addEventListener('click', closeOriginalPopup);
+    if(oOk) oOk.addEventListener('click', commitOriginalPopup);
+    if(oReset) oReset.addEventListener('click', resetOriginalPopup);
+
 
     if(bMatch) bMatch.addEventListener('click', ()=>{ bTemp = clampInt(calcPlannedYen(),0,3000000); refreshBudgetPopupUI(); });
     if(bConfirmNo) bConfirmNo.addEventListener('click', ()=>{ if(bConfirm) bConfirm.hidden = true; });

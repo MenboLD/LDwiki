@@ -307,6 +307,7 @@
 
       <label class="pt-cat-item"><input type="checkbox" id="ptCat_normal_diamond" data-cat="normal_diamond"><span>通常ダイヤ</span></label>
       <label class="pt-cat-item"><input type="checkbox" id="ptCat_limited_diamond" data-cat="limited_diamond"><span>限定ダイヤ</span><span class="pt-cat-anno">１回限定購入が可能な直買いダイヤ</span></label>
+      <label class="pt-cat-item"><input type="checkbox" id="ptCat_original" data-cat="original"><span>オリジナル</span></label>
     </div>
 
     <div class="pt-cat-actions">
@@ -315,6 +316,7 @@
     </div>
 
     <div class="pt-cat-foot">
+      <button class="pt-popup-btn" id="ptOpenOriginal" type="button">オリジナル編集</button>
       <button class="pt-popup-btn pt-popup-btn--ok" id="ptCatOk" type="button">決定</button>
     </div>
   </div>
@@ -341,6 +343,24 @@
     <div class="pt-bulk-foot">
       <button class="pt-popup-btn pt-popup-btn--ok" id="ptBulkOk" type="button">決定</button>
     </div>
+  </div>
+</div>
+
+
+<!-- Original Packages Modal -->
+<div class="pt-overlay" id="ptOrigOverlay" hidden></div>
+<div class="pt-popup pt-popup--orig" id="ptOrigPopup" role="dialog" aria-modal="true" hidden>
+  <div class="pt-popup-head">
+    <div class="pt-popup-title">オリジナル（最大6件）</div>
+    <button class="pt-xbtn" id="ptOrigClose" type="button">×</button>
+  </div>
+  <div class="pt-popup-body">
+    <div class="pt-note">各「オリジナル1〜6」を編集できます。端末内（ローカル）のみ保存されます。</div>
+    <div id="ptOrigList" class="pt-orig-list"></div>
+  </div>
+  <div class="pt-popup-foot">
+    <button class="pt-popup-btn" id="ptOrigReset" type="button">初期値に戻す</button>
+    <button class="pt-popup-btn pt-popup-btn--ok" id="ptOrigOk" type="button">決定</button>
   </div>
 </div>
 
