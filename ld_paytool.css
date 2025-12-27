@@ -909,6 +909,10 @@ select.pt-rate-input{
   background: rgba(0,0,0,.55);
   z-index: 50;
 }
+/* Safari safeguard: ensure hidden attribute always wins */
+.pt-submodal[hidden]{
+  display: none !important;
+}
 .pt-submodal-box{
   width: min(320px, 92vw);
   background:#0f1623;
