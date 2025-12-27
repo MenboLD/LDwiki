@@ -731,7 +731,8 @@ function getBudgetVal(){ return clampInt(elBudgetYen.value, 0, 200000); }
     // decision-style temp value (only applied on OK)
     let bTemp = 0;
     let bInitial = 0; // value when popup open
-    let bJustOpened = false; // prevent same-tap overlay closeed
+    let bJustOpened = false; // prevent same-tap close (esp. iOS)
+    let bOpenedAt = 0;
 
     function calcPlannedYen(){
       let sum = 0;
@@ -767,7 +768,8 @@ function refreshBudgetPopupUI(){
       bOverlay.hidden = false; bPopup.hidden = false;
       // On mobile, the same tap that opens the popup can also hit the overlay. Ignore it.
       bJustOpened = true;
-      setTimeout(()=>{ bJustOpened = false; }, 0);
+      bOpenedAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      setTimeout(()=>{ bJustOpened = false; }, 220);
 
       // show slightly above center
       const h = bPopup.getBoundingClientRect().height || 260;
@@ -787,6 +789,9 @@ function refreshBudgetPopupUI(){
 
     function requestCloseBudgetPopup(){
       if(bJustOpened) return;
+      // Extra safety: ignore any close request that happens immediately after opening.
+      const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      if(bOpenedAt && (now - bOpenedAt) < 350) return;
       // If temp changed, confirm discard
       if(bTemp !== bInitial){
         if(bConfirm){ bConfirm.hidden = false; }
@@ -803,7 +808,9 @@ function refreshBudgetPopupUI(){
     }
 
     if(elBudgetQuick) elBudgetQuick.addEventListener('click', (e)=>{ e.stopPropagation(); openBudgetPopup(); });
-    if(bOverlay) bOverlay.addEventListener('click', requestCloseBudgetPopup);
+    // Do NOT close by tapping the overlay.
+    // It can be triggered by the same tap that opened the popup (esp. Safari), which causes the discard-confirm to appear immediately.
+    if(bOverlay) bOverlay.addEventListener('click', (e)=>{ e.stopPropagation(); });
     if(bClose) bClose.addEventListener('click', requestCloseBudgetPopup);
     if(bClear) bClear.addEventListener('click', ()=>{ bTemp = 0; refreshBudgetPopupUI(); });
     if(bOk) bOk.addEventListener('click', commitBudget);

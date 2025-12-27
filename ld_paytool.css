@@ -886,7 +886,7 @@ select.pt-rate-input{
 .pt-toolbar .pt-field-budget .pt-input-budget{width:60px;}
 .pt-toolbar #btnBudgetQuick{flex:0 0 auto; white-space:nowrap;}
 .pt-toolbar .pt-field-sort{flex: 0 0 auto;}
-.pt-toolbar .pt-field-sort .pt-select{width:120px;}
+.pt-toolbar .pt-field-sort .pt-select{width:100px;}
 
 
 /* Budget over warning */
