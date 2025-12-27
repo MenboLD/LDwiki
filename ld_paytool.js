@@ -7,6 +7,8 @@
   let elMineKeyRate = null;
   const elBudgetYen = document.getElementById('optBudgetYen');
   const elBudgetQuick = document.getElementById('btnBudgetQuick');
+  const elBtnCategoryFilter = document.getElementById('btnCategoryFilter');
+  const elCategoryFilterSummary = document.getElementById('ptCategoryFilterSummary');
   const elRateEditor = document.getElementById('rateEditor');
   const elRateReset = document.getElementById('btnRateReset');
   const elBtnResAll = document.getElementById('btnResAll');
@@ -86,6 +88,8 @@
   let lastRowsMain = [];
   let lastSummaryDetail = [];
   const CART_LS_KEY = "ld_paytool_cart_v1";
+  const CAT_FILTER_LS_KEY = "ld_paytool_cat_filter_v1";
+
 
   function rowKey(p){
     // primary key is first column, but we don't know its name; try common ones then fallback
@@ -99,7 +103,108 @@
       if(obj && typeof obj === 'object') cart = obj;
     }catch(_){}
   }
-  function saveCart(){
+  
+  // === Category filter (UI + calc visibility) ===
+  const CATEGORY_DEFS = [
+    { key:'weekly',         label:'週間',     aliases:['weekly','週間'] },
+    { key:'monthly',        label:'月間',     aliases:['monthly','月間'] },
+    { key:'period_pass',    label:'期間パス', aliases:['period_pass','期間パス'] },
+    { key:'limited_pass',   label:'限定パス', aliases:['limited_pass','限定パス'] },
+    { key:'badge',          label:'バッジ',   aliases:['badge','バッジ'] },
+    { key:'normal_diamond', label:'通常ダイヤ', aliases:['normal_diamond','通常ダイヤ'] },
+    { key:'limited_diamond',label:'限定ダイヤ', aliases:['limited_diamond','限定ダイヤ'] },
+  ];
+
+  const CATEGORY_ALIAS_TO_KEY = (() => {
+    const map = {};
+    for(const d of CATEGORY_DEFS){
+      for(const a of (d.aliases||[])){
+        map[String(a).toLowerCase()] = d.key;
+      }
+      map[String(d.key).toLowerCase()] = d.key;
+    }
+    return map;
+  })();
+
+  function defaultCategoryFilter(){
+    return {
+      weekly: true,
+      monthly: true,
+      period_pass: true,
+      limited_pass: true,
+      normal_diamond: true,
+      limited_diamond: true,
+      badge: {
+        vvip: true,
+        vvip_cont: true,
+        vip: true,
+        vip_cont: true
+      }
+    };
+  }
+
+  let categoryFilter = defaultCategoryFilter();
+
+  function loadCategoryFilter(){
+    try{
+      const raw = localStorage.getItem(CAT_FILTER_LS_KEY);
+      if(!raw) return;
+      const obj = JSON.parse(raw);
+      if(!obj || typeof obj !== 'object') return;
+
+      // merge with defaults to keep forward compatibility
+      const def = defaultCategoryFilter();
+      for(const k of Object.keys(def)){
+        if(k === 'badge'){
+          def.badge = def.badge || {};
+          const src = (obj.badge && typeof obj.badge === 'object') ? obj.badge : {};
+          for(const bk of Object.keys(def.badge)){
+            if(typeof src[bk] === 'boolean') def.badge[bk] = src[bk];
+          }
+        }else{
+          if(typeof obj[k] === 'boolean') def[k] = obj[k];
+        }
+      }
+      categoryFilter = def;
+    }catch(_e){}
+  }
+
+  function saveCategoryFilter(){
+    try{
+      localStorage.setItem(CAT_FILTER_LS_KEY, JSON.stringify(categoryFilter));
+    }catch(_e){}
+  }
+
+  function normalizeCategoryKey(raw){
+    if(raw === null || raw === undefined || raw === '') return null;
+    const k = String(raw).toLowerCase();
+    return CATEGORY_ALIAS_TO_KEY[k] || null;
+  }
+
+  function badgeSubKeyFromName(name){
+    const s = String(name || '');
+    const isVVIP = s.includes('VVIP');
+    const isVIP  = !isVVIP && s.includes('VIP');
+    const cont   = s.includes('継続');
+    if(isVVIP) return cont ? 'vvip_cont' : 'vvip';
+    if(isVIP)  return cont ? 'vip_cont' : 'vip';
+    // fallback (shouldn't happen if names are consistent)
+    return cont ? 'vip_cont' : 'vip';
+  }
+
+  function isRowVisibleByCategory(row){
+    const cat = normalizeCategoryKey(row ? row.category_key : null);
+    if(!cat) return true; // unknown / null -> keep visible (safe)
+    if(cat === 'badge'){
+      const sub = badgeSubKeyFromName(row ? row.package_name : '');
+      const b = categoryFilter.badge || {};
+      return (b[sub] !== false);
+    }
+    // default: visible unless explicitly false
+    return (categoryFilter[cat] !== false);
+  }
+
+function saveCart(){
     try{
       localStorage.setItem(CART_LS_KEY, JSON.stringify(cart));
     }catch(_){}
@@ -116,8 +221,8 @@
     return cap;
   }
 
-  function isRowEnabledForCalc(_row){
-    return true;
+  function isRowEnabledForCalc(row){
+    return isRowVisibleByCategory(row);
   }
 
   function getEffectiveQty(key, row, capOverride){
@@ -366,8 +471,9 @@ function getEffectiveRates(){
       const max = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
       const cap = (Number.isFinite(max) && max > 0) ? max : 999;
 
+      const rawQty = clampInt(cart[key] ?? 0, 0, cap);
+      cart[key] = rawQty;
       const qty = getEffectiveQty(key, r, cap);
-      cart[key] = qty;
 
       const maxDisp = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? '∞' : fmtNum(maxRaw);
 
@@ -408,7 +514,7 @@ function getEffectiveRates(){
     const uniq = Array.from(new Set(tiers)).sort((a,b)=>a-b);
     const enabled = uniq.filter(p => doubleAvailability[p] !== false).length;
     // KPI baseline line removed per spec
-    const rows = packages.map(p => {
+    const rows = (packages||[]).filter(p => isRowVisibleByCategory(p)).map(p => {
       const yen = Number(p.jpy) || 0;
       const dia = calcPackageDiaValue(p, rates);
       const dpy = yen > 0 ? (dia / yen) : 0;
@@ -629,6 +735,43 @@ function updateRowStates(tableBodyEl, selectedKey){
     if(elSummaryTbody) updateRowStates(elSummaryTbody, selectedKeySummary);
   }
 
+
+  function buildCategoryFilterSummaryText(){
+    // If all true -> "全て表示" else list hidden or visible
+    const def = defaultCategoryFilter();
+    const parts = [];
+    const hidden = [];
+
+    // main categories
+    for(const d of CATEGORY_DEFS){
+      if(d.key === 'badge') continue;
+      const on = (categoryFilter[d.key] !== false);
+      if(!on) hidden.push(d.label);
+    }
+
+    // badge sub
+    const b = categoryFilter.badge || def.badge;
+    const badgeOn = {
+      'VVIP': (b.vvip !== false),
+      'VVIP(継続)': (b.vvip_cont !== false),
+      'VIP': (b.vip !== false),
+      'VIP(継続)': (b.vip_cont !== false),
+    };
+    const badgeHidden = Object.entries(badgeOn).filter(([,v])=>!v).map(([k])=>k);
+    if(badgeHidden.length > 0){
+      hidden.push('バッジ:' + badgeHidden.join(','));
+    }
+
+    if(hidden.length === 0) return 'カテゴリ：全て表示';
+    return 'カテゴリ：一部非表示（' + hidden.join(' / ') + '）';
+  }
+
+  function updateCategoryFilterSummary(){
+    if(!elCategoryFilterSummary) return;
+    elCategoryFilterSummary.textContent = buildCategoryFilterSummaryText();
+  }
+
+
 function applyAll(){
     pullRatesFromUI();
     const { out, budgetDiaPerYen } = calcAndSort();
@@ -639,6 +782,7 @@ function applyAll(){
     updateSelectedInfo();
     saveCart();
     status.textContent = `表示中：${out.length}件（計算反映）`;
+    updateCategoryFilterSummary();
     updateBudgetInputWarning();
   }
 
@@ -655,6 +799,7 @@ function applyAll(){
 
   try {
     loadCart();
+    loadCategoryFilter();
 
     const [pkgRows, rateRows, baseRows, dblRows] = await Promise.all([
       fetchTable('ld_pay_packages', 'sort_order.asc'),
@@ -837,6 +982,121 @@ function refreshBudgetPopupUI(){
     if(bClose) bClose.addEventListener('click', requestCloseBudgetPopup);
     if(bClear) bClear.addEventListener('click', ()=>{ bTemp = 0; refreshBudgetPopupUI(); });
     if(bOk) bOk.addEventListener('click', commitBudget);
+
+    // === Category filter popup ===
+    const cOverlay = document.getElementById('ptCatOverlay');
+    const cPopup   = document.getElementById('ptCatPopup');
+    const cClose   = document.getElementById('ptCatClose');
+    const cOk      = document.getElementById('ptCatOk');
+    const cAllOn   = document.getElementById('ptCatAllOn');
+    const cAllOff  = document.getElementById('ptCatAllOff');
+
+    const cChecks = {
+      weekly: document.getElementById('ptCat_weekly'),
+      monthly: document.getElementById('ptCat_monthly'),
+      period_pass: document.getElementById('ptCat_period_pass'),
+      limited_pass: document.getElementById('ptCat_limited_pass'),
+      normal_diamond: document.getElementById('ptCat_normal_diamond'),
+      limited_diamond: document.getElementById('ptCat_limited_diamond'),
+      badge_vvip: document.getElementById('ptCat_badge_vvip'),
+      badge_vvip_cont: document.getElementById('ptCat_badge_vvip_cont'),
+      badge_vip: document.getElementById('ptCat_badge_vip'),
+      badge_vip_cont: document.getElementById('ptCat_badge_vip_cont'),
+    };
+
+    let cTemp = null;
+
+    function syncCatChecksFromTemp(){
+      if(!cTemp) return;
+      const b = cTemp.badge || {};
+      if(cChecks.weekly) cChecks.weekly.checked = (cTemp.weekly !== false);
+      if(cChecks.monthly) cChecks.monthly.checked = (cTemp.monthly !== false);
+      if(cChecks.period_pass) cChecks.period_pass.checked = (cTemp.period_pass !== false);
+      if(cChecks.limited_pass) cChecks.limited_pass.checked = (cTemp.limited_pass !== false);
+      if(cChecks.normal_diamond) cChecks.normal_diamond.checked = (cTemp.normal_diamond !== false);
+      if(cChecks.limited_diamond) cChecks.limited_diamond.checked = (cTemp.limited_diamond !== false);
+
+      if(cChecks.badge_vvip) cChecks.badge_vvip.checked = (b.vvip !== false);
+      if(cChecks.badge_vvip_cont) cChecks.badge_vvip_cont.checked = (b.vvip_cont !== false);
+      if(cChecks.badge_vip) cChecks.badge_vip.checked = (b.vip !== false);
+      if(cChecks.badge_vip_cont) cChecks.badge_vip_cont.checked = (b.vip_cont !== false);
+    }
+
+    function readCatTempFromChecks(){
+      if(!cTemp) cTemp = defaultCategoryFilter();
+      cTemp.weekly = !!(cChecks.weekly && cChecks.weekly.checked);
+      cTemp.monthly = !!(cChecks.monthly && cChecks.monthly.checked);
+      cTemp.period_pass = !!(cChecks.period_pass && cChecks.period_pass.checked);
+      cTemp.limited_pass = !!(cChecks.limited_pass && cChecks.limited_pass.checked);
+      cTemp.normal_diamond = !!(cChecks.normal_diamond && cChecks.normal_diamond.checked);
+      cTemp.limited_diamond = !!(cChecks.limited_diamond && cChecks.limited_diamond.checked);
+      cTemp.badge = cTemp.badge || {};
+      cTemp.badge.vvip = !!(cChecks.badge_vvip && cChecks.badge_vvip.checked);
+      cTemp.badge.vvip_cont = !!(cChecks.badge_vvip_cont && cChecks.badge_vvip_cont.checked);
+      cTemp.badge.vip = !!(cChecks.badge_vip && cChecks.badge_vip.checked);
+      cTemp.badge.vip_cont = !!(cChecks.badge_vip_cont && cChecks.badge_vip_cont.checked);
+    }
+
+    function openCategoryPopup(){
+      if(!cOverlay || !cPopup) return;
+      // copy current state
+      cTemp = JSON.parse(JSON.stringify(categoryFilter));
+      syncCatChecksFromTemp();
+      cOverlay.hidden = false;
+      cPopup.hidden = false;
+      updateCategoryFilterSummary();
+    }
+
+    function closeCategoryPopup(){
+      if(!cOverlay || !cPopup) return;
+      cOverlay.hidden = true;
+      cPopup.hidden = true;
+      cTemp = null;
+    }
+
+    function commitCategoryPopup(){
+      readCatTempFromChecks();
+      categoryFilter = cTemp;
+      saveCategoryFilter();
+
+      // if currently selected row becomes invisible, clear selection
+      const curKey = selectedKeyMain || selectedKeySummary;
+      if(curKey){
+        const row = (packages||[]).find(p => rowKey(p) === curKey);
+        if(row && !isRowVisibleByCategory(row)){
+          selectedKeyMain = null;
+          selectedKeySummary = null;
+        }
+      }
+
+      applyAll();
+      closeCategoryPopup();
+    }
+
+    function setAllCats(on){
+      if(!cTemp) cTemp = JSON.parse(JSON.stringify(categoryFilter));
+      // main categories
+      cTemp.weekly = on;
+      cTemp.monthly = on;
+      cTemp.period_pass = on;
+      cTemp.limited_pass = on;
+      cTemp.normal_diamond = on;
+      cTemp.limited_diamond = on;
+      cTemp.badge = cTemp.badge || {};
+      cTemp.badge.vvip = on;
+      cTemp.badge.vvip_cont = on;
+      cTemp.badge.vip = on;
+      cTemp.badge.vip_cont = on;
+      syncCatChecksFromTemp();
+    }
+
+    if(elBtnCategoryFilter) elBtnCategoryFilter.addEventListener('click', openCategoryPopup);
+    if(cOverlay) cOverlay.addEventListener('click', (e)=>{ e.stopPropagation(); }); // do not close by overlay
+    if(cClose) cClose.addEventListener('click', closeCategoryPopup);
+    if(cOk) cOk.addEventListener('click', commitCategoryPopup);
+    if(cAllOn) cAllOn.addEventListener('click', ()=>setAllCats(true));
+    if(cAllOff) cAllOff.addEventListener('click', ()=>setAllCats(false));
+
     if(bMatch) bMatch.addEventListener('click', ()=>{ bTemp = clampInt(calcPlannedYen(),0,200000); refreshBudgetPopupUI(); });
     if(bConfirmNo) bConfirmNo.addEventListener('click', ()=>{ if(bConfirm) bConfirm.hidden = true; });
     if(bConfirmYes) bConfirmYes.addEventListener('click', ()=>{ if(bConfirm) bConfirm.hidden = true; closeBudgetPopup(true); });

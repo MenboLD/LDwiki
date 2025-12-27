@@ -90,6 +90,10 @@
 </select>
   </label>
 </div>
+<div class="pt-toolbar-sub">
+  <button class="pt-btn" id="btnCategoryFilter" type="button">カテゴリ</button>
+  <div class="pt-toolbar-subtext" id="ptCategoryFilterSummary">カテゴリ：全て表示</div>
+</div>
 <div class="pt-selected-info" id="selectedRowInfo">
 <div class="pt-selected-text pt-selected-placeholder" id="selectedRowInfoText">選択された行の商品内容がここに表示されます</div>
 </div>
@@ -260,5 +264,46 @@
   </div>
 </div>
 </div>
+
+<!-- category filter popup -->
+<div class="pt-popup-overlay" hidden id="ptCatOverlay"></div>
+<div aria-label="カテゴリ表示" aria-modal="true" class="pt-popup pt-popup--cat" hidden id="ptCatPopup" role="dialog">
+  <div class="pt-popup-head">
+    <div class="pt-popup-title">カテゴリ表示</div>
+    <button aria-label="閉じる" class="pt-popup-close" id="ptCatClose" type="button">×</button>
+  </div>
+  <div class="pt-popup-body">
+    <div class="pt-cat-note">チェックOFFのカテゴリは非表示（購入数は保持され、計算上は0扱い）</div>
+
+    <div class="pt-cat-list">
+      <label class="pt-cat-item"><input type="checkbox" id="ptCat_weekly" data-cat="weekly"><span>週間</span></label>
+      <label class="pt-cat-item"><input type="checkbox" id="ptCat_monthly" data-cat="monthly"><span>月間</span></label>
+      <label class="pt-cat-item"><input type="checkbox" id="ptCat_period_pass" data-cat="period_pass"><span>期間パス</span></label>
+      <label class="pt-cat-item"><input type="checkbox" id="ptCat_limited_pass" data-cat="limited_pass"><span>限定パス</span></label>
+
+      <div class="pt-cat-badge">
+        <div class="pt-cat-subtitle">バッジ</div>
+        <label class="pt-cat-item pt-cat-item--sub"><input type="checkbox" id="ptCat_badge_vvip" data-cat="badge_vvip"><span>VVIP</span></label>
+        <label class="pt-cat-item pt-cat-item--sub"><input type="checkbox" id="ptCat_badge_vvip_cont" data-cat="badge_vvip_cont"><span>VVIP(継続)</span></label>
+        <label class="pt-cat-item pt-cat-item--sub"><input type="checkbox" id="ptCat_badge_vip" data-cat="badge_vip"><span>VIP</span></label>
+        <label class="pt-cat-item pt-cat-item--sub"><input type="checkbox" id="ptCat_badge_vip_cont" data-cat="badge_vip_cont"><span>VIP(継続)</span></label>
+      </div>
+
+      <label class="pt-cat-item"><input type="checkbox" id="ptCat_normal_diamond" data-cat="normal_diamond"><span>通常ダイヤ</span></label>
+      <label class="pt-cat-item"><input type="checkbox" id="ptCat_limited_diamond" data-cat="limited_diamond"><span>限定ダイヤ</span></label>
+    </div>
+
+    <div class="pt-cat-actions">
+      <button class="pt-popup-btn" id="ptCatAllOn" type="button">全てON</button>
+      <button class="pt-popup-btn" id="ptCatAllOff" type="button">全てOFF</button>
+    </div>
+
+    <div class="pt-cat-foot">
+      <button class="pt-popup-btn pt-popup-btn--ok" id="ptCatOk" type="button">決定</button>
+    </div>
+  </div>
+</div>
+
+
 </body>
 </html>
