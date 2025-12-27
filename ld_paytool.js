@@ -1293,6 +1293,7 @@ bPopup?.addEventListener('click', (e)=>{
     const popQty   = document.getElementById('ptPopupQty');
     const popMax   = document.getElementById('ptPopupMax');
     const popSum   = document.getElementById('ptPopupSum');
+    const popGrandSum = document.getElementById('ptPopupGrandSum');
     const popOk    = document.getElementById('ptPopupOk');
 
     let popKey = null;
