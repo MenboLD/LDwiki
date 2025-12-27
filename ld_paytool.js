@@ -3,6 +3,7 @@
   const tbody = document.getElementById('payTableBody');
   const elSelectedInfo = document.getElementById('selectedRowInfo');
   const elSelectedInfoText = document.getElementById('selectedRowInfoText');
+  const elPlannedSummaryText = document.getElementById('ptPlannedSummaryText');
 
   let elMineKeyRate = null;
   const elBudgetYen = document.getElementById('optBudgetYen');
@@ -772,8 +773,23 @@ function getEffectiveRates(){
     if(elSummaryTbody){
       elSummaryTbody.innerHTML = totalRow + detailRows;
     }
+    updatePlannedSummaryCard(sumY, sumRes);
     lastSummaryDetail = detailItems;
     updateSelectedInfo();
+  }
+
+  function updatePlannedSummaryCard(sumY, sumRes){
+    if(!elPlannedSummaryText) return;
+    const parts = [];
+    parts.push(`<span class="pt-sel-price">¥${fmtNum(sumY)}</span>`);
+    for(const k of RESOURCE_KEYS){
+      const v = Number(sumRes?.[k] || 0);
+      if(!v) continue;
+      const icon = ICONS[k];
+      if(!icon) continue;
+      parts.push(`<span class="pt-sel-item"><img class="pt-sel-ico" src="${icon}" alt="${k}"><span class="pt-sel-val">${fmtNum(v)}</span></span>`);
+    }
+    elPlannedSummaryText.innerHTML = `<div class="pt-sel-items">${parts.join('')}</div>`;
   }
 
   
