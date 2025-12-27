@@ -465,6 +465,12 @@ body {
 }
 
 /* Popup */
+.pt-popup[hidden],
+.pt-popup-overlay[hidden],
+.pt-overlay[hidden]{
+  display: none !important;
+}
+
 .pt-popup-overlay{
   position: fixed;
   inset: 0;

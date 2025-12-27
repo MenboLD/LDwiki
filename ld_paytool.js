@@ -1533,7 +1533,7 @@ function closeCategoryPopup(){
         const item = t.closest('.pt-orig-item');
         if(!item) return;
         const idx = Number(item.getAttribute('data-idx'));
-        if(!Number.isFinite(idx) || !oTemp[idx]) return;
+        if(!Number.isFinite(idx) || !oTemp || !oTemp[idx]) return;
 
         const f = t.dataset.f;
         if(f === 'name'){
