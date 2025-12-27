@@ -1044,10 +1044,17 @@ function refreshBudgetPopupUI(){
       syncCatChecksFromTemp();
       cOverlay.hidden = false;
       cPopup.hidden = false;
+
+      // position: keep inside viewport (fixed without top can end up off-screen)
+      try{
+        const h = cPopup.getBoundingClientRect().height || 360;
+        const y = Math.max(8, Math.min(window.innerHeight - h - 8, Math.floor(window.innerHeight * 0.10)));
+        cPopup.style.top = y + 'px';
+      }catch(_){ /* noop */ }
+
       updateCategoryFilterSummary();
     }
-
-    function closeCategoryPopup(){
+function closeCategoryPopup(){
       if(!cOverlay || !cPopup) return;
       cOverlay.hidden = true;
       cPopup.hidden = true;

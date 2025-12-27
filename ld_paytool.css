@@ -908,8 +908,8 @@ select.pt-rate-input{
 /* category popup */
 .pt-popup--cat{
   width: min(340px, calc(100vw - 16px));
+  top: 10%;
 }
-.pt-popup--cat .pt-popup-body{ padding: 12px; }
 .pt-cat-note{
   font-size: 11px;
   color: rgba(255,255,255,.75);
