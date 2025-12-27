@@ -105,6 +105,29 @@
     }catch(_){}
   }
 
+  // === Quantity for calculations (effective qty) ===
+  // Step 1: same as raw qty (no category filtering yet).
+  // Later steps can make isRowEnabledForCalc(row) depend on category filter state,
+  // so totals/budget/sorting can treat disabled categories as qty=0 without erasing user inputs.
+  function getPurchaseCap(row){
+    const maxRaw = row ? row.purchase_limit : null;
+    const maxNum = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999999 : Number(maxRaw);
+    const cap = (Number.isFinite(maxNum) && maxNum > 0) ? Math.floor(maxNum) : 999999;
+    return cap;
+  }
+
+  function isRowEnabledForCalc(_row){
+    return true;
+  }
+
+  function getEffectiveQty(key, row, capOverride){
+    const cap = (capOverride !== undefined && capOverride !== null) ? capOverride : getPurchaseCap(row);
+    const raw = clampInt(cart[key] ?? 0, 0, cap);
+    if(raw <= 0) return 0;
+    if(!isRowEnabledForCalc(row)) return 0;
+    return raw;
+  }
+
   function buildResourceToggleUI(){
     elToggles.innerHTML = '';
     for(const k of RESOURCE_KEYS){
@@ -343,7 +366,7 @@ function getEffectiveRates(){
       const max = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
       const cap = (Number.isFinite(max) && max > 0) ? max : 999;
 
-      const qty = clampInt(cart[key] ?? 0, 0, cap);
+      const qty = getEffectiveQty(key, r, cap);
       cart[key] = qty;
 
       const maxDisp = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? '∞' : fmtNum(maxRaw);
@@ -424,7 +447,7 @@ const mode = elSort.value;
       const maxRaw = r.purchase_limit;
       const max = (maxRaw === null || maxRaw === undefined || maxRaw === '') ? 999 : Number(maxRaw);
       const cap = (Number.isFinite(max) && max > 0) ? max : 999;
-      const qty = clampInt(cart[key] ?? 0, 0, cap);
+      const qty = getEffectiveQty(key, r, cap);
       if(qty <= 0) continue;
 
       picked.push({ r, qty });
@@ -738,7 +761,7 @@ function getBudgetVal(){ return clampInt(elBudgetYen.value, 0, 200000); }
       let sum = 0;
       for(const p of (packages||[])){
         const key = rowKey(p);
-        const qty = clampInt(cart[key] ?? 0, 0, 999999);
+        const qty = getEffectiveQty(key, p, getPurchaseCap(p));
         if(qty <= 0) continue;
         sum += (Number(p.jpy)||0) * qty;
       }
