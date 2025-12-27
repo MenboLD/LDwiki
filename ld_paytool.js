@@ -196,6 +196,59 @@
   let baselinePacks = [];
   let doublePacks = [];
   let doubleAvailability = {}; // price_yen -> bool
+  let doublePackDiamondByPrice = {}; // price_yen -> diamonds (first-double pack)
+
+  function rebuildDoublePackIndex(){
+    doublePackDiamondByPrice = {};
+    for(const p of (doublePacks || [])){
+      if(!p || p.is_active === false) continue;
+      const price = Number(p.price_yen);
+      const dia = Number(p.diamonds);
+      if(!Number.isFinite(price) || price <= 0) continue;
+      if(!Number.isFinite(dia) || dia <= 0) continue;
+      doublePackDiamondByPrice[price] = dia;
+    }
+  }
+
+  function isFirstDoubleDiamondRow(row){
+    if(!row) return false;
+    const cat = normalizeCategoryKey(row.category_key);
+    if(cat !== 'normal_diamond' && cat !== 'limited_diamond') return false;
+    const price = Number(row.jpy ?? 0);
+    if(!Number.isFinite(price) || price <= 0) return false;
+    const target = doublePackDiamondByPrice[price];
+    if(!Number.isFinite(target) || target <= 0) return false;
+    const dia = Number(row.diamond ?? 0);
+    if(!Number.isFinite(dia) || dia <= 0) return false;
+    return Math.abs(dia - target) < 0.0001;
+  }
+
+  function isRowAllowedByFirstDoubleSetting(row){
+    if(!isFirstDoubleDiamondRow(row)) return true;
+    const price = Number(row.jpy ?? 0);
+    return (doubleAvailability[price] !== false);
+  }
+
+  function applyFirstDoubleSettingToCartForPrice(price){
+    if(!Number.isFinite(price) || price <= 0) return;
+    if(doubleAvailability[price] !== false) return;
+    for(const p of (packages || [])){
+      if(!isFirstDoubleDiamondRow(p)) continue;
+      const pPrice = Number(p.jpy ?? 0);
+      if(pPrice !== price) continue;
+      const key = rowKey(p);
+      cart[key] = 0;
+    }
+    saveCart();
+  }
+
+  function applyFirstDoubleSettingToCartAll(){
+    for(const k of Object.keys(doubleAvailability || {})){
+      const price = Number(k);
+      if(doubleAvailability[price] === false) applyFirstDoubleSettingToCartForPrice(price);
+    }
+  }
+
   let cart = {}; // key -> qty
 
 
@@ -208,6 +261,7 @@
   let lastSummaryDetail = [];
   const CART_LS_KEY = "ld_paytool_cart_v1";
   const CAT_FILTER_LS_KEY = "ld_paytool_cat_filter_v1";
+  const DOUBLE_AVAIL_LS_KEY = "ld_paytool_double_avail_v1";
 
 
   function rowKey(p){
@@ -294,7 +348,22 @@
     }catch(_e){}
   }
 
-  function normalizeCategoryKey(raw){
+  
+  function loadDoubleAvailability(){
+    try{
+      const raw = localStorage.getItem(DOUBLE_AVAIL_LS_KEY);
+      if(!raw) return;
+      const obj = JSON.parse(raw);
+      if(obj && typeof obj === 'object') doubleAvailability = obj;
+    }catch(_e){}
+  }
+
+  function saveDoubleAvailability(){
+    try{
+      localStorage.setItem(DOUBLE_AVAIL_LS_KEY, JSON.stringify(doubleAvailability));
+    }catch(_e){}
+  }
+function normalizeCategoryKey(raw){
     if(raw === null || raw === undefined || raw === '') return null;
     const k = String(raw).toLowerCase();
     return CATEGORY_ALIAS_TO_KEY[k] || null;
@@ -319,6 +388,12 @@
       const b = categoryFilter.badge || {};
       return (b[sub] !== false);
     }
+
+  function isRowVisible(row){
+    // Initial double availability (初回ダイヤ) should override category when it disables a row.
+    return isRowVisibleByCategory(row) && isRowAllowedByFirstDoubleSetting(row);
+  }
+
     // default: visible unless explicitly false
     return (categoryFilter[cat] !== false);
   }
@@ -341,7 +416,7 @@ function saveCart(){
   }
 
   function isRowEnabledForCalc(row){
-    return isRowVisibleByCategory(row);
+    return isRowVisible(row);
   }
 
   function getEffectiveQty(key, row, capOverride){
@@ -433,6 +508,8 @@ function saveCart(){
       const price = Number(t.dataset.price);
       if(!Number.isFinite(price)) return;
       doubleAvailability[price] = !!t.checked;
+      saveDoubleAvailability();
+      if(!t.checked) applyFirstDoubleSettingToCartForPrice(price);
     });
   }
 
@@ -643,7 +720,7 @@ function getEffectiveRates(){
     const enabled = uniq.filter(p => doubleAvailability[p] !== false).length;
     // KPI baseline line removed per spec
     const rows = (packages||[])
-      .filter(p => isRowVisibleByCategory(p))
+      .filter(p => isRowVisible(p))
       .map(p => {
         const key = rowKey(p);
         const yen = Number(p.jpy) || 0;
@@ -941,6 +1018,7 @@ function applyAll(){
   try {
     loadCart();
     loadCategoryFilter();
+    loadDoubleAvailability();
 
     const [pkgRows, rateRows, baseRows, dblRows] = await Promise.all([
       fetchTable('ld_pay_packages', 'sort_order.asc'),
@@ -952,6 +1030,7 @@ function applyAll(){
     packages = (pkgRows || []).filter(r => r.is_active !== false);
     baselinePacks = baseRows || [];
     doublePacks = dblRows || [];
+    rebuildDoublePackIndex();
 
     rateBase = {};
     toggles = {};
@@ -968,6 +1047,7 @@ function applyAll(){
 
     buildResourceToggleUI();
     buildDoubleAvailabilityUI();
+    applyFirstDoubleSettingToCartAll();
     buildRateEditorUI();
 
     // snapshot server/default rates for reset
@@ -1239,7 +1319,7 @@ function closeCategoryPopup(){
       const curKey = selectedKeyMain || selectedKeySummary;
       if(curKey){
         const row = (packages||[]).find(p => rowKey(p) === curKey);
-        if(row && !isRowVisibleByCategory(row)){
+        if(row && !isRowVisible(row)){
           selectedKeyMain = null;
           selectedKeySummary = null;
         }

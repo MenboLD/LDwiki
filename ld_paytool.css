@@ -412,8 +412,8 @@ body {
 
 /* Phase3v3: summary table under double line */
 .pt-summary-table-wrap{
-  margin-top: 10px;
-  padding-top: 10px;
+  margin-top: 18px;
+  padding-top: 18px;
   border-top: 3px double #2b3750;
 }
 .pt-table-summary .pt-limit button{ display:none; }
@@ -1159,3 +1159,17 @@ select.pt-rate-input{
   font-weight: 600;
   opacity: 0.9;
 }
+
+
+/* Phase5c: spacing + help accordion */
+.pt-after-summary-spacer{ height: 16px; }
+
+.pt-help-acc{ margin-top: 0; }
+.pt-help-body{
+  padding: 6px 0;
+  color: var(--txt2, #b8c1d9);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.pt-bottom-spacer{ height: 200px; }
