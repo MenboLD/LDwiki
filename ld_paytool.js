@@ -1277,7 +1277,7 @@ bPopup?.addEventListener('click', (e)=>{
       lastTap = {x:e.clientX,y:e.clientY,moved:false};
     }, {passive:true});
     tbody.addEventListener('pointermove', (e)=>{
-      if(Math.abs(e.clientX-lastTap.x)+Math.abs(e.clientY-lastTap.y) > 6){
+      if(Math.abs(e.clientX-lastTap.x)+Math.abs(e.clientY-lastTap.y) > 12){
         lastTap.moved = true;
       }
     }, {passive:true});
@@ -1438,7 +1438,7 @@ if(popOk) popOk.addEventListener('click', ()=>{
     // - when selected, tap name cell -> open popup
     tbody.addEventListener('click', (e)=>{
       if(lastTap.moved) return;
-      const el = e.target instanceof HTMLElement ? e.target : null;
+      const el = (e.target instanceof Element) ? e.target : (e.target && e.target.parentElement ? e.target.parentElement : null);
       if(!el) return;
 
       const tr = el.closest('tr[data-key]');
@@ -1486,12 +1486,12 @@ if(popOk) popOk.addEventListener('click', ()=>{
       elSummaryTbody.addEventListener('pointermove', (e)=>{
         const dx = Math.abs(e.clientX - lastTap.x);
         const dy = Math.abs(e.clientY - lastTap.y);
-        if(dx > 8 || dy > 8) lastTap.moved = true;
+        if(dx > 12 || dy > 12) lastTap.moved = true;
       }, { passive:true });
 
       elSummaryTbody.addEventListener('click', (e)=>{
         if(lastTap.moved) return;
-        const el = e.target instanceof HTMLElement ? e.target : null;
+        const el = (e.target instanceof Element) ? e.target : (e.target && e.target.parentElement ? e.target.parentElement : null);
         if(!el) return;
 
         const tr = el.closest('tr[data-key]');
