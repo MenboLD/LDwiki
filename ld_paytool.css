@@ -1181,6 +1181,16 @@ select.pt-rate-input{
   max-height: 86vh;
   top: 7%;
 }
+.pt-popup--orig{
+  display: flex;
+  flex-direction: column;
+}
+.pt-popup--orig .pt-popup-body{
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .pt-orig-list{
   display: flex;
   flex-direction: column;
