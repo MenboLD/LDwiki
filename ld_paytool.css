@@ -1036,3 +1036,10 @@ select.pt-rate-input{
 .pt-table:not(.pt-table-summary) thead th.pt-icon-sortable:hover{
   background: rgba(255,255,255,.06);
 }
+
+
+.pt-popup-sum--grand{
+  margin-top: 6px;
+  font-weight: 600;
+  opacity: 0.9;
+}

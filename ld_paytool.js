@@ -350,6 +350,15 @@ function saveCart(){
     return raw;
   }
 
+  function getEffectiveQtyOverride(key, row, capOverride, overrideQty){
+    const cap = (capOverride !== undefined && capOverride !== null) ? capOverride : getPurchaseCap(row);
+    const base = (overrideQty !== undefined && overrideQty !== null) ? overrideQty : (cart[key] ?? 0);
+    const raw = clampInt(base, 0, cap);
+    if(raw <= 0) return 0;
+    if(!isRowEnabledForCalc(row)) return 0;
+    return raw;
+  }
+
   function buildResourceToggleUI(){
     elToggles.innerHTML = '';
     for(const k of RESOURCE_KEYS){
@@ -619,7 +628,7 @@ function getEffectiveRates(){
 
   function calcAndSort(){
     const rates = getEffectiveRates();
-    const budget = clampInt(elBudgetYen.value, 0, 200000);
+    const budget = clampInt(elBudgetYen.value, 0, 3000000);
 
     const budgetBestDia = baselineBudgetBestDia(budget);
     const budgetDiaPerYen = (budget > 0 && budgetBestDia > 0) ? (budgetBestDia / budget) : 0;
@@ -1023,7 +1032,7 @@ function applyAll(){
     const bConfirm = document.getElementById('ptBudgetConfirm');
     const bConfirmYes = document.getElementById('ptBudgetConfirmYes');
     const bConfirmNo  = document.getElementById('ptBudgetConfirmNo');
-function getBudgetVal(){ return clampInt(elBudgetYen.value, 0, 200000); }
+function getBudgetVal(){ return clampInt(elBudgetYen.value, 0, 3000000); }
 
     // decision-style temp value (only applied on OK)
     let bTemp = 0;
@@ -1036,6 +1045,20 @@ function getBudgetVal(){ return clampInt(elBudgetYen.value, 0, 200000); }
       for(const p of (packages||[])){
         const key = rowKey(p);
         const qty = getEffectiveQty(key, p, getPurchaseCap(p));
+        if(qty <= 0) continue;
+        sum += (Number(p.jpy)||0) * qty;
+      }
+      return sum;
+    }
+
+function calcPlannedYenWithOverride(overrideKey, overrideQty){
+      let sum = 0;
+      for(const p of (packages||[])){
+        const key = rowKey(p);
+        const cap = getPurchaseCap(p);
+        const qty = (overrideKey && key === overrideKey)
+          ? getEffectiveQtyOverride(key, p, cap, overrideQty)
+          : getEffectiveQty(key, p, cap);
         if(qty <= 0) continue;
         sum += (Number(p.jpy)||0) * qty;
       }
@@ -1098,7 +1121,7 @@ function refreshBudgetPopupUI(){
     }
 
     function commitBudget(){
-      const nv = clampInt(bTemp, 0, 200000);
+      const nv = clampInt(bTemp, 0, 3000000);
       elBudgetYen.value = String(nv);
       applyAll();
       closeBudgetPopup();
@@ -1233,7 +1256,7 @@ function closeCategoryPopup(){
     if(cAllOn) cAllOn.addEventListener('click', ()=>setAllCats(true));
     if(cAllOff) cAllOff.addEventListener('click', ()=>setAllCats(false));
 
-    if(bMatch) bMatch.addEventListener('click', ()=>{ bTemp = clampInt(calcPlannedYen(),0,200000); refreshBudgetPopupUI(); });
+    if(bMatch) bMatch.addEventListener('click', ()=>{ bTemp = clampInt(calcPlannedYen(),0,3000000); refreshBudgetPopupUI(); });
     if(bConfirmNo) bConfirmNo.addEventListener('click', ()=>{ if(bConfirm) bConfirm.hidden = true; });
     if(bConfirmYes) bConfirmYes.addEventListener('click', ()=>{ if(bConfirm) bConfirm.hidden = true; closeBudgetPopup(true); });
 bPopup?.addEventListener('click', (e)=>{
@@ -1243,7 +1266,7 @@ bPopup?.addEventListener('click', (e)=>{
       if(!btn) return;
       const delta = Number(btn.getAttribute('data-delta'));
       if(!Number.isFinite(delta)) return;
-      bTemp = clampInt(bTemp + delta, 0, 200000);
+      bTemp = clampInt(bTemp + delta, 0, 3000000);
       refreshBudgetPopupUI();
     });
 
@@ -1304,7 +1327,7 @@ bPopup?.addEventListener('click', (e)=>{
       popQty.textContent = String(popTempQty);
       popMax.textContent = String(maxDisp);
       popSum.textContent = fmtNum((Number(row.jpy)||0) * popTempQty);
-
+      if(popGrandSum) popGrandSum.textContent = fmtNum(calcPlannedYenWithOverride(popKey, popTempQty));
       popMinus.disabled = popTempQty <= 0;
       popPlus.disabled  = popTempQty >= popCap;
       if(popClear){
@@ -1346,6 +1369,7 @@ bPopup?.addEventListener('click', (e)=>{
       const qty = clampInt(cart[popKey] ?? 0, 0, cap);
       popQty.textContent = String(popTempQty);
       popSum.textContent = fmtNum((Number(row.jpy)||0) * popTempQty);
+      if(popGrandSum) popGrandSum.textContent = fmtNum(calcPlannedYenWithOverride(popKey, popTempQty));
       popMinus.disabled = popTempQty <= 0;
       popPlus.disabled  = popTempQty >= popCap;
       if(popMaxBtn){
