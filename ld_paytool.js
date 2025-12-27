@@ -119,12 +119,14 @@
     return cmpNumber(Number(a[key])||0, Number(b[key])||0, dir);
   }
   function cmpQty(a,b){
-    const qa = (a._effQty||0) > 0 ? 1 : 0;
-    const qb = (b._effQty||0) > 0 ? 1 : 0;
+    // Purchase-amount priority (total planned spend in JPY), using effective quantity.
+    const ta = (Number(a.jpy)||0) * (a._effQty||0);
+    const tb = (Number(b.jpy)||0) * (b._effQty||0);
+    if(tb !== ta) return tb - ta; // desc
+    // tie-breaker: higher effective quantity first
+    const qa = (a._effQty||0);
+    const qb = (b._effQty||0);
     if(qb !== qa) return qb - qa;
-    const da = (a._effQty||0);
-    const db = (b._effQty||0);
-    if(db !== da) return db - da;
     return 0;
   }
   function cmpStableKey(a,b){
