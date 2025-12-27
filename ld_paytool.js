@@ -1464,7 +1464,7 @@ function closeCategoryPopup(){
       const map = {
         gold: 'Resource_01_gold_20x20px.png',
         mine_key: 'Resource_02_key_20x20px.png',
-        churu: 'Resource_03_churu_20x20px.png',
+        churu: 'Resource_03_chur_20x20px.png',
         battery: 'Resource_04_battery_20x20px.png',
         pet_food: 'Resource_05_petfood_20x20px.png',
         mythic_stone: 'Resource_06_Mythstone_20x20px.png',
@@ -1513,8 +1513,8 @@ function closeCategoryPopup(){
           const cell = document.createElement('div');
           cell.className = 'pt-orig-res-cell';
           cell.innerHTML = `
-            <div class="pt-orig-res-head"><img src="${meta.src}" alt="${meta.name}"><span>${meta.name}</span></div>
-            <input class="pt-input pt-orig-input" data-f="res" data-k="${k}" type="number" min="0" step="1" value="${Number(p[k]||0)}" />
+            <div class="pt-orig-res-head"><img src="${meta.src}" alt="${meta.name}"></div>
+            <input class="pt-input pt-orig-input pt-orig-input--res" data-f="res" data-k="${k}" type="number" min="0" step="1" value="${Number(p[k]||0)}" />
           `;
           grid.appendChild(cell);
         }

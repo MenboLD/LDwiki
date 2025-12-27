@@ -1206,6 +1206,7 @@ select.pt-rate-input{
 .pt-orig-input{
   width: 110px;
 }
+.pt-orig-input--res{ width: 56px; padding-left: 8px; padding-right: 8px; text-align: right; }
 .pt-orig-input--name{ width: 220px; }
 .pt-orig-res-wrap{
   width: 100%;
@@ -1214,7 +1215,7 @@ select.pt-rate-input{
 .pt-orig-res-grid{
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 86px;
+  grid-auto-columns: 64px;
   gap: 6px;
   padding-bottom: 4px;
 }
