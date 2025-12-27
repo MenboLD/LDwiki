@@ -388,14 +388,13 @@ function normalizeCategoryKey(raw){
       const b = categoryFilter.badge || {};
       return (b[sub] !== false);
     }
+    // default: visible unless explicitly false
+    return (categoryFilter[cat] !== false);
+  }
 
   function isRowVisible(row){
     // Initial double availability (初回ダイヤ) should override category when it disables a row.
     return isRowVisibleByCategory(row) && isRowAllowedByFirstDoubleSetting(row);
-  }
-
-    // default: visible unless explicitly false
-    return (categoryFilter[cat] !== false);
   }
 
 function saveCart(){
