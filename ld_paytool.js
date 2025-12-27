@@ -34,6 +34,8 @@
     return (Math.round(v * 1000) / 10).toFixed(1) + '%';
   }
   function clampInt(n, min, max){
+    // accept strings with commas/spaces (e.g., "15,000")
+    if(typeof n === "string") n = n.replaceAll(/[,\s]/g, "");
     n = Math.floor(Number(n));
     if(!Number.isFinite(n)) return min;
     return Math.min(max, Math.max(min, n));
@@ -757,6 +759,7 @@ function refreshBudgetPopupUI(){
 
     function openBudgetPopup(){
       if(!bOverlay || !bPopup) return;
+      if(bConfirm) bConfirm.hidden = true;
       bTemp = getBudgetVal();
       bInitial = bTemp;
       refreshBudgetPopupUI();
