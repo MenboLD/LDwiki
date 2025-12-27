@@ -117,7 +117,12 @@
 
     const note = document.createElement('div');
     note.className = 'pt-note pt-note--purpose';
-    note.textContent = `※パッケージの価値をダイヤ換算した場合の値に影響します。\n\n例：神話ユニットが全てLv.15 → 神話石のチェックを外す\n例：デイリーショップの鉱山の鍵とは別に鍵が欲しい → 鉱山の鍵以外のチェックを外す\n\n上記のように自分にとっての価値を正確にし、必要物リースを絞れます。`;
+    note.textContent = `※パッケージの価値をダイヤ換算した場合の値に影響します。
+
+例：神話ユニットが全てLv.15 → 神話石のチェックを外す
+例：デイリーショップの鉱山の鍵とは別に鍵が欲しい → 鉱山の鍵以外のチェックを外す
+
+上記のように自分にとっての価値を正確にし、必要リソースを絞れます。`;
     elToggles.appendChild(note);
     elToggles.addEventListener('change', (e)=>{
       const t = e.target;
@@ -672,11 +677,6 @@ function applyAll(){
         applyAll();
       });
     }
-
-    const note = document.createElement('div');
-    note.className = 'pt-note pt-note--purpose';
-    note.textContent = `※パッケージの価値をダイヤ換算した場合の値に影響します。\n\n例：神話ユニットが全てLv.15 → 神話石のチェックを外す\n例：デイリーショップの鉱山の鍵とは別に鍵が欲しい → 鉱山の鍵以外のチェックを外す\n\n上記のように自分にとっての価値を正確にし、必要物リースを絞れます。`;
-    elToggles.appendChild(note);
     elToggles.addEventListener('change', applyAll);
     if(elDoubleToggles) elDoubleToggles.addEventListener('change', applyAll);
     elSort.addEventListener('change', applyAll);

@@ -717,14 +717,14 @@ select.pt-rate-input{
   background: rgba(60, 255, 160, 0.22);
 }
 .pt-table tbody tr.pt-at-cap td{
-  /* capped: brighten a bit for readability */
-  background: rgba(255, 90, 140, 0.26);
+  /* capped: brighter pink/red for dark theme */
+  background: rgba(255, 80, 130, 0.34);
 }
 .pt-table tbody tr.pt-row-selected td{
   box-shadow: inset 0 0 0 2px rgba(70,220,140,0.70);
 }
 .pt-table tbody tr.pt-row-selected.pt-at-cap td{
-  box-shadow: inset 0 0 0 2px rgba(235, 170, 255, 0.92);
+  box-shadow: inset 0 0 0 2px rgba(255, 120, 170, 0.92);
 }
 
 /* prevent double-tap zoom-ish behaviors on interactive controls */
@@ -776,7 +776,7 @@ select.pt-rate-input{
 .pt-table tbody tr.pt-has-qty td.sticky-col{
   background: #123a2a; /* opaque variant */}
 .pt-table tbody tr.pt-at-cap td.sticky-col{
-  background: #2b1636; /* opaque variant of cap-highlight (brighter) */
+  background: #3a1426; /* opaque variant */
 }
 .pt-table tbody tr.pt-row-selected td.sticky-col{
   /* keep current background; outline already drawn via box-shadow */
@@ -883,7 +883,7 @@ select.pt-rate-input{
   margin: 8px 0 10px;
 }
 .pt-toolbar .pt-field-budget{flex: 0 0 45%;}
-.pt-toolbar .pt-field-budget .pt-input-budget{width:100%;}
+.pt-toolbar .pt-field-budget .pt-input-budget{width:60px;}
 .pt-toolbar #btnBudgetQuick{flex:0 0 auto; white-space:nowrap;}
 .pt-toolbar .pt-field-sort{flex: 0 0 auto;}
 .pt-toolbar .pt-field-sort .pt-select{width:120px;}
