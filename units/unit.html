@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Unit</title>
+
+  <!-- 共通ヘッダーCSS（root直下想定） -->
+  <link rel="stylesheet" href="../common_header.css?v=20260101a" />
+  <link rel="stylesheet" href="./unit.css?v=20260101a" />
+</head>
+
+<body data-page-name="ユニット">
+  <!-- common_header.js がここにヘッダーを挿入する想定（あなたの既存仕様に合わせる） -->
+
+  <main class="app-main">
+    <section class="card">
+      <div class="row">
+        <div class="icon" id="unitIcon"></div>
+        <div class="titleBlock">
+          <h1 class="h1" id="unitName">Loading...</h1>
+          <div class="sub" id="unitMeta"></div>
+          <div class="sub small" id="unitCodeLine"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="h2">基本ステータス</h2>
+      <div class="grid" id="unitStats"></div>
+    </section>
+
+    <section class="card" id="materialsCard" style="display:none;">
+      <h2 class="h2">素材</h2>
+      <div class="chips" id="materials"></div>
+    </section>
+
+    <section class="card" id="formsCard" style="display:none;">
+      <h2 class="h2">形態</h2>
+      <div class="list" id="forms"></div>
+    </section>
+
+    <section class="card">
+      <h2 class="h2">固有能力</h2>
+      <div class="table" id="abilities"></div>
+    </section>
+
+    <section class="card">
+      <h2 class="h2">レベル特性</h2>
+      <div class="table" id="levelMods"></div>
+    </section>
+
+    <section class="card" id="treasureCard" style="display:none;">
+      <h2 class="h2">専用財宝</h2>
+      <div class="sub" id="treasureName"></div>
+      <div class="table" id="treasureLevels"></div>
+    </section>
+
+    <section class="card">
+      <h2 class="h2">記事</h2>
+      <div class="md" id="articleOverview"></div>
+      <hr class="sep" />
+      <div class="md" id="articleRole"></div>
+      <hr class="sep" />
+      <div class="md" id="articleRating"></div>
+    </section>
+
+    <section class="card">
+      <h2 class="h2">コメント（仮：表示のみ）</h2>
+      <div class="sub small">※投稿UIは次ステップで追加</div>
+      <div class="list" id="comments"></div>
+    </section>
+
+    <section class="card error" id="errBox" style="display:none;">
+      <h2 class="h2">エラー</h2>
+      <pre id="errText"></pre>
+    </section>
+  </main>
+
+  <!-- Supabase（root直下想定） -->
+  <script src="../supabase_config.js?v=20260101a"></script>
+  <!-- 共通ヘッダーJS（root直下想定） -->
+  <script src="../common_header.js?v=20260101a"></script>
+
+  <script src="./unit.js?v=20260101a"></script>
+</body>
+</html>

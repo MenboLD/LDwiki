@@ -1,0 +1,109 @@
+:root{
+  --bg:#0b0f14;
+  --card:#121826;
+  --text:#e6edf3;
+  --muted:#9aa4b2;
+  --line:#223044;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+}
+
+/* 共通ヘッダー分の上余白（common_header.css の --ld-topbar-h を尊重） */
+.app-main{
+  padding: 12px;
+  padding-top: calc(var(--ld-topbar-h, 56px) + 12px);
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  margin: 12px 0;
+}
+
+.h1{ margin:0; font-size: 20px; }
+.h2{ margin:0 0 10px; font-size: 16px; color: var(--text); }
+.sub{ color: var(--muted); font-size: 13px; }
+.small{ font-size: 12px; }
+
+.row{ display:flex; gap:12px; align-items:center; }
+.icon{
+  width:60px; height:60px;
+  border-radius: 12px;
+  background:#0f1522;
+  border:1px solid var(--line);
+  display:flex;
+  align-items:center; justify-content:center;
+  overflow:hidden;
+}
+.icon img{ width:100%; height:100%; object-fit:cover; }
+
+.grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.kv{
+  border:1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px;
+}
+.kv .k{ color:var(--muted); font-size:12px; }
+.kv .v{ font-size:14px; margin-top:2px; }
+
+.chips{ display:flex; flex-wrap:wrap; gap:8px; }
+.chip{
+  border:1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.list{ display:flex; flex-direction:column; gap:8px; }
+.item{
+  border:1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.table{ display:flex; flex-direction:column; gap:8px; }
+.rowHead, .rowBody{
+  border:1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+}
+.rowHead{ display:flex; justify-content:space-between; gap:10px; cursor:pointer; }
+.rowHead .left{ display:flex; gap:10px; flex-wrap:wrap; }
+.badge{
+  border:1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  color: var(--muted);
+  font-size:12px;
+}
+.rowBody{ display:none; color: var(--text); }
+.rowBody.open{ display:block; }
+
+.sep{
+  border:none;
+  border-top:1px solid var(--line);
+  margin: 12px 0;
+}
+
+.error{
+  border-color:#6b1b1b;
+}
+pre{
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin:0;
+}
