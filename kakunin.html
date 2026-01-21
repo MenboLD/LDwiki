@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>レイアウト確認（40x46サイズ）</title>
+    <style>
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 10px; /* 段ごとの隙間 */
+            padding: 10px;
+            font-family: sans-serif;
+        }
+
+        .item-row {
+            display: inline-flex; 
+            gap: 10px;
+            /* 画像の高さ(46px)を基準にする */
+            height: 46px; 
+            align-items: stretch;
+        }
+
+        /* 画像サイズを40x46に固定 */
+        .main-image {
+            width: 40px;
+            height: 46px;
+            object-fit: contain;
+            flex-shrink: 0;
+            display: block;
+        }
+
+        /* 右側のエリア：画像の高さ46px内で上下に分配 */
+        .info-area {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 1; /* 上下端に密着させるため0 */
+        }
+
+        /* 上部の行（ラベル ＋ ボタン） */
+        .top-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+	    line-height: 1; /* 余計な上下余白を排除 */
+            margin-top: -1px; /* フォント特有の上部余白を相殺して上端に寄せる */
+            line-height: 2; /* 上端を揃えやすくする */
+        }
+
+        .label-title {
+            font-weight: bold;
+            font-size: 14px; /* 小さい画像に合わせたサイズ */
+        }
+
+        .button-group {
+            display: flex;
+            gap: 2px;
+        }
+
+        .btn {
+            padding: 1px 2px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background: #eee;
+            border-radius: px;
+            font-size: 10px; /* 小さい画像に合わせたサイズ */
+            min-width: 16px;
+            text-align: center;
+        }
+
+        /* 下部のラベル */
+        .bottom-row {
+            font-size: 9px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px; /* フォント特有の下部余白を微調整 */
+            line-height: 1; /* 下端を揃えやすくする */
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div class="item-row">
+        <img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/0.png" alt="メロンソーダ" class="main-image">
+        <div class="info-area">
+            <div class="top-row">
+                <span class="label-title">メロンソーダ</span>
+                <div class="button-group">
+                    <button class="btn">N</button><button class="btn">R</button><button class="btn">E</button><button class="btn">L</button><button class="btn">M</button>
+                </div>
+            </div>
+            <div class="bottom-row">のうりょくめい</div>
+        </div>
+    </div>
+
+    <div class="item-row">
+        <img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/0.png" alt="メロンソーダ" class="main-image">
+        <div class="info-area">
+            <div class="top-row">
+                <span class="label-title">メロンソーダ</span>
+                <div class="button-group">
+                    <button class="btn">N</button><button class="btn">R</button><button class="btn">E</button><button class="btn">L</button><button class="btn">M</button>
+                </div>
+            </div>
+            <div class="bottom-row">キル時：0.01～0.5％でコイン2～30枚</div>
+        </div>
+    </div>
+
+    <div class="item-row">
+        <img src="https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/0.png" alt="メロンソーダ" class="main-image">
+        <div class="info-area">
+            <div class="top-row">
+                <span class="label-title">メロンソーダ</span>
+                <div class="button-group">
+                    <button class="btn">N</button><button class="btn">R</button><button class="btn">E</button><button class="btn">L</button><button class="btn">M</button>
+                </div>
+            </div>
+            <div class="bottom-row">のうりょくめい</div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
