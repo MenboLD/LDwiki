@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark light" />
+  <title>ADK Damage式 推測まとめ（1〜5）</title>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: rgba(255,255,255,0.06);
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.70);
+      --codebg: rgba(255,255,255,0.08);
+      --border: rgba(255,255,255,0.12);
+      --accent: #7dd3fc;
+      --maxw: 720px;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f6f7fb;
+        --panel: rgba(0,0,0,0.04);
+        --text: rgba(0,0,0,0.88);
+        --muted: rgba(0,0,0,0.62);
+        --codebg: rgba(0,0,0,0.05);
+        --border: rgba(0,0,0,0.10);
+        --accent: #0284c7;
+      }
+    }
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      line-height: 1.75;
+      -webkit-text-size-adjust: 100%;
+    }
+    .wrap {
+      max-width: var(--maxw);
+      margin: 0 auto;
+      padding: 16px 14px 28px;
+      padding-top: calc(16px + env(safe-area-inset-top));
+      padding-bottom: calc(28px + env(safe-area-inset-bottom));
+    }
+    header {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 14px 12px;
+      margin-bottom: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+    }
+    h1 {
+      font-size: 18px;
+      margin: 0 0 6px 0;
+      letter-spacing: .2px;
+    }
+    .sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0;
+    }
+    main {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+    }
+    h2 {
+      font-size: 16px;
+      margin: 18px 0 10px;
+      padding-top: 6px;
+      border-top: 1px solid var(--border);
+    }
+    h2:first-of-type {
+      border-top: none;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    h3 {
+      font-size: 14px;
+      margin: 14px 0 8px;
+      color: var(--accent);
+    }
+    p {
+      margin: 10px 0;
+      font-size: 14px;
+    }
+    ul, ol {
+      margin: 10px 0 10px 20px;
+      padding: 0;
+      font-size: 14px;
+    }
+    li { margin: 6px 0; }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Noto Sans Mono", "Courier New", monospace;
+      background: var(--codebg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 8px;
+      font-size: 0.95em;
+    }
+    pre {
+      background: var(--codebg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      overflow: auto;
+      margin: 12px 0;
+    }
+    pre code {
+      background: transparent;
+      border: none;
+      padding: 0;
+      border-radius: 0;
+      font-size: 12.5px;
+      display: block;
+      line-height: 1.6;
+    }
+    .spacer { height: 6px; }
+    footer {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      padding: 2px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(125,211,252,0.10);
+      color: var(--accent);
+      margin-left: 6px;
+      vertical-align: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>ADK 内部データから「damage」式を推測するまとめ <span class="badge">X向け 1〜5</span></h1>
+      <p class="sub">スマホで読みやすいように整形（単一HTML・CSS内包）</p>
+    </header>
+    <main>
+      <h3>【adk内シンボルから推測できる“ダメージ式の骨格”】【確率要素は除外】</h3><div class='spacer'></div><ol><li>このファイルから読める「damage設計の部品」</li></ol><ul><li>入力/基礎: inputDamage</li><li>加算追加: DamageExtra, AttackDamageAdd, GetCurrentHpAddDamage</li><li>倍率/％: PercentageDamage, damagePercentage, damageRatio</li><li>HP依存: currentHpMultiply, maxHpMultiply</li><li>防御/耐性: GetCalculatePhysicalDefense, GetCalculateMagicDefense,</li></ul><p>  decreaseDefenseValue(固定減), decreaseDefencePercentage(割合減),</p><p>  GetPercentDamageResistance(被ダメ軽減％の統合点っぽい)</p><ul><li>物理/魔法 + 近接/遠隔: EAttackType Physical/Magical/Melee/Ranged</li></ul><div class='spacer'></div><ol><li>係数カテゴリの推測（同枠=加算、別枠=乗算の当たり）</li></ol><p>A. 加算枠（同枠で足されやすい）</p><ul><li>AttackDamageAdd / DamageExtra / Get…AddDamage 系</li></ul><div class='spacer'></div><p>B. ％同枠→合算して1回だけ掛ける帯（最重要）</p><ul><li>TotalAttackDamagePercentage / GetTotalAttackDamagePercentageBuff</li></ul><p>  → 複数％を足し上げて Total を作り、(1+Total) を1回乗算する設計を示唆</p><div class='spacer'></div><p>C. 別枠で乗算されそうなカテゴリ（Getが分離している）</p><ul><li>属性: PhysicalDamage / MagicalDamage</li><li>攻撃種: BasicAttackDamage / SkillDamage / UltimateDamage</li><li>射程/範囲: SingleRangeDamage / MultiRangeDamage</li><li>対象: BossMonsterDamage% / NormalMonsterDamage%</li><li>条件: StuningAdditionalDamage%（スタン時など）</li><li>タイミング: AfterMovement / AfterWaveStart / ForOneWave</li><li>クリ倍率: CriticalDamage（発生判定は除外して倍率枠だけ見る）</li></ul><div class='spacer'></div><p>D. 防御・耐性（最終段寄りの別枠減衰）</p><ul><li>GetPercentDamageResistance + 各種 Resistance バフ名</li></ul><p>  → base × (1 - resist%) か、def→resist% 変換を噛ませる可能性が高い</p><div class='spacer'></div><ol><li>式順の“自然な並び”（骨格）</li><li>加算で土台を作る</li></ol><p>  base = inputDamage + DamageExtra + AttackDamageAdd + Get…AddDamage + …</p><ol><li>HP依存（加算/乗算由来の追加）を反映</li></ol><p>  base += targetCurrentHp * currentHpMultiply</p><p>  base += targetMaxHp     * maxHpMultiply</p><ol><li>スキル倍率/％ダメ枠</li></ol><p>  base *= (1 + PercentageDamage)  or  base *= damageRatio</p><ol><li>攻撃側の倍率群</li></ol><p>  base *= (1 + TotalAttackDamagePercentage)        ←％同枠の合算→1回乗算</p><p>  base *= Π(1 + 各カテゴリ倍率: 物理/魔法, 通常/スキル/究極, ボス/通常, 単体/範囲, 条件, タイミング…)</p><p>  if crit: base *= (1 + CriticalDamage)</p><ol><li>防御/耐性で減衰</li></ol><p>  effectiveDef = f(def, decreaseDefenseValue, decreaseDefencePercentage)</p><p>  resistPct    = g(effectiveDef, resistBuffs…)</p><p>  base *= (1 - resistPct)</p><div class='spacer'></div><ol><li>「同枠(加算) vs 別枠(乗算)」推測は難しい？</li></ol><ul><li>完全断言は不可だが、このファイルは“設計の痕跡”が強い。</li><li>Add/Extra/…AddDamage が加算枠の存在を示し、</li><li>TotalAttackDamagePercentage が「％同枠合算→最後に1回乗算」を強く示唆。</li><li>物理/魔法、通常/スキル/究極、ボス/通常、単体/範囲…のように Get がカテゴリ分離しているほど</li></ul><p>  「別枠（乗算で積む）」で残している可能性が高い。</p><div class='spacer'></div><ol><li>次に“式本体”を特定するための狙い目キーワード</li></ol><ul><li>CalcDamage / CalculateDamage / DamageWrapper</li><li>GetPercentDamageResistance</li><li>GetCalculatePhysicalDefense / GetCalculateMagicDefense</li><li>TotalAttackDamagePercentage</li></ul><div class='spacer'></div><p>※このまとめは「small.txt にあるシンボル名」からの推測（骨格）です。実装本体が見つかれば式順と同枠/別枠はほぼ確定できます。</p>
+    </main>
+    <footer>Generated for mobile reading</footer>
+  </div>
+</body>
+</html>
