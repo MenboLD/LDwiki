@@ -1,4 +1,4 @@
-/* [ldwiki] UNIFIED_BUILD:20260124c */
+/* [ldwiki] UNIFIED_BUILD:20260124d */
 /* ld_doll_gacha_sim.js (UI確認：ステップ①)
    - データは仕様書Excel(テーブル_ld_piece_gacha)を埋め込み
    - ステップ②以降は未実装（UIのみ）

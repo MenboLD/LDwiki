@@ -1,4 +1,4 @@
-/* [ldwiki] UNIFIED_BUILD:20260124c */
+/* [ldwiki] UNIFIED_BUILD:20260124d */
 /* 人形ガチャ確率シミュレート（UI確認：ステップ①）
    - iPhone SE 幅(375px)想定 / ダークテーマ
 */
@@ -85,7 +85,7 @@ button:disabled{opacity:.45; cursor:not-allowed}
 }
 
 .main{
-  padding:8px;
+  padding:6px;
   display:flex;
   flex-direction:column;
   gap:10px;
@@ -146,19 +146,25 @@ button:disabled{opacity:.45; cursor:not-allowed}
 
 .doll-grid{
   display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap:10px 10px;
+  align-items:stretch;
+}
+
+@media (max-width: 340px){
+  .doll-grid{ gap:8px; }
 }
 
 .doll-card{
-  border:1px solid var(--line);
-  background: rgba(13,19,28,.75);
-  border-radius: 12px;
+  border:1px solid rgba(255,255,255,.10);
+  background: linear-gradient(180deg, rgba(16,24,35,.78), rgba(10,16,24,.78));
+  border-radius: 14px;
   padding:8px;
-  min-height: 114px;
+  min-height: 86px;
   display:flex;
   gap:8px;
-  overflow: visible;
+  overflow:hidden;
+  box-shadow: 0 10px 22px rgba(0,0,0,.25);
 }
 
 .doll-card.is-selected{
@@ -167,9 +173,9 @@ button:disabled{opacity:.45; cursor:not-allowed}
 }
 
 .doll-pic{
-  width:54px;
-  height:54px;
-  border-radius:10px;
+  width:46px;
+  height:46px;
+  border-radius:12px;
   overflow:hidden;
   border:2px solid rgba(255,255,255,.10);
   background: rgba(255,255,255,.06);
@@ -198,14 +204,18 @@ button:disabled{opacity:.45; cursor:not-allowed}
 
 .doll-top{
   display:flex;
-  flex-direction:column;
-  align-items:stretch;
-  gap:6px;
+  flex-direction:row;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-width:0;
 }
 
 .doll-name{
-  font-size:12px;
-  font-weight:800;
+  flex:1 1 auto;
+  min-width:0;
+  font-size:13px;
+  font-weight:900;
   line-height:1.15;
   overflow:hidden;
   text-overflow:ellipsis;
@@ -213,17 +223,18 @@ button:disabled{opacity:.45; cursor:not-allowed}
 }
 
 .rarities{
-  display:flex;
-  justify-content:flex-end;
-  gap:3px;
+  display:grid;
+  grid-auto-flow:column;
+  grid-auto-columns: 20px;
+  gap:4px;
   flex:0 0 auto;
-  flex-wrap:wrap;
+  align-items:center;
 }
 
 .rbtn{
-  width:18px;
-  height:18px;
-  border-radius:6px;
+  width:20px;
+  height:20px;
+  border-radius:8px;
   border:1px solid rgba(255,255,255,.14);
   background: rgba(255,255,255,.04);
   color: var(--muted);
@@ -240,19 +251,27 @@ button:disabled{opacity:.45; cursor:not-allowed}
 
 .doll-desc{
   margin-top:auto;
+  width:100%;
+  display:block;
   font-size:11px;
-  color:var(--muted);
-  line-height:1.2;
+  font-weight:800;
+  line-height:1.15;
+  color: rgba(231,238,247,.88);
+  background: rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.10);
+  border-radius: 9px;
+  padding:4px 6px;
+  text-align:center;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
-  display:block;
+  -webkit-appearance:none;
+  appearance:none;
 }
 
 .doll-desc.is-clickable{
-  color: rgba(231,238,247,.92);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  color: rgba(231,238,247,.96);
+  border-color: rgba(96,165,250,.35);
 }
 
 .transfer-row{
