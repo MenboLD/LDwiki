@@ -1,3 +1,4 @@
+/* [ldwiki] UNIFIED_BUILD:20260124c */
 /* 人形ガチャ確率シミュレート（UI確認：ステップ①）
    - iPhone SE 幅(375px)想定 / ダークテーマ
 */
@@ -84,18 +85,18 @@ button:disabled{opacity:.45; cursor:not-allowed}
 }
 
 .main{
-  padding:12px;
+  padding:8px;
   display:flex;
   flex-direction:column;
-  gap:12px;
+  gap:10px;
 }
 
 .panel{
-  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-  border:1px solid var(--line);
-  border-radius: var(--r);
-  padding:12px;
-  box-shadow: var(--shadow);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
 }
 
 .panel__head{
@@ -103,7 +104,8 @@ button:disabled{opacity:.45; cursor:not-allowed}
   align-items:flex-end;
   justify-content:space-between;
   gap:10px;
-  margin-bottom:10px;
+  margin-bottom:8px;
+  padding: 0 2px;
 }
 
 .panel__title{
@@ -115,18 +117,20 @@ button:disabled{opacity:.45; cursor:not-allowed}
 .hint{
   font-size:11px;
   color:var(--muted);
-  white-space:nowrap;
+  white-space:normal;
+  text-align:right;
+  line-height:1.2;
 }
 
 .subtabs{
   display:flex;
-  gap:8px;
-  margin-bottom:10px;
+  gap:6px;
+  margin-bottom:8px;
 }
 
 .subtabs__tab{
   flex:1;
-  height:38px;
+  height:36px;
   border-radius:999px;
   border:1px solid var(--line2);
   background: rgba(255,255,255,.04);
@@ -143,18 +147,18 @@ button:disabled{opacity:.45; cursor:not-allowed}
 .doll-grid{
   display:grid;
   grid-template-columns: 1fr 1fr;
-  gap:10px;
+  gap:8px;
 }
 
 .doll-card{
   border:1px solid var(--line);
   background: rgba(13,19,28,.75);
   border-radius: 12px;
-  padding:10px;
-  min-height: 116px;
+  padding:8px;
+  min-height: 114px;
   display:flex;
-  gap:10px;
-  overflow:hidden;
+  gap:8px;
+  overflow: visible;
 }
 
 .doll-card.is-selected{
@@ -194,9 +198,9 @@ button:disabled{opacity:.45; cursor:not-allowed}
 
 .doll-top{
   display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:8px;
+  flex-direction:column;
+  align-items:stretch;
+  gap:6px;
 }
 
 .doll-name{
@@ -210,18 +214,20 @@ button:disabled{opacity:.45; cursor:not-allowed}
 
 .rarities{
   display:flex;
-  gap:4px;
+  justify-content:flex-end;
+  gap:3px;
   flex:0 0 auto;
+  flex-wrap:wrap;
 }
 
 .rbtn{
-  width:22px;
-  height:22px;
-  border-radius:7px;
+  width:18px;
+  height:18px;
+  border-radius:6px;
   border:1px solid rgba(255,255,255,.14);
   background: rgba(255,255,255,.04);
   color: var(--muted);
-  font-size:11px;
+  font-size:10px;
   font-weight:900;
   padding:0;
 }
@@ -236,11 +242,11 @@ button:disabled{opacity:.45; cursor:not-allowed}
   margin-top:auto;
   font-size:11px;
   color:var(--muted);
-  line-height:1.25;
+  line-height:1.2;
+  white-space:nowrap;
   overflow:hidden;
-  display:-webkit-box;
-  -webkit-line-clamp:3;
-  -webkit-box-orient:vertical;
+  text-overflow:ellipsis;
+  display:block;
 }
 
 .doll-desc.is-clickable{
