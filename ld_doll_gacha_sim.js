@@ -1,4 +1,3 @@
-/* [ldwiki] UNIFIED_BUILD:20260124d */
 /* ld_doll_gacha_sim.js (UI確認：ステップ①)
    - データは仕様書Excel(テーブル_ld_piece_gacha)を埋め込み
    - ステップ②以降は未実装（UIのみ）
@@ -126,13 +125,7 @@ function renderDollGrid() {
     pic.setAttribute("aria-label", `人形カード選択: ${doll?.name ?? n}`);
     pic.innerHTML = `<img alt="" loading="lazy" src="${doll?.picurl ?? PLACEHOLDER_PIC}">`;
 
-    const body = document.createElement("div");
-    body.className = "doll-body";
-
-    const top = document.createElement("div");
-    top.className = "doll-top";
-
-    const name = document.createElement("div");
+        const name = document.createElement("div");
     name.className = "doll-name";
     name.textContent = doll?.name ?? `#${n}`;
 
@@ -148,8 +141,10 @@ function renderDollGrid() {
       rar.appendChild(b);
     }
 
-    top.appendChild(name);
-    top.appendChild(rar);
+    const meta = document.createElement("div");
+    meta.className = "doll-meta";
+    meta.appendChild(name);
+    meta.appendChild(rar);
 
     const desc = document.createElement("button");
     desc.type = "button";
@@ -157,11 +152,9 @@ function renderDollGrid() {
     desc.dataset.desc = "1";
     desc.textContent = computeDesc(n) || "";
 
-    body.appendChild(top);
-    body.appendChild(desc);
-
     card.appendChild(pic);
-    card.appendChild(body);
+    card.appendChild(meta);
+    card.appendChild(desc);
     UI.dollGrid.appendChild(card);
   }
 }
