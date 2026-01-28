@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Step1 人形スロット</title>
+<link rel="stylesheet" href="ld_step1.css?v=20260201a"/>
+</head>
+<body>
+<header class="top"><h1>Step1｜人形スロット</h1></header>
+<main class="wrap">
+<section class="slots">
+<div class="slot" data-i="0"><div class="img"></div><div class="name">空</div><button class="lock">🔓</button></div>
+<div class="slot" data-i="1"><div class="img"></div><div class="name">空</div><button class="lock">🔓</button></div>
+<div class="slot" data-i="2"><div class="img"></div><div class="name">空</div><button class="lock">🔓</button></div>
+<div class="slot" data-i="3"><div class="img"></div><div class="name">空</div><button class="lock">🔓</button></div>
+<div class="slot" data-i="4"><div class="img"></div><div class="name">空</div><button class="lock">🔓</button></div>
+</section>
+<section class="controls">
+<button id="transfer">転写</button><button id="swapUp">▲</button><button id="swapDown">▼</button><button id="remove">削除</button><button id="reset">①リセット</button>
+</section>
+<section class="list">
+<h2>人形リスト（ダミー）</h2>
+<div class="cards">
+<div class="card" data-name="仮面">仮面</div>
+<div class="card" data-name="ぺたんこ">ぺたんこ</div>
+<div class="card" data-name="教官">教官</div>
+</div>
+</section>
+</main>
+<div id="modal" class="modal hidden">
+<div class="box">
+<p>②〜④で選択済みと重複があります。解除して続行しますか？</p>
+<div class="row"><button id="yes">はい</button><button id="no">いいえ</button></div>
+</div>
+</div>
+<script src="supabase_config.js"></script>
+<script src="ld_step1.js?v=20260201a"></script>
+</body>
+</html>

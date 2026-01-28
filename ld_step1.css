@@ -1,0 +1,16 @@
+*{box-sizing:border-box} body{margin:0;background:#111;color:#eee;font-family:sans-serif}
+.top{padding:8px 12px;background:#181818}
+.wrap{padding:8px}
+.slots{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.slot{background:#1f1f1f;border-radius:8px;padding:6px;text-align:center;position:relative}
+.slot .img{height:44px;background:#333;border-radius:6px}
+.slot .name{font-size:12px;margin-top:4px}
+.slot .lock{position:absolute;top:4px;right:4px}
+.controls{display:flex;gap:6px;margin:8px 0}
+.controls button{flex:1}
+.list .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.card{background:#222;border-radius:8px;padding:10px;text-align:center}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center}
+.hidden{display:none}
+.modal .box{background:#222;padding:16px;border-radius:8px;width:80%}
+.modal .row{display:flex;gap:8px;margin-top:12px}
