@@ -1,95 +1,80 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <!-- UNIFIED_BUILD:20260124e -->
-  <title>人形ガチャ確率シミュレート（UI確認：ステップ①）</title>
-  <link rel="stylesheet" href="./ld_doll_gacha_sim.css?v=20260124e">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<title>人形ガチャ確率シミュレート</title>
+<link href="./ld_doll_gacha_sim.css?v=20260124a" rel="stylesheet"/>
 </head>
 <body>
-  <div class="app">
-    <header class="top">
-      <div class="top__title">人形ガチャ確率シミュレート</div>
-
-      <nav class="step-tabs" aria-label="進行ステップ">
-        <button class="step-tabs__dot is-active" data-step="1" aria-current="step" type="button">①</button>
-        <span class="step-tabs__arrow" aria-hidden="true">➡</span>
-        <button class="step-tabs__dot" data-step="2" type="button" disabled>②</button>
-        <span class="step-tabs__arrow" aria-hidden="true">➡</span>
-        <button class="step-tabs__dot" data-step="3" type="button" disabled>③</button>
-        <span class="step-tabs__arrow" aria-hidden="true">➡</span>
-        <button class="step-tabs__dot" data-step="4" type="button" disabled>④</button>
-        <span class="step-tabs__arrow" aria-hidden="true">➡</span>
-        <button class="step-tabs__dot" data-step="5" type="button" disabled>⑤</button>
-        <span class="step-tabs__arrow" aria-hidden="true">➡</span>
-        <button class="step-tabs__dot" data-step="6" type="button" disabled>⑥</button>
-      </nav>
-    </header>
-
-    <main class="main">
-      <section class="panel" aria-labelledby="sec-dolls">
-        <div class="panel__head">
-          <h2 id="sec-dolls" class="panel__title">人形一覧</h2>
-          <div class="hint">カードを選択 → ▼でスロットへ転写</div>
-        </div>
-
-        <div class="subtabs" role="tablist" aria-label="人形一覧ページ">
-          <button class="subtabs__tab is-active" type="button" data-listpage="1" role="tab" aria-selected="true">1</button>
-          <button class="subtabs__tab" type="button" data-listpage="2" role="tab" aria-selected="false">2</button>
-          <button class="subtabs__tab" type="button" data-listpage="3" role="tab" aria-selected="false">3</button>
-        </div>
-
-        <div id="dollGrid" class="doll-grid" aria-label="人形リスト"></div>
-
-        <div class="transfer-row" data-keep-selection="true">
-          <button id="btnTransferDown" class="btn btn--primary" type="button">▼ 転写</button>
-          <button id="btnTransferUp" class="btn" type="button">▲ クリア</button>
-        </div>
-      </section>
-
-      <section class="panel" aria-labelledby="sec-slots">
-        <div class="panel__head">
-          <h2 id="sec-slots" class="panel__title">スロット枠</h2>
-          <div class="hint">ロックは左3枠のみ</div>
-        </div>
-
-        <div id="slotList" class="slot-list"></div>
-
-        <div class="confirm-row" data-keep-selection="true">
-          <button id="btnConfirmStep1" class="btn btn--confirm" type="button">本セクションの内容を確定</button>
-        </div>
-      </section>
-    </main>
-
-    <div id="toastHost" class="toast-host" aria-live="polite" aria-atomic="true"></div>
-
-    <div id="modalBackdrop" class="modal-backdrop is-hidden" aria-hidden="true">
-      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <div class="modal__title" id="modalTitle">能力値の下限値</div>
-
-        <div class="modal__name" id="modalDollName">-</div>
-
-        <div class="modal__slider">
-          <input id="abilitySlider" type="range" min="0" max="1" step="0.1" value="0" />
-        </div>
-
-        <div class="modal__steprow">
-          <button id="btnMinus5" class="mini" type="button">-5×</button>
-          <button id="btnMinus1" class="mini" type="button">-1×</button>
-          <div class="modal__value" id="abilityValue">0</div>
-          <button id="btnPlus1" class="mini" type="button">+1×</button>
-          <button id="btnPlus5" class="mini" type="button">+5×</button>
-        </div>
-
-        <div class="modal__actions">
-          <button id="btnModalCancel" class="btn" type="button">キャンセル</button>
-          <button id="btnModalOk" class="btn btn--primary" type="button">決定</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script defer src="./ld_doll_gacha_sim.js?v=20260124e"></script>
+<div class="app">
+<header class="top">
+<div class="top__title">人形ガチャ確率シミュレート</div>
+<nav aria-label="進行ステップ" class="step-tabs">
+<button aria-current="step" class="step-tabs__dot is-active" data-step="1" type="button">①</button>
+<span aria-hidden="true" class="step-tabs__arrow">➡</span>
+<button class="step-tabs__dot" data-step="2" disabled="" type="button">②</button>
+<span aria-hidden="true" class="step-tabs__arrow">➡</span>
+<button class="step-tabs__dot" data-step="3" disabled="" type="button">③</button>
+<span aria-hidden="true" class="step-tabs__arrow">➡</span>
+<button class="step-tabs__dot" data-step="4" disabled="" type="button">④</button>
+<span aria-hidden="true" class="step-tabs__arrow">➡</span>
+<button class="step-tabs__dot" data-step="5" disabled="" type="button">⑤</button>
+<span aria-hidden="true" class="step-tabs__arrow">➡</span>
+<button class="step-tabs__dot" data-step="6" disabled="" type="button">⑥</button>
+</nav>
+</header>
+<main class="main">
+<section aria-labelledby="sec-dolls" class="panel">
+<div class="panel__head">
+<h2 class="panel__title" id="sec-dollsTitle">人形一覧</h2>
+<div class="hint" id="dollHint">カードを選択 → ▼でスロットへ転写</div>
+</div>
+<div aria-label="人形一覧ページ" class="subtabs" role="tablist">
+<button aria-selected="true" class="subtabs__tab is-active" data-listpage="1" role="tab" type="button">1</button>
+<button aria-selected="false" class="subtabs__tab" data-listpage="2" role="tab" type="button">2</button>
+<button aria-selected="false" class="subtabs__tab" data-listpage="3" role="tab" type="button">3</button>
+</div><div class="allbar is-hidden" data-keep-selection="true" id="allBar"><div class="allbar__label">All（選択中のみ）</div><button class="mini allbtn" data-all="N" type="button">N</button><button class="mini allbtn" data-all="R" type="button">R</button><button class="mini allbtn" data-all="E" type="button">E</button><button class="mini allbtn" data-all="L" type="button">L</button><button class="mini allbtn" data-all="M" type="button">M</button></div>
+<div aria-label="人形リスト" class="doll-grid" id="dollGrid"></div>
+<div class="transfer-row" data-keep-selection="true">
+<button class="btn btn--primary" id="btnTransferDown" type="button">▼ 転写</button>
+<button class="btn" id="btnTransferUp" type="button">▲ クリア</button>
+</div>
+</section>
+<section aria-labelledby="sec-slots" class="panel" data-step-panel="1">
+<div class="panel__head">
+<h2 class="panel__title" id="sec-slots">スロット枠</h2>
+<div class="hint">ロックは左3枠のみ</div>
+</div>
+<div class="slot-list" id="slotList"></div>
+<div class="confirm-row" data-keep-selection="true">
+<button class="btn btn--danger" id="btnResetStep1" type="button">リセット</button><button class="btn btn--confirm" id="btnConfirmStep1" type="button">本セクションの内容を確定</button>
+</div>
+</section><section class="panel is-hidden" data-step-panel="2"><div class="panel__head"><h2 class="panel__title" id="sec-cand2">第1候補（ステップ②）</h2><div class="hint">このステップで選択中（0/10）</div></div><div class="cand-list" id="candList2"></div><div class="confirm-row" data-keep-selection="true"><button class="btn btn--danger" id="btnResetStep2" type="button">リセット</button><button class="btn btn--confirm" id="btnConfirmStep2" type="button">本セクションの内容を確定</button></div></section><section class="panel is-hidden" data-step-panel="3"><div class="panel__head"><h2 class="panel__title" id="sec-cand3">第2候補（ステップ③）</h2><div class="hint">このステップで選択中（0/10）</div></div><div class="cand-list" id="candList3"></div><div class="confirm-row" data-keep-selection="true"><button class="btn btn--danger" id="btnResetStep3" type="button">リセット</button><button class="btn btn--confirm" id="btnConfirmStep3" type="button">本セクションの内容を確定</button></div></section><section class="panel is-hidden" data-step-panel="4"><div class="panel__head"><h2 class="panel__title" id="sec-cand4">第3候補（ステップ④）</h2><div class="hint">このステップで選択中（0/10）</div></div><div class="cand-list" id="candList4"></div><div class="confirm-row" data-keep-selection="true"><button class="btn btn--danger" id="btnResetStep4" type="button">リセット</button><button class="btn btn--confirm" id="btnConfirmStep4" type="button">本セクションの内容を確定</button></div></section>
+</main>
+<div aria-atomic="true" aria-live="polite" class="toast-host" id="toastHost"></div>
+<div aria-hidden="true" class="modal-backdrop is-hidden" id="modalBackdrop">
+<div aria-labelledby="modalTitle" aria-modal="true" class="modal" role="dialog">
+<div class="modal__title" id="modalTitle">能力値の下限値</div>
+<div class="modal__name" id="modalDollName">-</div>
+<div class="modal__slider">
+<input id="abilitySlider" max="1" min="0" step="0.1" type="range" value="0"/>
+</div>
+<div class="modal__steprow">
+<button class="mini" id="btnMinus5" type="button">-5×</button>
+<button class="mini" id="btnMinus1" type="button">-1×</button>
+<div class="modal__value" id="abilityValue">0</div>
+<button class="mini" id="btnPlus1" type="button">+1×</button>
+<button class="mini" id="btnPlus5" type="button">+5×</button>
+</div><div class="modal__presetrow" data-keep-selection="true"><button class="mini preset" data-preset="25" id="btnPreset25" type="button">25%</button><button class="mini preset" data-preset="33" id="btnPreset33" type="button">33%</button><button class="mini preset" data-preset="50" id="btnPreset50" type="button">50%</button><button class="mini preset" data-preset="66" id="btnPreset66" type="button">66%</button><button class="mini preset" data-preset="75" id="btnPreset75" type="button">75%</button></div>
+<div class="modal__actions">
+<button class="btn" id="btnModalCancel" type="button">キャンセル</button>
+<button class="btn btn--primary" id="btnModalOk" type="button">決定</button>
+</div>
+</div>
+</div>
+</div>
+<script defer="" src="./ld_doll_gacha_sim.js?v=20260124a"></script>
 </body>
 </html>
