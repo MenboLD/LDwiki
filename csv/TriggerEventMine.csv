@@ -1,0 +1,7 @@
+int, ETriggerEvent, int, int, EOpenType, int[], int, int, int, int, bool, int, int[], float[], int[], TableReward, TableReward, TableReward
+Id, EventType, Group, OpenLevel, OpenType, UnlockParams, OpenProb, Duration, Cooltime, OpenLimit, IsOpen, TargetWaveGroup, Steps, PlayerCountRatio, GoalCount, Reward_1, Reward_2, Reward_3
+5000, "Mine", 1, 7, "WaveClear", "1 | 80", 2000, 86400, 21600, 2, "TRUE", 1, "5000 | 6000 | 8000", "1 | 1 | 1 | 1", "2 | 3", "104,100,100"
+5001, "Mine", 1, 7, "WaveClear", "2 | 80", 2000, 86400, 21600, 2, "TRUE", 2, "5000 | 6000 | 8000", "1 | 1 | 1 | 1", "2 | 3", "104,100,100"
+5002, "Mine", 1, 7, "WaveClear", "3 | 80", 2000, 86400, 21600, 2, "TRUE", 3, "5000 | 6000 | 8000", "1 | 1 | 1 | 1", "2 | 3", "102,3000,3000"
+5003, "Mine", 1, 7, "WaveClear", "4 | 80", 2000, 86400, 21600, 2, "TRUE", 4, "5000 | 6000 | 8000", "1 | 1 | 1 | 1", "2 | 3", "102,3000,3000"
+5004, "Mine", 1, 7, "WaveClear", "5 | 80", 2000, 86400, 21600, 2, "TRUE", 5, "5000 | 6000 | 8000", "1 | 1 | 1 | 1", "2 | 3", "102,3000,3000"

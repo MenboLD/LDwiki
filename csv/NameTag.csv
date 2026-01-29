@@ -1,0 +1,8 @@
+int, string, string
+Id, Name, Description
+0, "nametag_name_0", "nametag_description_0"
+960001, "nametag_name_960001", "nametag_description_960001"
+960002, "nametag_name_960002", "nametag_description_960002"
+960003, "nametag_name_960003", "nametag_description_960003"
+960004, "nametag_name_960004", "nametag_description_960004"
+960005, "nametag_name_960005", "nametag_description_960005"

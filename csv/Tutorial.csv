@@ -1,0 +1,42 @@
+ETutorial, ETutorial, bool, bool, bool, bool, bool, int, int, TableReward, TableReward, TableReward, TableReward
+Id, NextTutorialId, IsHead, IsAutoNext, IsEnd, IsBegin, IsInGame, TutorialGroup, TutorialWaveGroup, CompleteReward_1, CompleteReward_2, CompleteReward_3, CompleteReward_4
+"TutorialStep_1", "TutorialStep_2", "TRUE", "FALSE", "FALSE", "TRUE", "TRUE", 0, 1, "10, 140, 140", "103, 30, 30", "101, 170, 170"
+"TutorialStep_2", "TutorialStep_2_1", "TRUE", "TRUE", "FALSE", "FALSE", "FALSE", 0, 1, "101, 500, 500", "2000, 1005, 10, 10"
+"TutorialStep_2_1", "TutorialStep_3", "FALSE", "FALSE", "FALSE", "FALSE", "FALSE", 0, 1
+"TutorialStep_3", "TutorialStep_4", "TRUE", "FALSE", "FALSE", "FALSE", "TRUE", 0, 1, "10, 280, 280", "103, 24, 24", "101, 510, 510", "11, 380, 380"
+"TutorialStep_4", "TutorialStep_4_1", "TRUE", "TRUE", "FALSE", "FALSE", "FALSE", 0, 1
+"TutorialStep_4_1", "TutorialStep_5", "FALSE", "TRUE", "FALSE", "FALSE", "FALSE", 0, 1
+"TutorialStep_5", "TutorialStep_5_1", "TRUE", "TRUE", "FALSE", "FALSE", "FALSE", 0, 1
+"TutorialStep_5_1", "TutorialStep_6", "TRUE", "FALSE", "FALSE", "FALSE", "FALSE", 0, 1
+"TutorialStep_6", "TutorialStep_6_1", "TRUE", "TRUE", "FALSE", "FALSE", "FALSE", 0, 1
+"TutorialStep_6_1", "", "FALSE", "FALSE", "FALSE", "FALSE", "FALSE", 0, 1
+"TutorialStep_7", "TutorialStep_7_1", "TRUE", "FALSE", "FALSE", "FALSE", "FALSE", 0, 1
+"TutorialStep_7_1", "TutorialStep_7_2", "TRUE", "FALSE", "FALSE", "FALSE", "FALSE", 0, 1
+"TutorialStep_7_2", "", "TRUE", "FALSE", "TRUE", "FALSE", "FALSE", 0, 1
+"TutorialStep_Login", "", "FALSE", "FALSE", "FALSE", "FALSE", "FALSE", "", 1
+"TutorialAB1_Step_1", "", "TRUE", "FALSE", "FALSE", "FALSE", "FALSE", "", 1
+"TutorialAB1_Step_2", "", "TRUE", "FALSE", "FALSE", "FALSE", "FALSE", "", 1
+"TutorialAB1_Step_3", "TutorialStep_2", "TRUE", "FALSE", "FALSE", "FALSE", "FALSE", "", 1
+"TutorialStepTest_1", "", "TRUE", "FALSE", "FALSE", "TRUE", "TRUE", 100, 91, "101, 100, 100"
+"TutorialStepTest_2", "TutorialStepTest_2_1", "TRUE", "TRUE", "FALSE", "FALSE", "FALSE", 100, 91, "103, 30, 30"
+"TutorialStepTest_2_1", "TutorialStepTest_2_2", "FALSE", "TRUE", "FALSE", "FALSE", "FALSE", 100, 91
+"TutorialStepTest_2_2", "TutorialStepTest_2_3", "FALSE", "TRUE", "FALSE", "FALSE", "FALSE", 100, 91
+"TutorialStepTest_2_3", "", "FALSE", "FALSE", "FALSE", "FALSE", "FALSE", 100, 91
+"TutorialStepTest_3", "", "TRUE", "FALSE", "FALSE", "FALSE", "TRUE", 100, 91
+"TutorialStepTest_4", "TutorialStepTest_4_1", "TRUE", "TRUE", "FALSE", "FALSE", "FALSE", 100, 91
+"TutorialStepTest_4_1", "", "FALSE", "FALSE", "FALSE", "FALSE", "FALSE", 100, 91
+"TutorialStepTest_5", "TutorialStepTest_5_1", "TRUE", "FALSE", "FALSE", "FALSE", "FALSE", 100, 91
+"TutorialStepTest_5_1", "", "TRUE", "FALSE", "TRUE", "FALSE", "FALSE", 100, 91
+"TutorialStep_EasyMode_1", "", "TRUE", "FALSE", "FALSE", "TRUE", "TRUE", 2, 90, "103, 18, 18"
+"TutorialStep_EasyMode_2", "TutorialStep_EasyMode_2_1", "TRUE", "TRUE", "FALSE", "FALSE", "FALSE", 2, 90
+"TutorialStep_EasyMode_2_1", "TutorialStep_EasyMode_3", "FALSE", "FALSE", "FALSE", "FALSE", "FALSE", 2, 90
+"TutorialStep_EasyMode_3", "TutorialStep_EasyMode_3", "TRUE", "FALSE", "FALSE", "FALSE", "TRUE", 2, 90
+"TutorialStep_EasyMode_4", "TutorialStep_EasyMode_4_1", "TRUE", "TRUE", "FALSE", "FALSE", "FALSE", 2, 90
+"TutorialStep_EasyMode_4_1", "TutorialStep_EasyMode_4_2", "FALSE", "TRUE", "FALSE", "FALSE", "FALSE", 2, 90
+"TutorialStep_EasyMode_4_2", "TutorialStep_EasyMode_4_3", "FALSE", "TRUE", "FALSE", "FALSE", "FALSE", 2, 90
+"TutorialStep_EasyMode_4_3", "TutorialStep_EasyMode_5", "FALSE", "FALSE", "FALSE", "FALSE", "FALSE", 2, 90
+"TutorialStep_EasyMode_5", "TutorialStep_EasyMode_6", "TRUE", "FALSE", "FALSE", "FALSE", "TRUE", 2, 90
+"TutorialStep_EasyMode_6", "TutorialStep_EasyMode_7", "TRUE", "FALSE", "FALSE", "FALSE", "FALSE", 2, 90
+"TutorialStep_EasyMode_7", "TutorialStep_EasyMode_8", "TRUE", "TRUE", "FALSE", "FALSE", "FALSE", 2, 90
+"TutorialStep_EasyMode_8", "TutorialStep_EasyMode_9", "FALSE", "TRUE", "FALSE", "FALSE", "FALSE", 2, 90
+"TutorialStep_EasyMode_9", "", "FALSE", "FALSE", "TRUE", "FALSE", "FALSE", 2, 90

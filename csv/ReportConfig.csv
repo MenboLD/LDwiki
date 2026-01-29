@@ -1,0 +1,13 @@
+"int", "BanHistoryLimit", 5
+"int", "ReportHistoryLimit", 30
+"int", "SpamReportPeriod", 7
+"int[]", "SpamBanPeriod", "1 | 3 | 5"
+"int", "SpamReportCount", 7
+"int", "DistruptTeamReportPeriod", 7
+"int[]", "DistruptTeamBanPeriod", "1 | 3 | 7"
+"int", "DistruptTeamReportCount", 15
+"int", "AbusingReportPeriod", 7
+"int[]", "AbusingBanPeriod", "1 | 3 | 7"
+"int", "AbusingReportCount", 15
+"int", "InappropriateNicknameReportPeriod", 7
+"int", "InappropriateNicknameReportCount", 10

@@ -1,0 +1,4 @@
+int, ETriggerEvent, int, int, EOpenType, int[], int, int, int, bool, int, TableReward, TableReward, TableReward
+Id, EventType, Group, OpenLevel, OpenType, UnlockParams, Duration, Cooltime, OpenLimit, IsOpen, TargetWaveGroup, Reward_1, Reward_2, Reward_3
+6000, "Quiz", 999, 5, "TargetWaveFail", "1 | 50 | 3", 259200, 86400, 1, "FALSE", 1, "201,5,5"
+6001, "Quiz", 999, 5, "TargetWaveFail", "2 | 50 | 3", 259200, 86400, 1, "FALSE", 2, "201,5,5"

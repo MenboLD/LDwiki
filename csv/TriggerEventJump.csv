@@ -1,0 +1,7 @@
+int, ETriggerEvent, int, int, EOpenType, int[], int, int, int, int, bool, int, int[], float[], int[], TableReward, TableReward, TableReward
+Id, EventType, Group, OpenLevel, OpenType, UnlockParams, OpenProb, Duration, Cooltime, OpenLimit, IsOpen, TargetWaveGroup, Steps, PlayerCountRatio, GoalCount, Reward_1, Reward_2, Reward_3
+4000, "Jump", 1, 7, "WaveClear", "1 | 80", 5000, 259200, 172800, 2, "TRUE", 1, "5000 | 5500 | 6000 | 6500 | 8000", "0.4 | 0.6 | 0.8 | 0.9 | 1 | 1", "2 | 5", "104,200,200"
+4001, "Jump", 1, 7, "WaveClear", "2 | 80", 2000, 259200, 172800, 2, "TRUE", 2, "5000 | 5500 | 6000 | 6500 | 8000", "0.4 | 0.6 | 0.8 | 0.9 | 1 | 1", "2 | 5", "104,200,200"
+4002, "Jump", 1, 7, "WaveClear", "3 | 80", 2000, 259200, 172800, 2, "TRUE", 3, "5000 | 5500 | 6000 | 6500 | 8000", "0.4 | 0.6 | 0.8 | 0.9 | 1 | 1", "2 | 5", "102,5000,5000"
+4003, "Jump", 1, 7, "WaveClear", "4 | 80", 2000, 259200, 172800, 2, "TRUE", 4, "5000 | 5500 | 6000 | 6500 | 8000", "0.4 | 0.6 | 0.8 | 0.9 | 1 | 1", "2 | 5", "102,5000,5000"
+4004, "Jump", 1, 7, "WaveClear", "5 | 80", 2000, 259200, 172800, 2, "TRUE", 5, "5000 | 5500 | 6000 | 6500 | 8000", "0.4 | 0.6 | 0.8 | 0.9 | 1 | 1", "2 | 5", "102,5000,5000"

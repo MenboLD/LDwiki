@@ -1,0 +1,5 @@
+int, int, int, TableReward, TableReward, TableReward
+Id, MaillFormatId, DurationDays, Reward_1, Reward_2, Reward_3
+7001, 1001, 30, "102, 300, 300"
+7002, 1002, 30, "102, 600, 600"
+7003, 1002, 30, "102, 600, 600"

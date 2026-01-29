@@ -1,0 +1,6 @@
+"ETutorial", "TutorialCond", "TutorialStep_7_2"
+"int", "LevelCond", 7
+"int", "HerbPointPerWaveCount", 5
+"int", "HerbPointForWinner", 0
+"int", "JumpStartUnitCount", 100
+"int", "MineStartUnitCount", 30

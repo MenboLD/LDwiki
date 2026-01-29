@@ -1,0 +1,21 @@
+"int[]", "CommonUpgradeNeedCount", "5 | 10 | 20 | 30 | 50 | 70 | 100 | 130 | 170 | 210 | 260 | 310 | 360 | 430"
+"int[]", "RareUpgradeNeedCount", "3 | 6 | 10 | 20 | 30 | 40 | 60 | 80 | 100 | 130 | 160 | 190 | 220 | 260"
+"int[]", "EpicUpgradeNeedCount", "3 | 4 | 8 | 12 | 20 | 30 | 40 | 50 | 70 | 85 | 105 | 125 | 145 | 170"
+"int[]", "LegendUpgradeNeedCount", "2 | 3 | 6 | 10 | 15 | 20 | 30 | 40 | 50 | 65 | 80 | 95 | 110 | 130"
+"int[]", "MythicalUpgradeNeedCount", "5 | 10 | 20 | 30 | 50 | 70 | 100 | 130 | 170 | 210 | 260 | 310 | 360 | 430"
+"int[]", "HyperUpgradeNeedCount", "5 | 10 | 20 | 30 | 50 | 70 | 100 | 130 | 170 | 210 | 260 | 310 | 360 | 430"
+"int[]", "CommonUpgradeNeedGoldCost", "500 | 1000 | 2000 | 3000 | 5000 | 7000 | 10000 | 13000 | 17000 | 21000 | 26000 | 31000 | 36000 | 43000"
+"int[]", "RareUpgradeNeedGoldCost", "1000 | 2000 | 3000 | 5000 | 8000 | 12000 | 17000 | 22000 | 28000 | 35000 | 43000 | 52000 | 60000 | 72000"
+"int[]", "EpicUpgradeNeedGoldCost", "1000 | 2000 | 4000 | 6000 | 10000 | 14000 | 20000 | 26000 | 34000 | 42000 | 52000 | 62000 | 72000 | 86000"
+"int[]", "LegnedUpgradeNeedGoldCost", "1000 | 2000 | 4000 | 6000 | 10000 | 14000 | 20000 | 26000 | 34000 | 42000 | 52000 | 62000 | 72000 | 86000"
+"int[]", "MythicalUpgradeNeedGoldCost", "1000 | 2000 | 4000 | 6000 | 10000 | 14000 | 20000 | 26000 | 34000 | 42000 | 52000 | 62000 | 72000 | 86000"
+"int[]", "HyperUpgradeNeedGoldCost", "2000 | 4000 | 8000 | 12000 | 20000 | 28000 | 40000 | 52000 | 68000 | 84000 | 104000 | 124000 | 144000 | 172000"
+"int", "MythicalExchangePoint", 30
+"int", "HyperExchangePoint", 30
+"int", "MaxFavoriteUnitCount", 3
+"string[]", "RaceTypeKey", "unit_race_human | unit_race_robot | unit_race_elemental | unit_race_animal | unit_race_devil"
+"string[]", "RaceIconName", "icon_race_human | icon_race_robot | icon_race_elemental | icon_race_animal | icon_race_devil"
+"string[]", "RoleTypeKey", "role_property_human | role_property_robot | role_property_elemental | role_property_animal | role_property_devil"
+"int", "MythicResetUnitLevel", 5
+"int", "UnitMaxLevel", 15
+"int", "HyperUnitMaxLevel", 15

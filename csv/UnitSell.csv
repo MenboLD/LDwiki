@@ -1,0 +1,6 @@
+EGradeType, int, int, FP
+Grade, GivePoint, GiveSpecialPoint, Percentage
+"Common", 0, 0, 100
+"Rare", 0, 1, 100
+"Epic", 0, 2, 100
+"Legend", 0, 4, 100

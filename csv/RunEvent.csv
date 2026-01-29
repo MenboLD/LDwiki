@@ -1,0 +1,6 @@
+int, ERunType, int, int, EOpenType, int[], int, int[], int, int, int, int, bool, ERunType, int[]
+Id, Name, Group, OpenLevel, OpenType, UnlockParams, OpenProb, WinWave, Duration, Cooltime, RewardGroup, OpenLimit, IsOpen, AiType, Prerequisites
+1000, "Run_1", 1, 7, "WaveClear", "1 | 80", 10000, "1 | 300", 259200, 86400, 1, 5, "TRUE", "Run_1"
+1001, "Run_1", 1, 7, "WaveClear", "2 | 80", 4000, "2 | 300", 259200, 86400, 2, 5, "TRUE", "Run_2"
+1002, "Run_1", 1, 7, "WaveClear", "3 | 80", 4000, "3 | 300", 259200, 86400, 3, 4, "TRUE", "Run_1"
+1003, "Run_1", 1, 7, "WaveClear", "4 | 80", 4000, "4 | 300", 259200, 86400, 3, 3, "TRUE", "Run_1"

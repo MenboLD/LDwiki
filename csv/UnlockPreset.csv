@@ -1,0 +1,53 @@
+EUnlockPresetType, EUnlockType, int[]
+PresetId, UnlockType, UnlockParams
+"None", "None"
+"AfterUpdate", "AfterUpdate"
+"UserLevel_1", "UserLevel", 1
+"UserLevel_4", "UserLevel", 4
+"UserLevel_5", "UserLevel", 5
+"UserLevel_8", "UserLevel", 8
+"UserLevel_9", "UserLevel", 9
+"UserLevel_10", "UserLevel", 10
+"UserLevel_11", "UserLevel", 11
+"UserLevel_12", "UserLevel", 12
+"Unit_UserLevel_9", "UserLevel_Unit", 9
+"Unit_UserLevel_10", "UserLevel_Unit", 10
+"Unit_UserLevel_11", "UserLevel_Unit", 11
+"Unit_UserLevel_12", "UserLevel_Unit", 12
+"WaveClear_Normal_49", "WaveClear", "1 | 49"
+"WaveClear_Normal_69", "WaveClear", "1 | 69"
+"WaveClear_Normal_70", "WaveClear", "1 | 70"
+"WaveClear_Hard_9", "WaveClear", "2 | 9"
+"WaveClear_Hard_10", "WaveClear", "2 | 10"
+"WaveClear_Hard_20", "WaveClear", "2 | 20"
+"WaveClear_Hard_40", "WaveClear", "2 | 40"
+"WaveClear_Hard_50", "WaveClear", "2 | 50"
+"WaveClear_Hard_60", "WaveClear", "2 | 60"
+"WaveClear_Hell_20", "WaveClear", "3 | 20"
+"WaveClear_Hell_40", "WaveClear", "3 | 40"
+"Unit_WaveClear_Hard_20", "WaveClear_Unit", "2 | 20"
+"Unit_WaveClear_Hard_50", "WaveClear_Unit", "2 | 50"
+"ModeClear_Normal_1", "ModeClear", "1 | 1"
+"ModeClear_Hard_1", "ModeClear", "2 | 1"
+"ModeClear_Hell_1", "ModeClear", "3 | 1"
+"ModeClear_God_1", "ModeClear", "4 | 1"
+"ModeClear_Origin_1", "ModeClear", "5 | 1"
+"Unit_ModeClear_Normal_1", "ModeClear_Unit", "1 | 1"
+"Unit_ModeClear_Hard_1", "ModeClear_Unit", "2 | 1"
+"FastClear_Normal_1", "FastClear_Test", "1 | 1"
+"FastClear_Hard_1", "FastClear_Test", "2 | 1"
+"FastClear_Hell_1", "FastClear_Test", "3 | 1"
+"FastClear_God_1", "FastClear_Test", "4 | 1"
+"FastClear_Origin_1", "FastClear_Test", "5 | 1"
+"FastClear_Easy_1", "FastClear_Test"
+"TotalPlayCount_3", "TotalPlayCount", 3
+"TotalPlayCount_7", "TotalPlayCount", 7
+"HasUnitGrade_Hyper_1", "HasUnitGrade", "5 | 1"
+"MythLevel_6", "MythLevel", 6
+"MythLevel_10", "MythLevel", 10
+"MythLevel_12", "MythLevel", 12
+"MythLevel_15", "MythLevel", 15
+"Unit_MythLevel_6", "MythLevel_Unit", 6
+"Unit_MythLevel_12", "MythLevel_Unit", 12
+"Unlock_Pet", "UserLevel", 9
+"Unlock_Hyper", "MythLevel", 12

@@ -1,0 +1,24 @@
+"int", "SingleModeLife", 5
+"int", "SingleModeMonsterLifeDamage", 1
+"int", "SingleModeBossLifeDamage", 5
+"int", "PunchMachineModeTimeLimit", 240
+"int", "SingleModeTreeStaminaCost", 1
+"float", "SingleModeTreAttackInterval", "0.3"
+"FP[]", "QuestModeAISutnRatio", "1 | 0.4 | 0.5 | 0.6 | 0.7"
+"FP[]", "QuestModeAIBanditRatio", "1 | 0.4 | 0.5 | 0.6 | 0.7"
+"FP[]", "QuestModeUserSutnRatio", "0.4 | 0.4 | 0.5 | 0.6 | 0.7"
+"FP[]", "QuestModeUserBanditRatio", "0.4 | 0.4 | 0.5 | 0.6 | 0.7"
+"int", "SingleModeStartStemina", 240
+"FP", "PuaseMonsterTime", 4
+"int", "MissionModeNPCSpeakStartWave", 2
+"FP", "MissionModeSpeakTimeDuration", 60
+"FP", "MissionModeSpeakMinTime", 40
+"FP", "MissionModeTriggerSpeakMinTime", 100
+"FP", "MissionModeTriggerSpeakTimeDuration", 200
+"int", "MissionModeNPCSpeakTerm", 3
+"int", "MissionModeBanditSpeakTrigger", 3
+"int", "MissionModeRobotSpeakTrigger", 4
+"int", "MissionModeTriggerSpeakTerm", 10
+"int", "MissionModeSpeakDuration", 5
+"int", "MissionModeTriggerSpeakMin", 5
+"int[]", "SingleModeWallIdList", "1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12"

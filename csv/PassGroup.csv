@@ -1,0 +1,9 @@
+EPassType, int, string, EUnlockPresetType, bool
+Id, ProductId, PassName, UnlockPresets, IsSetLevel
+"Normal", 20003, "popup_triggerevent_wave_1", "", "TRUE"
+"Hard", 20004, "popup_triggerevent_wave_2", "ModeClear_Normal_1", "TRUE"
+"Hell", 20005, "popup_triggerevent_wave_3", "ModeClear_Hard_1", "TRUE"
+"God", 20006, "popup_triggerevent_wave_4", "ModeClear_Hell_1", "TRUE"
+"DeepCave", 20007, "gamemode_304_title", "ModeClear_Normal_1", "TRUE"
+"Combat", 20008, "popup_combat_title", "", "FALSE"
+"WavePass", 20001, "title_wavepass_title", "", "FALSE"

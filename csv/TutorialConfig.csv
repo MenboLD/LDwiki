@@ -1,0 +1,10 @@
+"int", "FunnelType", 1
+"int", "EasyModeFunnelType", 2
+"TableReward[]", "FirstDayRewardIds", "[2000, 1001,1, 1] | [2000, 1002,1, 1] | [2000, 2004,1, 1] | [2000, 1003,1, 1] | [2000, 1004, 1, 1] | [2000, 1004,1, 1] | [2000, 3005,1, 1] | [2000, 4005,1, 1] | [2000, 1001,1, 1] | [2000, 2003,1, 1]"
+"bool[]", "FirstDaySuccessList", "FALSE | FALSE | TRUE | TRUE | FALSE | TRUE | TRUE | TRUE | TRUE | FALSE"
+"TableReward[]", "SecondDayRewardIds", "[2000, 1005,1, 1] | [2000, 2003,1, 1] | [104 ,1, 1] | [102, 10, 10] | [2000, 3006, 1, 1] | [2000, 1001,1, 1] | [102,20, 20] | [2000, 1005,1, 1] | [2000, 1004,1, 1] | [2000, 1005,1, 1] | [2000, 3007,1, 1]"
+"bool[]", "SecondDaySuccessList", "FALSE | TRUE | FALSE | FALSE | TRUE | FALSE | TRUE | TRUE | FASLE | FALSE | TRUE"
+"int", "NewUserCareNeedCount", 5
+"int[]", "NewUserCareMythUnitIds", "5002 | 5006 | 5014 | 5006"
+"int[]", "NewUserCareMythSeed", "1949240270 | 1712497203 | 739467421 | 533473356 | 1870176234 | 1438053507 | 1066969901 | 1830982148 | 355377762 | 200728279 | 160482884 | 677917778"
+"ETutorial", "TargetTutorial", "TutorialStep_1"
