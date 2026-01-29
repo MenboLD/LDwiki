@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260129e';
+  const VERSION = '20260129g';
 
   const GRADE_JP_TO_SHORT = {
     'ノーマル':'N',
@@ -61,6 +61,7 @@
         4: { activeTab: 1, selected: new Set(), grade: new Map(), value: new Map() },
       },
       modal: { open:false, step:null, number:null, idx:0 },
+      confirm: { open:false, title:'', message:'', yesLabel:'', noLabel:'', action:null },
       error: null,
       loading: true,
     };
@@ -205,32 +206,38 @@
     const locked = getLockedNames();
     const c1 = getCandidateNameSet(app.state.candidate1);
     const c2 = getCandidateNameSet(app.state.candidate2);
+    const c3 = getCandidateNameSet(app.state.candidate3);
 
     if (locked.has(m.name)) return true;
-    if (step >= 3 && c1.has(m.name)) return true;
-    if (step >= 4 && c2.has(m.name)) return true;
+    // other-step selections are not allowed
+    if (step === 2 && (c2.has(m.name) || c3.has(m.name))) return true;
+    if (step === 3 && (c1.has(m.name) || c3.has(m.name))) return true;
+    if (step === 4 && (c1.has(m.name) || c2.has(m.name))) return true;
     return false;
   }
 
-
-  function getDisabledOverlayLabel(step, number){
-    if (step < 2 || step > 4) return null;
+  function getOverlayLabel(step, number){
     const num = Number(number);
     const m = app.masterByNumber.get(num);
     if (!m) return null;
 
-    const st = getStepState(step);
     // when the reason is only "limit reached", do not show a label
-    if (st.selected.size >= 10 && !st.selected.has(num)) return null;
+    if (step >= 2 && step <= 4){
+      const st = getStepState(step);
+      if (st.selected.size >= 10 && !st.selected.has(num)){
+        // may still have other reasons; keep checking
+      }
+    }
 
     const locked = getLockedNames();
-    if (locked.has(m.name)) return 'スロットでロック中';
-
     const c1 = getCandidateNameSet(app.state.candidate1);
     const c2 = getCandidateNameSet(app.state.candidate2);
+    const c3 = getCandidateNameSet(app.state.candidate3);
 
-    if (step >= 3 && c1.has(m.name)) return '第1候補で選択中';
-    if (step >= 4 && c2.has(m.name)) return '第2候補で選択中';
+    if (locked.has(m.name)) return 'スロットでロック中';
+    if (c1.has(m.name)) return '第1候補で選択中';
+    if (c2.has(m.name)) return '第2候補で選択中';
+    if (c3.has(m.name)) return '第3候補で選択中';
     return null;
   }
 
@@ -317,6 +324,23 @@
 
   function closeModal(){
     app.state.modal = { open:false, step:null, number:null, idx:0 };
+  }
+
+  function openConfirm({ title, message, yesLabel, noLabel, action }){
+    app.state.confirm = {
+      open: true,
+      title: String(title || ''),
+      message: String(message || ''),
+      yesLabel: String(yesLabel || 'OK'),
+      noLabel: String(noLabel || 'キャンセル'),
+      action: action || null,
+    };
+    // value modal is mutually exclusive
+    closeModal();
+  }
+
+  function closeConfirm(){
+    app.state.confirm = { open:false, title:'', message:'', yesLabel:'', noLabel:'', action:null };
   }
 
   function clampInt(v, min, max){
@@ -487,7 +511,93 @@ function clampNum(v, min, max){
     const sl = app.state.slot[i];
     if (!sl.number) return;
 
-    sl.locked = !sl.locked;
+    const next = !sl.locked;
+    // unlock
+    if (!next){
+      sl.locked = false;
+      enforceLockContinuity();
+      return;
+    }
+
+    // lock: must be prefix (1->2->3)
+    if (i > 0 && !app.state.slot[i-1].locked){
+      toast(`先にスロット${i}をロックしてください`);
+      return;
+    }
+
+    // if this doll is already selected in steps 2-4, ask to clear
+    const name = sl.name;
+    const overlap = findOverlapsByName(name);
+    if (overlap.hasAny){
+      openConfirm({
+        title: '確認',
+        message: `スロット②〜④ですでに選択済みの人形の選択状態を解除する？\n（対象：${name}）`,
+        yesLabel: '解除してロック',
+        noLabel: 'キャンセル',
+        action: { type:'lock-and-clear', slotIndex:i, dollName:name },
+      });
+      return;
+    }
+
+    sl.locked = true;
+    enforceLockContinuity();
+  }
+
+  function findOverlapsByName(name){
+    const out = { hasAny:false };
+    // confirmed candidates
+    const inC1 = app.state.candidate1.some(x => x.name === name);
+    const inC2 = app.state.candidate2.some(x => x.name === name);
+    const inC3 = app.state.candidate3.some(x => x.name === name);
+    if (inC1 || inC2 || inC3) out.hasAny = true;
+
+    // in-progress selections
+    for (const s of [2,3,4]){
+      const st = getStepState(s);
+      for (const num of st.selected){
+        const m = app.masterByNumber.get(num);
+        if (m && m.name === name){
+          out.hasAny = true;
+          break;
+        }
+      }
+      if (out.hasAny) break;
+    }
+    return out;
+  }
+
+  function applyLockAndClear(action){
+    if (!action || action.type !== 'lock-and-clear') return;
+    const i = Number(action.slotIndex);
+    const name = String(action.dollName || '');
+    if (!(i >= 0 && i <= 2)) return;
+    const sl = app.state.slot[i];
+    if (!sl || !sl.number) return;
+    if (sl.name !== name) return;
+
+    // clear confirmed candidates
+    app.state.candidate1 = app.state.candidate1.filter(x => x.name !== name);
+    app.state.candidate2 = app.state.candidate2.filter(x => x.name !== name);
+    app.state.candidate3 = app.state.candidate3.filter(x => x.name !== name);
+
+    // clear in-progress selections (2-4)
+    for (const step of [2,3,4]){
+      const st = getStepState(step);
+      const removeNums = Array.from(st.selected).filter(num => {
+        const m = app.masterByNumber.get(num);
+        return m && m.name === name;
+      });
+      for (const num of removeNums){
+        deselectCard(step, num);
+      }
+    }
+
+    // now lock
+    if (i > 0 && !app.state.slot[i-1].locked){
+      toast(`先にスロット${i}をロックしてください`);
+      return;
+    }
+    sl.locked = true;
     enforceLockContinuity();
   }
 
@@ -655,6 +765,7 @@ function clampNum(v, min, max){
     if (s > app.state.maxReached) return;
     app.state.currentStep = s;
     closeModal();
+    closeConfirm();
     if (s === 1){
       app.state.selectedSlotIndex = null;
     }
@@ -817,6 +928,7 @@ function clampNum(v, min, max){
 
     const lockVisible = filled && index <= 2;
     const lockOn = lockVisible && sl.locked;
+    const lockCanToggle = lockVisible && (lockOn || index === 0 || !!app.state.slot[index-1].locked);
 
     const upEnabled = filled && index > 0 && !!app.state.slot[index-1].number;
     const downEnabled = filled && index < 4 && !!app.state.slot[index+1].number;
@@ -842,7 +954,7 @@ function clampNum(v, min, max){
         </div>
 
         <div class="slot-tail">
-          ${lockVisible ? `<button class="icon-btn lock ${lockOn?'on':''}" data-action="slot-lock" data-index="${index}">${lockOn?'🔒':'🔓'}</button>` : `<span class="slot-tail-spacer"></span>`}
+          ${lockVisible ? `<button class="icon-btn lock ${lockOn?'on':''}" data-action="slot-lock" data-index="${index}" ${lockCanToggle?'':'disabled'}>${lockOn?'🔒':'🔓'}</button>` : `<span class="slot-tail-spacer"></span>`}
           ${scoreChip}
           ${gradeChip}
         </div>
@@ -995,8 +1107,12 @@ function clampNum(v, min, max){
       return `<button class="gbtn ${on?'on':''}" data-action="grade" data-step="${step}" data-number="${number}" data-grade="${g}">${g}</button>`;
     }).join('');
 
-    const blockLabel = disabled ? getDisabledOverlayLabel(step, number) : null;
-    const overlay = blockLabel ? `<div class="card-block-label">${escapeHtml(blockLabel)}</div>` : '';
+    const overlayLabel = (step === 1)
+      ? getOverlayLabel(step, number)
+      : (disabled ? getOverlayLabel(step, number) : null);
+    const overlay = (!selected && overlayLabel)
+      ? `<div class="card-block-label">${escapeHtml(overlayLabel)}</div>`
+      : '';
 
     return `
       <div class="${classes.join(' ')}" data-card="${number}">
@@ -1019,13 +1135,30 @@ function clampNum(v, min, max){
 
   function renderModal(){
     const host = $('#modalHost');
+    const c = app.state.confirm;
     const m = app.state.modal;
-    if (!m.open){
+    if (!c.open && !m.open){
       host.innerHTML = '';
       document.body.classList.remove('modal-open');
       return;
     }
     document.body.classList.add('modal-open');
+
+    if (c.open){
+      host.innerHTML = `
+        <div class="modal-backdrop">
+          <div class="modal" role="dialog" aria-modal="true" aria-label="${escapeAttr(c.title||'確認')}">
+            <div class="modal-title">${escapeHtml(c.title||'確認')}</div>
+            <div class="small" style="white-space:pre-line; margin-top:8px;">${escapeHtml(c.message||'')}</div>
+            <div class="modal-actions" style="margin-top:16px;">
+              <button class="btn" data-action="confirm-no">${escapeHtml(c.noLabel||'キャンセル')}</button>
+              <button class="btn primary" data-action="confirm-yes">${escapeHtml(c.yesLabel||'OK')}</button>
+            </div>
+          </div>
+        </div>
+      `;
+      return;
+    }
     const st = getStepState(m.step);
     const num = m.number;
     const grade = st.grade.get(num);
@@ -1105,6 +1238,22 @@ function clampNum(v, min, max){
       // modal backdrop: allow click to cancel
       if (action === 'modal-cancel'){
         closeModal();
+        closeConfirm();
+        render();
+        return;
+      }
+
+      if (action === 'confirm-no'){
+        closeConfirm();
+        render();
+        return;
+      }
+      if (action === 'confirm-yes'){
+        const a = app.state.confirm && app.state.confirm.action;
+        closeConfirm();
+        if (a && a.type === 'lock-and-clear'){
+          applyLockAndClear(a);
+        }
         render();
         return;
       }
