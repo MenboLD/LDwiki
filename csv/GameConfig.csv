@@ -1,0 +1,77 @@
+"FP[]", "SpawnPercentages", "100 | 2 | 0.5 | 0.1"
+"FP[]", "SpawnLevelPlusBounus", "0 | 6 | 2 | 0.4"
+"FP[]", "SpawnLevelNeedCosts", "100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100"
+"int", "MaxUnitCount", 20
+"int", "RareSpawnUnlockWave", 0
+"int", "RareSpawnPercentage", 60
+"int", "RareSpawnCost", 1
+"int", "EpicSpawnUnlockWave", 0
+"int", "EpicSpawnPercentage", 20
+"int", "EpicSpawnCost", 1
+"int", "LegendSpawnUnlockWave", 0
+"int", "LegendSpawnPercentage", 10
+"int", "LegendSpawnCost", 2
+"FP", "CriticalChance", 5
+"FP", "CriticalDamage", 150
+"int", "DeadCount", 100
+"FP", "AlertAmount", "0.7"
+"FP", "WaveRewardPopupDuration", 15
+"int", "SellRewardCount", 10
+"int[]", "NeedJokerByGrades", "1 | 1 | 1 | 3"
+"int[]", "NeedRerollCostByGrades", "10 | 30 | 100 | 300"
+"string[]", "GradeColors", "FFFFFF | 00BBFF | D700E7 | FFC400 | FF6600 | FF0026 | FF0020"
+"FP", "DefenseEfficiency", 6
+"FP", "MoveSpeedEfficiency", 1
+"FP[]", "LevelNeedExps", "10 | 15 | 20 | 25 | 30 | 35 | 40 | 45 | 50"
+"int", "AttackDamageUpgradeNeedCost1", 30
+"int", "AttackDamageUpgradeIncreaseCost1", 30
+"int", "AttackDamageUpgradeMax1", 10
+"int", "AttackDamageUpgradeNeedCost2", 50
+"int", "AttackDamageUpgradeIncreeseCost2", 50
+"int", "AttackDamageUpgradeMax2", 10
+"int", "AttackDamageUpgradeNeedCost3", 2
+"int", "AttackDamageUpgradeIncreaseCost3", 1
+"int", "AttackDamageUpgradeMax3", 30
+"FP[]", "AttackSpeedUpgradeNeedCost", "3 | 4 | 5 | 6 | 7 | 8 | 9 | 10"
+"int", "SelectUnitRerollCost", 100
+"int", "RareShopCost", 4
+"int", "EpicShopCost", 12
+"FP", "BossFastClearTime", 30
+"FP", "BossFastClearGiveReward", 1
+"FP", "GamblingRewardEpicPercentage", 50
+"FP", "GamblingRewardLegendPercentage", 25
+"FP", "BeginnerHelpPercentage", 70
+"int", "BeginnerHelpLevel", 2
+"int", "BeginnerHelpCount", 80
+"int", "NewbieLevelLimit", 4
+"FP[]", "NewbieSupportSpawnPercentages", "1 | 3 | 5"
+"FP[]", "NewbieSupportGambleRarePercentages", "5 | 10 | 15"
+"FP[]", "NewbieSupportGambleEpicPercentages", "5 | 10 | 15"
+"FP[]", "NewbieSupportGambleLegendPercentages", "5 | 10 | 15"
+"int", "MaxPauseCount", 3
+"FP", "GameResultBonusChance", 33
+"int[]", "BonusItemId", "101 | 103"
+"float[]", "BonusRatioValues", "1 | 1.5 | 3 | 2.5 | 2 | 0.5"
+"float[]", "BonusRatioWeights", "25 | 20 | 3 | 7 | 15 | 25"
+"int", "ReplayTime", 5
+"int", "GuideQuestBestPosUnitId", 3001
+"float", "EffectDelay", "0.05"
+"int", "DefaultLife", 10
+"int", "LifePerRelic", 5
+"int", "MonsterLifeDamage", 0
+"int", "BossLifeDamage", 99999
+"int", "RefreshMoveFrameCount", 5
+"int", "TestKey", 11
+"string[]", "TestIds", "f79bffe615bb434aa98292656cc14731"
+"int", "TestSampling", 100
+"int", "TestKey2", 1234
+"int", "PlayMultiplyLimit", 5
+"int", "RebuildKey", 0
+"int", "WaveBoxGetLimit", 5
+"int", "BuffCardDrawAmount", 3
+"int", "BuffCardPickAmount", 1
+"int", "BuffCardRerollAmount", 1
+"int", "BuffCardMapLimit", 20
+"int", "BoxProbAdjustTrigger", 240
+"int[]", "BoxProbAdjust", "3000 |  3000 | 3000 | 4000 | 6000 | 8000 | 10000"
+"int[]", "RecruitTypes", "1 | 10"

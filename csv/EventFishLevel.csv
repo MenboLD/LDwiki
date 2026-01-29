@@ -1,0 +1,7 @@
+EGradeType, float, float, float, float, float, float, float, float
+Grade, BarSize, CatchSpeed, FishMoveSpeed, MinFishMoveTime, MaxFishMoveTime, MaxWeakenPower, WeakenPower, WeakenInterval
+"Common", "0.28", "0.5", "0.5", "1.6", "2.6", "0.3", "0.1", 12
+"Rare", "0.28", "0.4", 1, "1.4", "2.4", "0.3", "0.1", 12
+"Epic", "0.28", "0.2", "2.5", "1.2", "2.2", "0.3", "0.1", 12
+"Legend", "0.28", "0.17", 3, "1.0", 2, "0.3", "0.1", 12
+"Mythical", "0.28", "0.15", "3.5", "0.8", "1.8", "0.3", "0.1", 12

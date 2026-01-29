@@ -1,0 +1,5 @@
+"int", "MaxFriendCount", 20
+"int", "MaxReceiveCount", 30
+"int", "MaxSentCount", 30
+"int", "MaxSearchCount", 30
+"int", "ActiveStateUpdateCoolTime", 30

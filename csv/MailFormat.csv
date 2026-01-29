@@ -1,0 +1,21 @@
+int, string, string, bool, bool, System.DateTime, float, int
+Id, Title, Content, IsInfinite, IsReadable, ExpireDate, KeepTime, StoreDay
+1001, "popup_vip_description1", "popup_reward_result_title_vvip", "FALSE", "FALSE", "", 1184400, 3
+1002, "popup_vip_description1", "popup_reward_result_title_vvip", "FALSE", "FALSE", "", 1184400, 3
+2001, "popup_dragon_reset_description", "popup_reward_result_dragon_reset", "FALSE", "FALSE", "", 1184400, 3
+3001, "mail_title_guild_raid_reward", "mail_desc_guild_raid_reward", "FALSE", "FALSE", "", 592200, 3
+3002, "mail_title_guild_battle_reward", "mail_desc_guild_battle_reward", "FALSE", "FALSE", "", 592200, 3
+4001, "mail_title_register_invitecode", "mail_desc_register_invitecode", "FALSE", "FALSE", "", 592200, 3
+5001, "mail_title_reset_myth_unit", "mail_desc_reset_myth_unit", "FALSE", "FALSE", "", 1209600, 3
+6001, "mail_title_buy_product", "mail_desc_buy_product", "FALSE", "FALSE", "", 592200, 3
+7001, "mail_title_mine_reward", "mail_desc_mine_reward", "FALSE", "FALSE", "", 592200, 3
+8001, "mail_title_guild_package", "mail_desc_guild_package", "FALSE", "FALSE", "", 2538000, 3
+9001, "mail_title_masterpiece_reward", "mail_desc_masterpiece_reward", "TRUE", "FALSE", "", 0, 0
+10001, "mail_title_origin_box_reward", "mail_desc_origin_box_reward", "TRUE", "FALSE", "", 0, 0
+810001, "mail_title_kakao_emoticon", "mail_desc_kakao_emoticon", "FALSE", "TRUE", "2025-05-21 0:00:00", 0, 0
+910001, "mail_title_popup_reward", "mail_desc_popup_reward", "FALSE", "FALSE", "", 592200, 3
+910002, "mail_title_popup_reward_rank1", "mail_desc_popup_reward_rank1", "FALSE", "FALSE", "", 592200, 3
+910003, "mail_title_popup_reward_rank2", "mail_desc_popup_reward_rank2", "FALSE", "FALSE", "", 592200, 3
+910004, "mail_title_popup_reward_rank3", "mail_desc_popup_reward_rank3", "FALSE", "FALSE", "", 592200, 3
+910005, "mail_title_popup_reward_rank4", "mail_desc_popup_reward_rank4", "FALSE", "FALSE", "", 592200, 3
+910006, "mail_title_popup_reward_rank5", "mail_desc_popup_reward_rank5", "FALSE", "FALSE", "", 592200, 3

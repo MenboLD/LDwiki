@@ -1,0 +1,16 @@
+int, EMatchingType, int, float, int[], int, int, int, bool, bool, float, float[], bool, int
+WaveGroup, MatchingType, MaxPlayers, Duration, LevelLimits, StartValue, ExpandValue, ExpandTryCount, UseAI, UseDuo, ForceStartDelay, ExtraParams, UseForceStart, UseForceRegionKR_TargetExpand
+1, "Level", 2, 20, "6 | 10", 2, 2, 5, "TRUE", "FALSE", "", "", "FALSE"
+2, "RelicLevel", 2, 20, 0, 20, 30, 5, "TRUE", "FALSE", "", "", "FALSE"
+3, "RelicLevel", 2, 20, 0, 20, 30, 5, "TRUE", "FALSE", "", "", "FALSE", 2
+4, "RelicLevel", 2, 20, 0, 20, 30, 5, "TRUE", "FALSE", "", "", "FALSE", 2
+5, "RelicLevel", 2, 20, 0, 20, 30, 5, "TRUE", "FALSE", "", "", "FALSE", 2
+91, "Level", 2, 3, 0, 0, 0, 0, "TRUE", "FALSE", "", "", "FALSE"
+101, "Level", 2, 10, 0, 2, 2, 5, "FALSE", "FALSE", "", "", "FALSE"
+102, "Level", 4, 9999, 0, -1, -1, 1, "FALSE", "FALSE", 30, "", "TRUE"
+103, "Level", 2, 10, 0, 2, 2, 5, "FALSE", "FALSE", "", "", "FALSE"
+104, "Level", 4, 9999, 0, 2, 2, 5, "FALSE", "FALSE", 30, "", "TRUE"
+301, "Level", 2, 10, 0, 2, 2, 5, "FALSE", "FALSE", "", "", "FALSE"
+501, "MMR", 4, 10, 0, 50, 20, 5, "FALSE", "TRUE", "", "", "FALSE"
+502, "MMR", 2, 10, 0, 50, 20, 5, "FALSE", "FALSE", "", "", "FALSE"
+704, "", 2, 10, 0, 50, 20, 5, "FALSE", "FALSE", "", "", "FALSE"

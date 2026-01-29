@@ -1,0 +1,4 @@
+int, int, System.DateTime, System.DateTime, System.DateTime, int, int, int, int
+Season, WaveGroup, StartAt, EndAt, FreeAt, BossId, RewardGroupId_1, RewardGroupId_2, RewardGroupId_3
+1, 305, "2025-08-18 0:00:00", "2025-08-31 0:00:00", "2025-09-01 0:00:00", 305002, 1, 1, 1
+2, 305, "2025-09-03 0:00:00", "2025-09-14 0:00:00", "2025-09-15 0:00:00", 305002, 1, 1, 1

@@ -1,0 +1,14 @@
+int, string, bool, int, string
+Id, EmojiName, IsDefault, ShopOrder, SoundName
+30030001, "Emoji_30030001", "TRUE", 0, "outgame_emoji_ghost_hello"
+30030002, "Emoji_30030002", "TRUE", 0, "outgame_emoji_king_laugh"
+30030003, "Emoji_30030003", "TRUE", 0, "outgame_emoji_ghost_cry"
+30030004, "Emoji_30030004", "TRUE", 0, "outgame_emoji_king_flag"
+30030005, "Emoji_30030005", "TRUE", 0, "outgame_emoji_ghost_dunno"
+30030006, "Emoji_30030006", "TRUE", 0, "outgame_emoji_king_thumbsup"
+30030007, "Emoji_30030007", "FALSE", 1, "outgame_emoji_bamba_angry"
+30030008, "Emoji_30030008", "FALSE", 2, "outgame_emoji_indi_hip"
+30030009, "Emoji_30030009", "FALSE", 3, "outgame_emoji_cordy_sigh"
+30030010, "Emoji_30030010", "FALSE", 4, "outgame_emoji_bandit_gold"
+30030011, "Emoji_30030011", "FALSE", 5, "outgame_emoji_devil_hit"
+30030012, "Emoji_30030012", "FALSE", 6, "outgame_emoji_blob_question"

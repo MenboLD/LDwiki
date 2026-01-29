@@ -1,0 +1,11 @@
+int, EInGameQuest, string, int, int
+Id, Type, Text, Step, NeedCount
+1001, "KillMonster", "quest_KillMonster", 0, 50
+1003, "KillMonster", "quest_KillMonster", 2, 100
+1004, "KillMonster", "quest_KillMonster", 3, 150
+1005, "KillMonster", "quest_KillMonster", 4, 200
+2001, "SaveGold", "quest_SaveGold", 0, 2000
+2002, "SaveGold", "quest_SaveGold", 1, 5000
+2003, "SaveGold", "quest_SaveGold", 2, 8000
+2004, "SaveGold", "quest_SaveGold", 3, 10000
+2005, "SaveGold", "quest_SaveGold", 4, 30000

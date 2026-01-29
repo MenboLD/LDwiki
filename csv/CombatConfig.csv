@@ -1,0 +1,11 @@
+"int[]", "DefaultPointIncrease", "20 | 20 | 15 | 15 | 10 | 10 | 7 | 0 | 0 | 0 | 5"
+"int[]", "DefaultPointDecrease", "3 | 5 | 3 | 5 | 3 | 5 | 5 | 0 | 0 | 0 | 4"
+"float[]", "KFactor", "1.25 | 1 | 1 | 1 | 1 | 0.75 | 0.6 | 0 | 0 | 0 | 0.5"
+"float", "NewbieKFactor", 2
+"int", "NewbiePlayCountMax", 5
+"int", "TierProtectCount", 2
+"int", "BanMaxCount", 2
+"int", "CombatBuffCardPoolId", 2
+"int", "CombatBuffCardDuration", 60
+"int", "CombatBuffCardDrawCount", 3
+"int", "CombatLastWaveNumber", 30

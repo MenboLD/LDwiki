@@ -1,0 +1,9 @@
+"int[]", "CostPerLock", "5 | 10 | 20 | 30 | 100"
+"int", "SlotCount", 5
+"int[]", "Probability", "3500 | 3000 | 2500 | 900 | 100"
+"int", "LockLimit", 3
+"EGradeType", "WarningGrade", "Mythical"
+"string", "ValueRatioColor", "FFDF00"
+"string", "DescValueColor", 009617
+"int", "MythicGuaranteeMaxCount", 500
+"System.DateTime", "ActivationTime", "2025-09-06 0:00:00"

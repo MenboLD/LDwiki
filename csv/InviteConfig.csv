@@ -1,0 +1,6 @@
+"TableReward", "RegisterInviteCodeReward", "103, 300, 300"
+"TableReward", "FriendEventOpenReward", "102, 100, 100"
+"int", "InviteCodeLength", 8
+"int", "InviteCodeGenRetryCount", 5
+"int", "MaxInviteRewardCount", 10
+"EUnlockPresetType[]", "InviteProvideUnlockPresets", "UserLevel_10 | ModeClear_Normal_1"

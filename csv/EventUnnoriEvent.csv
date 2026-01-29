@@ -1,0 +1,10 @@
+int, EUnnoriEventType, bool, bool, bool, bool, bool, int, float, float, string, string, string
+Id, UnnoriType, IsAuto, IsTargetOpponent, IsSelectNode, IsOnlyBoard, WithoutTriggerPiece, TargetCount, Weight, Param, SelectDescriptionKey, ImageResource, IconResource
+1, "MoveFront", "TRUE", "FALSE", "FALSE", "FALSE", "FALSE", 0, 5, 2, "", "unnori_event_image_01", "unnori_event_icon_01"
+2, "MoveBack", "TRUE", "FALSE", "FALSE", "FALSE", "FALSE", 0, 5, 2, "", "unnori_event_image_02", "unnori_event_icon_02"
+3, "SwapEnemy", "FALSE", "TRUE", "FALSE", "TRUE", "FALSE", 1, 5, 0, "desc_unnori_select_single_piece", "unnori_event_image_07", "unnori_event_icon_07"
+4, "PullHere", "FALSE", "FALSE", "FALSE", "FALSE", "TRUE", 1, 5, 0, "desc_unnori_select_single_piece", "unnori_event_image_04", "unnori_event_icon_04"
+5, "Shield", "TRUE", "FALSE", "FALSE", "FALSE", "FALSE", 0, 5, 1, "", "unnori_event_image_03", "unnori_event_icon_03"
+6, "DestroyAdjacent", "FALSE", "FALSE", "FALSE", "TRUE", "FALSE", 1, 5, 1, "desc_unnori_select_single_piece", "unnori_event_image_08", "unnori_event_icon_08"
+7, "MoveToCenter", "TRUE", "FALSE", "FALSE", "FALSE", "FALSE", 0, 5, 28, "", "unnori_event_image_05", "unnori_event_icon_05"
+8, "TeleportTo", "FALSE", "FALSE", "TRUE", "FALSE", "FALSE", 1, 5, 0, "desc_unnori_select_single_tile", "unnori_event_image_09", "unnori_event_icon_09"

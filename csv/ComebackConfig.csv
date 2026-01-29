@@ -1,0 +1,7 @@
+"int", "PlusMatchingLevel", 5
+"FP", "HeroUnitPlusProb", 1
+"FP", "LegendaryUnitPlusProb", "0.5"
+"FP", "RareRulletPlusProb", 10
+"FP", "HeroRulletPlusProb", 5
+"FP", "LegendaryRulletPlusProb", 3
+"FP", "CareProb", 50

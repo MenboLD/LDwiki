@@ -1,0 +1,52 @@
+"int", "DailyEventKillCountLimit", 25
+"int", "EventLuckyCarnivalBoardRow", 5
+"int", "EventLuckyCarnivalBoardCol", 5
+"int[]", "EventLuckyCarnivalGacheRatioList", "1 | 2 | 3 | 5"
+"int", "EventLuckyCarnivalGacheDefaultPoint", 10
+"TableReward", "EventLuckyCarnivalTicketCost", "102, 100, 100"
+"TableReward", "EventLuckyCarnivalTicketReward", "112, 1, 1"
+"int", "DailyEventRewardPointLimit", 500
+"int[]", "EventUnnoriOutcomeWeights", "4 | 6 | 4 | 1 | 1"
+"int[]", "EventUnnoriPointShopProducts", "1000901|1000902|1000903|1000904|1000905|1000906|1000907|1000908|1000909|1000910|1000911|1000912|1000913|1000915|1000916"
+"TableReward", "EventUnnoriUnitReward", "2000, 5023, 1,1"
+"TableReward", "EventUnnoriRollReward", "122, 20, 20"
+"TableReward", "EventUnnoriWinReward", "122, 500, 500"
+"TableReward", "EventUnnoriGoalReward", "122, 200, 200"
+"TableReward", "EventUnnoriGoalExp", "23, 20, 20"
+"TableReward", "EventUnnoriWinExp", "23, 100, 100"
+"int", "EventUnnoriMaxLevel", 10
+"int[]", "EventUnnoriNeedExpList", "0 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100"
+"int[]", "EventUnnoriEventNodeIdList1", "5 | 6 | 7 | 8 | 20 | 21"
+"int[]", "EventUnnoriEventNodeIdList2", "10 | 11 | 12 | 13 | 22 | 23"
+"int[]", "EventUnnoriEventNodeIdList3", "15 | 16 | 17 | 18 | 24 | 25 | 26 | 27"
+"int", "EventUnnoriEventNodeChance", 60
+"int", "EventUnnoriEventNodeMinCount", 2
+"int", "GrowEventUnitId", 5023
+"int", "GrowEventLevelLimit", 10
+"int", "GrowEventId", 1009
+"int", "EvenAdventureMiniGameHighScore", 400
+"int", "EventAdventureGoStopInitReward", 10
+"int", "EventFirstAnnivMileageEventId", 4
+"int", "EventNewbieMileageEventId", 29
+"int", "EventAdventureRouletteInitReward", 100
+"TableReward", "EventFirstAnnivLoginReward", "102, 11111, 11111"
+"int", "EventFirstAnnivTransLevel", 12
+"EItemType", "EventFirstAnnivExpType", "FirstAnnivExp"
+"EItemType", "EventNewbieExpType", "NewbieExp"
+"FP", "BombReviveTime", 1
+"FP", "BombStartDelayTime", "1.5"
+"int[]", "BossThrowCost", 3
+"int[]", "BossThrowMonsterIds", "103001 | 103002 | 103003 | 103004 | 103005 | 103007 | 103008 | 103009 | 103010 | 103011 | 103012 | 103015 | 103016 | 103017"
+"FP[]", "BossThrowWeights", "10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 20 | 20 | 20"
+"int[]", "BossThrowLevels", "0 | 1 | 2 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 15 | 20 | 25 | 30 | 35 | 40 | 50 | 60 | 70 | 90 | 120 | 150 | 200 | 250 | 300 | 350 | 400 | 450 | 500 | 600 | 700 | 800 | 900 | 1000 | 1100 | 1200 | 1400 | 1600 | 1800 | 2000 | 2500 | 3000 | 3500 | 4000 | 4700 | 5400 | 6200 | 7000 | 8000 | 8800 | 9600 | 10400 | 11200 | 12000 | 13000 | 14000 | 15000 | 16000 | 17000 | 19000 | 22000 | 25000 | 30000 | 35000 | 40000 | 45000 | 50000 | 55000 | 60000 | 65000 | 70000 | 75000 | 80000 | 85000 | 90000 | 95000 | 100000 | 105000 | 110000 | 150000"
+"int", "AuctionTime", 10
+"bool", "IsShowEvnetInPopup", "TRUE"
+"ETutorial", "ShowEventTutorialId", "TutorialStep_7_2"
+"float[]", "CommonFishSizeRatioList", "5 | 6 | 7 | 8 | 9 | 10 | 10 | 10 | 10 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 1"
+"float[]", "RareFishSizeRatioList", "6 | 7 | 8 | 9 | 10 | 10 | 10 | 10 | 10 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0.5"
+"float[]", "EpicFishSizeRatioList", "7 | 8 | 9 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0.5"
+"float[]", "LegendFishSizeRatioList", "8 | 9 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0.5"
+"float[]", "MythicalFishSizeRatioList", "9 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0.5"
+"float[]", "FishingMotionRatioByGrade", "0.2 | 0.3 | 0.5 | 0.7 | 0.9"
+"int", "XMasV2FreeDrawMileage", 10
+"EUnlockPresetType", "EventRuneUnlockPresetType", "ModeClear_Normal_1"

@@ -1,0 +1,21 @@
+int, int[], EStatType, string, FP[]
+Id, BuffUnitIds, StatType, Description, BuffParams
+1, "4006 | 5001 | 5010 | 5011", "PhysicalDamage", "text_statbuff_PhysicalDamage", 30
+2, "4006 | 5001 | 5010 | 5011", "MagicalDamage", "text_statbuff_MagicalDamage", 30
+3, "4006 | 5001 | 5010 | 5011", "AttackDamage", "text_statbuff_AttackDamage", 30
+4, "4006 | 5001 | 5010 | 5011", "AttackSpeed", "text_statbuff_AttackSpeed", 20
+5, "4006 | 5001 | 5010 | 5011", "SpRegen", "text_statbuff_SpRegen", 30
+6, "4006 | 5001 | 5010 | 5011", "CooltimeRegen", "text_statbuff_CooltimeRegen", 20
+7, "4006 | 5001 | 5010 | 5011", "CriticalPercentage", "text_statbuff_CriticalPercentage", 20
+8, "4006 | 5001 | 5010 | 5011", "CriticalDamage", "text_statbuff_CriticalDamage", 30
+9, "4006 | 5001 | 5010 | 5011", "StunDamage", "text_statbuff_StunDamage", 25
+10, "4006 | 5001 | 5010 | 5011", "DecreaseDefense", "text_statbuff_DecreaseDefense", 15
+11, "4006 | 5001 | 5010 | 5011", "MovementSpeed", "text_statbuff_MovementSpeed", 30
+12, "4006 | 5001 | 5010 | 5011", "BasicAttackDamage", "text_statbuff_BasicAttackDamage", 30
+13, "4006 | 5001 | 5010 | 5011", "SkillDamage", "text_statbuff_SkillDamage", 25
+14, "4006 | 5001 | 5010 | 5011", "SkillChancePercentage", "text_statbuff_SkillChancePercentage", 20
+15, "4006 | 5001 | 5010 | 5011", "AttackCountDecrease", "text_statbuff_AttackCountDecrease", 20
+16, "4006 | 5001 | 5010 | 5011", "SpawnDamageBuff", "text_statbuff_SpawnDamageBuff", "20 | 30"
+17, "4006 | 5001 | 5010 | 5011", "AfterMoveDamageBuff", "text_statbuff_AfterMoveDamageBuff", "15 | 3"
+18, "4006 | 5001 | 5010 | 5011", "WaveStartDamageBuff", "text_statbuff_WaveStartDamageBuff", "30 | 10"
+19, "4006 | 5001 | 5010 | 5011", "WaveStartManaRegen", "text_statbuff_WaveStartManaRegen", 20

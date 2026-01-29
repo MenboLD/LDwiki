@@ -1,0 +1,15 @@
+int, int, EGuildBuffType, string, FP[], TableReward[]
+Id, RequiredLv, GuildBuffType, Description, Params, RewardParams
+10, 1, "ExpEarn", "text_guildbuff_ExpEarn", 1
+20, 2, "FirstBonusGold", "text_guildbuff_FirstBonusGold", 4000, "101, 4000, 4000"
+30, 3, "ExpEarn", "text_guildbuff_ExpEarn", 1
+40, 4, "GuildMemberCount", "text_guildbuff_GuildMemberCount", 5
+51, 5, "GuildDonationReward", "text_guildbuff_GuildDonationReward", "", "109, 20, 20"
+60, 6, "FirstBonusScroll", "text_guildbuff_FirstBonusScroll", 70, "103, 70, 70"
+70, 7, "BaseAttackDamage", "text_guildbuff_BaseAttackDamage", 2
+80, 8, "GuildBaseAttackDamage", "text_guildbuff_GuildBaseAttackDamage", 5
+90, 9, "ExpEarn", "text_guildbuff_ExpEarn", 1
+91, 9, "FirstBonusGold", "text_guildbuff_FirstBonusGold", 1000, "101, 1000, 1000"
+92, 9, "FirstBonusScroll", "text_guildbuff_FirstBonusScroll", 20, "103, 20, 20"
+100, 10, "BossMonsterAttackDamage", "text_guildbuff_BossMonsterAttackDamage", 5
+101, 10, "GuildMemberCount", "text_guildbuff_GuildMemberCount", 5

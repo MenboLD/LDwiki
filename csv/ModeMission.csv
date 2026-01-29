@@ -1,0 +1,13 @@
+int, int, EModeMissionType, EModeMissionCheckType, string, string, string, FP[], bool
+Id, Order, MissionType, MissionCheckType, IconName, TitleName, Description, Parameters, IsDisable
+11001, 0, "AllFindUnit", "Spawn", "", "mission_mod_title_1", "mission_mod_mission_1", 1, "FALSE"
+11002, 1, "HasPoint", "GivePoint", "", "mission_mod_title_2", "mission_mod_mission_2", "0 | 15000", "FALSE"
+11003, 2, "HasPoint", "GivePoint", "", "mission_mod_title_3", "mission_mod_mission_3", "1 | 60", "FALSE"
+11004, 3, "ColdyStack", "ColdyStack", "", "mission_mod_title_4", "mission_mod_mission_4", 150, "FALSE"
+11005, 4, "FrogPrinceFailStack", "FrogPrinceFailStack", "", "mission_mod_title_5", "mission_mod_mission_5", 4, "FALSE"
+11006, 5, "BatmanStack", "BatmanStack", "", "mission_mod_title_6", "mission_mod_mission_6", "15 | 2", "FALSE"
+11007, 6, "IndyStack", "IndyStack", "", "mission_mod_title_7", "mission_mod_mission_7", "3 | 1", "FALSE"
+11008, 7, "OwnUnit", "Spawn", "", "mission_mod_title_8", "mission_mod_mission_8", "4 | 5006", "FALSE"
+11009, 8, "BlobStack", "BlobStack", "", "mission_mod_title_9", "mission_mod_mission_9", 500, "FALSE"
+11010, 9, "TarEatStack", "TarEatStack", "", "mission_mod_title_11", "mission_mod_mission_11", 3, "FALSE"
+11011, 10, "RocketChuFailStack", "RocketChuFailStack", "", "mission_mod_title_12", "mission_mod_mission_12", 2, "FALSE"

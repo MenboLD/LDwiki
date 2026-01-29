@@ -1,0 +1,38 @@
+"int[]", "MinLevelList", "0 | 5 | 10 | 15 | 20"
+"int", "MaxMemberCount", 30
+"ERegion[]", "RegionList", "KR | US | JP | TW"
+"int[]", "JoinTypeList", "2 | 1 | 0"
+"int", "InactiveDayCount", 7
+"int", "ChatCharacterLimit", 30
+"float", "SpammingInterval", "0.5"
+"int", "SpammingCount", 3
+"float", "ChatBanDuration", 15
+"int[]", "GuildIconList", "1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33"
+"int", "UserJoinRequestLimit", 30
+"int", "GuildJointRequestLimit", 30
+"int", "UserBanLimit", 99
+"int", "GuildSearchLimit", 30
+"int", "JoinCoolTime", 86400
+"int", "CreateCoolTime", 86400
+"int", "EditCoolTime", 86400
+"int", "SeasonRaidTryCount", 99999999
+"int", "RandomProductCount", 3
+"int", "NearGuildRankingCount", 10
+"int", "GuildRaidContributionPoint", 30
+"int", "GuildAutoTrasferTime", 1209600
+"TableReward[]", "GuildCheckInRewards", "[109, 100, 100] | [9000, 10, 10]"
+"int", "GuildRaidRoomExpiredTime", 1800
+"int", "GuildRaidRoomJoinLimitCount", 5
+"int[]", "GuildOpponentFilterRange", "800 | 500 | 300 | 100 | 10"
+"int", "GuildOpponentFilterLimit", 10
+"int", "GuildOpponentFilterLoop", 10
+"float", "GuildBattleSoftResetConstant", "0.3"
+"int", "GuildBattleExpireTime", 1500
+"int", "GuildBattleMinMember", 10
+"int", "GuildMinChatTextSizeLimit", 20
+"string", "GuildChatUserMessageColor", "#FFFFFF"
+"string", "GuildChatSystemMessageColor", "#E2C5AE"
+"string", "GuildChatSystemLevelMessageColor", "#FF8800"
+"TableReward", "GuildMineNeedCost", "4, 100, 100"
+"int", "GuildMineHistoryMaxCount", 100
+"int", "MineStaminaPushMinNeedSecond", 6000

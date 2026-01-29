@@ -1,0 +1,324 @@
+int, int, EMissionType, EMissionCheckType, string, string, string, FP[], int, int
+Id, WaveGroup, MissionType, MissionCheckType, IconName, TitleName, Description, Parameters, GivePoint, GiveSpecialPoint
+10001, 1, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+10002, 1, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+10003, 1, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+10004, 1, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+10005, 1, "HasPoint", "GivePoint", "icon_resource_coin", "mission_title_5", "mission_description_5", "0 | 1000", 50
+10006, 1, "HasPoint", "GivePoint", "icon_resource_lucky_gem", "mission_title_6", "mission_description_6", "1 | 10", 50
+10007, 1, "ChallengeTimeAttack", "Challenge", "Emblem/emblem_mission_challenge", "mission_title_8", "mission_description_8", "10 | 1", 100
+10008, 1, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+10009, 1, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+10010, 1, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+10011, 1, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+10012, 1, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+10013, 1, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+10014, 1, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+10015, 1, "Kill", "Kill", "Emblem/emblem_mission_challenge", "mission_title_17", "mission_description_17", 40, 100
+10016, 1, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100
+20001, 2, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+20002, 2, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+20003, 2, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+20004, 2, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+20005, 2, "HasPoint", "GivePoint", "icon_resource_coin", "mission_title_5", "mission_description_5", "0 | 1000", 50
+20006, 2, "HasPoint", "GivePoint", "icon_resource_lucky_gem", "mission_title_6", "mission_description_6", "1 | 10", 50
+20007, 2, "ChallengeTimeAttack", "Challenge", "Emblem/emblem_mission_challenge", "mission_title_8", "mission_description_8", "10 | 1", 100
+20008, 2, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+20009, 2, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+20010, 2, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+20011, 2, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+20012, 2, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+20013, 2, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+20014, 2, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+20015, 2, "Kill", "Kill", "Emblem/emblem_mission_challenge", "mission_title_17", "mission_description_17", 40, 100
+20016, 2, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100
+30001, 3, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+30002, 3, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+30003, 3, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+30004, 3, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+30007, 3, "ChallengeTimeAttack", "Challenge", "Emblem/emblem_mission_challenge", "mission_title_8", "mission_description_8", "8 | 1", 100
+30008, 3, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 10, 100
+30009, 3, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 5", 50
+30010, 3, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 50
+30011, 3, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 30", "", 1
+30012, 3, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 30", 50
+30013, 3, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 5", 100
+30014, 3, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 10", "", 1
+30015, 3, "Dead", "WaveCount", "Emblem/emblem_mission_challenge", "mission_title_9", "mission_description_9", 99, 200
+40001, 4, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+40002, 4, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+40003, 4, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+40004, 4, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+40005, 4, "ChallengeTimeAttack", "Challenge", "Emblem/emblem_mission_challenge", "mission_title_8", "mission_description_8", "8 | 1", 100
+40006, 4, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 10, 100
+40007, 4, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 5", 50
+40008, 4, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 50
+40009, 4, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 30", "", 1
+40010, 4, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 30", 50
+40011, 4, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 5", 100
+40012, 4, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 10", "", 1
+40013, 4, "Dead", "WaveCount", "Emblem/emblem_mission_challenge", "mission_title_9", "mission_description_9", 100, 200
+50001, 5, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+50002, 5, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+50003, 5, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+50004, 5, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+50005, 5, "ChallengeTimeAttack", "Challenge", "Emblem/emblem_mission_challenge", "mission_title_8", "mission_description_8", "8 | 1", 100
+50006, 5, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 10, 100
+50007, 5, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 5", 50
+50008, 5, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 50
+50009, 5, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 30", "", 1
+50010, 5, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 30", 50
+50011, 5, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 5", 100
+50012, 5, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 10", "", 1
+50013, 5, "Dead", "WaveCount", "Emblem/emblem_mission_challenge", "mission_title_9", "mission_description_9", 100, 200
+910001, 91, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+910002, 91, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+910003, 91, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+910004, 91, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+910005, 91, "HasPoint", "GivePoint", "icon_resource_coin", "mission_title_5", "mission_description_5", "0 | 1000", 50
+910006, 91, "HasPoint", "GivePoint", "icon_resource_lucky_gem", "mission_title_6", "mission_description_6", "1 | 10", 50
+910007, 91, "ChallengeTimeAttack", "Challenge", "Emblem/emblem_mission_challenge", "mission_title_8", "mission_description_8", "10 | 1", 100
+910008, 91, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+910009, 91, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+910010, 91, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+910011, 91, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+910012, 91, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+910013, 91, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+910014, 91, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+910015, 91, "Kill", "Kill", "Emblem/emblem_mission_challenge", "mission_title_17", "mission_description_17", 40, 100
+910016, 91, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100
+1010001, 101, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+1010002, 101, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+1010003, 101, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+1010004, 101, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+1010005, 101, "HasPoint", "GivePoint", "icon_resource_coin", "mission_title_5", "mission_description_5", "0 | 1000", 50
+1010006, 101, "HasPoint", "GivePoint", "icon_resource_lucky_gem", "mission_title_6", "mission_description_6", "1 | 10", 50
+1010007, 101, "ChallengeTimeAttack", "Challenge", "Emblem/emblem_mission_challenge", "mission_title_8", "mission_description_8", "10 | 1", 100
+1010008, 101, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+1010009, 101, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+1010010, 101, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+1010011, 101, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+1010012, 101, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+1010013, 101, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+1010014, 101, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+1030001, 103, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+1030002, 103, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+1030003, 103, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+1030004, 103, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+1030005, 103, "HasPoint", "GivePoint", "icon_resource_coin", "mission_title_5", "mission_description_5", "0 | 1000", 50
+1030006, 103, "HasPoint", "GivePoint", "icon_resource_lucky_gem", "mission_title_6", "mission_description_6", "1 | 10", 50
+1030007, 103, "ChallengeTimeAttack", "Challenge", "Emblem/emblem_mission_challenge", "mission_title_8", "mission_description_8", "10 | 1", 100
+1030008, 103, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+1030009, 103, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+1030010, 103, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+1030011, 103, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+1030012, 103, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+1030013, 103, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+1040001, 104, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+1040002, 104, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+1040003, 104, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+1040004, 104, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+1040008, 104, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+1040009, 104, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+1040010, 104, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+2010001, 201, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+2010002, 201, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+2010003, 201, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+2010004, 201, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+2010005, 201, "HasPoint", "GivePoint", "icon_resource_coin", "mission_title_5", "mission_description_5", "0 | 1000", 50
+2010006, 201, "HasPoint", "GivePoint", "icon_resource_lucky_gem", "mission_title_6", "mission_description_6", "1 | 10", 50
+2010007, 201, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+2010008, 201, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+2010009, 201, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+2010010, 201, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+2010011, 201, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+2010012, 201, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+2010013, 201, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+2010014, 201, "Kill", "Kill", "Emblem/emblem_mission_challenge", "mission_title_17", "mission_description_17", 40, 100
+2010015, 201, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100
+2020001, 202, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+2020002, 202, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+2020003, 202, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+2020004, 202, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+2020005, 202, "HasPoint", "GivePoint", "icon_resource_lucky_gem", "mission_title_6", "mission_description_6", "1 | 10", 50
+2020006, 202, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+2020007, 202, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+2020008, 202, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+2020009, 202, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+2020010, 202, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+2020011, 202, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+2020012, 202, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+2020013, 202, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100
+2030001, 251, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+2030002, 251, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+2030003, 251, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+2030004, 251, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+2030005, 251, "HasPoint", "GivePoint", "icon_resource_lucky_gem", "mission_title_6", "mission_description_6", "1 | 10", 50
+2030006, 251, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+2030007, 251, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+2030008, 251, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+2030009, 251, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+2030010, 251, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+2030011, 251, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+2030012, 251, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+2030013, 251, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100
+3010001, 301, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+3010002, 301, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+3010003, 301, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+3010004, 301, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+3010005, 301, "HasPoint", "GivePoint", "icon_resource_coin", "mission_title_5", "mission_description_5", "0 | 1000", 50
+3010006, 301, "HasPoint", "GivePoint", "icon_resource_lucky_gem", "mission_title_6", "mission_description_6", "1 | 10", 50
+3010007, 301, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+3010008, 301, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+3010009, 301, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+3010010, 301, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+3010011, 301, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+3010012, 301, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+3010013, 301, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+3010014, 301, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100
+3040001, 304, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+3040002, 304, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+3040003, 304, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+3040004, 304, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+3040005, 304, "HasPoint", "GivePoint", "icon_resource_coin", "mission_title_5", "mission_description_5", "0 | 1000", 50
+3040006, 304, "HasPoint", "GivePoint", "icon_resource_lucky_gem", "mission_title_6", "mission_description_6", "1 | 10", 50
+3040007, 304, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+3040008, 304, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+3040009, 304, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+3040010, 304, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+3040011, 304, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+3040012, 304, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+3040013, 304, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+3040014, 304, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100
+3050001, 305, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+3050002, 305, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+3050003, 305, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+3050004, 305, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+3050005, 305, "HasPoint", "GivePoint", "icon_resource_coin", "mission_title_5", "mission_description_5", "0 | 1000", 50
+3050006, 305, "HasPoint", "GivePoint", "icon_resource_lucky_gem", "mission_title_6", "mission_description_6", "1 | 10", 50
+3050007, 305, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+3050008, 305, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+3050009, 305, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+3050010, 305, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+3050011, 305, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+3050012, 305, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+3050013, 305, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+3050014, 305, "Kill", "Kill", "Emblem/emblem_mission_challenge", "mission_title_17", "mission_description_17", 40, 100
+3050015, 305, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100
+3060001, 306, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+3060002, 306, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+3060003, 306, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+3060004, 306, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+3060005, 306, "HasPoint", "GivePoint", "icon_resource_lucky_gem", "mission_title_6", "mission_description_6", "1 | 10", 50
+3060006, 306, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+3060007, 306, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+3060008, 306, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+3060009, 306, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+3060010, 306, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+3060011, 306, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+3060012, 306, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+3060013, 306, "Kill", "Kill", "Emblem/emblem_mission_challenge", "mission_title_17", "mission_description_17", 100, 100
+3060014, 306, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100
+5010001, 501, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+5010002, 501, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+5010003, 501, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+5010004, 501, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+5010005, 501, "HasPoint", "GivePoint", "icon_resource_coin", "mission_title_5", "mission_description_5", "0 | 1000", 50
+5010006, 501, "HasPoint", "GivePoint", "icon_resource_lucky_gem", "mission_title_6", "mission_description_6", "1 | 10", 50
+5010007, 501, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+5010008, 501, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+5010009, 501, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+5010010, 501, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+5010011, 501, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+5010012, 501, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+5010013, 501, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+5010014, 501, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100
+5020001, 502, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+5020002, 502, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+5020003, 502, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+5020004, 502, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+5020005, 502, "HasPoint", "GivePoint", "icon_resource_coin", "mission_title_5", "mission_description_5", "0 | 1000", 50
+5020006, 502, "HasPoint", "GivePoint", "icon_resource_lucky_gem", "mission_title_6", "mission_description_6", "1 | 10", 50
+5020007, 502, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+5020008, 502, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+5020009, 502, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+5020010, 502, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+5020011, 502, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+5020012, 502, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+5020013, 502, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+5020014, 502, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100
+6010001, 601, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+6010002, 601, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+6010003, 601, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+6010004, 601, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+6010005, 601, "HasPoint", "GivePoint", "icon_resource_coin", "mission_title_5", "mission_description_5", "0 | 1000", 50
+6010006, 601, "HasPoint", "GivePoint", "icon_resource_lucky_gem", "mission_title_6", "mission_description_6", "1 | 10", 50
+6010007, 601, "ChallengeTimeAttack", "Challenge", "Emblem/emblem_mission_challenge", "mission_title_8", "mission_description_8", "10 | 1", 100
+6010008, 601, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+6010009, 601, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+6010010, 601, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+6010011, 601, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+6010012, 601, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+6010013, 601, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+6010014, 601, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+6010015, 601, "Dead", "WaveCount", "Emblem/emblem_mission_challenge", "mission_title_9", "mission_description_9", 90, 200
+6020001, 602, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+6020002, 602, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+6020003, 602, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+6020004, 602, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+6020005, 602, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+6020006, 602, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+6020007, 602, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+6020008, 602, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+6020009, 602, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+6020010, 602, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+6020011, 602, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+6020012, 602, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100
+7010001, 701, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+7010002, 701, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+7010003, 701, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+7010004, 701, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+7010005, 701, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+7010006, 701, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+7010007, 701, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+7010008, 701, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+7010009, 701, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+7010010, 701, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+7010011, 701, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+7010012, 701, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100
+7020001, 702, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+7020002, 702, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+7020003, 702, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+7020004, 702, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+7020005, 702, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+7020006, 702, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+7020007, 702, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+7020008, 702, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+7020009, 702, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+7020010, 702, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+7020011, 702, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+7020012, 702, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100
+7030001, 703, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+7030002, 703, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+7030003, 703, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+7030004, 703, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+7030005, 703, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+7030006, 703, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+7030007, 703, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+7030008, 703, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+7030009, 703, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+7030010, 703, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+7030011, 703, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+7030012, 703, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100
+7040001, 704, "GradeAllFindUnit", "Spawn", "", "mission_title_1", "mission_description_1", "0 | 5", 100
+7040002, 704, "GradeAllFindUnit", "Spawn", "", "mission_title_2", "mission_description_2", "1 | 5", 100
+7040003, 704, "GradeAllFindUnit", "Spawn", "", "mission_title_3", "mission_description_3", "2 | 5", "", 1
+7040004, 704, "GradeOwnUnit", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_4", "mission_description_4", "3 | 3", "", 2
+7040005, 704, "Sell", "Sell", "Emblem/emblem_mission_challenge", "mission_title_16", "mission_description_16", 5, 100
+7040006, 704, "Lotto", "Spawn", "Emblem/emblem_grade_3_hero", "mission_title_10", "mission_description_10", "2 | 3", 50
+7040007, 704, "Lotto", "Spawn", "Emblem/emblem_grade_4_legend", "mission_title_11", "mission_description_11", "3 | 1", 100
+7040008, 704, "Gambling", "Gambling", "Emblem/emblem_gamble_common", "mission_title_12", "mission_description_12", "-1 | 20", "", 1
+7040009, 704, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_common", "mission_title_13", "mission_description_13", "-1 | 10", 50
+7040010, 704, "GamblingSuccess", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_14", "mission_description_14", "3 | 3", 100
+7040011, 704, "GamblingFailed", "Gambling", "Emblem/emblem_gamble_legend", "mission_title_15", "mission_description_15", "3 | 5", "", 1
+7040012, 704, "Upgrade", "Upgrade", "Emblem/emblem_mission_challenge", "mission_title_18", "mission_description_18", 2, 100

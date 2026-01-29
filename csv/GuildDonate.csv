@@ -1,0 +1,5 @@
+int, int, TableReward, TableReward, TableReward
+Id, Cost, Reward_1, Reward_2, Reward_3
+1, 0, "109,30,30", "9000, 20, 20"
+2, 60, "109,30,30", "9000, 20, 20"
+3, 60, "109,30,30", "9000, 20, 20"

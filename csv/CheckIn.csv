@@ -1,0 +1,16 @@
+int, bool, EResetType, int, TableReward
+Id, IsContinuous, ResetType, Days, CompleteReward
+1001, "FALSE", "Event"
+1002, "FALSE", "Event"
+1003, "FALSE", "Event"
+1004, "FALSE", "Event"
+1006, "FALSE", "Event"
+1007, "FALSE", "Event"
+1009, "FALSE", "Event"
+1011, "FALSE", "Event"
+1200, "FALSE", "Day", 30
+1300, "FALSE", "None", "", "3000, 90002, 1, 1"
+1301, "FALSE", "None"
+1302, "FALSE", "None"
+1400, "FALSE", "Day", 30
+1500, "TRUE", "Day", 30

@@ -1,0 +1,7 @@
+int, EChargeType, float, int, int
+Id, ChargeType, Cooltime, ChargeCount, MaxCount
+1, "Cooltime", 600, 1, 30
+2, "Daily", "", 5, 5
+3, "Daily", "", 5, 5
+4, "Cooltime", 60, 1, 3000
+5, "Cooltime", 600, 1, 100

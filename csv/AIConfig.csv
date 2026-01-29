@@ -1,0 +1,9 @@
+"bool", "IsActiveSuperAI", "TRUE"
+"ERegion[]", "SuperAIDisabledRegions", "KR"
+"FP", "StartInterval", 10
+"FP", "StartRandomIntervalRange", 2
+"FP", "BehaviourInterval", 1
+"FP", "BehaviourRandomIntervalRange", "0.8"
+"FP[]", "BehaviourWeights", "60 | 20 | 20 | 20 | 5 | 1 | 10 | 10 | 1 | 30"
+"FP", "ChallengeTryWave", 11
+"int", "SuperAIEnableCount", 5

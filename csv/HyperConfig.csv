@@ -1,0 +1,4 @@
+"int", "ExtendedHyperUnitLevel", 15
+"int[]", "ExtendedHyperUpgradeNeedCount", "1 | 2 | 3 | 4 | 5"
+"float", "DrawProbability", 10
+"float", "MileageDrawProbabilityPlus", 5

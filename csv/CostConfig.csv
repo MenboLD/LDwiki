@@ -1,0 +1,16 @@
+"int", "StaminaCost", 5
+"int[]", "BuyStaminaCost", "100 | 100 | 100 | 100 | 300 | 500 | 1000 | 1500 | 2000 | 2500 | 3000 | 3500 | 4000 | 4500 | 5000"
+"int[]", "IncreaseStaminaCost", "0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14"
+"int", "BuyCombatTicketCost", 100
+"int", "ChangeNickNameCost", 200
+"int", "RecruitCost", 30
+"int", "DailyShopResetCost", 1000
+"TableReward", "EventMoonWishCost", "106, 10, 10"
+"int", "GuildCreateCost", 3000
+"TableReward", "EventXmasWishCost", "110, 10, 10"
+"TableReward", "EventNewYearSummonCost", "111, 10, 10"
+"TableReward", "EventLuckyCarnivalWishCost", "112, 10, 10"
+"TableReward", "EventPetPicnicWishCost", "114, 100, 100"
+"TableReward", "EventFirstAnnivWishCost", "117, 10, 10"
+"TableReward", "EventSummerWishCost", "119, 10, 10"
+"TableReward", "EventPetstivalWishCost", "120, 100, 100"

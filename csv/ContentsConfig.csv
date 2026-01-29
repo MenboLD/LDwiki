@@ -1,0 +1,4 @@
+"EUnlockPresetType", "LegacyGuildUnlockPreset", "ModeClear_Normal_1"
+"EUnlockPresetType", "LegacyGuildRaidUnlockPreset", "UserLevel_1"
+"EUnlockPresetType", "LegacyPetUnlockPreset", "Unlock_Pet"
+"EUnlockPresetType", "LegacyHyperUnlockPreset", "Unlock_Hyper"

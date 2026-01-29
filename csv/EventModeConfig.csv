@@ -1,0 +1,7 @@
+"TableReward", "Winner2p", "153, 50, 50"
+"TableReward", "Looser2p", "153, 20, 20"
+"TableReward", "FirstRank4p", "153, 50, 50"
+"TableReward", "SecondRank4p", "153, 30, 30"
+"TableReward", "ThirdRank4p", "153, 20, 20"
+"TableReward", "ForthRank4p", "153, 10, 10"
+"int", "MaxDailyPoint", 100

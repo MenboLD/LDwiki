@@ -1,0 +1,18 @@
+int, EStatBuffType, string, FP, FP, FP
+Id, HuntBuffType, Description, BuffTime, Params_1, Params_2
+4001, "PhysicalDamage", "text_statbuff_PhysicalDamage", 9999, 10
+4002, "MagicalDamage", "text_statbuff_MagicalDamage", 9999, 10
+4003, "AttackDamage", "text_statbuff_AttackDamage", 9999, 20
+4004, "AttackSpeed", "text_statbuff_AttackSpeed", 9999, 5
+4005, "SpRegen", "text_statbuff_SpRegen", 9999, 20
+4006, "CooltimeRegen", "text_statbuff_CooltimeRegen", 9999, 10
+4007, "CriticalPercentage", "text_statbuff_CriticalPercentage", 9999, 5
+4008, "CriticalDamage", "text_statbuff_CriticalDamage", 9999, 15
+4009, "StunDamage", "text_statbuff_StunDamage", 9999, 10
+4010, "MonsterDefenseDecreasePercentage", "text_statbuff_MonsterDefenseDecreasePercentage", 9999, 15
+4011, "MovementSpeed", "text_statbuff_MovementSpeed", 9999, 30
+4012, "BasicAttackDamage", "text_statbuff_BasicAttackDamage", 9999, 15
+4013, "SkillDamage", "text_statbuff_SkillDamage", 9999, 10
+4014, "SkillChancePercentage", "text_statbuff_SkillChancePercentage", 9999, 4
+4015, "AttackCountDecrease", "text_statbuff_AttackCountDecrease", 9999, 15
+4016, "UltimateDamage", "text_statbuff_UltimateDamage", 9999, 10

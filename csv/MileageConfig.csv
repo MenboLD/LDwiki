@@ -1,0 +1,4 @@
+"int[]", "UnitMileageConversionRate", "1 | 1 | 1 | 1 "
+"int", "UnitMilieageRandomProductCount", 6
+"int", "CombatMilieageRandomProductCount", 6
+"int", "ChallengeMilieageRandomProductCount", 6

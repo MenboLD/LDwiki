@@ -1,0 +1,8 @@
+"int", "StaminaAdsCount", 3
+"int", "AdsStaminaGiveCount", 5
+"int", "PaidStaminaGiveCount", 15
+"int", "CombatTicketAdsCount", 3
+"int", "AdsCombatTicketGiveCount", 1
+"int", "PaidCombatTicketGiveCount", 1
+"int", "BatteryAdsCount", 3
+"int", "PetFoodAdsCount", 3
