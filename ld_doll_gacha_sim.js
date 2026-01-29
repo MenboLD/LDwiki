@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260129b';
+  const VERSION = '20260129e';
 
   const GRADE_JP_TO_SHORT = {
     'ノーマル':'N',
@@ -549,6 +549,55 @@
     }
   }
 
+  function resetStepState(step){
+    const st = getStepState(step);
+    st.selected = new Set();
+    st.grade = new Map();
+    st.value = new Map();
+    st.activeTab = 1;
+  }
+
+  function resetFromStep(step){
+    const s = Number(step);
+    if (s <= 1){
+      // full reset
+      app.state.slot = Array.from({length:5}, () => ({ number:null, name:'', picurl:'', grade:null, valueMin:null, score:null, desc:'', locked:false }));
+      app.state.selectedSlotIndex = null;
+      app.state.candidate1 = [];
+      app.state.candidate2 = [];
+      app.state.candidate3 = [];
+      app.state.currentStep = 1;
+      app.state.maxReached = 1;
+      for (const k of [1,2,3,4]) resetStepState(k);
+      return;
+    }
+
+    if (s === 2){
+      app.state.candidate1 = [];
+      app.state.candidate2 = [];
+      app.state.candidate3 = [];
+      for (const k of [2,3,4]) resetStepState(k);
+      app.state.currentStep = 2;
+      app.state.maxReached = 2;
+      return;
+    }
+    if (s === 3){
+      app.state.candidate2 = [];
+      app.state.candidate3 = [];
+      for (const k of [3,4]) resetStepState(k);
+      app.state.currentStep = 3;
+      app.state.maxReached = 3;
+      return;
+    }
+    if (s === 4){
+      app.state.candidate3 = [];
+      resetStepState(4);
+      app.state.currentStep = 4;
+      app.state.maxReached = 4;
+      return;
+    }
+  }
+
   function setAllGrade(step, grade){
     const s = Number(step);
     if (s < 2 || s > 4) return;
@@ -712,8 +761,8 @@
       </div>
 
       <div class="between-bar" aria-label="転写・削除">
-        <button class="arrow-btn up" data-action="slot-delete" ${app.state.selectedSlotIndex===null?'disabled':''}>▲<span>削除</span></button>
         <button class="arrow-btn down" data-action="transfer" ${canTransfer?'':'disabled'}>▼<span>転写</span></button>
+        <button class="arrow-btn up" data-action="slot-delete" ${app.state.selectedSlotIndex===null?'disabled':''}>▲<span>削除</span></button>
       </div>
 
       <div class="section">
@@ -724,12 +773,9 @@
 
         <div class="slot-list">${slotHtml}</div>
 
-        <div class="row" style="margin-top:10px; justify-content:flex-end;">
-          <button class="btn primary" data-action="confirm-step" data-step="1" ${allFilled?'':'disabled'}>① 確定</button>
-        </div>
-
-        <div class="small" style="margin-top:8px;">
-          ▼転写：一覧で選択中の人形をスロットへ（同名があれば上書き／ロックと位置は維持）。　▲削除：選択中スロットをリストへ戻す（上に詰め）。
+        <div class="cta-row">
+          <button class="btn reset" data-action="reset-step" data-step="1">リセット</button>
+          <button class="btn primary" data-action="confirm-step" data-step="1" ${allFilled?'':'disabled'}>①確定</button>
         </div>
       </div>
     `;
@@ -780,9 +826,9 @@
   function renderListTabs(step, activeTab){
     return `
       <div class="tabs">
-        <button class="tab-btn" data-action="tab" data-step="${step}" data-tab="1" aria-current="${activeTab===1?'true':'false'}">1</button>
-        <button class="tab-btn" data-action="tab" data-step="${step}" data-tab="2" aria-current="${activeTab===2?'true':'false'}">2</button>
-        <button class="tab-btn" data-action="tab" data-step="${step}" data-tab="3" aria-current="${activeTab===3?'true':'false'}">3</button>
+        <button class="tab-btn" data-action="tab" data-step="${step}" data-tab="1" aria-current="${activeTab===1?'true':'false'}">リスト1</button>
+        <button class="tab-btn" data-action="tab" data-step="${step}" data-tab="2" aria-current="${activeTab===2?'true':'false'}">リスト2</button>
+        <button class="tab-btn" data-action="tab" data-step="${step}" data-tab="3" aria-current="${activeTab===3?'true':'false'}">リスト3</button>
       </div>
     `;
   }
@@ -853,7 +899,8 @@
 
         ${panel}
 
-        <div class="row" style="margin-top:10px; justify-content:flex-end;">
+        <div class="cta-row">
+          <button class="btn reset" data-action="reset-step" data-step="${step}">リセット</button>
           <button class="btn primary" data-action="confirm-step" data-step="${step}" ${canConfirm?'':'disabled'}>${escapeHtml(confirmLabel)}</button>
         </div>
       </div>
@@ -1094,6 +1141,11 @@
         const dir = t.dataset.dir;
         if (dir === 'up' && idx > 0) swapSlotContent(idx, idx-1);
         if (dir === 'down' && idx < 4) swapSlotContent(idx, idx+1);
+        render();
+        return;
+      }
+      if (action === 'reset-step'){
+        resetFromStep(t.dataset.step);
         render();
         return;
       }
