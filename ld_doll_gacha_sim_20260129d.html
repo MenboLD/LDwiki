@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>人形ガチャ確率シミュレート（UI確認：ステップ①）</title>
+  <link rel="stylesheet" href="./ld_doll_gacha_sim_20260129d.css?v=20260129d">
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="top__title">人形ガチャ確率シミュレート</div>
+
+      <nav class="step-tabs" aria-label="進行ステップ">
+        <button class="step-tabs__dot is-active" data-step="1" aria-current="step" type="button">①</button>
+        <span class="step-tabs__arrow" aria-hidden="true">➡</span>
+        <button class="step-tabs__dot" data-step="2" type="button" disabled>②</button>
+        <span class="step-tabs__arrow" aria-hidden="true">➡</span>
+        <button class="step-tabs__dot" data-step="3" type="button" disabled>③</button>
+        <span class="step-tabs__arrow" aria-hidden="true">➡</span>
+        <button class="step-tabs__dot" data-step="4" type="button" disabled>④</button>
+        <span class="step-tabs__arrow" aria-hidden="true">➡</span>
+        <button class="step-tabs__dot" data-step="5" type="button" disabled>⑤</button>
+        <span class="step-tabs__arrow" aria-hidden="true">➡</span>
+        <button class="step-tabs__dot" data-step="6" type="button" disabled>⑥</button>
+      </nav>
+    </header>
+
+    <main class="main">
+      <section class="panel" aria-labelledby="sec-dolls">
+        <div class="panel__head">
+          <h2 id="sec-dolls" class="panel__title">人形一覧</h2>
+          <div class="hint">カードを選択 → ▼でスロットへ転写</div>
+        </div>
+
+        <div class="subtabs" role="tablist" aria-label="人形一覧ページ">
+          <button class="subtabs__tab is-active" type="button" data-listpage="1" role="tab" aria-selected="true">1</button>
+          <button class="subtabs__tab" type="button" data-listpage="2" role="tab" aria-selected="false">2</button>
+          <button class="subtabs__tab" type="button" data-listpage="3" role="tab" aria-selected="false">3</button>
+        </div>
+
+        <div id="dollGrid" class="doll-grid" aria-label="人形リスト"></div>
+
+        <div class="transfer-row" data-keep-selection="true">
+          <button id="btnTransferDown" class="btn btn--primary" type="button">▼ 転写</button>
+          <button id="btnTransferUp" class="btn" type="button">▲ クリア</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="sec-slots">
+        <div class="panel__head">
+          <h2 id="sec-slots" class="panel__title">スロット枠</h2>
+          <div class="hint">ロックは左3枠のみ</div>
+        </div>
+
+        <div id="slotList" class="slot-list"></div>
+
+        <div class="confirm-row" data-keep-selection="true">
+          <button id="btnConfirmStep1" class="btn btn--confirm" type="button">本セクションの内容を確定</button>
+        </div>
+      </section>
+    </main>
+
+    <div id="toastHost" class="toast-host" aria-live="polite" aria-atomic="true"></div>
+
+    <div id="modalBackdrop" class="modal-backdrop is-hidden" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal__title" id="modalTitle">能力値の下限値</div>
+
+        <div class="modal__name" id="modalDollName">-</div>
+
+        <div class="modal__slider">
+          <input id="abilitySlider" type="range" min="0" max="1" step="0.1" value="0" />
+        </div>
+
+        <div class="modal__steprow">
+          <button id="btnMinus5" class="mini" type="button">-5×</button>
+          <button id="btnMinus1" class="mini" type="button">-1×</button>
+          <div class="modal__value" id="abilityValue">0</div>
+          <button id="btnPlus1" class="mini" type="button">+1×</button>
+          <button id="btnPlus5" class="mini" type="button">+5×</button>
+        </div>
+
+        <div class="modal__actions">
+          <button id="btnModalCancel" class="btn" type="button">キャンセル</button>
+          <button id="btnModalOk" class="btn btn--primary" type="button">決定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script defer src="./ld_doll_gacha_sim_20260129d.js?v=20260129d"></script>
+</body>
+</html>
