@@ -1,743 +1,1196 @@
-/* ld_doll_gacha_sim.js (UI確認：ステップ①)
-   - データは仕様書Excel(テーブル_ld_piece_gacha)を埋め込み
-   - ステップ②以降は未実装（UIのみ）
-*/
-const LD_DATA = {"byNumber":{"1":{"number":1,"name":"仮面","basetxt":"単体dmg：0.1～15％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/1.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":30.0,"paramemin":0.1,"paramemax":3.0,"fp":1,"ability1":"単体dmg：","ability2":"～15％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":31.0,"paramemin":3.0,"paramemax":6.0,"fp":1,"ability1":"単体dmg：","ability2":"～15％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":31.0,"paramemin":6.0,"paramemax":9.0,"fp":1,"ability1":"単体dmg：","ability2":"～15％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":31.0,"paramemin":9.0,"paramemax":12.0,"fp":1,"ability1":"単体dmg：","ability2":"～15％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":31.0,"paramemin":12.0,"paramemax":15.0,"fp":1,"ability1":"単体dmg：","ability2":"～15％","paramebase":0.1}}},"2":{"number":2,"name":"ぺたんこ","basetxt":"範囲dmg：0.1～15％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/2.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":30.0,"paramemin":0.1,"paramemax":3.0,"fp":1,"ability1":"範囲dmg：","ability2":"～15％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":31.0,"paramemin":3.0,"paramemax":6.0,"fp":1,"ability1":"範囲dmg：","ability2":"～15％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":31.0,"paramemin":6.0,"paramemax":9.0,"fp":1,"ability1":"範囲dmg：","ability2":"～15％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":31.0,"paramemin":9.0,"paramemax":12.0,"fp":1,"ability1":"範囲dmg：","ability2":"～15％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":31.0,"paramemin":12.0,"paramemax":15.0,"fp":1,"ability1":"範囲dmg：","ability2":"～15％","paramebase":0.1}}},"3":{"number":3,"name":"片目","basetxt":"現在ユニ数分：0.01～0.5％分dmg","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/3.png","grades":{"N":{"grade":"ノーマル","stepmin":0.01,"stepmax":10.0,"paramemin":0.01,"paramemax":0.1,"fp":2,"ability1":"現在ユニ数分：","ability2":"～0.5％分dmg","paramebase":0.01},"R":{"grade":"レア","stepmin":0.01,"stepmax":11.0,"paramemin":0.1,"paramemax":0.2,"fp":2,"ability1":"現在ユニ数分：","ability2":"～0.5％分dmg","paramebase":0.01},"E":{"grade":"エピック","stepmin":0.01,"stepmax":10.999999999999998,"paramemin":0.2,"paramemax":0.3,"fp":2,"ability1":"現在ユニ数分：","ability2":"～0.5％分dmg","paramebase":0.01},"L":{"grade":"レジェンド","stepmin":0.01,"stepmax":11.000000000000004,"paramemin":0.3,"paramemax":0.4,"fp":2,"ability1":"現在ユニ数分：","ability2":"～0.5％分dmg","paramebase":0.01},"M":{"grade":"神話","stepmin":0.01,"stepmax":10.999999999999998,"paramemin":0.4,"paramemax":0.5,"fp":2,"ability1":"現在ユニ数分：","ability2":"～0.5％分dmg","paramebase":0.01}}},"4":{"number":4,"name":"バンバ","basetxt":"気絶時のdmg：0.1～10％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/4.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":20.0,"paramemin":0.1,"paramemax":2.0,"fp":1,"ability1":"気絶時のdmg：","ability2":"～10％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":21.0,"paramemin":2.0,"paramemax":4.0,"fp":1,"ability1":"気絶時のdmg：","ability2":"～10％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":21.0,"paramemin":4.0,"paramemax":6.0,"fp":1,"ability1":"気絶時のdmg：","ability2":"～10％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":21.0,"paramemin":6.0,"paramemax":8.0,"fp":1,"ability1":"気絶時のdmg：","ability2":"～10％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":21.0,"paramemin":8.0,"paramemax":10.0,"fp":1,"ability1":"気絶時のdmg：","ability2":"～10％","paramebase":0.1}}},"5":{"number":5,"name":"ウォーター","basetxt":"ボスdmg：0.1～15％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/5.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":30.0,"paramemin":0.1,"paramemax":3.0,"fp":1,"ability1":"ボスdmg：","ability2":"～15％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":31.0,"paramemin":3.0,"paramemax":6.0,"fp":1,"ability1":"ボスdmg：","ability2":"～15％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":31.0,"paramemin":6.0,"paramemax":9.0,"fp":1,"ability1":"ボスdmg：","ability2":"～15％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":31.0,"paramemin":9.0,"paramemax":12.0,"fp":1,"ability1":"ボスdmg：","ability2":"～15％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":31.0,"paramemin":12.0,"paramemax":15.0,"fp":1,"ability1":"ボスdmg：","ability2":"～15％","paramebase":0.1}}},"6":{"number":6,"name":"ドラゴン","basetxt":"クリティカル率：0.1～5％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/6.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":10.0,"paramemin":0.1,"paramemax":1.0,"fp":1,"ability1":"クリティカル率：","ability2":"～5％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":11.0,"paramemin":1.0,"paramemax":2.0,"fp":1,"ability1":"クリティカル率：","ability2":"～5％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":11.0,"paramemin":2.0,"paramemax":3.0,"fp":1,"ability1":"クリティカル率：","ability2":"～5％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":11.0,"paramemin":3.0,"paramemax":4.0,"fp":1,"ability1":"クリティカル率：","ability2":"～5％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":11.0,"paramemin":4.0,"paramemax":5.0,"fp":1,"ability1":"クリティカル率：","ability2":"～5％","paramebase":0.1}}},"7":{"number":7,"name":"溶岩","basetxt":"スキルdmg：0.1～10％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/7.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":20.0,"paramemin":0.1,"paramemax":2.0,"fp":1,"ability1":"スキルdmg：","ability2":"～10％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":21.0,"paramemin":2.0,"paramemax":4.0,"fp":1,"ability1":"スキルdmg：","ability2":"～10％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":21.0,"paramemin":4.0,"paramemax":6.0,"fp":1,"ability1":"スキルdmg：","ability2":"～10％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":21.0,"paramemin":6.0,"paramemax":8.0,"fp":1,"ability1":"スキルdmg：","ability2":"～10％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":21.0,"paramemin":8.0,"paramemax":10.0,"fp":1,"ability1":"スキルdmg：","ability2":"～10％","paramebase":0.1}}},"8":{"number":8,"name":"サイボーグ","basetxt":"物理dmg：0.1～10％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/8.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":20.0,"paramemin":0.1,"paramemax":2.0,"fp":1,"ability1":"物理dmg：","ability2":"～10％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":21.0,"paramemin":2.0,"paramemax":4.0,"fp":1,"ability1":"物理dmg：","ability2":"～10％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":21.0,"paramemin":4.0,"paramemax":6.0,"fp":1,"ability1":"物理dmg：","ability2":"～10％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":21.0,"paramemin":6.0,"paramemax":8.0,"fp":1,"ability1":"物理dmg：","ability2":"～10％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":21.0,"paramemin":8.0,"paramemax":10.0,"fp":1,"ability1":"物理dmg：","ability2":"～10％","paramebase":0.1}}},"9":{"number":9,"name":"スカル","basetxt":"魔法dmg：0.1～10％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/9.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":20.0,"paramemin":0.1,"paramemax":2.0,"fp":1,"ability1":"魔法dmg：","ability2":"～10％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":21.0,"paramemin":2.0,"paramemax":4.0,"fp":1,"ability1":"魔法dmg：","ability2":"～10％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":21.0,"paramemin":4.0,"paramemax":6.0,"fp":1,"ability1":"魔法dmg：","ability2":"～10％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":21.0,"paramemin":6.0,"paramemax":8.0,"fp":1,"ability1":"魔法dmg：","ability2":"～10％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":21.0,"paramemin":8.0,"paramemax":10.0,"fp":1,"ability1":"魔法dmg：","ability2":"～10％","paramebase":0.1}}},"10":{"number":10,"name":"ダイヤ","basetxt":"攻撃力：0.1～10％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/10.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":20.0,"paramemin":0.1,"paramemax":2.0,"fp":1,"ability1":"攻撃力：","ability2":"～10％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":21.0,"paramemin":2.0,"paramemax":4.0,"fp":1,"ability1":"攻撃力：","ability2":"～10％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":21.0,"paramemin":4.0,"paramemax":6.0,"fp":1,"ability1":"攻撃力：","ability2":"～10％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":21.0,"paramemin":6.0,"paramemax":8.0,"fp":1,"ability1":"攻撃力：","ability2":"～10％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":21.0,"paramemin":8.0,"paramemax":10.0,"fp":1,"ability1":"攻撃力：","ability2":"～10％","paramebase":0.1}}},"11":{"number":11,"name":"魔法使い","basetxt":"クリティカルdmg：0.1～15％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/11.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":30.0,"paramemin":0.1,"paramemax":3.0,"fp":1,"ability1":"クリティカルdmg：","ability2":"～15％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":31.0,"paramemin":3.0,"paramemax":6.0,"fp":1,"ability1":"クリティカルdmg：","ability2":"～15％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":31.0,"paramemin":6.0,"paramemax":9.0,"fp":1,"ability1":"クリティカルdmg：","ability2":"～15％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":31.0,"paramemin":9.0,"paramemax":12.0,"fp":1,"ability1":"クリティカルdmg：","ability2":"～15％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":31.0,"paramemin":12.0,"paramemax":15.0,"fp":1,"ability1":"クリティカルdmg：","ability2":"～15％","paramebase":0.1}}},"12":{"number":12,"name":"バット","basetxt":"神話1種分：0.01～1％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/12.png","grades":{"N":{"grade":"ノーマル","stepmin":0.01,"stepmax":20.0,"paramemin":0.01,"paramemax":0.2,"fp":2,"ability1":"神話1種分：","ability2":"～1％","paramebase":0.01},"R":{"grade":"レア","stepmin":0.01,"stepmax":21.0,"paramemin":0.2,"paramemax":0.4,"fp":2,"ability1":"神話1種分：","ability2":"～1％","paramebase":0.01},"E":{"grade":"エピック","stepmin":0.01,"stepmax":20.999999999999996,"paramemin":0.4,"paramemax":0.6,"fp":2,"ability1":"神話1種分：","ability2":"～1％","paramebase":0.01},"L":{"grade":"レジェンド","stepmin":0.01,"stepmax":21.000000000000007,"paramemin":0.6,"paramemax":0.8,"fp":2,"ability1":"神話1種分：","ability2":"～1％","paramebase":0.01},"M":{"grade":"神話","stepmin":0.01,"stepmax":20.999999999999996,"paramemin":0.8,"paramemax":1.0,"fp":2,"ability1":"神話1種分：","ability2":"～1％","paramebase":0.01}}},"13":{"number":13,"name":"ファイヤー","basetxt":"基本攻撃dmg：0.1～15％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/13.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":30.0,"paramemin":0.1,"paramemax":3.0,"fp":1,"ability1":"基本攻撃dmg：","ability2":"～15％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":31.0,"paramemin":3.0,"paramemax":6.0,"fp":1,"ability1":"基本攻撃dmg：","ability2":"～15％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":31.0,"paramemin":6.0,"paramemax":9.0,"fp":1,"ability1":"基本攻撃dmg：","ability2":"～15％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":31.0,"paramemin":9.0,"paramemax":12.0,"fp":1,"ability1":"基本攻撃dmg：","ability2":"～15％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":31.0,"paramemin":12.0,"paramemax":15.0,"fp":1,"ability1":"基本攻撃dmg：","ability2":"～15％","paramebase":0.1}}},"14":{"number":14,"name":"サンタ","basetxt":"ゴレキル時コイン：5～200枚","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/14.png","grades":{"N":{"grade":"ノーマル","stepmin":0.5,"stepmax":71.0,"paramemin":5.0,"paramemax":40.0,"fp":1,"ability1":"ゴレキル時コイン：","ability2":"～200枚","paramebase":5.0},"R":{"grade":"レア","stepmin":0.5,"stepmax":81.0,"paramemin":40.0,"paramemax":80.0,"fp":1,"ability1":"ゴレキル時コイン：","ability2":"～200枚","paramebase":5.0},"E":{"grade":"エピック","stepmin":0.5,"stepmax":81.0,"paramemin":80.0,"paramemax":120.0,"fp":1,"ability1":"ゴレキル時コイン：","ability2":"～200枚","paramebase":5.0},"L":{"grade":"レジェンド","stepmin":0.5,"stepmax":81.0,"paramemin":120.0,"paramemax":160.0,"fp":1,"ability1":"ゴレキル時コイン：","ability2":"～200枚","paramebase":5.0},"M":{"grade":"神話","stepmin":0.5,"stepmax":81.0,"paramemin":160.0,"paramemax":200.0,"fp":1,"ability1":"ゴレキル時コイン：","ability2":"～200枚","paramebase":5.0}}},"15":{"number":15,"name":"パン","basetxt":"スキル率：0.01～2％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/15.png","grades":{"N":{"grade":"ノーマル","stepmin":0.01,"stepmax":40.0,"paramemin":0.01,"paramemax":0.4,"fp":2,"ability1":"スキル率：","ability2":"～2％","paramebase":0.01},"R":{"grade":"レア","stepmin":0.01,"stepmax":41.0,"paramemin":0.4,"paramemax":0.8,"fp":2,"ability1":"スキル率：","ability2":"～2％","paramebase":0.01},"E":{"grade":"エピック","stepmin":0.01,"stepmax":40.99999999999999,"paramemin":0.8,"paramemax":1.2,"fp":2,"ability1":"スキル率：","ability2":"～2％","paramebase":0.01},"L":{"grade":"レジェンド","stepmin":0.01,"stepmax":41.000000000000014,"paramemin":1.2,"paramemax":1.6,"fp":2,"ability1":"スキル率：","ability2":"～2％","paramebase":0.01},"M":{"grade":"神話","stepmin":0.01,"stepmax":40.99999999999999,"paramemin":1.6,"paramemax":2.0,"fp":2,"ability1":"スキル率：","ability2":"～2％","paramebase":0.01}}},"16":{"number":16,"name":"超サイヤ人","basetxt":"開始コイン：1～100枚","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/16.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":191.0,"paramemin":1.0,"paramemax":20.0,"fp":1,"ability1":"開始コイン：","ability2":"～100枚","paramebase":1.0},"R":{"grade":"レア","stepmin":0.1,"stepmax":101.0,"paramemin":20.0,"paramemax":30.0,"fp":1,"ability1":"開始コイン：","ability2":"～100枚","paramebase":1.0},"E":{"grade":"エピック","stepmin":0.1,"stepmax":201.0,"paramemin":40.0,"paramemax":60.0,"fp":1,"ability1":"開始コイン：","ability2":"～100枚","paramebase":1.0},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":201.0,"paramemin":60.0,"paramemax":80.0,"fp":1,"ability1":"開始コイン：","ability2":"～100枚","paramebase":1.0},"M":{"grade":"神話","stepmin":0.1,"stepmax":201.0,"paramemin":80.0,"paramemax":100.0,"fp":1,"ability1":"開始コイン：","ability2":"～100枚","paramebase":1.0}}},"17":{"number":17,"name":"コーラ","basetxt":"毎waveコイン：1～25枚","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/17.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":41.0,"paramemin":1.0,"paramemax":5.0,"fp":1,"ability1":"毎waveコイン：","ability2":"～25枚","paramebase":1.0},"R":{"grade":"レア","stepmin":0.1,"stepmax":51.0,"paramemin":5.0,"paramemax":10.0,"fp":1,"ability1":"毎waveコイン：","ability2":"～25枚","paramebase":1.0},"E":{"grade":"エピック","stepmin":0.1,"stepmax":51.0,"paramemin":10.0,"paramemax":15.0,"fp":1,"ability1":"毎waveコイン：","ability2":"～25枚","paramebase":1.0},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":51.0,"paramemin":15.0,"paramemax":20.0,"fp":1,"ability1":"毎waveコイン：","ability2":"～25枚","paramebase":1.0},"M":{"grade":"神話","stepmin":0.1,"stepmax":51.0,"paramemin":20.0,"paramemax":25.0,"fp":1,"ability1":"毎waveコイン：","ability2":"～25枚","paramebase":1.0}}},"18":{"number":18,"name":"メロンソーダ","basetxt":"エピルレ率：0.1～2.5％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/18.png","grades":{"N":{"grade":"ノーマル","stepmin":0.01,"stepmax":41.0,"paramemin":0.1,"paramemax":0.5,"fp":2,"ability1":"エピルレ率：","ability2":"～2.5％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.01,"stepmax":51.0,"paramemin":0.5,"paramemax":1.0,"fp":2,"ability1":"エピルレ率：","ability2":"～2.5％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.01,"stepmax":51.0,"paramemin":1.0,"paramemax":1.5,"fp":2,"ability1":"エピルレ率：","ability2":"～2.5％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.01,"stepmax":51.0,"paramemin":1.5,"paramemax":2.0,"fp":2,"ability1":"エピルレ率：","ability2":"～2.5％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.01,"stepmax":51.0,"paramemin":2.0,"paramemax":2.5,"fp":2,"ability1":"エピルレ率：","ability2":"～2.5％","paramebase":0.1}}},"19":{"number":19,"name":"アイス","basetxt":"レジェルレ率：0.1～1.5％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/19.png","grades":{"N":{"grade":"ノーマル","stepmin":0.01,"stepmax":21.0,"paramemin":0.1,"paramemax":0.3,"fp":2,"ability1":"レジェルレ率：","ability2":"～1.5％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.01,"stepmax":31.0,"paramemin":0.3,"paramemax":0.6,"fp":2,"ability1":"レジェルレ率：","ability2":"～1.5％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.01,"stepmax":31.0,"paramemin":0.6,"paramemax":0.9,"fp":2,"ability1":"レジェルレ率：","ability2":"～1.5％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.01,"stepmax":31.0,"paramemin":0.9,"paramemax":1.2,"fp":2,"ability1":"レジェルレ率：","ability2":"～1.5％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.01,"stepmax":31.0,"paramemin":1.2,"paramemax":1.5,"fp":2,"ability1":"レジェルレ率：","ability2":"～1.5％","paramebase":0.1}}},"20":{"number":20,"name":"コーヒー","basetxt":"レアルレ率：0.1～5％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/20.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":10.0,"paramemin":0.1,"paramemax":1.0,"fp":1,"ability1":"レアルレ率：","ability2":"～5％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":11.0,"paramemin":1.0,"paramemax":2.0,"fp":1,"ability1":"レアルレ率：","ability2":"～5％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":11.0,"paramemin":2.0,"paramemax":3.0,"fp":1,"ability1":"レアルレ率：","ability2":"～5％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":11.0,"paramemin":3.0,"paramemax":4.0,"fp":1,"ability1":"レアルレ率：","ability2":"～5％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":11.0,"paramemin":4.0,"paramemax":5.0,"fp":1,"ability1":"レアルレ率：","ability2":"～5％","paramebase":0.1}}},"21":{"number":21,"name":"V3","basetxt":"最大ユニ：0.1～5体","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/21.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":10.0,"paramemin":0.1,"paramemax":1.0,"fp":1,"ability1":"最大ユニ：","ability2":"～5体","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":11.0,"paramemin":1.0,"paramemax":2.0,"fp":1,"ability1":"最大ユニ：","ability2":"～5体","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":11.0,"paramemin":2.0,"paramemax":3.0,"fp":1,"ability1":"最大ユニ：","ability2":"～5体","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":11.0,"paramemin":3.0,"paramemax":4.0,"fp":1,"ability1":"最大ユニ：","ability2":"～5体","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":11.0,"paramemin":4.0,"paramemax":5.0,"fp":1,"ability1":"最大ユニ：","ability2":"～5体","paramebase":0.1}}},"22":{"number":22,"name":"バーガー","basetxt":"キル時：0.01～0.5％でコイン2～30枚","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/22.png","grades":{"N":{"grade":"ノーマル","stepmin":0.01,"stepmax":10.0,"paramemin":0.01,"paramemax":0.1,"fp":2,"ability1":"キル時：","ability2":"～0.5％でコイン2～6枚","paramebase":0.01},"R":{"grade":"レア","stepmin":0.01,"stepmax":11.0,"paramemin":0.1,"paramemax":0.2,"fp":2,"ability1":"キル時：","ability2":"～0.5％でコイン6～12枚","paramebase":0.01},"E":{"grade":"エピック","stepmin":0.01,"stepmax":10.999999999999998,"paramemin":0.2,"paramemax":0.3,"fp":2,"ability1":"キル時：","ability2":"～0.5％でコイン12～18枚","paramebase":0.01},"L":{"grade":"レジェンド","stepmin":0.01,"stepmax":11.000000000000004,"paramemin":0.3,"paramemax":0.4,"fp":2,"ability1":"キル時：","ability2":"～0.5％でコイン18～24枚","paramebase":0.01},"M":{"grade":"神話","stepmin":0.01,"stepmax":10.999999999999998,"paramemin":0.4,"paramemax":0.5,"fp":2,"ability1":"キル時：","ability2":"～0.5％でコイン24～30枚","paramebase":0.01}}},"23":{"number":23,"name":"軍人","basetxt":"防御力減少：0.1～15％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/23.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":30.0,"paramemin":0.1,"paramemax":3.0,"fp":1,"ability1":"防御力減少：","ability2":"～15％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":31.0,"paramemin":3.0,"paramemax":6.0,"fp":1,"ability1":"防御力減少：","ability2":"～15％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":31.0,"paramemin":6.0,"paramemax":9.0,"fp":1,"ability1":"防御力減少：","ability2":"～15％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":31.0,"paramemin":9.0,"paramemax":12.0,"fp":1,"ability1":"防御力減少：","ability2":"～15％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":31.0,"paramemin":12.0,"paramemax":15.0,"fp":1,"ability1":"防御力減少：","ability2":"～15％","paramebase":0.1}}},"24":{"number":24,"name":"ハロウィン","basetxt":"マナ回復速度：0.1～20％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/24.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":40.0,"paramemin":0.1,"paramemax":4.0,"fp":1,"ability1":"マナ回復速度：","ability2":"～20％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":41.0,"paramemin":4.0,"paramemax":8.0,"fp":1,"ability1":"マナ回復速度：","ability2":"～20％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":41.0,"paramemin":8.0,"paramemax":12.0,"fp":1,"ability1":"マナ回復速度：","ability2":"～20％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":41.0,"paramemin":12.0,"paramemax":16.0,"fp":1,"ability1":"マナ回復速度：","ability2":"～20％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":41.0,"paramemin":16.0,"paramemax":20.0,"fp":1,"ability1":"マナ回復速度：","ability2":"～20％","paramebase":0.1}}},"25":{"number":25,"name":"ゴールド","basetxt":"攻撃速度：0.1～5％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/25.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":10.0,"paramemin":0.1,"paramemax":1.0,"fp":1,"ability1":"攻撃速度：","ability2":"～5％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":11.0,"paramemin":1.0,"paramemax":2.0,"fp":1,"ability1":"攻撃速度：","ability2":"～5％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":11.0,"paramemin":2.0,"paramemax":3.0,"fp":1,"ability1":"攻撃速度：","ability2":"～5％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":11.0,"paramemin":3.0,"paramemax":4.0,"fp":1,"ability1":"攻撃速度：","ability2":"～5％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":11.0,"paramemin":4.0,"paramemax":5.0,"fp":1,"ability1":"攻撃速度：","ability2":"～5％","paramebase":0.1}}},"26":{"number":26,"name":"肉","basetxt":"クールタイム減：0.1～10％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/26.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":20.0,"paramemin":0.1,"paramemax":2.0,"fp":1,"ability1":"クールタイム減：","ability2":"～10％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":21.0,"paramemin":2.0,"paramemax":4.0,"fp":1,"ability1":"クールタイム減：","ability2":"～10％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":21.0,"paramemin":4.0,"paramemax":6.0,"fp":1,"ability1":"クールタイム減：","ability2":"～10％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":21.0,"paramemin":6.0,"paramemax":8.0,"fp":1,"ability1":"クールタイム減：","ability2":"～10％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":21.0,"paramemin":8.0,"paramemax":10.0,"fp":1,"ability1":"クールタイム減：","ability2":"～10％","paramebase":0.1}}},"27":{"number":27,"name":"サイダー","basetxt":"毎wave：1～10％で石1個","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/27.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":11.0,"paramemin":1.0,"paramemax":2.0,"fp":1,"ability1":"毎wave：","ability2":"～10％で石1個","paramebase":1.0},"R":{"grade":"レア","stepmin":0.1,"stepmax":21.0,"paramemin":2.0,"paramemax":4.0,"fp":1,"ability1":"毎wave：","ability2":"～10％で石1個","paramebase":1.0},"E":{"grade":"エピック","stepmin":0.1,"stepmax":21.0,"paramemin":4.0,"paramemax":6.0,"fp":1,"ability1":"毎wave：","ability2":"～10％で石1個","paramebase":1.0},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":21.0,"paramemin":6.0,"paramemax":8.0,"fp":1,"ability1":"毎wave：","ability2":"～10％で石1個","paramebase":1.0},"M":{"grade":"神話","stepmin":0.1,"stepmax":21.0,"paramemin":8.0,"paramemax":10.0,"fp":1,"ability1":"毎wave：","ability2":"～10％で石1個","paramebase":1.0}}},"28":{"number":28,"name":"小太り","basetxt":"合成時ランク上昇：0.01～1％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/28.png","grades":{"N":{"grade":"ノーマル","stepmin":0.01,"stepmax":20.0,"paramemin":0.01,"paramemax":0.2,"fp":2,"ability1":"合成時ランク上昇：","ability2":"～1％","paramebase":0.01},"R":{"grade":"レア","stepmin":0.01,"stepmax":21.0,"paramemin":0.2,"paramemax":0.4,"fp":2,"ability1":"合成時ランク上昇：","ability2":"～1％","paramebase":0.01},"E":{"grade":"エピック","stepmin":0.01,"stepmax":20.999999999999996,"paramemin":0.4,"paramemax":0.6,"fp":2,"ability1":"合成時ランク上昇：","ability2":"～1％","paramebase":0.01},"L":{"grade":"レジェンド","stepmin":0.01,"stepmax":21.000000000000007,"paramemin":0.6,"paramemax":0.8,"fp":2,"ability1":"合成時ランク上昇：","ability2":"～1％","paramebase":0.01},"M":{"grade":"神話","stepmin":0.01,"stepmax":20.999999999999996,"paramemin":0.8,"paramemax":1.0,"fp":2,"ability1":"合成時ランク上昇：","ability2":"～1％","paramebase":0.01}}},"29":{"number":29,"name":"ピンク","basetxt":"移動速度：1～25％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/29.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":41.0,"paramemin":1.0,"paramemax":5.0,"fp":1,"ability1":"移動速度：","ability2":"～25％","paramebase":1.0},"R":{"grade":"レア","stepmin":0.1,"stepmax":51.0,"paramemin":5.0,"paramemax":10.0,"fp":1,"ability1":"移動速度：","ability2":"～25％","paramebase":1.0},"E":{"grade":"エピック","stepmin":0.1,"stepmax":51.0,"paramemin":10.0,"paramemax":15.0,"fp":1,"ability1":"移動速度：","ability2":"～25％","paramebase":1.0},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":51.0,"paramemin":15.0,"paramemax":20.0,"fp":1,"ability1":"移動速度：","ability2":"～25％","paramebase":1.0},"M":{"grade":"神話","stepmin":0.1,"stepmax":51.0,"paramemin":20.0,"paramemax":25.0,"fp":1,"ability1":"移動速度：","ability2":"～25％","paramebase":1.0}}},"30":{"number":30,"name":"教官","basetxt":"鈍化効果：0.1～15％","picurl":"https://teggcuiyqkbcvbhdntni.supabase.co/storage/v1/object/public/ld_masterpiece/30.png","grades":{"N":{"grade":"ノーマル","stepmin":0.1,"stepmax":30.0,"paramemin":0.1,"paramemax":3.0,"fp":1,"ability1":"鈍化効果：","ability2":"～15％","paramebase":0.1},"R":{"grade":"レア","stepmin":0.1,"stepmax":31.0,"paramemin":3.0,"paramemax":6.0,"fp":1,"ability1":"鈍化効果：","ability2":"～15％","paramebase":0.1},"E":{"grade":"エピック","stepmin":0.1,"stepmax":31.0,"paramemin":6.0,"paramemax":9.0,"fp":1,"ability1":"鈍化効果：","ability2":"～15％","paramebase":0.1},"L":{"grade":"レジェンド","stepmin":0.1,"stepmax":31.0,"paramemin":9.0,"paramemax":12.0,"fp":1,"ability1":"鈍化効果：","ability2":"～15％","paramebase":0.1},"M":{"grade":"神話","stepmin":0.1,"stepmax":31.0,"paramemin":12.0,"paramemax":15.0,"fp":1,"ability1":"鈍化効果：","ability2":"～15％","paramebase":0.1}}}}};
+/* ld_doll_gacha_sim.js (step 1-4) */
+(() => {
+  'use strict';
 
-/* =========================
-   Phase A: Step1-4 入力UI
-   ========================= */
+  const VERSION = '20260129b';
 
-const $ = (sel,root=document)=>root.querySelector(sel);
-const $$ = (sel,root=document)=>Array.from(root.querySelectorAll(sel));
+  const GRADE_JP_TO_SHORT = {
+    'ノーマル':'N',
+    'レア':'R',
+    'エピック':'E',
+    'レジェンド':'L',
+    '神話':'M',
+  };
+  const GRADE_SHORT_TO_JP = {
+    'N':'ノーマル',
+    'R':'レア',
+    'E':'エピック',
+    'L':'レジェンド',
+    'M':'神話',
+  };
+  const GRADE_ORDER = ['N','R','E','L','M'];
+  const STEP_LABEL = {
+    1:'①',2:'②',3:'③',4:'④',5:'⑤',6:'⑥',7:'⑦'
+  };
 
-/** iOS Safari: double-tap zoom抑止（保険） */
-(function preventDoubleTapZoom(){
-  let lastTouchEnd = 0;
-  document.addEventListener('touchend', (e)=>{
-    const now = Date.now();
-    if (now - lastTouchEnd <= 300) {
-      e.preventDefault();
+  const RARITY_BG_CLASS = { N:'card-bgN', R:'card-bgR', E:'card-bgE', L:'card-bgL', M:'card-bgM' };
+
+  const PLACEHOLDER_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
+      <rect width="100%" height="100%" rx="14" ry="14" fill="#22262d"/>
+      <path d="M18 44c7-18 21-18 28 0" fill="none" stroke="#8a93a3" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="32" cy="26" r="8" fill="none" stroke="#8a93a3" stroke-width="3"/>
+    </svg>`
+  );
+
+  const $ = (sel, root=document) => root.querySelector(sel);
+
+  const app = {
+    supabase: null,
+    masterByNumber: new Map(), // number -> {number,name,picurl,basetxt, byGrade:{N:row..}}
+    state: null,
+  };
+
+  function makeBlankSlot(){
+    return { number:null, name:null, grade:null, value:null, score:null, picurl:null, desc:null, locked:false };
+  }
+
+  function initState(){
+    return {
+      currentStep: 1,
+      maxReached: 1,
+      slot: [makeBlankSlot(),makeBlankSlot(),makeBlankSlot(),makeBlankSlot(),makeBlankSlot()],
+      selectedSlotIndex: null,
+      candidate1: [],
+      candidate2: [],
+      candidate3: [],
+      stepStates: {
+        1: { activeTab: 1, selected: new Set(), grade: new Map(), value: new Map() },
+        2: { activeTab: 1, selected: new Set(), grade: new Map(), value: new Map() },
+        3: { activeTab: 1, selected: new Set(), grade: new Map(), value: new Map() },
+        4: { activeTab: 1, selected: new Set(), grade: new Map(), value: new Map() },
+      },
+      modal: { open:false, step:null, number:null, idx:0 },
+      error: null,
+      loading: true,
+    };
+  }
+
+  function assertSupabaseConfig(){
+    if (!window.LD_SUPABASE_URL || !window.LD_SUPABASE_ANON_KEY){
+      throw new Error('supabase_config.js が見つからないか、LD_SUPABASE_URL / LD_SUPABASE_ANON_KEY が未設定です。');
     }
-    lastTouchEnd = now;
-  }, {passive:false});
+    if (!window.supabase || !window.supabase.createClient){
+      throw new Error('supabase-js の読み込みに失敗しました。');
+    }
+  }
+
+  async function loadMaster(){
+    // ld_piece_gacha
+    const { data: gacha, error: e1 } = await app.supabase
+      .from('ld_piece_gacha')
+      .select('*')
+      .order('number', { ascending: true })
+      .order('id', { ascending: true });
+    if (e1) throw e1;
+    if (!Array.isArray(gacha) || gacha.length < 30) throw new Error('ld_piece_gacha の取得に失敗しました。');
+
+    // build map
+    for (const row of gacha){
+      const num = Number(row.number);
+      if (!app.masterByNumber.has(num)){
+        app.masterByNumber.set(num, {
+          number: num,
+          name: String(row.name),
+          picurl: row.picurl || null,
+          basetxt: String(row.basetxt || ''),
+          byGrade: {},
+        });
+      }
+      const m = app.masterByNumber.get(num);
+      const g = GRADE_JP_TO_SHORT[String(row.grade)] || null;
+      if (!g) continue;
+
+      m.byGrade[g] = {
+        id: row.id,
+        number: num,
+        name: String(row.name),
+        grade: g,
+        stepmin: Number(row.stepmin),
+        stepmax: Number(row.stepmax),
+        paramemin: Number(row.paramemin),
+        paramebase: Number(row.paramebase), // defensive
+        paramemax: Number(row.paramemax),
+        fp: Number(row.fp),
+        basetxt: String(row.basetxt || ''),
+        ability1: String(row.ability1 || ''),
+        ability2: String(row.ability2 || ''),
+        picurl: row.picurl || null,
+      };
+    }
+
+    // sanity: ensure all grades exist
+    for (let i=1;i<=30;i++){
+      const m = app.masterByNumber.get(i);
+      if (!m) throw new Error('master missing number=' + i);
+      for (const g of GRADE_ORDER){
+        if (!m.byGrade[g]) throw new Error(`master missing number=${i} grade=${g}`);
+      }
+    }
+  }
+
+  function getStepState(step){
+    return app.state.stepStates[step];
+  }
+
+  function formatValue(v, fp){
+    if (v === null || v === undefined || Number.isNaN(Number(v))) return '';
+    const n = Number(v);
+    const f = Math.max(0, Number(fp)||0);
+    return n.toFixed(f);
+  }
+
+  function buildDesc(number, grade, value){
+    const m = app.masterByNumber.get(Number(number));
+    if (!m) return '';
+    if (!grade){
+      return m.basetxt || '';
+    }
+    const r = m.byGrade[grade];
+    const vv = (value === null || value === undefined) ? r.paramemin : Number(value);
+    return `${(r.ability1||'').trim()}${formatValue(vv, r.fp)}${(r.ability2||'').trim()}`;
+  }
+
+  function calcScore(number, grade, value){
+    const m = app.masterByNumber.get(Number(number));
+    if (!m || !grade) return null;
+    const r = m.byGrade[grade];
+    const stepmin = r.stepmin;
+    const paramebase = r.paramebase;
+    const paramemax = r.paramemax;
+
+    // integerize by stepmin
+    const rankSteps = Math.round((Number(value) - paramebase) / stepmin) + 1;
+    const totalSteps = Math.round((paramemax - paramebase) / stepmin) + 1;
+    const score = Math.round((rankSteps / totalSteps) * 10000);
+    return Number.isFinite(score) ? score : null;
+  }
+
+  function getLockedNames(){
+    const s = app.state.slot;
+    const set = new Set();
+    for (let i=0;i<3;i++){
+      if (s[i] && s[i].locked && s[i].name) set.add(s[i].name);
+    }
+    return set;
+  }
+
+  function getTransferredGradeByNumber(){
+    const map = new Map();
+    for (const sl of app.state.slot){
+      if (sl && sl.number){
+        map.set(Number(sl.number), sl.grade);
+      }
+    }
+    return map;
+  }
+
+  function getCandidateNameSet(list){
+    const set = new Set();
+    for (const c of (list||[])){
+      if (c && c.name) set.add(c.name);
+    }
+    return set;
+  }
+
+  function isDisabledInStep(step, number){
+    if (step < 2 || step > 4) return false;
+    const num = Number(number);
+    const m = app.masterByNumber.get(num);
+    if (!m) return true;
+
+    const st = getStepState(step);
+    if (st.selected.size >= 10 && !st.selected.has(num)) return true;
+
+    const locked = getLockedNames();
+    const c1 = getCandidateNameSet(app.state.candidate1);
+    const c2 = getCandidateNameSet(app.state.candidate2);
+
+    if (locked.has(m.name)) return true;
+    if (step >= 3 && c1.has(m.name)) return true;
+    if (step >= 4 && c2.has(m.name)) return true;
+    return false;
+  }
+
+  function selectCard(step, num, initGrade){
+    const st = getStepState(step);
+    const number = Number(num);
+    if (step >= 2 && step <= 4){
+      if (isDisabledInStep(step, number)) return;
+      if (st.selected.size >= 10 && !st.selected.has(number)) return;
+    }
+    st.selected.add(number);
+    const grade = initGrade || (step === 1 ? 'N' : 'M');
+    st.grade.set(number, grade);
+    const r = app.masterByNumber.get(number).byGrade[grade];
+    st.value.set(number, r.paramemin);
+  }
+
+  function deselectCard(step, num){
+    const st = getStepState(step);
+    const number = Number(num);
+    st.selected.delete(number);
+    st.grade.delete(number);
+    st.value.delete(number);
+  }
+
+  function toggleCardByImage(step, num){
+    const st = getStepState(step);
+    const number = Number(num);
+
+    if (step === 1){
+      // basic 1-card workflow: selecting a new card replaces the old selection
+      if (!st.selected.has(number) && st.selected.size >= 1){
+        for (const old of Array.from(st.selected)) deselectCard(1, old);
+      }
+    }
+
+    if (st.selected.has(number)){
+      deselectCard(step, number);
+    } else {
+      selectCard(step, number, step === 1 ? 'N' : 'M');
+    }
+  }
+
+  function setCardGrade(step, num, grade){
+    const st = getStepState(step);
+    const number = Number(num);
+
+    if (step >= 2 && step <= 4 && isDisabledInStep(step, number) && !st.selected.has(number)) return;
+
+    if (!st.selected.has(number)){
+      if (step === 1 && st.selected.size >= 1){
+        for (const old of Array.from(st.selected)) deselectCard(1, old);
+      }
+      selectCard(step, number, grade);
+      return;
+    }
+
+    const prev = st.grade.get(number) || null;
+
+    // Step①: re-tap same grade => unselect (E-05)
+    if (step === 1 && prev === grade){
+      deselectCard(step, number);
+      return;
+    }
+
+    st.grade.set(number, grade);
+    const r = app.masterByNumber.get(number).byGrade[grade];
+    st.value.set(number, r.paramemin);
+  }
+
+  function openModal(step, num){
+    const st = getStepState(step);
+    const number = Number(num);
+    if (!st.selected.has(number)) return;
+
+    const grade = st.grade.get(number);
+    if (!grade) return;
+
+    const r = app.masterByNumber.get(number).byGrade[grade];
+    const cur = st.value.get(number);
+    const idx = Math.round((Number(cur) - r.paramemin) / r.stepmin);
+    app.state.modal = { open:true, step, number, idx: clampInt(idx, 0, Math.max(0, (r.stepmax||1) - 1)) };
+  }
+
+  function closeModal(){
+    app.state.modal = { open:false, step:null, number:null, idx:0 };
+  }
+
+  function clampInt(v, min, max){
+    return Math.max(min, Math.min(max, Math.trunc(v)));
+  }
+
+  function modalApplyIdx(newIdx){
+    const m = app.state.modal;
+    if (!m.open) return;
+    const st = getStepState(m.step);
+    const number = m.number;
+    const grade = st.grade.get(number);
+    const r = app.masterByNumber.get(number).byGrade[grade];
+    const maxIdx = Math.max(0, (r.stepmax||1) - 1);
+    m.idx = clampInt(newIdx, 0, maxIdx);
+  }
+
+  function modalCurrentValue(){
+    const m = app.state.modal;
+    if (!m.open) return null;
+    const st = getStepState(m.step);
+    const number = m.number;
+    const grade = st.grade.get(number);
+    const r = app.masterByNumber.get(number).byGrade[grade];
+    return r.paramemin + (r.stepmin * m.idx);
+  }
+
+  function modalPreset(p){
+    const m = app.state.modal;
+    if (!m.open) return;
+    const st = getStepState(m.step);
+    const number = m.number;
+    const grade = st.grade.get(number);
+    const r = app.masterByNumber.get(number).byGrade[grade];
+
+    const target = r.paramebase + (r.paramemax - r.paramebase) * p;
+    const k = Math.round((target - r.paramebase) / r.stepmin);
+    const value = clampNum(r.paramebase + k * r.stepmin, r.paramemin, r.paramemax);
+    const idx = Math.round((value - r.paramemin) / r.stepmin);
+    modalApplyIdx(idx);
+  }
+
+  function clampNum(v, min, max){
+    return Math.max(min, Math.min(max, v));
+  }
+
+  function modalDecide(){
+    const m = app.state.modal;
+    if (!m.open) return;
+
+    const st = getStepState(m.step);
+    const number = m.number;
+    const grade = st.grade.get(number);
+    const r = app.masterByNumber.get(number).byGrade[grade];
+    const value = r.paramemin + (r.stepmin * m.idx);
+
+    st.value.set(number, clampNum(value, r.paramemin, r.paramemax));
+    closeModal();
+  }
+
+  function transferToSlot(){
+    const st = getStepState(1);
+    if (st.selected.size < 1) return;
+
+    const number = Array.from(st.selected)[0];
+    const m = app.masterByNumber.get(number);
+    const grade = st.grade.get(number);
+    const value = st.value.get(number);
+    const desc = buildDesc(number, grade, value);
+    const score = calcScore(number, grade, value);
+
+    // find existing same name
+    let idx = -1;
+    for (let i=0;i<5;i++){
+      if (app.state.slot[i] && app.state.slot[i].name === m.name){
+        idx = i; break;
+      }
+    }
+    if (idx === -1){
+      // find first blank (topmost)
+      for (let i=0;i<5;i++){
+        if (!app.state.slot[i].number){
+          idx = i; break;
+        }
+      }
+    }
+    if (idx === -1){
+      // all filled and no same name
+      toast('スロットが満杯です（同名がないため転写できません）');
+      return;
+    }
+
+    const keepLocked = app.state.slot[idx].locked === true;
+    app.state.slot[idx] = {
+      number: m.number,
+      name: m.name,
+      grade,
+      value,
+      score,
+      picurl: m.picurl,
+      desc,
+      locked: keepLocked,
+    };
+
+    // after transfer: clear list selection (workflow friendly)
+    deselectCard(1, number);
+    app.state.selectedSlotIndex = null;
+
+    // enforce lock rule after overwrite
+    enforceLockContinuity();
+  }
+
+  function deleteSelectedSlot(){
+    const idx = app.state.selectedSlotIndex;
+    if (idx === null || idx === undefined) return;
+
+    const arr = app.state.slot.slice();
+    // remove idx, shift up filled cards below it
+    arr.splice(idx, 1);
+
+    // append blank
+    arr.push(makeBlankSlot());
+
+    // locked belongs to position: we must keep locked flags for positions,
+    // BUT spec says deletion shifts "info cards" up; blank slot becomes locked=false.
+    // We'll interpret as content shifts, positions remain.
+    // To satisfy this, shift content only, keep locked flags per position.
+    const lockedFlags = app.state.slot.map(s => !!s.locked);
+    const newSlot = [];
+    for (let i=0;i<5;i++){
+      const content = arr[i] || makeBlankSlot();
+      newSlot.push({
+        ...content,
+        locked: lockedFlags[i] && !!content.number, // blank => false
+      });
+    }
+
+    // if last became blank, force locked=false
+    for (let i=0;i<5;i++){
+      if (!newSlot[i].number) newSlot[i].locked = false;
+    }
+
+    app.state.slot = newSlot;
+    app.state.selectedSlotIndex = null;
+    enforceLockContinuity();
+  }
+
+  function enforceLockContinuity(){
+    // only slot 0..2
+    for (let i=0;i<3;i++){
+      if (!app.state.slot[i].number){
+        app.state.slot[i].locked = false;
+      }
+      if (i>0 && !app.state.slot[i-1].locked){
+        app.state.slot[i].locked = false;
+      }
+    }
+  }
+
+  function toggleLock(index){
+    const i = Number(index);
+    if (i < 0 || i > 2) return;
+    const sl = app.state.slot[i];
+    if (!sl.number) return;
+
+    sl.locked = !sl.locked;
+    enforceLockContinuity();
+  }
+
+  function swapSlotContent(i, j){
+    const a = app.state.slot[i];
+    const b = app.state.slot[j];
+    if (!a.number || !b.number) return;
+
+    const keepLockA = a.locked;
+    const keepLockB = b.locked;
+
+    app.state.slot[i] = { ...b, locked: keepLockA };
+    app.state.slot[j] = { ...a, locked: keepLockB };
+  }
+
+  function confirmStep(step){
+    const s = Number(step);
+
+    if (s === 1){
+      const allFilled = app.state.slot.every(x => !!x.number);
+      if (!allFilled){
+        toast('スロット5枠をすべて埋めてください');
+        return;
+      }
+      // if re-confirm, invalidate candidates
+      app.state.candidate1 = [];
+      app.state.candidate2 = [];
+      app.state.candidate3 = [];
+      app.state.currentStep = 2;
+      app.state.maxReached = Math.max(app.state.maxReached, 2);
+      // reset selection states for 2-4
+      for (const k of [2,3,4]){
+        const st = getStepState(k);
+        st.selected = new Set();
+        st.grade = new Map();
+        st.value = new Map();
+        st.activeTab = 1;
+      }
+      return;
+    }
+
+    if (s >= 2 && s <= 4){
+      const st = getStepState(s);
+      const n = st.selected.size;
+      if (n < 1 || n > 10){
+        toast('このステップで選択中の人形を 1〜10 個にしてください');
+        return;
+      }
+      const list = Array.from(st.selected).sort((a,b)=>a-b).map(num => {
+        const m = app.masterByNumber.get(num);
+        const grade = st.grade.get(num);
+        const value = st.value.get(num);
+        const desc = buildDesc(num, grade, value);
+        const score = calcScore(num, grade, value);
+        return { number: num, name: m.name, grade, valueMin: value, score, desc };
+      });
+
+      if (s === 2){
+        app.state.candidate1 = list;
+        app.state.candidate2 = [];
+        app.state.candidate3 = [];
+        app.state.currentStep = 3;
+        app.state.maxReached = Math.max(app.state.maxReached, 3);
+      } else if (s === 3){
+        // ensure no overlap with candidate1 (should already be blocked)
+        const c1 = getCandidateNameSet(app.state.candidate1);
+        if (list.some(x => c1.has(x.name))){
+          toast('候補1と同名は候補2で選べません');
+          return;
+        }
+        app.state.candidate2 = list;
+        app.state.candidate3 = [];
+        app.state.currentStep = 4;
+        app.state.maxReached = Math.max(app.state.maxReached, 4);
+      } else if (s === 4){
+        const c1 = getCandidateNameSet(app.state.candidate1);
+        const c2 = getCandidateNameSet(app.state.candidate2);
+        if (list.some(x => c1.has(x.name) || c2.has(x.name))){
+          toast('候補1/2と同名は候補3で選べません');
+          return;
+        }
+        app.state.candidate3 = list;
+        app.state.currentStep = 5;
+        app.state.maxReached = Math.max(app.state.maxReached, 5);
+      }
+    }
+  }
+
+  function setAllGrade(step, grade){
+    const s = Number(step);
+    if (s < 2 || s > 4) return;
+    const st = getStepState(s);
+    if (st.selected.size < 1) return;
+
+    for (const num of st.selected){
+      st.grade.set(num, grade);
+      const r = app.masterByNumber.get(num).byGrade[grade];
+      st.value.set(num, r.paramemin);
+    }
+  }
+
+  function removeFromPanel(step, num){
+    const s = Number(step);
+    if (s < 2 || s > 4) return;
+    const st = getStepState(s);
+    const number = Number(num);
+    if (st.selected.has(number)){
+      deselectCard(s, number);
+    }
+  }
+
+  function goStep(step){
+    const s = Number(step);
+    if (!Number.isFinite(s)) return;
+    if (s < 1 || s > 7) return;
+    if (s > app.state.maxReached) return;
+    app.state.currentStep = s;
+    closeModal();
+    if (s === 1){
+      app.state.selectedSlotIndex = null;
+    }
+  }
+
+  function setActiveTab(step, tab){
+    const st = getStepState(step);
+    st.activeTab = Number(tab) || 1;
+  }
+
+  // ---------- rendering ----------
+  function render(){
+    renderStepTabs();
+    renderMain();
+    renderModal();
+  }
+
+  function renderStepTabs(){
+    const host = $('#stepTabs');
+    const { currentStep, maxReached } = app.state;
+    const items = [];
+    for (let s=1; s<=7; s++){
+      const disabled = s > maxReached;
+      const isCurrent = s === currentStep;
+      items.push(
+        `<button class="step-btn" data-action="go-step" data-step="${s}" ${disabled?'disabled':''} ${isCurrent?'aria-current="step"':''}>
+          <span>${STEP_LABEL[s]}</span>
+        </button>`
+      );
+    }
+    host.innerHTML = items.join('');
+  }
+
+  function renderMain(){
+    const main = $('#main');
+    const s = app.state.currentStep;
+
+    if (app.state.loading){
+      main.innerHTML = `<div class="section"><div class="section-title">読み込み中…</div><div class="section-sub">Supabase からマスタデータを取得しています</div></div>`;
+      return;
+    }
+    if (app.state.error){
+      main.innerHTML = `<div class="section"><div class="section-title">エラー</div><div class="small">${escapeHtml(app.state.error)}</div></div>`;
+      return;
+    }
+
+    if (s === 1){
+      main.innerHTML = renderStep1();
+    } else if (s === 2){
+      main.innerHTML = renderStepCandidates(2, '第1候補（候補1）', '②確定');
+    } else if (s === 3){
+      main.innerHTML = renderStepCandidates(3, '第2候補（候補2）', '③確定');
+    } else if (s === 4){
+      main.innerHTML = renderStepCandidates(4, '第3候補（候補3）', '④確定');
+    } else {
+      main.innerHTML = `<div class="section">
+        <div class="section-title">この先（⑤〜⑦）は未実装</div>
+        <div class="section-sub">このZIPはステップ①〜④までを先に固めるための土台です。</div>
+        <div class="panel-list">
+          <div class="panel-item ref">
+            <div><div class="t">候補1</div><div class="d">${escapeHtml(summaryCandidate(app.state.candidate1))}</div></div>
+          </div>
+          <div class="panel-item ref">
+            <div><div class="t">候補2</div><div class="d">${escapeHtml(summaryCandidate(app.state.candidate2))}</div></div>
+          </div>
+          <div class="panel-item ref">
+            <div><div class="t">候補3</div><div class="d">${escapeHtml(summaryCandidate(app.state.candidate3))}</div></div>
+          </div>
+        </div>
+      </div>`;
+    }
+  }
+
+  function summaryCandidate(list){
+    if (!list || list.length === 0) return '（未確定）';
+    return list.map(x => `${x.name}(${x.grade}${formatValue(x.valueMin, getFp(x.number,x.grade))})`).join(' / ');
+  }
+
+  function getFp(number, grade){
+    const m = app.masterByNumber.get(Number(number));
+    if (!m) return 0;
+    return m.byGrade[grade].fp;
+  }
+  function renderStep1(){
+    const st = getStepState(1);
+    const tab = st.activeTab;
+    const selectedNumber = st.selected.size ? Array.from(st.selected)[0] : null;
+
+    const transferred = getTransferredGradeByNumber();
+
+    // list (top)
+    const listNumbers = getNumbersByTab(tab);
+    const ordered = orderByTwoColumn(listNumbers);
+    const gridHtml = ordered.map(num => {
+      const m = app.masterByNumber.get(num);
+      const selected = st.selected.has(num);
+      const grade = st.grade.get(num) || null;
+      const value = st.value.get(num);
+      const desc = selected ? buildDesc(num, grade, value) : (m.basetxt||'');
+      const bgGrade = selected ? grade : (transferred.get(num) || null);
+      return renderDollCard({
+        step: 1,
+        number: num,
+        name: m.name,
+        picurl: m.picurl,
+        desc,
+        selected,
+        grade,
+        bgGrade,
+        disabled: false,
+      });
+    }).join('');
+
+    // slots (bottom)
+    const slotHtml = app.state.slot.map((sl, i) => renderSlotCard(sl, i)).join('');
+
+    const canTransfer = selectedNumber !== null;
+    const allFilled = app.state.slot.every(x => !!x.number);
+
+    return `
+      <div class="section">
+        <div class="section-title list-head">
+          <span class="head-left"><span class="caret">▲</span>人形一覧</span>
+          <div class="head-right">
+            <span class="section-sub">画像タップで選択 →</span>
+            <button class="btn primary compact" data-action="transfer" ${canTransfer?'':'disabled'}>転写</button>
+          </div>
+        </div>
+
+        ${renderListTabs(1, tab)}
+        <div class="doll-grid">${gridHtml}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">
+          <span>ステップ①：所持状況（スロット/ロック）</span>
+          <span class="pill">スロット：5枠</span>
+        </div>
+
+        <div class="slot-list">${slotHtml}</div>
+
+        <div class="row" style="margin-top:10px; justify-content:flex-end;">
+          <button class="btn danger" data-action="slot-delete" ${app.state.selectedSlotIndex===null?'disabled':''}>▲ 削除</button>
+          <button class="btn primary" data-action="confirm-step" data-step="1" ${allFilled?'':'disabled'}>① 確定</button>
+        </div>
+
+        <div class="small" style="margin-top:8px;">
+          転写：一覧で選択中の人形をスロットへ。スロット内に同名があれば上書き（ロック/位置は維持）。
+        </div>
+      </div>
+    `;
+  }
+  function renderSlotCard(sl, index){
+    const filled = !!sl.number;
+    const selected = app.state.selectedSlotIndex === index;
+    const img = filled ? (sl.picurl || PLACEHOLDER_IMG) : PLACEHOLDER_IMG;
+    const name = filled ? sl.name : `（空き）`;
+    const grade = filled ? sl.grade : null;
+    const desc = filled ? (sl.desc || '') : '—';
+
+    const lockVisible = filled && index <= 2;
+    const lockOn = lockVisible && sl.locked;
+
+    const upEnabled = filled && index > 0 && !!app.state.slot[index-1].number;
+    const downEnabled = filled && index < 4 && !!app.state.slot[index+1].number;
+
+    const gradeChip = filled ? `<span class="chip grade ${grade}">${grade}</span>` : '';
+    const scoreChip = filled ? `<span class="chip">${sl.score ?? '-'}</span>` : '';
+
+    return `
+      <div class="slot-card ${selected?'selected':''} ${grade?RARITY_BG_CLASS[grade]:''}" data-action="slot-select" data-index="${index}">
+        ${filled ? `
+          <div class="slot-move" aria-label="入替">
+            <button class="move-btn" data-action="slot-swap" data-dir="up" data-index="${index}" ${upEnabled?'':'disabled'}>▲</button>
+            <button class="move-btn" data-action="slot-swap" data-dir="down" data-index="${index}" ${downEnabled?'':'disabled'}>▼</button>
+          </div>
+        ` : `
+          <div class="slot-move empty" aria-hidden="true"></div>
+        `}
+        <div class="slot-left"><img alt="" src="${escapeAttr(img)}" /></div>
+
+        <div class="slot-mid">
+          <div class="slot-name">${escapeHtml(name)}</div>
+          <div class="slot-desc">${escapeHtml(desc)}</div>
+        </div>
+
+        <div class="slot-tail">
+          ${lockVisible ? `<button class="icon-btn lock ${lockOn?'on':''}" data-action="slot-lock" data-index="${index}">${lockOn?'🔒':'🔓'}</button>` : `<span class="slot-tail-spacer"></span>`}
+          ${scoreChip}
+          ${gradeChip}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderListTabs(step, activeTab){
+    return `
+      <div class="tabs">
+        <button class="tab-btn" data-action="tab" data-step="${step}" data-tab="1" aria-current="${activeTab===1?'true':'false'}">1</button>
+        <button class="tab-btn" data-action="tab" data-step="${step}" data-tab="2" aria-current="${activeTab===2?'true':'false'}">2</button>
+        <button class="tab-btn" data-action="tab" data-step="${step}" data-tab="3" aria-current="${activeTab===3?'true':'false'}">3</button>
+      </div>
+    `;
+  }
+  function renderStepCandidates(step, title, confirmLabel){
+    const st = getStepState(step);
+    const tab = st.activeTab;
+
+    const listNumbers = getNumbersByTab(tab);
+    const ordered = orderByTwoColumn(listNumbers);
+
+    const gridHtml = ordered.map(num => {
+      const m = app.masterByNumber.get(num);
+      const selected = st.selected.has(num);
+      const grade = st.grade.get(num) || null;
+      const value = st.value.get(num);
+      const desc = selected ? buildDesc(num, grade, value) : (m.basetxt||'');
+      const disabled = isDisabledInStep(step, num) && !selected;
+      const bgGrade = selected ? grade : null;
+      return renderDollCard({
+        step,
+        number: num,
+        name: m.name,
+        picurl: m.picurl,
+        desc,
+        selected,
+        grade,
+        bgGrade,
+        disabled,
+      });
+    }).join('');
+
+    const canConfirm = st.selected.size >= 1 && st.selected.size <= 10;
+
+    const panel = renderSelectedPanel(step);
+
+    const allButtons = `
+      <div class="row" style="margin:8px 0 6px;">
+        <span class="pill">一括変更（選択中のみ）</span>
+        ${GRADE_ORDER.map(g => `<button class="icon-btn" data-action="all-grade" data-step="${step}" data-grade="${g}" ${st.selected.size?'':'disabled'}>All ${g}</button>`).join('')}
+      </div>
+    `;
+
+    const note = (step === 2)
+      ? '選択不可：ロック中スロット（枠1〜3で🔒）と同名'
+      : (step === 3)
+        ? '選択不可：ロック中同名 / 候補1と同名'
+        : '選択不可：ロック中同名 / 候補1・2と同名';
+
+    return `
+      <div class="section">
+        <div class="section-title list-head">
+          <span class="head-left"><span class="caret">▲</span>人形一覧</span>
+          <span class="section-sub">画像タップで選択 / 説明文タップで能力値下限</span>
+        </div>
+
+        ${renderListTabs(step, tab)}
+        <div class="doll-grid">${gridHtml}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">
+          <span>ステップ${STEP_LABEL[step]}：${escapeHtml(title)}</span>
+          <span class="pill">このステップで選択中：${st.selected.size}/10</span>
+        </div>
+        <div class="section-sub">${escapeHtml(note)}</div>
+
+        ${allButtons}
+
+        ${panel}
+
+        <div class="row" style="margin-top:10px; justify-content:flex-end;">
+          <button class="btn primary" data-action="confirm-step" data-step="${step}" ${canConfirm?'':'disabled'}>${escapeHtml(confirmLabel)}</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderSelectedPanel(step){
+    const st = getStepState(step);
+
+    const parts = [];
+    const refs = [];
+    if (step >= 3 && app.state.candidate1.length){
+      refs.push({ title:'候補1（確定済み）', list: app.state.candidate1 });
+    }
+    if (step >= 4 && app.state.candidate2.length){
+      refs.push({ title:'候補2（確定済み）', list: app.state.candidate2 });
+    }
+
+    for (const r of refs){
+      parts.push(`<div class="panel-item ref">
+        <div style="min-width:0;">
+          <div class="t">${escapeHtml(r.title)}</div>
+          <div class="d">${escapeHtml(r.list.map(x=>x.name).join(' / '))}</div>
+        </div>
+      </div>`);
+    }
+
+    const selected = Array.from(st.selected).sort((a,b)=>a-b).map(num => {
+      const m = app.masterByNumber.get(num);
+      const grade = st.grade.get(num);
+      const value = st.value.get(num);
+      const desc = buildDesc(num, grade, value);
+      return { number:num, name:m.name, desc };
+    });
+
+    for (const it of selected){
+      parts.push(`<div class="panel-item">
+        <div style="min-width:0;">
+          <div class="t">${escapeHtml(it.name)}</div>
+          <div class="d">${escapeHtml(it.desc)}</div>
+        </div>
+        <button class="x" data-action="panel-remove" data-step="${step}" data-number="${it.number}">×</button>
+      </div>`);
+    }
+
+    if (!parts.length){
+      return `<div class="panel-list"><div class="small">（まだ選択されていません）</div></div>`;
+    }
+    return `<div class="panel-list">${parts.join('')}</div>`;
+  }
+  function renderDollCard({step, number, name, picurl, desc, selected, grade, bgGrade, disabled}){
+    const bgClass = bgGrade ? (RARITY_BG_CLASS[bgGrade] || '') : '';
+    const classes = ['card', bgClass];
+    if (selected) classes.push('selected');
+    if (disabled) classes.push('disabled');
+
+    const master = app.masterByNumber.get(number);
+    const avail = (master && master.byGrade)
+      ? GRADE_ORDER.filter(g => master.byGrade[g] && master.byGrade[g].paramemin != null)
+      : GRADE_ORDER;
+    const grades = avail.length ? avail : GRADE_ORDER;
+
+    const gButtons = grades.map(g => {
+      const on = (grade === g);
+      return `<button class="gbtn ${on?'on':''}" data-action="grade" data-step="${step}" data-number="${number}" data-grade="${g}">${g}</button>`;
+    }).join('');
+
+    return `
+      <div class="${classes.join(' ')}" data-card="${number}">
+        <div class="card-left" data-action="card-toggle" data-step="${step}" data-number="${number}">
+          <img alt="" src="${escapeAttr(picurl || PLACEHOLDER_IMG)}" />
+        </div>
+        <div class="card-right">
+          <div class="name-row">
+            <div class="name">${escapeHtml(name)}</div>
+          </div>
+          <div class="grade-row">${gButtons}</div>
+          <div class="desc" data-action="desc" data-step="${step}" data-number="${number}" title="${escapeAttr(desc)}">${escapeHtml(desc)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderModal(){
+    const host = $('#modalHost');
+    const m = app.state.modal;
+    if (!m.open){
+      host.innerHTML = '';
+      return;
+    }
+    const st = getStepState(m.step);
+    const num = m.number;
+    const grade = st.grade.get(num);
+    const master = app.masterByNumber.get(num);
+    const r = master.byGrade[grade];
+    const maxIdx = Math.max(0, (r.stepmax||1) - 1);
+    const value = modalCurrentValue();
+    const vText = formatValue(value, r.fp);
+
+    host.innerHTML = `
+      <div class="modal-backdrop" data-action="modal-cancel">
+        <div class="modal" role="dialog" aria-modal="true" aria-label="能力値下限">
+          <div class="modal-title">${escapeHtml(master.name)} / ${grade}（${escapeHtml(GRADE_SHORT_TO_JP[grade]||'')}）</div>
+          <div class="row" style="justify-content:space-between;">
+            <div class="small">下限値</div>
+            <div class="modal-value">${escapeHtml(vText)}</div>
+          </div>
+          <input class="slider" type="range" min="0" max="${maxIdx}" step="1"
+            value="${m.idx}" data-action="modal-range" />
+
+          <div class="modal-grid">
+            <button class="btn" data-action="modal-step" data-delta="-5">-5</button>
+            <button class="btn" data-action="modal-step" data-delta="-1">-1</button>
+            <button class="btn" data-action="modal-step" data-delta="0">=</button>
+            <button class="btn" data-action="modal-step" data-delta="1">+1</button>
+            <button class="btn" data-action="modal-step" data-delta="5">+5</button>
+          </div>
+
+          <div class="preset-row">
+            ${[0.25,0.33,0.50,0.66,0.75].map(p => `<button class="preset" data-action="preset" data-p="${p}">${Math.round(p*100)}%</button>`).join('')}
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn" data-action="modal-cancel">キャンセル</button>
+            <button class="btn primary" data-action="modal-ok">決定</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function getNumbersByTab(tab){
+    const t = Number(tab) || 1;
+    const start = (t - 1) * 10 + 1;
+    const arr = [];
+    for (let i=0;i<10;i++) arr.push(start+i);
+    return arr;
+  }
+
+  function orderByTwoColumn(list10){
+    // expected 10 numbers 1..10 (or shifted)
+    const out = [];
+    for (let i=0;i<5;i++){
+      out.push(list10[i]);
+      out.push(list10[i+5]);
+    }
+    return out;
+  }
+
+  function escapeHtml(s){
+    return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+  function escapeAttr(s){
+    return escapeHtml(s).replace(/\n/g, ' ');
+  }
+
+  // ---------- events ----------
+  function bindEvents(){
+    document.addEventListener('click', (ev) => {
+      const t = ev.target.closest('[data-action]');
+      if (!t) return;
+
+      const action = t.dataset.action;
+
+      // modal backdrop: allow click to cancel
+      if (action === 'modal-cancel'){
+        closeModal();
+        render();
+        return;
+      }
+
+      if (action === 'go-step'){
+        goStep(t.dataset.step);
+        render();
+        return;
+      }
+      if (action === 'tab'){
+        setActiveTab(Number(t.dataset.step), Number(t.dataset.tab));
+        render();
+        return;
+      }
+      if (action === 'card-toggle'){
+        const step = Number(t.dataset.step);
+        const num = Number(t.dataset.number);
+        if (step >= 2 && step <= 4 && isDisabledInStep(step, num) && !getStepState(step).selected.has(num)){
+          return;
+        }
+        toggleCardByImage(step, num);
+        render();
+        return;
+      }
+      if (action === 'grade'){
+        const step = Number(t.dataset.step);
+        const num = Number(t.dataset.number);
+        const grade = t.dataset.grade;
+        if (step >= 2 && step <= 4 && isDisabledInStep(step, num) && !getStepState(step).selected.has(num)){
+          return;
+        }
+        setCardGrade(step, num, grade);
+        render();
+        return;
+      }
+      if (action === 'desc'){
+        const step = Number(t.dataset.step);
+        const num = Number(t.dataset.number);
+        openModal(step, num);
+        render();
+        return;
+      }
+      if (action === 'transfer'){
+        transferToSlot();
+        render();
+        return;
+      }
+      if (action === 'slot-select'){
+        const idx = Number(t.dataset.index);
+        if (idx === app.state.selectedSlotIndex) app.state.selectedSlotIndex = null;
+        else app.state.selectedSlotIndex = idx;
+        render();
+        return;
+      }
+      if (action === 'slot-delete'){
+        deleteSelectedSlot();
+        render();
+        return;
+      }
+      if (action === 'slot-lock'){
+        toggleLock(t.dataset.index);
+        render();
+        return;
+      }
+      if (action === 'slot-swap'){
+        const idx = Number(t.dataset.index);
+        const dir = t.dataset.dir;
+        if (dir === 'up' && idx > 0) swapSlotContent(idx, idx-1);
+        if (dir === 'down' && idx < 4) swapSlotContent(idx, idx+1);
+        render();
+        return;
+      }
+      if (action === 'confirm-step'){
+        confirmStep(t.dataset.step);
+        render();
+        return;
+      }
+      if (action === 'panel-remove'){
+        removeFromPanel(t.dataset.step, t.dataset.number);
+        render();
+        return;
+      }
+      if (action === 'all-grade'){
+        setAllGrade(t.dataset.step, t.dataset.grade);
+        render();
+        return;
+      }
+      if (action === 'modal-step'){
+        const delta = Number(t.dataset.delta);
+        if (delta === 0){
+          // noop
+        } else {
+          modalApplyIdx(app.state.modal.idx + delta);
+        }
+        render();
+        return;
+      }
+      if (action === 'preset'){
+        modalPreset(Number(t.dataset.p));
+        render();
+        return;
+      }
+      if (action === 'modal-ok'){
+        modalDecide();
+        render();
+        return;
+      }
+    });
+
+    document.addEventListener('input', (ev) => {
+      const t = ev.target;
+      if (!t || t.dataset.action !== 'modal-range') return;
+      modalApplyIdx(Number(t.value));
+      render();
+    }, true);
+
+    // prevent scroll behind modal (simple)
+    document.addEventListener('touchmove', (ev) => {
+      if (app.state && app.state.modal && app.state.modal.open){
+        // allow slider drag etc
+      }
+    }, { passive:true });
+  }
+
+  // ---------- tiny toast ----------
+  let toastTimer = null;
+  function toast(msg){
+    clearTimeout(toastTimer);
+    let el = document.getElementById('toast');
+    if (!el){
+      el = document.createElement('div');
+      el.id = 'toast';
+      el.style.position='fixed';
+      el.style.left='50%';
+      el.style.bottom='16px';
+      el.style.transform='translateX(-50%)';
+      el.style.background='rgba(0,0,0,0.75)';
+      el.style.color='white';
+      el.style.padding='10px 12px';
+      el.style.border='1px solid rgba(255,255,255,0.15)';
+      el.style.borderRadius='12px';
+      el.style.fontWeight='800';
+      el.style.fontSize='12px';
+      el.style.zIndex='200';
+      el.style.maxWidth='92vw';
+      el.style.textAlign='center';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.opacity='1';
+    toastTimer = setTimeout(() => { el.style.opacity='0'; }, 2200);
+  }
+
+  // ---------- start ----------
+  async function main(){
+    app.state = initState();
+    bindEvents();
+    render();
+
+    try{
+      assertSupabaseConfig();
+      app.supabase = window.supabase.createClient(window.LD_SUPABASE_URL, window.LD_SUPABASE_ANON_KEY);
+      await loadMaster();
+      app.state.loading = false;
+      render();
+    } catch (e){
+      app.state.loading = false;
+      app.state.error = (e && (e.message || e.error_description)) ? (e.message || e.error_description) : String(e);
+      render();
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', main);
 })();
-
-function toast(msg){
-  const host = $('#toastHost');
-  if(!host) return;
-  const el=document.createElement('div');
-  el.className='toast';
-  el.textContent=msg;
-  host.appendChild(el);
-  requestAnimationFrame(()=>el.classList.add('is-show'));
-  setTimeout(()=>{ el.classList.remove('is-show'); setTimeout(()=>el.remove(), 250); }, 2400);
-}
-
-const state = {
-  activeStep: 1,
-  listPage: 1,
-  // Step1
-  step1: {
-    slots: Array(5).fill(null), // {number,name,gradeKey,value}
-    locked: [false,false,false,false,false],
-    selectedSlotIndex: null,
-    selectedListNumber: null,
-    selectedListGradeKey: null, // step1 list
-    selectedListValue: null
-  },
-  // Step2-4
-  step2: { selected: new Set(), gradeKey: new Map(), minValue: new Map(), confirmed:false },
-  step3: { selected: new Set(), gradeKey: new Map(), minValue: new Map(), confirmed:false },
-  step4: { selected: new Set(), gradeKey: new Map(), minValue: new Map(), confirmed:false },
-  // modal context
-  modal: { open:false, step:1, number:null, name:null, gradeKey:null }
-};
-
-const GRADE_KEYS = ['N','R','E','L','M'];
-const GRADE_LABEL = {N:'N',R:'R',E:'E',L:'L',M:'M'};
-
-function getDollByNumber(num){
-  return LD_DATA.byNumber[String(num)];
-}
-function fmt(v, fp){
-  return Number(v).toFixed(fp);
-}
-function descFor(num, gradeKey, value){
-  const d=getDollByNumber(num);
-  const g=d.grades[gradeKey];
-  const val = (value==null)? g.paramemin : value;
-  return `${g.ability1}${fmt(val,g.fp)}${g.ability2}`;
-}
-function defaultMin(num, gradeKey){
-  return getDollByNumber(num).grades[gradeKey].paramemin;
-}
-
-function lockedSlotNamesSet(){
-  const s=new Set();
-  for(let i=0;i<3;i++){
-    if(state.step1.locked[i] && state.step1.slots[i]) s.add(state.step1.slots[i].name);
-  }
-  return s;
-}
-
-function stepObj(step){
-  return step===2?state.step2:step===3?state.step3:state.step4;
-}
-
-function canSelectInStep(step, num){
-  const name=getDollByNumber(num).name;
-  const lockedNames = lockedSlotNamesSet();
-  if(lockedNames.has(name)) return false;
-  if(step>=3 && state.step2.confirmed && state.step2.selected.has(num)) return false;
-  if(step>=4 && state.step3.confirmed && state.step3.selected.has(num)) return false;
-  return true;
-}
-
-/* ---------- Step Tabs (①〜⑦) ---------- */
-function ensureStepTabs(){
-  if($('.stepbar')) return;
-  const top = $('.top');
-  const bar=document.createElement('div');
-  bar.className='stepbar';
-  bar.innerHTML = `
-    <button class="stepbar__btn is-active" data-step="1" type="button">①</button>
-    <button class="stepbar__btn is-locked" data-step="2" type="button">②</button>
-    <button class="stepbar__btn is-locked" data-step="3" type="button">③</button>
-    <button class="stepbar__btn is-locked" data-step="4" type="button">④</button>
-    <button class="stepbar__btn is-disabled" type="button" disabled>⑤</button>
-    <button class="stepbar__btn is-disabled" type="button" disabled>⑥</button>
-    <button class="stepbar__btn is-disabled" type="button" disabled>⑦</button>
-  `;
-  top.appendChild(bar);
-
-  bar.addEventListener('click',(e)=>{
-    const b=e.target.closest('.stepbar__btn');
-    if(!b || b.disabled) return;
-    const step=Number(b.dataset.step||0);
-    if(!step) return;
-    // allow going back anytime
-    if(step<=maxAccessibleStep()){
-      state.activeStep=step;
-      renderAll();
-    }else{
-      toast('先に前のステップを確定してください');
-    }
-  });
-}
-function maxAccessibleStep(){
-  if(state.step4.confirmed) return 5;
-  if(state.step3.confirmed) return 4;
-  if(state.step2.confirmed) return 3;
-  if(state.step1Confirmed) return 2;
-  return 1;
-}
-state.step1Confirmed=false;
-
-function updateStepBar(){
-  const bar=$('.stepbar'); if(!bar) return;
-  const max=maxAccessibleStep();
-  $$('.stepbar__btn',bar).forEach(btn=>{
-    const step=Number(btn.dataset.step||0);
-    if(!step) return;
-    btn.classList.toggle('is-active', step===state.activeStep);
-    const locked = step>max;
-    btn.classList.toggle('is-locked', locked);
-    btn.disabled=false;
-  });
-}
-
-/* ---------- Extend HTML for step2-4 panels ---------- */
-function ensureStepPanels(){
-  const main=$('.main'); if(!main) return;
-  if($('#sec-step2')) return;
-
-  // clone doll panel header and grid container will be reused by JS (single grid)
-  // We'll add selection panel + all buttons + confirm/reset row (step2-4)
-  const step2=document.createElement('section');
-  step2.className='panel is-hidden';
-  step2.id='sec-step2';
-  step2.setAttribute('aria-labelledby','sec-c2');
-  step2.innerHTML=`
-    <div class="panel__head">
-      <h2 id="sec-c2" class="panel__title">ステップ②：第1候補</h2>
-      <div class="hint">カード選択（最大10）＋能力値下限 → 確定</div>
-    </div>
-    <div class="allrow" aria-label="一括変更">
-      <div class="allrow__label">All</div>
-      <div class="allrow__btns">
-        <button class="mini allbtn" data-grade="N" type="button">N</button>
-        <button class="mini allbtn" data-grade="R" type="button">R</button>
-        <button class="mini allbtn" data-grade="E" type="button">E</button>
-        <button class="mini allbtn" data-grade="L" type="button">L</button>
-        <button class="mini allbtn" data-grade="M" type="button">M</button>
-      </div>
-    </div>
-    <div class="selpanel">
-      <div class="selpanel__head">このステップで選択中（<span id="selCount2">0</span>/10）</div>
-      <div id="selList2" class="selpanel__list"></div>
-    </div>
-    <div class="confirm-row">
-      <button id="btnReset2" class="btn" type="button">リセット</button>
-      <button id="btnConfirm2" class="btn btn--confirm" type="button">確定（ステップ③へ）</button>
-    </div>
-  `;
-  const step3=step2.cloneNode(true);
-  step3.id='sec-step3';
-  step3.querySelector('.panel__title').textContent='ステップ③：第2候補';
-  step3.querySelector('.hint').textContent='候補1と重複不可。カード選択（最大10）＋能力値下限 → 確定';
-  step3.querySelector('#selCount2').id='selCount3';
-  step3.querySelector('#selList2').id='selList3';
-  step3.querySelector('#btnReset2').id='btnReset3';
-  step3.querySelector('#btnConfirm2').id='btnConfirm3';
-  step3.querySelector('#btnConfirm3') if False else None
-
-  const step4=step2.cloneNode(true);
-  step4.id='sec-step4';
-  step4.querySelector('.panel__title').textContent='ステップ④：第3候補';
-  step4.querySelector('.hint').textContent='候補1/2と重複不可。カード選択（最大10）＋能力値下限 → 確定';
-  step4.querySelector('#selCount2').id='selCount4';
-  step4.querySelector('#selList2').id='selList4';
-  step4.querySelector('#btnReset2').id='btnReset4';
-  step4.querySelector('#btnConfirm2').id='btnConfirm4';
-  step4.querySelector('#btnConfirm4') if False else None
-
-  main.appendChild(step2);
-  main.appendChild(step3);
-  main.appendChild(step4);
-
-  // wire all buttons handler
-  main.addEventListener('click',(e)=>{
-    const allbtn=e.target.closest('.allbtn');
-    if(allbtn){
-      const grade=allbtn.dataset.grade;
-      const step=state.activeStep;
-      if(step<2 || step>4) return;
-      const sobj=stepObj(step);
-      sobj.selected.forEach(num=>{
-        sobj.gradeKey.set(num, grade);
-        sobj.minValue.set(num, defaultMin(num, grade));
-      });
-      renderAll();
-      return;
-    }
-    const xbtn=e.target.closest('.selitem__x');
-    if(xbtn){
-      const step=Number(xbtn.closest('.selpanel')?.dataset.step || state.activeStep);
-    }
-  });
-}
-
-/* ---------- Render Doll Grid ---------- */
-const dollGrid = ()=>$('#dollGrid');
-
-function dollsForPage(page){
-  const start=(page-1)*10+1;
-  const end=start+9;
-  const nums=[];
-  for(let n=start;n<=end;n++) nums.push(n);
-  return nums;
-}
-
-function renderSubtabs(){
-  const tabs=$$('.subtabs__tab');
-  tabs.forEach(t=>{
-    const p=Number(t.dataset.listpage);
-    const active = p===state.listPage;
-    t.classList.toggle('is-active', active);
-    t.setAttribute('aria-selected', active?'true':'false');
-  });
-}
-
-function renderGrid(){
-  const grid=dollGrid(); if(!grid) return;
-  grid.innerHTML='';
-  const nums=dollsForPage(state.listPage);
-  const step=state.activeStep;
-
-  const selectedSet = (step===1)? null : stepObj(step).selected;
-  const lockedNames=lockedSlotNamesSet();
-  const maxed = (step>=2 && step<=4) ? (selectedSet.size>=10) : false;
-
-  nums.forEach(num=>{
-    const d=getDollByNumber(num);
-    const name=d.name;
-
-    const card=document.createElement('div');
-    card.className='doll-card';
-    card.dataset.number=String(num);
-
-    // determine selection and grade/value by step
-    let isSelected=false, gradeKey='N', value=null;
-    if(step===1){
-      isSelected = (state.step1.selectedListNumber===num);
-      gradeKey = state.step1.selectedListGradeKey || 'N';
-      value = state.step1.selectedListValue;
-    }else{
-      isSelected = selectedSet.has(num);
-      gradeKey = stepObj(step).gradeKey.get(num) || 'M'; // default for selection
-      value = stepObj(step).minValue.get(num);
-    }
-
-    const selectable = (step===1) ? true : (canSelectInStep(step,num) && !(maxed && !isSelected));
-
-    card.classList.toggle('is-selected', isSelected);
-    card.classList.toggle('is-disabled', !selectable);
-    if(!selectable) card.setAttribute('aria-disabled','true');
-
-    const desc = descFor(num, gradeKey, value);
-
-    card.innerHTML=`
-      <div class="doll-card__pic"><img alt="" src="${d.picurl}"></div>
-      <div class="doll-card__meta">
-        <div class="doll-card__name">${name}</div>
-        <div class="grade-row">
-          ${GRADE_KEYS.map(k=>`<button class="grade ${k===gradeKey?'is-on':''}" data-grade="${k}" type="button">${GRADE_LABEL[k]}</button>`).join('')}
-        </div>
-        <div class="doll-card__desc" data-desc="1">${desc}</div>
-      </div>
-    `;
-
-    // opacity tweak when maxed
-    if(maxed && !isSelected) card.style.opacity='0.45';
-
-    grid.appendChild(card);
-  });
-}
-
-function updateHintsAndVisibility(){
-  // show/hide panels for step1/2/3/4
-  const pDolls = $('#sec-dolls')?.closest('.panel');
-  const pSlots = $('#sec-slots')?.closest('.panel');
-  const p2 = $('#sec-step2');
-  const p3 = $('#sec-step3');
-  const p4 = $('#sec-step4');
-
-  if(state.activeStep===1){
-    pDolls?.classList.remove('is-hidden');
-    pSlots?.classList.remove('is-hidden');
-    p2?.classList.add('is-hidden');
-    p3?.classList.add('is-hidden');
-    p4?.classList.add('is-hidden');
-  }else{
-    pDolls?.classList.remove('is-hidden'); // reuse same list
-    pSlots?.classList.add('is-hidden');
-    p2?.classList.toggle('is-hidden', state.activeStep!==2);
-    p3?.classList.toggle('is-hidden', state.activeStep!==3);
-    p4?.classList.toggle('is-hidden', state.activeStep!==4);
-  }
-}
-
-/* ---------- Slot List (Step1) ---------- */
-function renderSlots(){
-  const host=$('#slotList'); if(!host) return;
-  host.innerHTML='';
-  state.step1.slots.forEach((it,i)=>{
-    const row=document.createElement('div');
-    row.className='slot-card';
-    row.dataset.index=String(i);
-    const selected = state.step1.selectedSlotIndex===i;
-    row.classList.toggle('is-selected', selected);
-
-    const lockable = i<3;
-    const locked = state.step1.locked[i];
-
-    const name = it? it.name : '空';
-    const grade = it? getDollByNumber(it.number).grades[it.gradeKey].grade : '';
-    const valtxt = it? descFor(it.number, it.gradeKey, it.value) : '';
-
-    row.innerHTML=`
-      <div class="slot-card__left">
-        <div class="slot-card__pic">${it? `<img alt="" src="${getDollByNumber(it.number).picurl}">` : ''}</div>
-      </div>
-      <div class="slot-card__right">
-        <div class="slot-card__top">
-          <div class="slot-card__name">${name}</div>
-          ${lockable? `<button class="mini lockbtn ${locked?'is-on':''}" data-lock="1" type="button">${locked?'🔒':'🔓'}</button>`:''}
-        </div>
-        <div class="slot-card__sub">
-          <div class="slot-card__grade">${grade}</div>
-        </div>
-        <div class="slot-card__desc">${it? valtxt:''}</div>
-        <div class="slot-card__swap">
-          <button class="mini swap" data-dir="up" type="button">▲</button>
-          <button class="mini swap" data-dir="down" type="button">▼</button>
-        </div>
-      </div>
-    `;
-    host.appendChild(row);
-  });
-}
-
-/* ---------- Selection Panels (Step2-4) ---------- */
-function renderSelPanel(step){
-  const sobj=stepObj(step);
-  const countEl=$(`#selCount${step}`); if(countEl) countEl.textContent=String(sobj.selected.size);
-  const listEl=$(`#selList${step}`); if(!listEl) return;
-  listEl.innerHTML='';
-  // show previous confirmed selections (dim, no remove)
-  const prevNums=[];
-  if(step>=3 && state.step2.confirmed) prevNums.push(...Array.from(state.step2.selected));
-  if(step>=4 && state.step3.confirmed) prevNums.push(...Array.from(state.step3.selected));
-
-  const addedPrev=new Set();
-  prevNums.forEach(num=>{
-    if(addedPrev.has(num)) return;
-    addedPrev.add(num);
-    const gk=(step===3? state.step2.gradeKey.get(num): state.step3.gradeKey.get(num)) || 'M';
-    const val=(step===3? state.step2.minValue.get(num): state.step3.minValue.get(num)) || defaultMin(num,gk);
-    const d=getDollByNumber(num);
-    const el=document.createElement('div');
-    el.className='selitem is-prev';
-    el.innerHTML=`<div class="selitem__name">${d.name}</div><div class="selitem__desc">${descFor(num,gk,val)}</div>`;
-    listEl.appendChild(el);
-  });
-
-  Array.from(sobj.selected).forEach(num=>{
-    const d=getDollByNumber(num);
-    const gk=sobj.gradeKey.get(num) || 'M';
-    const val=sobj.minValue.get(num) ?? defaultMin(num,gk);
-    const el=document.createElement('div');
-    el.className='selitem';
-    el.dataset.number=String(num);
-    el.innerHTML=`<div class="selitem__name">${d.name}</div><div class="selitem__desc">${descFor(num,gk,val)}</div><button class="selitem__x" type="button" aria-label="解除">×</button>`;
-    listEl.appendChild(el);
-  });
-}
-
-/* ---------- Ability Modal ---------- */
-function openAbilityModal(step, num){
-  const d=getDollByNumber(num);
-  const sobj = (step===1)? null : stepObj(step);
-  const gradeKey = (step===1) ? (state.step1.selectedListGradeKey||'N') : (sobj.gradeKey.get(num)||'M');
-  const g=d.grades[gradeKey];
-
-  const cur = (step===1) ? (state.step1.selectedListValue ?? g.paramemin) : (sobj.minValue.get(num) ?? g.paramemin);
-
-  state.modal={open:true, step, number:num, name:d.name, gradeKey};
-
-  $('#modalDollName').textContent = `${d.name}（${g.grade}）`;
-  const slider=$('#abilitySlider');
-  slider.min = g.paramemin;
-  slider.max = g.paramemax;
-  slider.step = g.paramebase || g.stepmin || 0.1;
-  slider.value = cur;
-
-  $('#abilityValue').textContent = fmt(cur,g.fp);
-
-  $('#modalBackdrop').classList.remove('is-hidden');
-  $('#modalBackdrop').setAttribute('aria-hidden','false');
-}
-
-function closeAbilityModal(save){
-  if(!state.modal.open){ return; }
-  const {step, number} = state.modal;
-  const d=getDollByNumber(number);
-  const gradeKey = state.modal.gradeKey;
-  const g=d.grades[gradeKey];
-  const val = Number($('#abilitySlider').value);
-
-  if(save){
-    if(step===1){
-      state.step1.selectedListValue = val;
-    }else{
-      const sobj=stepObj(step);
-      sobj.minValue.set(number, val);
-    }
-  }
-  $('#modalBackdrop').classList.add('is-hidden');
-  $('#modalBackdrop').setAttribute('aria-hidden','true');
-  state.modal.open=false;
-  renderAll();
-}
-
-function snapByPercent(num, gradeKey, pct){
-  const g=getDollByNumber(num).grades[gradeKey];
-  const base=g.paramebase || g.stepmin || 0.1;
-  const raw = g.paramemin + (g.paramemax - g.paramemin) * pct;
-  const k = Math.round((raw - g.paramemin)/base);
-  const v = g.paramemin + k*base;
-  return Math.min(g.paramemax, Math.max(g.paramemin, v));
-}
-
-/* ---------- Event Wiring ---------- */
-function wireEvents(){
-  // list page tabs
-  $$('.subtabs__tab').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      state.listPage=Number(btn.dataset.listpage);
-      renderAll();
-    });
-  });
-
-  // doll grid interactions
-  dollGrid().addEventListener('click',(e)=>{
-    const card=e.target.closest('.doll-card'); if(!card) return;
-    const num=Number(card.dataset.number);
-    const step=state.activeStep;
-
-    // grade button?
-    const gradeBtn=e.target.closest('.grade');
-    if(gradeBtn){
-      e.stopPropagation();
-      const gk=gradeBtn.dataset.grade;
-      if(step===1){
-        state.step1.selectedListGradeKey=gk;
-        state.step1.selectedListValue = defaultMin(num,gk);
-      }else{
-        const sobj=stepObj(step);
-        if(!sobj.selected.has(num)) return;
-        sobj.gradeKey.set(num,gk);
-        sobj.minValue.set(num, defaultMin(num,gk));
-      }
-      renderAll();
-      return;
-    }
-
-    // desc tap opens modal (when selected)
-    if(e.target.closest('.doll-card__desc')){
-      if(step===1){
-        if(state.step1.selectedListNumber!==num) return;
-        openAbilityModal(1,num);
-      }else{
-        const sobj=stepObj(step);
-        if(!sobj.selected.has(num)) return;
-        openAbilityModal(step,num);
-      }
-      return;
-    }
-
-    // selection toggle
-    if(card.classList.contains('is-disabled')) return;
-
-    if(step===1){
-      if(state.step1.selectedListNumber===num){
-        state.step1.selectedListNumber=null;
-      }else{
-        state.step1.selectedListNumber=num;
-        state.step1.selectedListGradeKey = state.step1.selectedListGradeKey || 'N';
-        // initialize value
-        const gk=state.step1.selectedListGradeKey;
-        state.step1.selectedListValue = defaultMin(num,gk);
-      }
-      renderAll();
-    }else{
-      const sobj=stepObj(step);
-      if(sobj.selected.has(num)){
-        sobj.selected.delete(num);
-        sobj.gradeKey.delete(num);
-        sobj.minValue.delete(num);
-      }else{
-        if(sobj.selected.size>=10){ toast('最大10個までです'); return; }
-        if(!canSelectInStep(step,num)){ toast('選択できません'); return; }
-        sobj.selected.add(num);
-        sobj.gradeKey.set(num,'M');
-        sobj.minValue.set(num, defaultMin(num,'M'));
-      }
-      renderAll();
-    }
-  });
-
-  // transfer buttons
-  $('#btnTransferDown').addEventListener('click',()=>{
-    if(state.activeStep!==1) return;
-    const num=state.step1.selectedListNumber;
-    if(!num){ toast('人形を選択してください'); return; }
-
-    // transfer to first unlocked empty slot from top
-    const idx = state.step1.slots.findIndex((v,i)=>!v && !state.step1.locked[i]);
-    if(idx<0){ toast('空きスロットがありません（ロック解除が必要かも）'); return; }
-    const d=getDollByNumber(num);
-    const gradeKey=state.step1.selectedListGradeKey||'N';
-    const value=state.step1.selectedListValue ?? defaultMin(num, gradeKey);
-    state.step1.slots[idx]={ number:num, name:d.name, gradeKey, value };
-    renderAll();
-  });
-
-  $('#btnTransferUp').addEventListener('click',()=>{
-    if(state.activeStep!==1) return;
-    const i=state.step1.selectedSlotIndex;
-    if(i==null){ toast('スロットを選択してください'); return; }
-    // clear slot and unlock if empty
-    state.step1.slots[i]=null;
-    state.step1.locked[i]=false;
-    state.step1.selectedSlotIndex=null;
-    // compact: pull up non-null to fill gaps (preserve order)
-    const kept=state.step1.slots.filter(v=>v);
-    while(kept.length<5) kept.push(null);
-    // locked stays by position, but if slot empty forced unlock for that position
-    const newLocked=state.step1.locked.slice();
-    for(let j=0;j<5;j++){ if(!kept[j]) newLocked[j]=false; }
-    state.step1.slots=kept;
-    state.step1.locked=newLocked;
-    renderAll();
-  });
-
-  // slot list interactions
-  $('#slotList').addEventListener('click',(e)=>{
-    const row=e.target.closest('.slot-card'); if(!row) return;
-    const i=Number(row.dataset.index);
-    const lockbtn=e.target.closest('.lockbtn');
-    if(lockbtn){
-      if(i>=3) return;
-      state.step1.locked[i]=!state.step1.locked[i];
-      // if lock turned on but empty, auto off
-      if(state.step1.locked[i] && !state.step1.slots[i]) state.step1.locked[i]=false;
-      renderAll();
-      return;
-    }
-    const swap=e.target.closest('.swap');
-    if(swap){
-      const dir=swap.dataset.dir;
-      const j = dir==='up'? i-1 : i+1;
-      if(j<0||j>=5) return;
-      // swap contents only if both positions not locked
-      if(state.step1.locked[i] || state.step1.locked[j]){ toast('ロック中は入替できません'); return; }
-      [state.step1.slots[i], state.step1.slots[j]]=[state.step1.slots[j], state.step1.slots[i]];
-      // if slot becomes empty, unlock
-      if(!state.step1.slots[i]) state.step1.locked[i]=false;
-      if(!state.step1.slots[j]) state.step1.locked[j]=false;
-      renderAll();
-      return;
-    }
-    // select row
-    state.step1.selectedSlotIndex = (state.step1.selectedSlotIndex===i)? null : i;
-    renderAll();
-  });
-
-  $('#btnConfirmStep1').addEventListener('click',()=>{
-    // step1 confirm: nothing required
-    state.step1Confirmed=true;
-    if(state.activeStep===1) state.activeStep=2;
-    renderAll();
-    toast('ステップ①を確定しました');
-  });
-
-  // modal controls
-  $('#abilitySlider').addEventListener('input',()=>{
-    if(!state.modal.open) return;
-    const {number, gradeKey}=state.modal;
-    const g=getDollByNumber(number).grades[gradeKey];
-    $('#abilityValue').textContent = fmt($('#abilitySlider').value, g.fp);
-  });
-  $('#btnMinus1').addEventListener('click',()=>stepSlider(-1));
-  $('#btnPlus1').addEventListener('click',()=>stepSlider(1));
-  $('#btnMinus5').addEventListener('click',()=>stepSlider(-5));
-  $('#btnPlus5').addEventListener('click',()=>stepSlider(5));
-
-  function stepSlider(mult){
-    if(!state.modal.open) return;
-    const {number, gradeKey}=state.modal;
-    const g=getDollByNumber(number).grades[gradeKey];
-    const base=g.paramebase || g.stepmin || 0.1;
-    const slider=$('#abilitySlider');
-    let v=Number(slider.value) + mult*base;
-    v=Math.min(Number(slider.max), Math.max(Number(slider.min), v));
-    slider.value=v;
-    $('#abilityValue').textContent = fmt(v,g.fp);
-  }
-
-  // add presets row dynamically (to avoid HTML edits)
-  const steprow=$('.modal__steprow');
-  if(steprow && !$('#preset25')){
-    const preset=document.createElement('div');
-    preset.className='modal__preset';
-    preset.innerHTML=`
-      <button id="preset25" class="mini" type="button">25%</button>
-      <button id="preset33" class="mini" type="button">33%</button>
-      <button id="preset50" class="mini" type="button">50%</button>
-      <button id="preset66" class="mini" type="button">66%</button>
-      <button id="preset75" class="mini" type="button">75%</button>
-    `;
-    steprow.parentElement.insertBefore(preset, steprow.nextSibling);
-    const map={25:0.25,33:0.33,50:0.5,66:0.66,75:0.75};
-    Object.keys(map).forEach(k=>{
-      $(`#preset${k}`).addEventListener('click',()=>{
-        if(!state.modal.open) return;
-        const {number, gradeKey}=state.modal;
-        const v=snapByPercent(number, gradeKey, map[k]);
-        $('#abilitySlider').value=v;
-        const g=getDollByNumber(number).grades[gradeKey];
-        $('#abilityValue').textContent=fmt(v,g.fp);
-      });
-    });
-  }
-
-  // close modal by backdrop click = cancel
-  $('#modalBackdrop').addEventListener('click',(e)=>{
-    if(e.target.id==='modalBackdrop') closeAbilityModal(false);
-  });
-
-  // add footer buttons if not exist
-  const modal=$('.modal');
-  if(modal && !$('#btnModalCancel')){
-    const row=document.createElement('div');
-    row.className='modal__actions';
-    row.innerHTML=`<button id="btnModalCancel" class="btn" type="button">キャンセル</button>
-                   <button id="btnModalOk" class="btn btn--confirm" type="button">決定</button>`;
-    modal.appendChild(row);
-    $('#btnModalCancel').addEventListener('click',()=>closeAbilityModal(false));
-    $('#btnModalOk').addEventListener('click',()=>closeAbilityModal(true));
-  }
-
-  // Step2-4 confirm/reset + sel remove
-  document.addEventListener('click',(e)=>{
-    const x=e.target.closest('.selitem__x');
-    if(x){
-      const step=state.activeStep;
-      if(step<2||step>4) return;
-      const num=Number(x.parentElement.dataset.number);
-      const sobj=stepObj(step);
-      sobj.selected.delete(num);
-      sobj.gradeKey.delete(num);
-      sobj.minValue.delete(num);
-      renderAll();
-      return;
-    }
-    const reset=e.target.closest('#btnReset2,#btnReset3,#btnReset4');
-    if(reset){
-      const step=state.activeStep;
-      if(step<2||step>4) return;
-      const sobj=stepObj(step);
-      sobj.selected.clear(); sobj.gradeKey.clear(); sobj.minValue.clear(); sobj.confirmed=false;
-      renderAll();
-      toast('リセットしました');
-      return;
-    }
-    const confirm=e.target.closest('#btnConfirm2,#btnConfirm3,#btnConfirm4');
-    if(confirm){
-      const step=state.activeStep;
-      if(step<2||step>4) return;
-      const sobj=stepObj(step);
-      const n=sobj.selected.size;
-      if(n<1 || n>10){ toast('1〜10個選択してください'); return; }
-      sobj.confirmed=true;
-      // advance
-      state.activeStep = step+1;
-      renderAll();
-      toast(`ステップ${step}を確定しました`);
-      return;
-    }
-  });
-}
-
-/* ---------- Render All ---------- */
-function renderAll(){
-  ensureStepTabs();
-  ensureStepPanels();
-  updateStepBar();
-  updateHintsAndVisibility();
-  renderSubtabs();
-  renderGrid();
-  renderSlots();
-  if(state.activeStep>=2 && state.activeStep<=4) renderSelPanel(state.activeStep);
-}
-
-function init(){
-  ensureStepTabs();
-  ensureStepPanels();
-  wireEvents();
-  renderAll();
-}
-
-init();
