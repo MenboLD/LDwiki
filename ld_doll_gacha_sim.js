@@ -212,6 +212,28 @@
     return false;
   }
 
+
+  function getDisabledOverlayLabel(step, number){
+    if (step < 2 || step > 4) return null;
+    const num = Number(number);
+    const m = app.masterByNumber.get(num);
+    if (!m) return null;
+
+    const st = getStepState(step);
+    // when the reason is only "limit reached", do not show a label
+    if (st.selected.size >= 10 && !st.selected.has(num)) return null;
+
+    const locked = getLockedNames();
+    if (locked.has(m.name)) return 'スロットでロック中';
+
+    const c1 = getCandidateNameSet(app.state.candidate1);
+    const c2 = getCandidateNameSet(app.state.candidate2);
+
+    if (step >= 3 && c1.has(m.name)) return '第1候補で選択中';
+    if (step >= 4 && c2.has(m.name)) return '第2候補で選択中';
+    return null;
+  }
+
   function selectCard(step, num, initGrade){
     const st = getStepState(step);
     const number = Number(num);
@@ -330,14 +352,19 @@
     const grade = st.grade.get(number);
     const r = app.masterByNumber.get(number).byGrade[grade];
 
-    const target = r.paramebase + (r.paramemax - r.paramebase) * p;
-    const k = Math.round((target - r.paramebase) / r.stepmin);
-    const value = clampNum(r.paramebase + k * r.stepmin, r.paramemin, r.paramemax);
+    // Percent is within this rarity band: [paramemin, paramemax]
+    const span = (r.paramemax - r.paramemin);
+    const target = r.paramemin + span * p;
+
+    // snap to discrete step grid
+    const k = Math.round((target - r.paramemin) / r.stepmin);
+    const value = clampNum(r.paramemin + k * r.stepmin, r.paramemin, r.paramemax);
+
     const idx = Math.round((value - r.paramemin) / r.stepmin);
     modalApplyIdx(idx);
   }
 
-  function clampNum(v, min, max){
+function clampNum(v, min, max){
     return Math.max(min, Math.min(max, v));
   }
 
@@ -968,6 +995,9 @@
       return `<button class="gbtn ${on?'on':''}" data-action="grade" data-step="${step}" data-number="${number}" data-grade="${g}">${g}</button>`;
     }).join('');
 
+    const blockLabel = disabled ? getDisabledOverlayLabel(step, number) : null;
+    const overlay = blockLabel ? `<div class="card-block-label">${escapeHtml(blockLabel)}</div>` : '';
+
     return `
       <div class="${classes.join(' ')}" data-card="${number}">
         <div class="card-top">
@@ -982,6 +1012,7 @@
           </div>
         </div>
         <div class="desc" data-action="desc" data-step="${step}" data-number="${number}" title="${escapeAttr(desc)}">${escapeHtml(desc)}</div>
+        ${overlay}
       </div>
     `;
   }
@@ -991,8 +1022,10 @@
     const m = app.state.modal;
     if (!m.open){
       host.innerHTML = '';
+      document.body.classList.remove('modal-open');
       return;
     }
+    document.body.classList.add('modal-open');
     const st = getStepState(m.step);
     const num = m.number;
     const grade = st.grade.get(num);
@@ -1003,7 +1036,7 @@
     const vText = formatValue(value, r.fp);
 
     host.innerHTML = `
-      <div class="modal-backdrop" data-action="modal-cancel">
+      <div class="modal-backdrop">
         <div class="modal" role="dialog" aria-modal="true" aria-label="能力値下限">
           <div class="modal-title">${escapeHtml(master.name)} / ${grade}（${escapeHtml(GRADE_SHORT_TO_JP[grade]||'')}）</div>
           <div class="row" style="justify-content:space-between;">
@@ -1193,7 +1226,19 @@
       render();
     }, true);
 
-    // prevent scroll behind modal (simple)
+    
+    // prevent double-tap zoom while modal is open (iOS Safari)
+    let __lastTap = 0;
+    document.addEventListener('touchend', (ev) => {
+      if (!(app.state && app.state.modal && app.state.modal.open)) return;
+      const now = Date.now();
+      if (now - __lastTap <= 300){
+        ev.preventDefault();
+      }
+      __lastTap = now;
+    }, { passive:false, capture:true });
+
+// prevent scroll behind modal (simple)
     document.addEventListener('touchmove', (ev) => {
       if (app.state && app.state.modal && app.state.modal.open){
         // allow slider drag etc
