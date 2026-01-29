@@ -1,0 +1,7 @@
+"float", "WavePassResetCooltime", 2592000
+"int", "WavePassProductId", 20001
+"int", "FreeUserWavePassProductId", 20002
+"int", "WavePassAdsCount", 2
+"int", "WavePassBoostCount", 5
+"float", "WavePassBoostRatio", 2
+"float", "RemainNotiDays", 3

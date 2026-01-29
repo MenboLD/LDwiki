@@ -1,0 +1,14 @@
+"bool", "IsEnableOldAI", "TRUE"
+"int", "OldAILevel", 7
+"bool", "IsEnableMatchingJump", "FALSE"
+"int", "MatchingJumpFailedCount", 5
+"int", "MatchingJumpLevel", 5
+"int", "MatchingJumpExpandLevel", 5
+"bool", "IsEnableNewbiePowerBuff", "FALSE"
+"int", "NewbiePowerBuffLevel", 5
+"FP", "NewbiePowerBuffPercentage", 1000
+"int[]", "NewbieRelicIds", "10022 | 10030 | 10010 | 10002"
+"int[]", "NewbieHideProductIds", "7001 | 10002 | 1009"
+"bool", "IsNewbieHideWeeklyMythPackage", "TRUE"
+"bool", "IsShowStaminaMultiplyPackagePopup", "TRUE"
+"bool", "IsEnableNewbieProductTest", "TRUE"

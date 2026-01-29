@@ -1,0 +1,6 @@
+"string[]", "GradeColors", "C5B39C | 529BDB | A470E5 | F5AA20 | E66426 | D93A3A"
+"TableReward", "PetDrawCost", "113, 1, 1"
+"int", "DrawCount", 10
+"int", "MultiDrawCount", 100
+"float[]", "FakeChance", "0 | 0 | 40 | 30 | 30 | 20 | 20 | 20 | 20 | 20 | 20"
+"EPetGradeType", "MinNewPetGrade", "Legend"

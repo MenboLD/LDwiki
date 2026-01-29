@@ -1,0 +1,23 @@
+"int", "LinkRewardCount", 500
+"int", "MailHideDays", 3
+"float", "ToastNoticeDuration", 5
+"float", "BusGuideContributionAmount", "0.8"
+"int", "RecruitManyCount", 10
+"int", "GameRecordCount", 10
+"float", "RTTDataSendingChance", "0.05"
+"int", "NewUserDays", 7
+"int[]", "UserInactivityDays", "2 | 4"
+"int", "VipRewardNotiSecond", 10800
+"int", "GameResultBonusCount", 3
+"bool", "NewUserSkipLogin", "TRUE"
+"int", "DailyEventRewardCount", 2
+"int", "DailyEventRewardResetCount", 1
+"int", "ComebackRequiredDays", 30
+"int", "ComebackEventDays", 30
+"int", "UserSessionAwayTime", 1800
+"int", "ContributionRecordCount", 10
+"int", "ShopFreeRelicAdditionalCheckInNotiHour", 12
+"int", "NewUserCheckInNotiHour", 18
+"int", "CombackCheckInNotiHour", 18
+"int", "EventCheckInNotiHour", 18
+"int", "SingleModeStaminaNotiMinTime", 6000

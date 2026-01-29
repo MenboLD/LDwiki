@@ -1,0 +1,9 @@
+int, string, EItemType, int[], int
+Id, QuizDescription, Type, IconValues, Answer
+1, "description_trigger_event_quiz_1", "None", "", 1
+2, "description_trigger_event_quiz_2", "None", "", 3
+3, "description_trigger_event_quiz_3", "Unit", "3003 | 1005 | 3002", 2
+4, "description_trigger_event_quiz_4", "Unit", "3001 | 4004 | 3003", 1
+5, "description_trigger_event_quiz_5", "Relic", "10027 | 10028 | 10023", 1
+6, "description_trigger_event_quiz_6", "Unit", "2002 | 1003 | 3003", 3
+7, "description_trigger_event_quiz_7", "None", "", 1

@@ -1,0 +1,50 @@
+"bool", "IsCouponIOSActive", "TRUE"
+"bool", "IsGuideQuestActive", "TRUE"
+"bool", "IsNewUserRegisterInviteCode", "FALSE"
+"bool", "IsBestProductTagActive", "TRUE"
+"bool", "DisableNewUserNormalModePass", "TRUE"
+"bool", "DisableFreeUserSpecialShop", "TRUE"
+"bool", "EnableGoodsStoreButton", "FALSE"
+"string[]", "GuideQuestDisabledRegions", "KR"
+"string[]", "NewbiePackageWidgetRegions", "KR | TW"
+"string[]", "SuperAIMatchingRegions", "KR"
+"string[]", "DisableNewbiePackageTypeRegions", "KR | TW | HK"
+"float", "InGameSoundLimitTime", "0.35"
+"float", "DefaultSoundLimitTime", "0.1"
+"int", "DailyNotiPopupShowCount", 1
+"string", "NotiPopupSpecificName", "PopupStoreNotiPopup"
+"string[]", "NotiPopupLanguages", "ko"
+"int[]", "NotiPopupScheduleId", 10002
+"int", "ConnectTimeOutSec", 15
+"int", "ConnectRetryCount", 5
+"int", "ReleaseTimeOutSec", 0
+"int", "ReleaseRetryCount", 1
+"int[]", "RunEventAI_1", "5|5"
+"int[]", "RunEventAI_2", "-15|10"
+"int[]", "RunEventAI_3", "-30|0"
+"int[]", "RunEventAI_4", "-5|5"
+"int", "RunEventMinLevel", 3
+"int", "RunEventLevelRange", 2
+"int", "RunEventProfileMinLevel", 10
+"int", "RunEventFrameMinLevel", 10
+"float", "RunEventProfileProbability", 30
+"float", "RunEventFrameProbability", 30
+"int[]", "GuideScreenshotCount", "1 | 1 | 1 | 2 | 1 | 1 | 2"
+"int", "ReviewUserLevel", 3
+"int", "GlobalChatCharacterLimit", 30
+"float", "GlobalSpammingInterval", 1
+"int", "GlobalSpammingCount", 5
+"float", "GlobalChatBanDuration", 30
+"int", "GlobalChatReportLimit", 1
+"float", "GlobalChatReportExpiration", 2073600
+"float", "OtherUserDataCachingDuration", 20
+"int", "DailyLuckUnlockPeriod", 1
+"System.DateTime", "RokaForbiddenResetPeriod", "2025-10-14 0:00:00"
+"System.DateTime", "HaileyForbiddenResetPeriod", "2025-06-09 0:00:00"
+"int", "DailyWaveBoxLimit", 5
+"int", "HyperTabUnlockLevel", 12
+"int", "ShowDaysUntilDDay", 3
+"int", "MailBoxRefreshDuration", 10
+"string", "GoodsStoreURL", "https://smartstore.naver.com/luckycrew111"
+"float", "CamMaxOrthgrihicSizeRatio", 3
+"bool", "IsShowDifficulty", "TRUE"

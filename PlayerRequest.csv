@@ -1,0 +1,5 @@
+EPlayerRequest, string, float
+Id, TitleName, Duration
+"FastSpeedMode", "2배속 제안", 10
+"NormalSpeedMode", "1배속 제안", 10
+"ChallengeBoss", "보스 도전", 10

@@ -1,0 +1,19 @@
+int, EResetType, int, System.DateTime, System.DateTime, int, bool, EQuest[], int
+Group, ResetType, Duration, StartAt, EndAt, EventId, IsStepQuest, CheckQuestType, QuestPointId
+1000, "Daily", "", "", "", "", "FALSE", "", 12
+1001, "Daily", "", "", "", 1001, "FALSE", "", 13
+1002, "Daily", "", "", "", 1002, "FALSE", "", 14
+1003, "Daily", "", "", "", 1003, "FALSE", "", 15
+1004, "Daily", "", "", "", 1004, "FALSE", "", 16
+1005, "Daily", "", "", "", 1005, "FALSE", "", 17
+1006, "Daily", "", "", "", 1006, "FALSE", "", 18
+1007, "Daily", "", "", "", 1007, "FALSE", "", 20
+1008, "Daily", "", "", "", 1008, "FALSE", "", 21
+1009, "Daily", "", "", "", 1009, "FALSE", "", 22
+1010, "Daily", "", "", "", 1010, "FALSE", "", 24
+1011, "Daily", "", "", "", 1011, "FALSE", "", 25
+1012, "Daily", "", "", "", 1012, "FALSE", "", 26
+1014, "Daily", "", "", "", 1014, "FALSE", "", 28
+1100, "None", "", "", "", "", "TRUE"
+1200, "Daily", "", "", "", "", "FALSE", "MythUnitLevel10"
+1300, "Daily", "", "", "", "", "FALSE"

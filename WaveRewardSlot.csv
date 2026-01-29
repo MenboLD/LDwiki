@@ -1,0 +1,10 @@
+int, bool, EWaveRewardSlotType, int, int[], FP
+Id, IsGamble, SlotType, Grade, PoolIds, Percentage
+1, "FALSE", "SpawnUnit", 1
+2, "TRUE", "SpawnUnit", 2, "", 50
+3, "FALSE", "SpawnUnit", 2
+4, "TRUE", "SpawnUnit", 3, "", 25
+5, "FALSE", "SpawnUnit", 3
+6, "FALSE", "BuffCard", -1, 1
+7, "FALSE", "BuffCard", -1, 2
+306, "FALSE", "BuffCard", -1, 306

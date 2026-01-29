@@ -1,0 +1,29 @@
+int, ETrialMissionType, ETrialMissionCheckType, int[], int, int, int, string, string, string, string, FP[], bool, TableReward, TableReward, TableReward, TableReward
+Id, MissionType, MissionCheckType, Group, RequiredItemType, RequiredItemId, RequiredLevel, TitleName, Description, TipDescription, CountFormat, Parameters, IsClear, Reward_1, Reward_2, Reward_3, Reward_4
+1, "BanditStealPoint", "BanditStealPoint", "601001 | 601002 | 601003 | 601004 | 601005 | 601006 | 601007 | 601008 | 601009 | 601010", "", "", "", "trial_mission_title_2", "trial_mission_description_2", "trial_mission_tip_1", "", 30, "FALSE", "102,300,300"
+2, "BossStunTimeAccumulate", "StunBoss", "601001 | 601002 | 601003 | 601004 | 601005 | 601006 | 601007 | 601008 | 601009 | 601099", "", "", "", "trial_mission_title_1", "trial_mission_description_1_2", "trial_mission_tip_4", "{0}s / {1}s", 20, "FALSE", "102,300,300"
+3, "SafeBoxInterest", "SafeBoxInterest", "601001 | 601002 | 601003 | 601004 | 601005 | 601006 | 601007 | 601008 | 601009 | 601010", 1000, 10027, "", "trial_mission_title_3", "trial_mission_description_3", "trial_mission_tip_2", "", 200, "FALSE", "102,300,300"
+4, "MoneyGunPower", "ChangePoint", "601001 | 601002 | 601003 | 601004 | 601005 | 601006 | 601007 | 601008 | 601009 | 601010", 1000, 10028, "", "trial_mission_title_4", "trial_mission_description_4", "trial_mission_tip_3", "", 10, "FALSE", "102,300,300"
+5, "BlobEat", "BlobEat", "601001 | 601002 | 601003 | 601004 | 601005 | 601006 | 601007 | 601008 | 601009 | 601010 |
+601011 | 601012 | 601013 | 601014 | 601015 | 601016 | 601017 | 601018 | 601019 | 601020 |
+601021 | 601022 | 601023 | 601024 | 601025 | 601026 | 601027 | 601028 | 601029 | 601030", 2000, 5005, "", "trial_mission_title_6", "trial_mission_description_6", "trial_mission_tip_6", "", 100, "TRUE", "102,300,300"
+6, "BanditStealPoint", "BanditStealPoint", "601001 | 601002 | 601003 | 601004 | 601005 | 601006 | 601007 | 601008 | 601009 | 601099", 2000, 1005, 6, "trial_mission_title_2", "trial_mission_description_2", "trial_mission_tip_1", "", 200, "FALSE", "102,300,300"
+7, "SafeBoxInterest", "SafeBoxInterest", "601001 | 601002 | 601003 | 601004 | 601005 | 601006 | 601007 | 601008 | 601009 | 601010 |
+601011 | 601012 | 601013 | 601014 | 601015 | 601016 | 601017 | 601018 | 601019 | 601020 |
+601021 | 601022 | 601023 | 601024 | 601025 | 601026 | 601027 | 601028 | 601029 | 601030", 1000, 10027, "", "trial_mission_title_3", "trial_mission_description_3", "trial_mission_tip_2", "", 2000, "TRUE", "102,300,300"
+8, "MoneyGunPower", "ChangePoint", "601001 | 601002 | 601003 | 601004 | 601005 | 601006 | 601007 | 601008 | 601009 | 601010 |
+601011 | 601012 | 601013 | 601014 | 601015 | 601016 | 601017 | 601018 | 601019 | 601020 |
+601021 | 601022 | 601023 | 601024 | 601025 | 601026 | 601027 | 601028 | 601029 | 601030", 1000, 10028, "", "trial_mission_title_4", "trial_mission_description_4", "trial_mission_tip_3", "{0}% / {1}%", 50, "TRUE", "102,300,300"
+9, "BatmanUpgrade", "BatmanUpgrade", "601001 | 601002 | 601003 | 601004 | 601005 | 601006 | 601007 | 601008 | 601009 | 601010 |
+601011 | 601012 | 601013 | 601014 | 601015 | 601016 | 601017 | 601018 | 601019 | 601020 |
+601021 | 601022 | 601023 | 601024 | 601025 | 601026 | 601027 | 601028 | 601029 | 601030", 2000, 5010, "", "trial_mission_title_9", "trial_mission_description_9", "trial_mission_tip_9", "", 10, "TRUE", "102,300,300"
+10, "DragonEggHatch", "DragonEggHatch", "601001 | 601002 | 601003 | 601004 | 601005 | 601006 | 601007 | 601008 | 601009 | 601010 |
+601011 | 601012 | 601013 | 601014 | 601015 | 601016 | 601017 | 601018 | 601019 | 601020 |
+601021 | 601022 | 601023 | 601024 | 601025 | 601026 | 601027 | 601028 | 601029 | 601030", 2000, 5006, "", "trial_mission_title_8", "trial_mission_description_8", "trial_mission_tip_8", "", 1, "TRUE", "102,300,300"
+11, "StunBoss", "StunBoss", "601001 | 601002 | 601003 | 601004 | 601005 | 601006 | 601007 | 601008 | 601009 | 601099", "", "", "", "trial_mission_title_1", "trial_mission_description_1", "trial_mission_tip_4", "{0}s / {1}s", 5, "FALSE", "102,300,300"
+12, "IronMeowTrans", "IronMeowTrans", "601001 | 601002 | 601003 | 601004 | 601005 | 601006 | 601007 | 601008 | 601009 | 601010 |
+601011 | 601012 | 601013 | 601014 | 601015 | 601016 | 601017 | 601018 | 601019 | 601020 |
+601021 | 601022 | 601023 | 601024 | 601025 | 601026 | 601027 | 601028 | 601029 | 601030", 2000, 5004, "", "trial_mission_title_7", "trial_mission_description_7", "trial_mission_tip_7", "", 1, "TRUE", "102,300,300"
+13, "FrogPrinceSuccessStack", "FrogPrinceSuccessStack", "601001 | 601002 | 601003 | 601004 | 601005 | 601006 | 601007 | 601008 | 601009 | 601010 |
+601011 | 601012 | 601013 | 601014 | 601015 | 601016 | 601017 | 601018 | 601019 | 601020 |
+601021 | 601022 | 601023 | 601024 | 601025 | 601026 | 601027 | 601028 | 601029 | 601030", 2000, 5009, "", "trial_mission_title_5", "trial_mission_description_5", "trial_mission_tip_5", "", 1, "TRUE", "102,300,300"

@@ -1,0 +1,313 @@
+int, ERuneGradeType, int, int, string, string, ERuneShowGroupType, ERuneBuffType, FP[], ERuneValue[], FP
+Id, Grade, resourceId, SortOrder, TitleName, Description, ShowGroupType, BuffType, Parameters, RuneValues, AdditionalAttackDamage
+1001, "Common", 1001, 1, "rune_name_1001", "rune_description_1001", "Attack", "PhysicalDamage", 2, "Percentage"
+1002, "Common", 1002, 2, "rune_name_1002", "rune_description_1002", "Attack", "MagicalDamage", 2, "Percentage"
+1003, "Common", 1003, 3, "rune_name_1003", "rune_description_1003", "Attack", "AttackDamage", 1, "Percentage"
+1004, "Common", 1004, 4, "rune_name_1004", "rune_description_1004", "AttackSpeed", "AttackSpeed", 1, "Percentage"
+1005, "Common", 1005, 5, "rune_name_1005", "rune_description_1005", "ManaAndCooltime", "SpRegen", 4, "Percentage"
+1006, "Common", 1006, 6, "rune_name_1006", "rune_description_1006", "ManaAndCooltime", "CoolTimeRegen", 1, "Percentage"
+1007, "Common", 1007, 7, "rune_name_1007", "rune_description_1007", "Critical", "CriticalPercentage", "0.5", "Constant"
+1008, "Common", 1008, 8, "rune_name_1008", "rune_description_1008", "Critical", "CriticalDamage", 3, "Percentage"
+1009, "Common", 1009, 9, "rune_name_1009", "rune_description_1009", "Attack", "StunDamage", 1, "Percentage"
+1010, "Common", 1010, 10, "rune_name_1010", "rune_description_1010", "Movement", "MovementSpeed", 3, "Percentage"
+1011, "Common", 1011, 11, "rune_name_1011", "rune_description_1011", "Attack", "BasicAttackDamage", 3, "Percentage"
+1012, "Common", 1012, 12, "rune_name_1012", "rune_description_1012", "SkillAndUltimate", "SkillDamage", 2, "Percentage"
+1013, "Common", 1013, 13, "rune_name_1013", "rune_description_1013", "SkillAndUltimate", "SkillChancePercentage", "0.2", "Constant"
+1014, "Common", 1014, 14, "rune_name_1014", "rune_description_1014", "StunAndSlow", "StunTime", 2, "Percentage"
+1015, "Common", 1015, 15, "rune_name_1015", "rune_description_1015", "Attack", "BossMonsterDamage", 2, "Percentage"
+1016, "Common", 1016, 16, "rune_name_1016", "rune_description_1016", "Defense", "DecreaseDefenseValue", 4, "Constant"
+1017, "Common", 1017, 17, "rune_name_1017", "rune_description_1017", "SkillAndUltimate", "UltimateDamage", 2, "Percentage"
+1018, "Common", 1018, 18, "rune_name_1018", "rune_description_1018", "Attack", "SingleRangeDamage", 2, "Percentage"
+1019, "Common", 1019, 19, "rune_name_1019", "rune_description_1019", "Attack", "MultiRangeDamage", 1, "Percentage"
+1020, "Common", 1020, 20, "rune_name_1020", "rune_description_1020", "Attack", "HyperCountIncreaseDamage", "0.2", "Percentage"
+1022, "Common", 1022, 22, "rune_name_1022", "rune_description_1022", "ManaAndCooltime", "CooltimeDecreaseAtCritical", "2|0.6", "Constant | Constant"
+1023, "Common", 1023, 23, "rune_name_1023", "rune_description_1023", "ManaAndCooltime", "ManaRegenAtCritical", "2|3", "Constant | Constant"
+1026, "Common", 1026, 26, "rune_name_1026", "rune_description_1026", "StunAndSlow", "StunAtBasicAttack", "1.8|0.4", "Constant | Constant"
+1029, "Common", 1029, 29, "rune_name_1029", "rune_description_1029", "ManaAndCooltime", "CooltimeDecreaseAtBasicAttack", "3|1.8", "Constant | Percentage"
+1031, "Common", 1031, 31, "rune_name_1031", "rune_description_1031", "AttackSpeed", "AttackSpeedIncreaseAfterMovement", "0.8|6", "Constant | Percentage"
+1032, "Common", 1032, 32, "rune_name_1032", "rune_description_1032", "Attack", "AdditionalDamageAtSkill", "25|3", "Constant | Percentage"
+1033, "Common", 1033, 33, "rune_name_1033", "rune_description_1033", "Attack", "AdditionalBasicAttack", 1, "Constant"
+1035, "Common", 1035, 35, "rune_name_1035", "rune_description_1035", "InstantDeath", "InstantKillAtLowHealth", "0.8|2.5", "Constant | Constant"
+1036, "Common", 1036, 36, "rune_name_1036", "rune_description_1036", "SpecialPoint", "GetSpecialPointAtUltimate", "4|1", "Constant | Constant"
+1038, "Common", 1038, 38, "rune_name_1038", "rune_description_1038", "Attack", "DamageIncreaseForOneWave", "5|0.1", "Constant | Percentage"
+1041, "Common", 1041, 41, "rune_name_1041", "rune_description_1041", "Defense", "SheildAtSpawn", 10, "Constant"
+1042, "Common", 1042, 42, "rune_name_1042", "rune_description_1042", "AttackSpeed", "AttackSpeedIncreaseByHyperCount", "0.1", "Percentage"
+1043, "Common", 1043, 43, "rune_name_1043", "rune_description_1043", "Attack", "MagicalDamageIncreaseAfterWave", "0.12", "Percentage"
+1044, "Common", 1044, 44, "rune_name_1044", "rune_description_1044", "AttackRange", "DecreaseAttackRangeAndDamageIncrease", "30|4", "Percentage | Percentage"
+1045, "Common", 1045, 45, "rune_name_1045", "rune_description_1045", "SkillAndUltimate", "UseUltimateAgain", 4, "Constant"
+1048, "Common", 1048, 48, "rune_name_1048", "rune_description_1048", "Attack", "StopAttackAndWaitForDamageIncrease", "8|4", "Constant | Percentage"
+1049, "Common", 1049, 49, "rune_name_1049", "rune_description_1049", "Attack", "BasicAttackIncreaseAtUltimate", "2|20", "Constant | Percentage"
+1050, "Common", 1050, 50, "rune_name_1050", "rune_description_1050", "Attack", "PhysicalDamageIncreaseByGoldUse", "500|0.02|12", "Constant | Percentage | Percentage"
+2001, "Rare", 1001, 1, "rune_name_1001", "rune_description_1001", "Attack", "PhysicalDamage", 3, "Percentage"
+2002, "Rare", 1002, 2, "rune_name_1002", "rune_description_1002", "Attack", "MagicalDamage", 3, "Percentage"
+2003, "Rare", 1003, 3, "rune_name_1003", "rune_description_1003", "Attack", "AttackDamage", 2, "Percentage"
+2004, "Rare", 1004, 4, "rune_name_1004", "rune_description_1004", "AttackSpeed", "AttackSpeed", "1.5", "Percentage"
+2005, "Rare", 1005, 5, "rune_name_1005", "rune_description_1005", "ManaAndCooltime", "SpRegen", 6, "Percentage"
+2006, "Rare", 1006, 6, "rune_name_1006", "rune_description_1006", "ManaAndCooltime", "CoolTimeRegen", 2, "Percentage"
+2007, "Rare", 1007, 7, "rune_name_1007", "rune_description_1007", "Critical", "CriticalPercentage", 1, "Constant"
+2008, "Rare", 1008, 8, "rune_name_1008", "rune_description_1008", "Critical", "CriticalDamage", 6, "Percentage"
+2009, "Rare", 1009, 9, "rune_name_1009", "rune_description_1009", "Attack", "StunDamage", 2, "Percentage"
+2010, "Rare", 1010, 10, "rune_name_1010", "rune_description_1010", "Movement", "MovementSpeed", 6, "Percentage"
+2011, "Rare", 1011, 11, "rune_name_1011", "rune_description_1011", "Attack", "BasicAttackDamage", 6, "Percentage"
+2012, "Rare", 1012, 12, "rune_name_1012", "rune_description_1012", "SkillAndUltimate", "SkillDamage", 3, "Percentage"
+2013, "Rare", 1013, 13, "rune_name_1013", "rune_description_1013", "SkillAndUltimate", "SkillChancePercentage", "0.3", "Constant"
+2014, "Rare", 1014, 14, "rune_name_1014", "rune_description_1014", "StunAndSlow", "StunTime", 3, "Percentage"
+2015, "Rare", 1015, 15, "rune_name_1015", "rune_description_1015", "Attack", "BossMonsterDamage", 3, "Percentage"
+2016, "Rare", 1016, 16, "rune_name_1016", "rune_description_1016", "Defense", "DecreaseDefenseValue", 6, "Constant"
+2017, "Rare", 1017, 17, "rune_name_1017", "rune_description_1017", "SkillAndUltimate", "UltimateDamage", 3, "Percentage"
+2018, "Rare", 1018, 18, "rune_name_1018", "rune_description_1018", "Attack", "SingleRangeDamage", 3, "Percentage"
+2019, "Rare", 1019, 19, "rune_name_1019", "rune_description_1019", "Attack", "MultiRangeDamage", 2, "Percentage"
+2020, "Rare", 1020, 20, "rune_name_1020", "rune_description_1020", "Attack", "HyperCountIncreaseDamage", "0.3", "Percentage"
+2022, "Rare", 1022, 22, "rune_name_1022", "rune_description_1022", "ManaAndCooltime", "CooltimeDecreaseAtCritical", "3|0.6", "Constant | Constant"
+2023, "Rare", 1023, 23, "rune_name_1023", "rune_description_1023", "ManaAndCooltime", "ManaRegenAtCritical", "3|3", "Constant | Constant"
+2026, "Rare", 1026, 26, "rune_name_1026", "rune_description_1026", "StunAndSlow", "StunAtBasicAttack", "1.8|0.4", "Constant | Constant"
+2029, "Rare", 1029, 29, "rune_name_1029", "rune_description_1029", "ManaAndCooltime", "CooltimeDecreaseAtBasicAttack", "4|1.8", "Constant | Percentage"
+2031, "Rare", 1031, 31, "rune_name_1031", "rune_description_1031", "AttackSpeed", "AttackSpeedIncreaseAfterMovement", "1.2|6", "Constant | Percentage"
+2032, "Rare", 1032, 32, "rune_name_1032", "rune_description_1032", "Attack", "AdditionalDamageAtSkill", "30|3", "Constant | Percentage"
+2033, "Rare", 1033, 33, "rune_name_1033", "rune_description_1033", "Attack", "AdditionalBasicAttack", "1.5", "Constant"
+2035, "Rare", 1035, 35, "rune_name_1035", "rune_description_1035", "InstantDeath", "InstantKillAtLowHealth", "1.2|2.5", "Constant | Constant"
+2036, "Rare", 1036, 36, "rune_name_1036", "rune_description_1036", "SpecialPoint", "GetSpecialPointAtUltimate", "6|1", "Constant | Constant"
+2038, "Rare", 1038, 38, "rune_name_1038", "rune_description_1038", "Attack", "DamageIncreaseForOneWave", "5|0.2", "Constant | Percentage"
+2041, "Rare", 1041, 41, "rune_name_1041", "rune_description_1041", "Defense", "SheildAtSpawn", 15, "Constant"
+2042, "Rare", 1042, 42, "rune_name_1042", "rune_description_1042", "AttackSpeed", "AttackSpeedIncreaseByHyperCount", "0.15", "Percentage"
+2043, "Rare", 1043, 43, "rune_name_1043", "rune_description_1043", "Attack", "MagicalDamageIncreaseAfterWave", "0.14", "Percentage"
+2044, "Rare", 1044, 44, "rune_name_1044", "rune_description_1044", "AttackRange", "DecreaseAttackRangeAndDamageIncrease", "30|6", "Percentage | Percentage"
+2045, "Rare", 1045, 45, "rune_name_1045", "rune_description_1045", "SkillAndUltimate", "UseUltimateAgain", 6, "Constant"
+2048, "Rare", 1048, 48, "rune_name_1048", "rune_description_1048", "Attack", "StopAttackAndWaitForDamageIncrease", "10|6", "Constant | Percentage"
+2049, "Rare", 1049, 49, "rune_name_1049", "rune_description_1049", "Attack", "BasicAttackIncreaseAtUltimate", "3|20", "Constant | Percentage"
+2050, "Rare", 1050, 50, "rune_name_1050", "rune_description_1050", "Attack", "PhysicalDamageIncreaseByGoldUse", "500|0.04|12", "Constant | Percentage | Percentage"
+3001, "Epic", 1001, 1, "rune_name_1001", "rune_description_1001", "Attack", "PhysicalDamage", 4, "Percentage"
+3002, "Epic", 1002, 2, "rune_name_1002", "rune_description_1002", "Attack", "MagicalDamage", 4, "Percentage"
+3003, "Epic", 1003, 3, "rune_name_1003", "rune_description_1003", "Attack", "AttackDamage", 3, "Percentage"
+3004, "Epic", 1004, 4, "rune_name_1004", "rune_description_1004", "AttackSpeed", "AttackSpeed", 2, "Percentage"
+3005, "Epic", 1005, 5, "rune_name_1005", "rune_description_1005", "ManaAndCooltime", "SpRegen", 8, "Percentage"
+3006, "Epic", 1006, 6, "rune_name_1006", "rune_description_1006", "ManaAndCooltime", "CoolTimeRegen", 3, "Percentage"
+3007, "Epic", 1007, 7, "rune_name_1007", "rune_description_1007", "Critical", "CriticalPercentage", "1.5", "Constant"
+3008, "Epic", 1008, 8, "rune_name_1008", "rune_description_1008", "Critical", "CriticalDamage", 9, "Percentage"
+3009, "Epic", 1009, 9, "rune_name_1009", "rune_description_1009", "Attack", "StunDamage", 3, "Percentage"
+3010, "Epic", 1010, 10, "rune_name_1010", "rune_description_1010", "Movement", "MovementSpeed", 9, "Percentage"
+3011, "Epic", 1011, 11, "rune_name_1011", "rune_description_1011", "Attack", "BasicAttackDamage", 9, "Percentage"
+3012, "Epic", 1012, 12, "rune_name_1012", "rune_description_1012", "SkillAndUltimate", "SkillDamage", 4, "Percentage"
+3013, "Epic", 1013, 13, "rune_name_1013", "rune_description_1013", "SkillAndUltimate", "SkillChancePercentage", "0.4", "Constant"
+3014, "Epic", 1014, 14, "rune_name_1014", "rune_description_1014", "StunAndSlow", "StunTime", 4, "Percentage"
+3015, "Epic", 1015, 15, "rune_name_1015", "rune_description_1015", "Attack", "BossMonsterDamage", 4, "Percentage"
+3016, "Epic", 1016, 16, "rune_name_1016", "rune_description_1016", "Defense", "DecreaseDefenseValue", 8, "Constant"
+3017, "Epic", 1017, 17, "rune_name_1017", "rune_description_1017", "SkillAndUltimate", "UltimateDamage", 4, "Percentage"
+3018, "Epic", 1018, 18, "rune_name_1018", "rune_description_1018", "Attack", "SingleRangeDamage", 4, "Percentage"
+3019, "Epic", 1019, 19, "rune_name_1019", "rune_description_1019", "Attack", "MultiRangeDamage", 3, "Percentage"
+3020, "Epic", 1020, 20, "rune_name_1020", "rune_description_1020", "Attack", "HyperCountIncreaseDamage", "0.4", "Percentage"
+3022, "Epic", 1022, 22, "rune_name_1022", "rune_description_1022", "ManaAndCooltime", "CooltimeDecreaseAtCritical", "3|0.9", "Constant | Constant"
+3023, "Epic", 1023, 23, "rune_name_1023", "rune_description_1023", "ManaAndCooltime", "ManaRegenAtCritical", "3|4.5", "Constant | Constant"
+3026, "Epic", 1026, 26, "rune_name_1026", "rune_description_1026", "StunAndSlow", "StunAtBasicAttack", "2|0.6", "Constant | Constant"
+3029, "Epic", 1029, 29, "rune_name_1029", "rune_description_1029", "ManaAndCooltime", "CooltimeDecreaseAtBasicAttack", "4|2", "Constant | Percentage"
+3031, "Epic", 1031, 31, "rune_name_1031", "rune_description_1031", "AttackSpeed", "AttackSpeedIncreaseAfterMovement", "1.2|9", "Constant | Percentage"
+3032, "Epic", 1032, 32, "rune_name_1032", "rune_description_1032", "Attack", "AdditionalDamageAtSkill", "30|4", "Constant | Percentage"
+3033, "Epic", 1033, 33, "rune_name_1033", "rune_description_1033", "Attack", "AdditionalBasicAttack", 2, "Constant"
+3035, "Epic", 1035, 35, "rune_name_1035", "rune_description_1035", "InstantDeath", "InstantKillAtLowHealth", "1.2|3", "Constant | Constant"
+3036, "Epic", 1036, 36, "rune_name_1036", "rune_description_1036", "SpecialPoint", "GetSpecialPointAtUltimate", "8|1", "Constant | Constant"
+3038, "Epic", 1038, 38, "rune_name_1038", "rune_description_1038", "Attack", "DamageIncreaseForOneWave", "5|0.3", "Constant | Percentage"
+3041, "Epic", 1041, 41, "rune_name_1041", "rune_description_1041", "Defense", "SheildAtSpawn", 20, "Constant"
+3042, "Epic", 1042, 42, "rune_name_1042", "rune_description_1042", "AttackSpeed", "AttackSpeedIncreaseByHyperCount", "0.2", "Percentage"
+3043, "Epic", 1043, 43, "rune_name_1043", "rune_description_1043", "Attack", "MagicalDamageIncreaseAfterWave", "0.16", "Percentage"
+3044, "Epic", 1044, 44, "rune_name_1044", "rune_description_1044", "AttackRange", "DecreaseAttackRangeAndDamageIncrease", "30|8", "Percentage | Percentage"
+3045, "Epic", 1045, 45, "rune_name_1045", "rune_description_1045", "SkillAndUltimate", "UseUltimateAgain", 8, "Constant"
+3048, "Epic", 1048, 48, "rune_name_1048", "rune_description_1048", "Attack", "StopAttackAndWaitForDamageIncrease", "12|8", "Constant | Percentage"
+3049, "Epic", 1049, 49, "rune_name_1049", "rune_description_1049", "Attack", "BasicAttackIncreaseAtUltimate", "3|25", "Constant | Percentage"
+3050, "Epic", 1050, 50, "rune_name_1050", "rune_description_1050", "Attack", "PhysicalDamageIncreaseByGoldUse", "500|0.06|15", "Constant | Percentage | Percentage"
+4001, "Legend", 1001, 1, "rune_name_1001", "rune_description_1001", "Attack", "PhysicalDamage", 6, "Percentage", "3.5"
+4002, "Legend", 1002, 2, "rune_name_1002", "rune_description_1002", "Attack", "MagicalDamage", 6, "Percentage", "3.5"
+4003, "Legend", 1003, 3, "rune_name_1003", "rune_description_1003", "Attack", "AttackDamage", 4, "Percentage", "3.5"
+4004, "Legend", 1004, 4, "rune_name_1004", "rune_description_1004", "AttackSpeed", "AttackSpeed", 3, "Percentage", "3.5"
+4005, "Legend", 1005, 5, "rune_name_1005", "rune_description_1005", "ManaAndCooltime", "SpRegen", 10, "Percentage", "3.5"
+4006, "Legend", 1006, 6, "rune_name_1006", "rune_description_1006", "ManaAndCooltime", "CoolTimeRegen", 4, "Percentage", "3.5"
+4007, "Legend", 1007, 7, "rune_name_1007", "rune_description_1007", "Critical", "CriticalPercentage", 2, "Constant", "3.5"
+4008, "Legend", 1008, 8, "rune_name_1008", "rune_description_1008", "Critical", "CriticalDamage", 12, "Percentage", "3.5"
+4009, "Legend", 1009, 9, "rune_name_1009", "rune_description_1009", "Attack", "StunDamage", 4, "Percentage", "3.5"
+4010, "Legend", 1010, 10, "rune_name_1010", "rune_description_1010", "Movement", "MovementSpeed", 12, "Percentage", "3.5"
+4011, "Legend", 1011, 11, "rune_name_1011", "rune_description_1011", "Attack", "BasicAttackDamage", 12, "Percentage", "3.5"
+4012, "Legend", 1012, 12, "rune_name_1012", "rune_description_1012", "SkillAndUltimate", "SkillDamage", 6, "Percentage", "3.5"
+4013, "Legend", 1013, 13, "rune_name_1013", "rune_description_1013", "SkillAndUltimate", "SkillChancePercentage", "0.6", "Constant", "3.5"
+4014, "Legend", 1014, 14, "rune_name_1014", "rune_description_1014", "StunAndSlow", "StunTime", 6, "Percentage", "3.5"
+4015, "Legend", 1015, 15, "rune_name_1015", "rune_description_1015", "Attack", "BossMonsterDamage", 6, "Percentage", "3.5"
+4016, "Legend", 1016, 16, "rune_name_1016", "rune_description_1016", "Defense", "DecreaseDefenseValue", 10, "Constant", "3.5"
+4017, "Legend", 1017, 17, "rune_name_1017", "rune_description_1017", "SkillAndUltimate", "UltimateDamage", 6, "Percentage", "3.5"
+4018, "Legend", 1018, 18, "rune_name_1018", "rune_description_1018", "Attack", "SingleRangeDamage", 6, "Percentage", "3.5"
+4019, "Legend", 1019, 19, "rune_name_1019", "rune_description_1019", "Attack", "MultiRangeDamage", 4, "Percentage", "3.5"
+4020, "Legend", 1020, 20, "rune_name_1020", "rune_description_1020", "Attack", "HyperCountIncreaseDamage", "0.6", "Percentage", "3.5"
+4022, "Legend", 1022, 22, "rune_name_1022", "rune_description_1022", "ManaAndCooltime", "CooltimeDecreaseAtCritical", "4|0.9", "Constant | Constant", "3.5"
+4023, "Legend", 1023, 23, "rune_name_1023", "rune_description_1023", "ManaAndCooltime", "ManaRegenAtCritical", "4|4.5", "Constant | Constant", "3.5"
+4026, "Legend", 1026, 26, "rune_name_1026", "rune_description_1026", "StunAndSlow", "StunAtBasicAttack", "2|0.6", "Constant | Constant", "3.5"
+4029, "Legend", 1029, 29, "rune_name_1029", "rune_description_1029", "ManaAndCooltime", "CooltimeDecreaseAtBasicAttack", "5|2", "Constant | Percentage", "3.5"
+4031, "Legend", 1031, 31, "rune_name_1031", "rune_description_1031", "AttackSpeed", "AttackSpeedIncreaseAfterMovement", "1.6|9", "Constant | Percentage", "3.5"
+4032, "Legend", 1032, 32, "rune_name_1032", "rune_description_1032", "Attack", "AdditionalDamageAtSkill", "35|4", "Constant | Percentage", "3.5"
+4033, "Legend", 1033, 33, "rune_name_1033", "rune_description_1033", "Attack", "AdditionalBasicAttack", "2.5", "Constant", "3.5"
+4035, "Legend", 1035, 35, "rune_name_1035", "rune_description_1035", "InstantDeath", "InstantKillAtLowHealth", "1.6|3", "Constant | Constant", "3.5"
+4036, "Legend", 1036, 36, "rune_name_1036", "rune_description_1036", "SpecialPoint", "GetSpecialPointAtUltimate", "10|1", "Constant | Constant", "3.5"
+4038, "Legend", 1038, 38, "rune_name_1038", "rune_description_1038", "Attack", "DamageIncreaseForOneWave", "5|0.4", "Constant | Percentage", "3.5"
+4041, "Legend", 1041, 41, "rune_name_1041", "rune_description_1041", "Defense", "SheildAtSpawn", 30, "Constant", "3.5"
+4042, "Legend", 1042, 42, "rune_name_1042", "rune_description_1042", "AttackSpeed", "AttackSpeedIncreaseByHyperCount", "0.3", "Percentage", "3.5"
+4043, "Legend", 1043, 43, "rune_name_1043", "rune_description_1043", "Attack", "MagicalDamageIncreaseAfterWave", "0.18", "Percentage", "3.5"
+4044, "Legend", 1044, 44, "rune_name_1044", "rune_description_1044", "AttackRange", "DecreaseAttackRangeAndDamageIncrease", "30|10", "Percentage | Percentage", "3.5"
+4045, "Legend", 1045, 45, "rune_name_1045", "rune_description_1045", "SkillAndUltimate", "UseUltimateAgain", 10, "Constant", "3.5"
+4048, "Legend", 1048, 48, "rune_name_1048", "rune_description_1048", "Attack", "StopAttackAndWaitForDamageIncrease", "14|10", "Constant | Percentage", "3.5"
+4049, "Legend", 1049, 49, "rune_name_1049", "rune_description_1049", "Attack", "BasicAttackIncreaseAtUltimate", "4|25", "Constant | Percentage", "3.5"
+4050, "Legend", 1050, 50, "rune_name_1050", "rune_description_1050", "Attack", "PhysicalDamageIncreaseByGoldUse", "500|0.08|15", "Constant | Percentage | Percentage", "3.5"
+5001, "Mythical", 1001, 1, "rune_name_1001", "rune_description_1001", "Attack", "PhysicalDamage", 9, "Percentage", 5
+5002, "Mythical", 1002, 2, "rune_name_1002", "rune_description_1002", "Attack", "MagicalDamage", 9, "Percentage", 5
+5003, "Mythical", 1003, 3, "rune_name_1003", "rune_description_1003", "Attack", "AttackDamage", 6, "Percentage", 5
+5004, "Mythical", 1004, 4, "rune_name_1004", "rune_description_1004", "AttackSpeed", "AttackSpeed", 4, "Percentage", 5
+5005, "Mythical", 1005, 5, "rune_name_1005", "rune_description_1005", "ManaAndCooltime", "SpRegen", 12, "Percentage", 5
+5006, "Mythical", 1006, 6, "rune_name_1006", "rune_description_1006", "ManaAndCooltime", "CoolTimeRegen", 6, "Percentage", 5
+5007, "Mythical", 1007, 7, "rune_name_1007", "rune_description_1007", "Critical", "CriticalPercentage", 3, "Constant", 5
+5008, "Mythical", 1008, 8, "rune_name_1008", "rune_description_1008", "Critical", "CriticalDamage", 15, "Percentage", 5
+5009, "Mythical", 1009, 9, "rune_name_1009", "rune_description_1009", "Attack", "StunDamage", 6, "Percentage", 5
+5010, "Mythical", 1010, 10, "rune_name_1010", "rune_description_1010", "Movement", "MovementSpeed", 15, "Percentage", 5
+5011, "Mythical", 1011, 11, "rune_name_1011", "rune_description_1011", "Attack", "BasicAttackDamage", 15, "Percentage", 5
+5012, "Mythical", 1012, 12, "rune_name_1012", "rune_description_1012", "SkillAndUltimate", "SkillDamage", 9, "Percentage", 5
+5013, "Mythical", 1013, 13, "rune_name_1013", "rune_description_1013", "SkillAndUltimate", "SkillChancePercentage", "0.9", "Constant", 5
+5014, "Mythical", 1014, 14, "rune_name_1014", "rune_description_1014", "StunAndSlow", "StunTime", 9, "Percentage", 5
+5015, "Mythical", 1015, 15, "rune_name_1015", "rune_description_1015", "Attack", "BossMonsterDamage", 9, "Percentage", 5
+5016, "Mythical", 1016, 16, "rune_name_1016", "rune_description_1016", "Defense", "DecreaseDefenseValue", 12, "Constant", 5
+5017, "Mythical", 1017, 17, "rune_name_1017", "rune_description_1017", "SkillAndUltimate", "UltimateDamage", 9, "Percentage", 5
+5018, "Mythical", 1018, 18, "rune_name_1018", "rune_description_1018", "Attack", "SingleRangeDamage", 9, "Percentage", 5
+5019, "Mythical", 1019, 19, "rune_name_1019", "rune_description_1019", "Attack", "MultiRangeDamage", 6, "Percentage", 5
+5020, "Mythical", 1020, 20, "rune_name_1020", "rune_description_1020", "Attack", "HyperCountIncreaseDamage", "0.9", "Percentage", 5
+5022, "Mythical", 1022, 22, "rune_name_1022", "rune_description_1022", "ManaAndCooltime", "CooltimeDecreaseAtCritical", "4|1.2", "Constant | Constant", 5
+5023, "Mythical", 1023, 23, "rune_name_1023", "rune_description_1023", "ManaAndCooltime", "ManaRegenAtCritical", "4|6", "Constant | Constant", 5
+5026, "Mythical", 1026, 26, "rune_name_1026", "rune_description_1026", "StunAndSlow", "StunAtBasicAttack", "2.5|0.8", "Constant | Constant", 5
+5029, "Mythical", 1029, 29, "rune_name_1029", "rune_description_1029", "ManaAndCooltime", "CooltimeDecreaseAtBasicAttack", "5|2.5", "Constant | Percentage", 5
+5031, "Mythical", 1031, 31, "rune_name_1031", "rune_description_1031", "AttackSpeed", "AttackSpeedIncreaseAfterMovement", "1.6|12", "Constant | Percentage", 5
+5032, "Mythical", 1032, 32, "rune_name_1032", "rune_description_1032", "Attack", "AdditionalDamageAtSkill", "35|6", "Constant | Percentage", 5
+5033, "Mythical", 1033, 33, "rune_name_1033", "rune_description_1033", "Attack", "AdditionalBasicAttack", 3, "Constant", 5
+5035, "Mythical", 1035, 35, "rune_name_1035", "rune_description_1035", "InstantDeath", "InstantKillAtLowHealth", "1.6|3.5", "Constant | Constant", 5
+5036, "Mythical", 1036, 36, "rune_name_1036", "rune_description_1036", "SpecialPoint", "GetSpecialPointAtUltimate", "12|1", "Constant | Constant", 5
+5038, "Mythical", 1038, 38, "rune_name_1038", "rune_description_1038", "Attack", "DamageIncreaseForOneWave", "5|0.5", "Constant | Percentage", 5
+5041, "Mythical", 1041, 41, "rune_name_1041", "rune_description_1041", "Defense", "SheildAtSpawn", 40, "Constant", 5
+5042, "Mythical", 1042, 42, "rune_name_1042", "rune_description_1042", "AttackSpeed", "AttackSpeedIncreaseByHyperCount", "0.4", "Percentage", 5
+5043, "Mythical", 1043, 43, "rune_name_1043", "rune_description_1043", "Attack", "MagicalDamageIncreaseAfterWave", "0.2", "Percentage", 5
+5044, "Mythical", 1044, 44, "rune_name_1044", "rune_description_1044", "AttackRange", "DecreaseAttackRangeAndDamageIncrease", "30|12", "Percentage | Percentage", 5
+5045, "Mythical", 1045, 45, "rune_name_1045", "rune_description_1045", "SkillAndUltimate", "UseUltimateAgain", 12, "Constant", 5
+5048, "Mythical", 1048, 48, "rune_name_1048", "rune_description_1048", "Attack", "StopAttackAndWaitForDamageIncrease", "16|12", "Constant | Percentage", 5
+5049, "Mythical", 1049, 49, "rune_name_1049", "rune_description_1049", "Attack", "BasicAttackIncreaseAtUltimate", "4|30", "Constant | Percentage", 5
+5050, "Mythical", 1050, 50, "rune_name_1050", "rune_description_1050", "Attack", "PhysicalDamageIncreaseByGoldUse", "500|0.12|20", "Constant | Percentage | Percentage", 5
+5051, "Mythical", 1051, 51, "rune_name_1051", "rune_description_1051", "AttackRange", "AttackRangeIncreaseDamageDecrease", "15|9", "Percentage | Percentage", 5
+5052, "Mythical", 1052, 52, "rune_name_1052", "rune_description_1052", "SkillAndUltimate", "AttackIncreaseBySameRaceType", "1.5", "Percentage", 5
+5053, "Mythical", 1053, 53, "rune_name_1053", "rune_description_1053", "Attack", "MovementDeletedAndDamageIncrease", 12, "Percentage", 5
+5054, "Mythical", 1054, 54, "rune_name_1054", "rune_description_1054", "ManaAndCooltime", "ManaRegenAfterSkill", 2, "Percentage", 5
+5055, "Mythical", 1055, 55, "rune_name_1055", "rune_description_1055", "Attack", "SpawnSummonerBySkill", "40|1500", "Constant | Percentage", 5
+5058, "Mythical", 1058, 58, "rune_name_1058", "rune_description_1058", "Attack", "SpawnSummoerAtCriticalDamage", 400, "Percentage", 5
+5059, "Mythical", 1059, 59, "rune_name_1059", "rune_description_1059", "Attack", "IncreaseMagicalDamageByKillCount", "10|0.2|20", "Constant | Percentage | Percentage", 5
+5060, "Mythical", 1060, 60, "rune_name_1060", "rune_description_1060", "SkillAndUltimate", "SkillChanceIncreaseDamageDecrease", "16|1.2", "Percentage | Constant ", 5
+5061, "Mythical", 1061, 61, "rune_name_1061", "rune_description_1061", "Attack", "BasicDamageIncreaseRemoveUltimate", 40, "Percentage ", 5
+5062, "Mythical", 1062, 62, "rune_name_1062", "rune_description_1062", "Attack", "AttackSpeedAndDamageIncreaseWhenHyperIsDead", "1.2|2", "Percentage | Percentage ", 5
+5063, "Mythical", 1063, 63, "rune_name_1063", "rune_description_1063", "Attack", "IncreasePhysicalDamageByKillCount", "10|0.2|20", "Constant | Percentage | Percentage", 5
+5064, "Mythical", 1064, 64, "rune_name_1064", "rune_description_1064", "Attack", "ReviveOnceAndIncreaseDamage", "20|60", "Constant | Percentage", 5
+5065, "Mythical", 1065, 65, "rune_name_1065", "rune_description_1065", "Attack", "IncreasePhysicalDamageDecreaseUltimateDamage", "12|50", "Percentage | Percentage", 5
+5066, "Mythical", 1066, 66, "rune_name_1066", "rune_description_1066", "Attack", "IncreaseMagicalDamageDecreaseSkilChance", "12|3", "Percentage | Constant", 5
+5067, "Mythical", 1067, 67, "rune_name_1067", "rune_description_1067", "Attack", "DamageIncreaseByPreMythicalCount", "1.5", "Percentage", 5
+6001, "Hyper", 1001, 1, "rune_name_1001", "rune_description_1001", "Attack", "PhysicalDamage", 12, "Percentage", "6.5"
+6002, "Hyper", 1002, 2, "rune_name_1002", "rune_description_1002", "Attack", "MagicalDamage", 12, "Percentage", "6.5"
+6003, "Hyper", 1003, 3, "rune_name_1003", "rune_description_1003", "Attack", "AttackDamage", 8, "Percentage", "6.5"
+6004, "Hyper", 1004, 4, "rune_name_1004", "rune_description_1004", "AttackSpeed", "AttackSpeed", 6, "Percentage", "6.5"
+6005, "Hyper", 1005, 5, "rune_name_1005", "rune_description_1005", "ManaAndCooltime", "SpRegen", 16, "Percentage", "6.5"
+6006, "Hyper", 1006, 6, "rune_name_1006", "rune_description_1006", "ManaAndCooltime", "CoolTimeRegen", 8, "Percentage", "6.5"
+6007, "Hyper", 1007, 7, "rune_name_1007", "rune_description_1007", "Critical", "CriticalPercentage", 4, "Constant", "6.5"
+6008, "Hyper", 1008, 8, "rune_name_1008", "rune_description_1008", "Critical", "CriticalDamage", 20, "Percentage", "6.5"
+6009, "Hyper", 1009, 9, "rune_name_1009", "rune_description_1009", "Attack", "StunDamage", 8, "Percentage", "6.5"
+6010, "Hyper", 1010, 10, "rune_name_1010", "rune_description_1010", "Movement", "MovementSpeed", 20, "Percentage", "6.5"
+6011, "Hyper", 1011, 11, "rune_name_1011", "rune_description_1011", "Attack", "BasicAttackDamage", 20, "Percentage", "6.5"
+6012, "Hyper", 1012, 12, "rune_name_1012", "rune_description_1012", "SkillAndUltimate", "SkillDamage", 12, "Percentage", "6.5"
+6013, "Hyper", 1013, 13, "rune_name_1013", "rune_description_1013", "SkillAndUltimate", "SkillChancePercentage", "1.2", "Constant", "6.5"
+6014, "Hyper", 1014, 14, "rune_name_1014", "rune_description_1014", "StunAndSlow", "StunTime", 12, "Percentage", "6.5"
+6015, "Hyper", 1015, 15, "rune_name_1015", "rune_description_1015", "Attack", "BossMonsterDamage", 12, "Percentage", "6.5"
+6016, "Hyper", 1016, 16, "rune_name_1016", "rune_description_1016", "Defense", "DecreaseDefenseValue", 16, "Constant", "6.5"
+6017, "Hyper", 1017, 17, "rune_name_1017", "rune_description_1017", "SkillAndUltimate", "UltimateDamage", 12, "Percentage", "6.5"
+6018, "Hyper", 1018, 18, "rune_name_1018", "rune_description_1018", "Attack", "SingleRangeDamage", 12, "Percentage", "6.5"
+6019, "Hyper", 1019, 19, "rune_name_1019", "rune_description_1019", "Attack", "MultiRangeDamage", 8, "Percentage", "6.5"
+6020, "Hyper", 1020, 20, "rune_name_1020", "rune_description_1020", "Attack", "HyperCountIncreaseDamage", "1.2", "Percentage", "6.5"
+6022, "Hyper", 1022, 22, "rune_name_1022", "rune_description_1022", "ManaAndCooltime", "CooltimeDecreaseAtCritical", "5|1.2", "Constant | Constant", "6.5"
+6023, "Hyper", 1023, 23, "rune_name_1023", "rune_description_1023", "ManaAndCooltime", "ManaRegenAtCritical", "5|6", "Constant | Constant", "6.5"
+6026, "Hyper", 1026, 26, "rune_name_1026", "rune_description_1026", "StunAndSlow", "StunAtBasicAttack", "2.5|0.8", "Constant | Constant", "6.5"
+6029, "Hyper", 1029, 29, "rune_name_1029", "rune_description_1029", "ManaAndCooltime", "CooltimeDecreaseAtBasicAttack", "6|2.5", "Constant | Percentage", "6.5"
+6031, "Hyper", 1031, 31, "rune_name_1031", "rune_description_1031", "AttackSpeed", "AttackSpeedIncreaseAfterMovement", "2|12", "Constant | Percentage", "6.5"
+6032, "Hyper", 1032, 32, "rune_name_1032", "rune_description_1032", "Attack", "AdditionalDamageAtSkill", "40|6", "Constant | Percentage", "6.5"
+6033, "Hyper", 1033, 33, "rune_name_1033", "rune_description_1033", "Attack", "AdditionalBasicAttack", "3.5", "Constant", "6.5"
+6035, "Hyper", 1035, 35, "rune_name_1035", "rune_description_1035", "InstantDeath", "InstantKillAtLowHealth", "2|3.5", "Constant | Constant", "6.5"
+6036, "Hyper", 1036, 36, "rune_name_1036", "rune_description_1036", "SpecialPoint", "GetSpecialPointAtUltimate", "16|1", "Constant | Constant", "6.5"
+6038, "Hyper", 1038, 38, "rune_name_1038", "rune_description_1038", "Attack", "DamageIncreaseForOneWave", "5|0.6", "Constant | Percentage", "6.5"
+6041, "Hyper", 1041, 41, "rune_name_1041", "rune_description_1041", "Defense", "SheildAtSpawn", 50, "Constant", "6.5"
+6042, "Hyper", 1042, 42, "rune_name_1042", "rune_description_1042", "AttackSpeed", "AttackSpeedIncreaseByHyperCount", "0.6", "Percentage", "6.5"
+6043, "Hyper", 1043, 43, "rune_name_1043", "rune_description_1043", "Attack", "MagicalDamageIncreaseAfterWave", "0.25", "Percentage", "6.5"
+6044, "Hyper", 1044, 44, "rune_name_1044", "rune_description_1044", "AttackRange", "DecreaseAttackRangeAndDamageIncrease", "30|16", "Percentage | Percentage", "6.5"
+6045, "Hyper", 1045, 45, "rune_name_1045", "rune_description_1045", "SkillAndUltimate", "UseUltimateAgain", 16, "Constant", "6.5"
+6048, "Hyper", 1048, 48, "rune_name_1048", "rune_description_1048", "Attack", "StopAttackAndWaitForDamageIncrease", "18|16", "Constant | Percentage", "6.5"
+6049, "Hyper", 1049, 49, "rune_name_1049", "rune_description_1049", "Attack", "BasicAttackIncreaseAtUltimate", "5|30", "Constant | Percentage", "6.5"
+6050, "Hyper", 1050, 50, "rune_name_1050", "rune_description_1050", "Attack", "PhysicalDamageIncreaseByGoldUse", "500|0.16|20", "Constant | Percentage | Percentage", "6.5"
+6051, "Hyper", 1051, 51, "rune_name_1051", "rune_description_1051", "AttackRange", "AttackRangeIncreaseDamageDecrease", "20|12", "Percentage | Percentage", "6.5"
+6052, "Hyper", 1052, 52, "rune_name_1052", "rune_description_1052", "SkillAndUltimate", "AttackIncreaseBySameRaceType", 2, "Percentage", "6.5"
+6053, "Hyper", 1053, 53, "rune_name_1053", "rune_description_1053", "Attack", "MovementDeletedAndDamageIncrease", 16, "Percentage", "6.5"
+6054, "Hyper", 1054, 54, "rune_name_1054", "rune_description_1054", "ManaAndCooltime", "ManaRegenAfterSkill", "2.5", "Percentage", "6.5"
+6055, "Hyper", 1055, 55, "rune_name_1055", "rune_description_1055", "Attack", "SpawnSummonerBySkill", "50|2000", "Constant | Percentage", "6.5"
+6058, "Hyper", 1058, 58, "rune_name_1058", "rune_description_1058", "Attack", "SpawnSummoerAtCriticalDamage", 600, "Percentage", "6.5"
+6059, "Hyper", 1059, 59, "rune_name_1059", "rune_description_1059", "Attack", "IncreaseMagicalDamageByKillCount", "10|0.3|30", "Constant | Percentage | Percentage", "6.5"
+6060, "Hyper", 1060, 60, "rune_name_1060", "rune_description_1060", "SkillAndUltimate", "SkillChanceIncreaseAttackSpeedDecrease", "18|1.6", "Percentage | Constant ", "6.5"
+6061, "Hyper", 1061, 61, "rune_name_1061", "rune_description_1061", "Attack", "BasicDamageIncreaseRemoveUltimate", 50, "Percentage ", "6.5"
+6062, "Hyper", 1062, 62, "rune_name_1062", "rune_description_1062", "Attack", "AttackSpeedAndDamageIncreaseWhenHyperIsDead", "1.6|3", "Percentage | Percentage ", "6.5"
+6063, "Hyper", 1063, 63, "rune_name_1063", "rune_description_1063", "Attack", "IncreasePhysicalDamageByKillCount", "10|0.3|30", "Constant | Percentage | Percentage", "6.5"
+6064, "Hyper", 1064, 64, "rune_name_1064", "rune_description_1064", "Attack", "ReviveOnceAndIncreaseDamage", "25|80", "Constant | Percentage", "6.5"
+6065, "Hyper", 1065, 65, "rune_name_1065", "rune_description_1065", "Attack", "IncreasePhysicalDamageDecreaseUltimateDamage", "16|50", "Percentage | Percentage", "6.5"
+6066, "Hyper", 1066, 66, "rune_name_1066", "rune_description_1066", "Attack", "IncreaseMagicalDamageDecreaseSkilChance", "16|3", "Percentage | Constant", "6.5"
+6067, "Hyper", 1067, 67, "rune_name_1067", "rune_description_1067", "Attack", "DamageIncreaseByPreMythicalCount", 2, "Percentage", "6.5"
+7001, "Eternal", 1001, 1, "rune_name_1001", "rune_description_1001", "Attack", "PhysicalDamage", 15, "Percentage", 8
+7002, "Eternal", 1002, 2, "rune_name_1002", "rune_description_1002", "Attack", "MagicalDamage", 15, "Percentage", 8
+7003, "Eternal", 1003, 3, "rune_name_1003", "rune_description_1003", "Attack", "AttackDamage", 10, "Percentage", 8
+7004, "Eternal", 1004, 4, "rune_name_1004", "rune_description_1004", "AttackSpeed", "AttackSpeed", 8, "Percentage", 8
+7005, "Eternal", 1005, 5, "rune_name_1005", "rune_description_1005", "ManaAndCooltime", "SpRegen", 20, "Percentage", 8
+7006, "Eternal", 1006, 6, "rune_name_1006", "rune_description_1006", "ManaAndCooltime", "CoolTimeRegen", 10, "Percentage", 8
+7007, "Eternal", 1007, 7, "rune_name_1007", "rune_description_1007", "Critical", "CriticalPercentage", 5, "Constant", 8
+7008, "Eternal", 1008, 8, "rune_name_1008", "rune_description_1008", "Critical", "CriticalDamage", 25, "Percentage", 8
+7009, "Eternal", 1009, 9, "rune_name_1009", "rune_description_1009", "Attack", "StunDamage", 10, "Percentage", 8
+7010, "Eternal", 1010, 10, "rune_name_1010", "rune_description_1010", "Movement", "MovementSpeed", 25, "Percentage", 8
+7011, "Eternal", 1011, 11, "rune_name_1011", "rune_description_1011", "Attack", "BasicAttackDamage", 25, "Percentage", 8
+7012, "Eternal", 1012, 12, "rune_name_1012", "rune_description_1012", "SkillAndUltimate", "SkillDamage", 15, "Percentage", 8
+7013, "Eternal", 1013, 13, "rune_name_1013", "rune_description_1013", "SkillAndUltimate", "SkillChancePercentage", "1.5", "Constant", 8
+7014, "Eternal", 1014, 14, "rune_name_1014", "rune_description_1014", "StunAndSlow", "StunTime", 15, "Percentage", 8
+7015, "Eternal", 1015, 15, "rune_name_1015", "rune_description_1015", "Attack", "BossMonsterDamage", 15, "Percentage", 8
+7016, "Eternal", 1016, 16, "rune_name_1016", "rune_description_1016", "Defense", "DecreaseDefenseValue", 20, "Constant", 8
+7017, "Eternal", 1017, 17, "rune_name_1017", "rune_description_1017", "SkillAndUltimate", "UltimateDamage", 15, "Percentage", 8
+7018, "Eternal", 1018, 18, "rune_name_1018", "rune_description_1018", "Attack", "SingleRangeDamage", 15, "Percentage", 8
+7019, "Eternal", 1019, 19, "rune_name_1019", "rune_description_1019", "Attack", "MultiRangeDamage", 10, "Percentage", 8
+7020, "Eternal", 1020, 20, "rune_name_1020", "rune_description_1020", "Attack", "HyperCountIncreaseDamage", "1.5", "Percentage", 8
+7022, "Eternal", 1022, 22, "rune_name_1022", "rune_description_1022", "ManaAndCooltime", "CooltimeDecreaseAtCritical", "5|1.5", "Constant | Constant", 8
+7023, "Eternal", 1023, 23, "rune_name_1023", "rune_description_1023", "ManaAndCooltime", "ManaRegenAtCritical", "5|7.5", "Constant | Constant", 8
+7026, "Eternal", 1026, 26, "rune_name_1026", "rune_description_1026", "StunAndSlow", "StunAtBasicAttack", "3|1", "Constant | Constant", 8
+7029, "Eternal", 1029, 29, "rune_name_1029", "rune_description_1029", "ManaAndCooltime", "CooltimeDecreaseAtBasicAttack", "6|3", "Constant | Percentage", 8
+7031, "Eternal", 1031, 31, "rune_name_1031", "rune_description_1031", "AttackSpeed", "AttackSpeedIncreaseAfterMovement", "2|15", "Constant | Percentage", 8
+7032, "Eternal", 1032, 32, "rune_name_1032", "rune_description_1032", "Attack", "AdditionalDamageAtSkill", "40|8", "Constant | Percentage", 8
+7033, "Eternal", 1033, 33, "rune_name_1033", "rune_description_1033", "Attack", "AdditionalBasicAttack", 4, "Constant", 8
+7035, "Eternal", 1035, 35, "rune_name_1035", "rune_description_1035", "InstantDeath", "InstantKillAtLowHealth", "2|4", "Constant | Constant", 8
+7036, "Eternal", 1036, 36, "rune_name_1036", "rune_description_1036", "SpecialPoint", "GetSpecialPointAtUltimate", "20|1", "Constant | Constant", 8
+7038, "Eternal", 1038, 38, "rune_name_1038", "rune_description_1038", "Attack", "DamageIncreaseForOneWave", "5|0.8", "Constant | Percentage", 8
+7041, "Eternal", 1041, 41, "rune_name_1041", "rune_description_1041", "Defense", "SheildAtSpawn", 60, "Constant", 8
+7042, "Eternal", 1042, 42, "rune_name_1042", "rune_description_1042", "AttackSpeed", "AttackSpeedIncreaseByHyperCount", "0.8", "Percentage", 8
+7043, "Eternal", 1043, 43, "rune_name_1043", "rune_description_1043", "Attack", "MagicalDamageIncreaseAfterWave", "0.3", "Percentage", 8
+7044, "Eternal", 1044, 44, "rune_name_1044", "rune_description_1044", "AttackRange", "DecreaseAttackRangeAndDamageIncrease", "30|20", "Percentage | Percentage", 8
+7045, "Eternal", 1045, 45, "rune_name_1045", "rune_description_1045", "SkillAndUltimate", "UseUltimateAgain", 20, "Constant", 8
+7048, "Eternal", 1048, 48, "rune_name_1048", "rune_description_1048", "Attack", "StopAttackAndWaitForDamageIncrease", "20|20", "Constant | Percentage", 8
+7049, "Eternal", 1049, 49, "rune_name_1049", "rune_description_1049", "Attack", "BasicAttackIncreaseAtUltimate", "5|35", "Constant | Percentage", 8
+7050, "Eternal", 1050, 50, "rune_name_1050", "rune_description_1050", "Attack", "PhysicalDamageIncreaseByGoldUse", "500|0.2|25", "Constant | Percentage | Percentage", 8
+7051, "Eternal", 1051, 51, "rune_name_1051", "rune_description_1051", "AttackRange", "AttackRangeIncreaseDamageDecrease", "25|15", "Percentage | Percentage", 8
+7052, "Eternal", 1052, 52, "rune_name_1052", "rune_description_1052", "SkillAndUltimate", "AttackIncreaseBySameRaceType", "2.5", "Percentage", 8
+7053, "Eternal", 1053, 53, "rune_name_1053", "rune_description_1053", "Attack", "MovementDeletedAndDamageIncrease", 20, "Percentage", 8
+7054, "Eternal", 1054, 54, "rune_name_1054", "rune_description_1054", "ManaAndCooltime", "ManaRegenAfterSkill", 3, "Percentage", 8
+7055, "Eternal", 1055, 55, "rune_name_1055", "rune_description_1055", "Attack", "SpawnSummonerBySkill", "60|2500", "Constant | Percentage", 8
+7058, "Eternal", 1058, 58, "rune_name_1058", "rune_description_1058", "Attack", "SpawnSummoerAtCriticalDamage", 800, "Percentage", 8
+7059, "Eternal", 1059, 59, "rune_name_1059", "rune_description_1059", "Attack", "IncreaseMagicalDamageByKillCount", "10|0.4|40", "Constant | Percentage | Percentage", 8
+7060, "Eternal", 1060, 60, "rune_name_1060", "rune_description_1060", "SkillAndUltimate", "SkillChanceIncreaseDamageDecrease", "20|2", "Percentage | Constant ", 8
+7061, "Eternal", 1061, 61, "rune_name_1061", "rune_description_1061", "Attack", "BasicDamageIncreaseRemoveUltimate", 60, "Percentage ", 8
+7062, "Eternal", 1062, 62, "rune_name_1062", "rune_description_1062", "Attack", "AttackSpeedAndDamageIncreaseWhenHyperIsDead", "2|4", "Percentage | Percentage ", 8
+7063, "Eternal", 1063, 63, "rune_name_1063", "rune_description_1063", "Attack", "IncreasePhysicalDamageByKillCount", "10|0.4|40", "Constant | Percentage | Percentage", 8
+7064, "Eternal", 1064, 64, "rune_name_1064", "rune_description_1064", "Attack", "ReviveOnceAndIncreaseDamage", "30|100", "Constant | Percentage", 8
+7065, "Eternal", 1065, 65, "rune_name_1065", "rune_description_1065", "Attack", "IncreasePhysicalDamageDecreaseUltimateDamage", "20|50", "Percentage | Percentage", 8
+7066, "Eternal", 1066, 66, "rune_name_1066", "rune_description_1066", "Attack", "IncreaseMagicalDamageDecreaseSkilChance", "20|3", "Percentage | Constant", 8
+7067, "Eternal", 1067, 67, "rune_name_1067", "rune_description_1067", "Attack", "DamageIncreaseByPreMythicalCount", "2.5", "Percentage", 8

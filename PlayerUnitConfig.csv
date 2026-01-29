@@ -1,0 +1,4 @@
+"int", "WattEnergyMax", 9999
+"int[]", "TarUnitId", "5014 | 5114 | 5214"
+"FP[]", "TarGradeRatio", "45 | 35 | 20"
+"FP[]", "TarIrochiProbability", "2 | 2 | 2"

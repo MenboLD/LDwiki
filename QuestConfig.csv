@@ -1,0 +1,16 @@
+"int", "UserQuestVersion", 1
+"FP[]", "UserQuestProgressNotiTriggetValues", 50
+"EQuest[]", "UserQuestProgressNotiTypes", "LootingMoney | SafeBoxMoney | MoneyGunStack"
+"EQuest[]", "BossWaveNotiTypes", "StunBoss"
+"int", "TryIngameUpgradePage", 1
+"int", "TryUnitMergePage", 3
+"int", "ClearIngameMissionPage", 4
+"int", "SpawnUnitByRoulettePage", 4
+"int", "SpawnMythUnitPage", 3
+"int", "MoveUnitBestPositionPage", 4
+"int", "StunBossPage", 3
+"int", "SetDefenceDownPage", 4
+"int", "LootingMoneyPage", 2
+"int", "SafeBoxMoneyPage", 1
+"int", "MoneyGunStackPage", 1
+"int", "UpgradeLancelotSkillPage", 1

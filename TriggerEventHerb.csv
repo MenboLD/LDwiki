@@ -1,0 +1,7 @@
+int, ETriggerEvent, int, int, EOpenType, int[], int, int, int, int, bool, int[]
+Id, EventType, Group, OpenLevel, OpenType, UnlockParams, OpenProb, Duration, Cooltime, OpenLimit, IsOpen, Steps
+3000, "Herb", 1, 7, "BestWaveCount", "2 | 80", 600, 259200, 172800, 2, "TRUE", "1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10"
+3001, "Herb", 1, 7, "BestWaveCount", "2 | 80", 600, 259200, 172800, 2, "TRUE", "11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20"
+3002, "Herb", 1, 7, "BestWaveCount", "3 | 80", 1000, 259200, 172800, 3, "TRUE", "11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20"
+3003, "Herb", 1, 7, "BestWaveCount", "4 | 90", 1000, 259200, 172800, 3, "TRUE", "11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20"
+3004, "Herb", 1, 7, "BestWaveCount", "5 | 100", 1000, 259200, 172800, 3, "TRUE", "11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20"

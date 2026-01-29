@@ -1,0 +1,9 @@
+"FP[]", "OpenConditionLeftSecRange", "70 | 85"
+"FP", "SpawnInterval", 1
+"FP", "SpawnIndexInterval", 5
+"FP", "HiddenWaveDuration", 120
+"long", "KillScore", "1000000000000"
+"int", "KillCountPer", 3
+"FP", "KillCountProb", 3000
+"TableReward", "KillCountReward", "[8000,2,1,1]"
+"int", "KillRewardMaxCount", 1

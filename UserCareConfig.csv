@@ -1,0 +1,13 @@
+"int", "LevelLimit", 5
+"FP", "CareProb", 0
+"int", "RareGambleCareCount", 3
+"int", "EpicGambleCareCount", 5
+"int", "LegendaryGambleCareCount", 6
+"int", "UnitWeightWaveId", 20
+"FP", "NeedUnitWeight", 3
+"int", "TargetMythicalUnitCount", 3
+"int", "MythUpgradeWaveId", 40
+"int", "MythUpgradeUnitCount", 2
+"int", "SpawnUpgradeWaveId", 10
+"int", "SpawnUpgradeSpawnCount", 30
+"int", "SpawnUpgradeGold", 500

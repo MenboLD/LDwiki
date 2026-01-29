@@ -1,0 +1,4 @@
+int, EItemType, ERankingType[]
+Id, RewardItemType, RankingTypes
+1, "Profile", "WaveGroup | Unit"
+2, "LevelTag", "HiddenWaveGroup"
