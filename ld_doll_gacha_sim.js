@@ -703,13 +703,17 @@
         <div class="section-title list-head">
           <span class="head-left"><span class="caret">▲</span>人形一覧</span>
           <div class="head-right">
-            <span class="section-sub">画像タップで選択 →</span>
-            <button class="btn primary compact" data-action="transfer" ${canTransfer?'':'disabled'}>転写</button>
+            <span class="section-sub">画像タップで選択</span>
           </div>
         </div>
 
         ${renderListTabs(1, tab)}
         <div class="doll-grid">${gridHtml}</div>
+      </div>
+
+      <div class="between-bar" aria-label="転写・削除">
+        <button class="arrow-btn up" data-action="slot-delete" ${app.state.selectedSlotIndex===null?'disabled':''}>▲<span>削除</span></button>
+        <button class="arrow-btn down" data-action="transfer" ${canTransfer?'':'disabled'}>▼<span>転写</span></button>
       </div>
 
       <div class="section">
@@ -721,12 +725,11 @@
         <div class="slot-list">${slotHtml}</div>
 
         <div class="row" style="margin-top:10px; justify-content:flex-end;">
-          <button class="btn danger" data-action="slot-delete" ${app.state.selectedSlotIndex===null?'disabled':''}>▲ 削除</button>
           <button class="btn primary" data-action="confirm-step" data-step="1" ${allFilled?'':'disabled'}>① 確定</button>
         </div>
 
         <div class="small" style="margin-top:8px;">
-          転写：一覧で選択中の人形をスロットへ。スロット内に同名があれば上書き（ロック/位置は維持）。
+          ▼転写：一覧で選択中の人形をスロットへ（同名があれば上書き／ロックと位置は維持）。　▲削除：選択中スロットをリストへ戻す（上に詰め）。
         </div>
       </div>
     `;
@@ -920,16 +923,18 @@
 
     return `
       <div class="${classes.join(' ')}" data-card="${number}">
-        <div class="card-left" data-action="card-toggle" data-step="${step}" data-number="${number}">
-          <img alt="" src="${escapeAttr(picurl || PLACEHOLDER_IMG)}" />
-        </div>
-        <div class="card-right">
-          <div class="name-row">
-            <div class="name">${escapeHtml(name)}</div>
+        <div class="card-top">
+          <div class="card-left" data-action="card-toggle" data-step="${step}" data-number="${number}">
+            <img alt="" src="${escapeAttr(picurl || PLACEHOLDER_IMG)}" />
           </div>
-          <div class="grade-row">${gButtons}</div>
-          <div class="desc" data-action="desc" data-step="${step}" data-number="${number}" title="${escapeAttr(desc)}">${escapeHtml(desc)}</div>
+          <div class="card-right">
+            <div class="name-row">
+              <div class="name">${escapeHtml(name)}</div>
+            </div>
+            <div class="grade-row">${gButtons}</div>
+          </div>
         </div>
+        <div class="desc" data-action="desc" data-step="${step}" data-number="${number}" title="${escapeAttr(desc)}">${escapeHtml(desc)}</div>
       </div>
     `;
   }
