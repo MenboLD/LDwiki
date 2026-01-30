@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260129h';
+  const VERSION = '20260129j';
 
   const GRADE_JP_TO_SHORT = {
     'ノーマル':'N',
@@ -49,6 +49,7 @@
     return {
       currentStep: 1,
       maxReached: 1,
+      confirmedSlotsSig: null,
       slot: [makeBlankSlot(),makeBlankSlot(),makeBlankSlot(),makeBlankSlot(),makeBlankSlot()],
       selectedSlotIndex: null,
       candidate1: [],
@@ -760,6 +761,44 @@ function applySwapAndClear(action){
 }
 
 
+
+
+// ---------- dirty check (step tab auto-confirm) ----------
+function slotSignature(){
+  return app.state.slot.map(s => {
+    const num = s?.number ?? '';
+    const grade = s?.grade ?? '';
+    const v = (s?.valueMin ?? s?.value ?? '');
+    return `${num}:${grade}:${v}`;
+  }).join('|');
+}
+function selectionSignature(step){
+  const st = getStepState(step);
+  const nums = Array.from(st.selected).sort((a,b)=>a-b);
+  return nums.map(num => {
+    const grade = st.grade.get(num) ?? '';
+    const v = st.value.get(num) ?? '';
+    return `${num}:${grade}:${v}`;
+  }).join('|');
+}
+function candidateSignature(list){
+  if (!Array.isArray(list) || list.length === 0) return '';
+  const sorted = list.slice().sort((a,b)=>Number(a.number)-Number(b.number));
+  return sorted.map(x => `${x.number}:${x.grade}:${x.valueMin}`).join('|');
+}
+function isDirtyStep(step){
+  const s = Number(step);
+  if (s === 1){
+    if (app.state.maxReached < 2) return true;
+    if (!app.state.confirmedSlotsSig) return true;
+    return slotSignature() !== app.state.confirmedSlotsSig;
+  }
+  if (s === 2) return selectionSignature(2) !== candidateSignature(app.state.candidate1);
+  if (s === 3) return selectionSignature(3) !== candidateSignature(app.state.candidate2);
+  if (s === 4) return selectionSignature(4) !== candidateSignature(app.state.candidate3);
+  return false;
+}
+
   function confirmStep(step){
     const s = Number(step);
 
@@ -773,8 +812,9 @@ function applySwapAndClear(action){
       app.state.candidate1 = [];
       app.state.candidate2 = [];
       app.state.candidate3 = [];
+      app.state.confirmedSlotsSig = slotSignature();
       app.state.currentStep = 2;
-      app.state.maxReached = Math.max(app.state.maxReached, 2);
+      app.state.maxReached = 2;
       // reset selection states for 2-4
       for (const k of [2,3,4]){
         const st = getStepState(k);
@@ -807,7 +847,7 @@ function applySwapAndClear(action){
         app.state.candidate2 = [];
         app.state.candidate3 = [];
         app.state.currentStep = 3;
-        app.state.maxReached = Math.max(app.state.maxReached, 3);
+        app.state.maxReached = 3;
       } else if (s === 3){
         // ensure no overlap with candidate1 (should already be blocked)
         const c1 = getCandidateNameSet(app.state.candidate1);
@@ -818,7 +858,7 @@ function applySwapAndClear(action){
         app.state.candidate2 = list;
         app.state.candidate3 = [];
         app.state.currentStep = 4;
-        app.state.maxReached = Math.max(app.state.maxReached, 4);
+        app.state.maxReached = 4;
       } else if (s === 4){
         const c1 = getCandidateNameSet(app.state.candidate1);
         const c2 = getCandidateNameSet(app.state.candidate2);
@@ -828,7 +868,7 @@ function applySwapAndClear(action){
         }
         app.state.candidate3 = list;
         app.state.currentStep = 5;
-        app.state.maxReached = Math.max(app.state.maxReached, 5);
+        app.state.maxReached = 5;
       }
     }
   }
@@ -852,6 +892,7 @@ function applySwapAndClear(action){
       app.state.candidate3 = [];
       app.state.currentStep = 1;
       app.state.maxReached = 1;
+      app.state.confirmedSlotsSig = null;
       for (const k of [1,2,3,4]) resetStepState(k);
       return;
     }
@@ -1412,10 +1453,19 @@ function applySwapAndClear(action){
       }
 
       if (action === 'go-step'){
-        goStep(t.dataset.step);
-        render();
-        return;
-      }
+  const target = Number(t.dataset.step);
+  const cur = app.state.currentStep;
+  // When moving forward via the step list, auto-confirm the current step if it has unsaved changes.
+  if (target > cur && isDirtyStep(cur)){
+    const before = app.state.currentStep;
+    confirmStep(before);
+    render();
+    return;
+  }
+  goStep(target);
+  render();
+  return;
+}
       if (action === 'tab'){
         setActiveTab(Number(t.dataset.step), Number(t.dataset.tab));
         render();
