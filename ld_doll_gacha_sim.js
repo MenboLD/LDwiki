@@ -1,8 +1,8 @@
-/* ld_doll_gacha_sim.js (step 1-4) */
+/* ld_doll_gacha_sim.js (step 1-6) */
 (() => {
   'use strict';
 
-  const VERSION = '20260129j';
+  const VERSION = '20260130a';
 
   const GRADE_JP_TO_SHORT = {
     'ノーマル':'N',
@@ -55,6 +55,17 @@
       candidate1: [],
       candidate2: [],
       candidate3: [],
+      keyCount: 0,
+      mythicGaugeInit: 0,
+      simConfig: {
+        lockStrategy: 'S1',
+        tieBreaker: 'score',
+        preferC1DontLockC2: false,
+        end: { N1: 0, N2: 0, N3: 0 },
+        useKeyCount: false,
+        trials: 10000,
+      },
+      ui: { step5Target: 'key', accOpen:false },
       stepStates: {
         1: { activeTab: 1, selected: new Set(), grade: new Map(), value: new Map() },
         2: { activeTab: 1, selected: new Set(), grade: new Map(), value: new Map() },
@@ -517,80 +528,6 @@ function clampNum(v, min, max){
     deleteSlotAt(idx);
   }
 
-
-
-function transferToSlot(){
-    const st = getStepState(1);
-    if (st.selected.size < 1) return;
-
-    const number = Array.from(st.selected)[0];
-    const m = app.masterByNumber.get(number);
-    const grade = st.grade.get(number);
-    const value = st.value.get(number);
-    const desc = buildDesc(number, grade, value);
-    const score = calcScore(number, grade, value);
-
-    // find existing same name
-    let idx = -1;
-    for (let i=0;i<5;i++){
-      if (app.state.slot[i] && app.state.slot[i].name === m.name){
-        idx = i; break;
-      }
-    }
-    if (idx === -1){
-      // find first blank (topmost)
-      for (let i=0;i<5;i++){
-        if (!app.state.slot[i].number){
-          idx = i; break;
-        }
-      }
-    }
-    if (idx === -1){
-      // all filled and no same name
-      toast('スロットが満杯です（同名がないため転写できません）');
-      return;
-    }
-
-    const keepLocked = app.state.slot[idx].locked === true;
-    app.state.slot[idx] = {
-      number: m.number,
-      name: m.name,
-      grade,
-      value,
-      score,
-      picurl: m.picurl,
-      desc,
-      locked: keepLocked,
-    };
-
-    // after transfer: clear list selection (workflow friendly)
-    deselectCard(1, number);
-    app.state.selectedSlotIndex = null;
-
-    // enforce lock rule after overwrite
-    enforceLockContinuity();
-  }
-
-  
-      }
-    }
-
-    if (clearNames.length){
-      openConfirm({
-        title: '確認',
-        message: `スロット削除によりロック枠に入る人形が、ステップ②〜④で選択済みです。\n選択状態を解除して削除しますか？\n（対象：${clearNames.join('、')}）`,
-        yesLabel: '解除して削除',
-        noLabel: 'キャンセル',
-        action: { type:'delete-and-clear', newSlot, clearNames },
-      });
-      return;
-    }
-
-    app.state.slot = newSlot;
-    app.state.selectedSlotIndex = null;
-    enforceLockContinuity();
-  }
-
   function buildSlotAfterDelete(idx){
     const arr = app.state.slot.slice();
     arr.splice(idx, 1);
@@ -893,6 +830,8 @@ function isDirtyStep(step){
   if (s === 2) return selectionSignature(2) !== candidateSignature(app.state.candidate1);
   if (s === 3) return selectionSignature(3) !== candidateSignature(app.state.candidate2);
   if (s === 4) return selectionSignature(4) !== candidateSignature(app.state.candidate3);
+  if (s === 5) return app.state.maxReached < 6; // not confirmed yet
+  if (s === 6) return app.state.maxReached < 7; // not confirmed yet
   return false;
 }
 
@@ -968,6 +907,32 @@ function isDirtyStep(step){
         app.state.maxReached = 5;
       }
     }
+
+    if (s === 5){
+      // validate ranges
+      const kc = clampInt(app.state.keyCount, 0, 99999);
+      const mg = clampInt(app.state.mythicGaugeInit, 0, 500);
+      app.state.keyCount = kc;
+      app.state.mythicGaugeInit = mg;
+
+      // (re)confirm -> invalidate step6/7
+      app.state.currentStep = 6;
+      app.state.maxReached = Math.max(app.state.maxReached, 6);
+      return;
+    }
+
+    if (s === 6){
+      // basic sanity for end condition values
+      const e = app.state.simConfig.end || (app.state.simConfig.end = {N1:0,N2:0,N3:0});
+      e.N1 = clampInt(e.N1, 0, 3);
+      e.N2 = clampInt(e.N2, 0, 5);
+      e.N3 = clampInt(e.N3, 0, 2);
+
+      app.state.currentStep = 7;
+      app.state.maxReached = Math.max(app.state.maxReached, 7);
+      return;
+    }
+
   }
 
   function resetStepState(step){
@@ -1018,6 +983,39 @@ function isDirtyStep(step){
       app.state.maxReached = 4;
       return;
     }
+
+    if (s === 5){
+      // reset key/gauge and later configs
+      app.state.keyCount = 0;
+      app.state.mythicGaugeInit = 0;
+      app.state.simConfig = {
+        lockStrategy: 'S1',
+        tieBreaker: 'score',
+        preferC1DontLockC2: false,
+        end: { N1: 0, N2: 0, N3: 0 },
+        useKeyCount: false,
+        trials: 10000,
+      };
+      app.state.currentStep = 5;
+      app.state.maxReached = 5;
+      return;
+    }
+
+    if (s === 6){
+      // reset strategy / end condition only
+      app.state.simConfig = {
+        lockStrategy: 'S1',
+        tieBreaker: 'score',
+        preferC1DontLockC2: false,
+        end: { N1: 0, N2: 0, N3: 0 },
+        useKeyCount: false,
+        trials: 10000,
+      };
+      app.state.currentStep = 6;
+      app.state.maxReached = 6;
+      return;
+    }
+
   }
 
   function setAllGrade(step, grade){
@@ -1105,20 +1103,21 @@ function isDirtyStep(step){
       main.innerHTML = renderStepCandidates(3, '第2候補（候補2）', '③確定');
     } else if (s === 4){
       main.innerHTML = renderStepCandidates(4, '第3候補（候補3）', '④確定');
+    } else if (s === 5){
+      main.innerHTML = renderStep5();
+    } else if (s === 6){
+      main.innerHTML = renderStep6();
     } else {
       main.innerHTML = `<div class="section">
-        <div class="section-title">この先（⑤〜⑦）は未実装</div>
-        <div class="section-sub">このZIPはステップ①〜④までを先に固めるための土台です。</div>
+        <div class="section-title">ステップ⑦（シミュレーション）は未実装</div>
+        <div class="section-sub">ここまでの入力内容をもとに、次に⑦（実行・結果表示）を実装します。</div>
         <div class="panel-list">
-          <div class="panel-item ref">
-            <div><div class="t">候補1</div><div class="d">${escapeHtml(summaryCandidate(app.state.candidate1))}</div></div>
-          </div>
-          <div class="panel-item ref">
-            <div><div class="t">候補2</div><div class="d">${escapeHtml(summaryCandidate(app.state.candidate2))}</div></div>
-          </div>
-          <div class="panel-item ref">
-            <div><div class="t">候補3</div><div class="d">${escapeHtml(summaryCandidate(app.state.candidate3))}</div></div>
-          </div>
+          <div class="panel-item ref"><div><div class="t">鍵</div><div class="d">${escapeHtml(String(app.state.keyCount))} 本</div></div></div>
+          <div class="panel-item ref"><div><div class="t">神話ゲージ</div><div class="d">${escapeHtml(String(app.state.mythicGaugeInit))} / 500</div></div></div>
+          <div class="panel-item ref"><div><div class="t">候補1</div><div class="d">${escapeHtml(summaryCandidate(app.state.candidate1))}</div></div></div>
+          <div class="panel-item ref"><div><div class="t">候補2</div><div class="d">${escapeHtml(summaryCandidate(app.state.candidate2))}</div></div></div>
+          <div class="panel-item ref"><div><div class="t">候補3</div><div class="d">${escapeHtml(summaryCandidate(app.state.candidate3))}</div></div></div>
+          <div class="panel-item ref"><div><div class="t">終了条件</div><div class="d">N1=${escapeHtml(String(app.state.simConfig.end.N1))} / N2=${escapeHtml(String(app.state.simConfig.end.N2))} / N3=${escapeHtml(String(app.state.simConfig.end.N3))}</div></div></div>
         </div>
       </div>`;
     }
@@ -1324,6 +1323,230 @@ function isDirtyStep(step){
       </div>
     `;
   }
+
+  // ---------- step 5 ----------
+  function renderStep5(){
+    const target = app.state.ui.step5Target || 'key';
+    const keyOn = target === 'key';
+    const gaugeOn = target === 'gauge';
+    const kc = clampInt(app.state.keyCount || 0, 0, 99999);
+    const mg = clampInt(app.state.mythicGaugeInit || 0, 0, 500);
+
+    return `
+      <div class="section">
+        <div class="section-title">ステップ⑤：鍵 / 神話ゲージ（初期値）</div>
+        <div class="section-sub">下のキーパッドで値を入力（タップで入力対象を切替）</div>
+
+        <div class="kv-row">
+          <button class="kv-box ${keyOn?'on':''}" data-action="keypad-target" data-target="key" type="button">
+            <div class="k">黄金の鍵</div>
+            <div class="v">${escapeHtml(String(kc))} <span class="unit">本</span></div>
+            <div class="h">0〜99999</div>
+          </button>
+
+          <button class="kv-box ${gaugeOn?'on':''}" data-action="keypad-target" data-target="gauge" type="button">
+            <div class="k">神話ゲージ</div>
+            <div class="v">${escapeHtml(String(mg))} <span class="unit">/ 500</span></div>
+            <div class="h">0〜500</div>
+          </button>
+        </div>
+
+        ${renderKeypad()}
+
+        <div class="cta-row">
+          <button class="btn reset" data-action="reset-step" data-step="5">リセット</button>
+          <button class="btn primary wide" data-action="confirm-step" data-step="5">⑤確定</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderKeypad(){
+    const nums = [1,2,3,4,5,6,7,8,9];
+    const buttons = nums.map(n => `<button class="kbtn" data-action="keypad-digit" data-digit="${n}" type="button">${n}</button>`).join('');
+    return `
+      <div class="keypad">
+        ${buttons}
+        <button class="kbtn zero" data-action="keypad-digit" data-digit="0" type="button">0</button>
+        <button class="kbtn bs" data-action="keypad-bs" type="button">BS</button>
+      </div>
+    `;
+  }
+
+  function keypadApplyDigit(digit){
+    const t = (app.state.ui.step5Target || 'key');
+    const d = String(digit);
+    if (!/^[0-9]$/.test(d)) return;
+
+    if (app.state.maxReached > 5) app.state.maxReached = 5;
+
+    if (t === 'gauge'){
+      const cur = clampInt(app.state.mythicGaugeInit || 0, 0, 500);
+      const s = String(cur);
+      const nextStr = (s === '0') ? d : (s + d);
+      const next = clampInt(parseInt(nextStr, 10) || 0, 0, 500);
+      app.state.mythicGaugeInit = next;
+    } else {
+      const cur = clampInt(app.state.keyCount || 0, 0, 99999);
+      const s = String(cur);
+      const nextStr = (s === '0') ? d : (s + d);
+      const next = clampInt(parseInt(nextStr, 10) || 0, 0, 99999);
+      app.state.keyCount = next;
+    }
+  }
+
+  function keypadBackspace(){
+    const t = (app.state.ui.step5Target || 'key');
+    if (app.state.maxReached > 5) app.state.maxReached = 5;
+
+    if (t === 'gauge'){
+      const cur = clampInt(app.state.mythicGaugeInit || 0, 0, 500);
+      const s = String(cur);
+      const nextStr = (s.length <= 1) ? '0' : s.slice(0, -1);
+      app.state.mythicGaugeInit = clampInt(parseInt(nextStr, 10) || 0, 0, 500);
+    } else {
+      const cur = clampInt(app.state.keyCount || 0, 0, 99999);
+      const s = String(cur);
+      const nextStr = (s.length <= 1) ? '0' : s.slice(0, -1);
+      app.state.keyCount = clampInt(parseInt(nextStr, 10) || 0, 0, 99999);
+    }
+  }
+
+  // ---------- step 6 ----------
+  function renderStep6(){
+    const cfg = app.state.simConfig;
+    if (!cfg.end) cfg.end = { N1:0, N2:0, N3:0 };
+    const lockedCount = app.state.slot.slice(0,3).filter(x => x.locked && x.number).length;
+    const remainingLock = 3 - lockedCount;
+    const s2ok = remainingLock >= 2;
+    if (!s2ok && cfg.lockStrategy === 'S2') cfg.lockStrategy = 'S1';
+
+    return `
+      <div class="section">
+        <div class="section-title list-head">
+          <span class="head-left"><span class="caret">▲</span>状況一覧</span>
+          <span class="section-sub">枠色：ロック=青（背景白） / 候補1=赤 / 候補2=橙 / 候補3=黄</span>
+        </div>
+        <div class="situ-grid">
+          ${Array.from({length:30}, (_,i)=>renderSituTile(i+1)).join('')}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">ステップ⑥：戦略 / 終了条件</div>
+
+        <div class="form-block">
+          <div class="form-title">ロック方針</div>
+          <div class="seg">
+            <button class="seg-btn ${cfg.lockStrategy==='S1'?'on':''}" data-action="cfg-lock" data-value="S1" type="button">S1：即ロック</button>
+            <button class="seg-btn ${cfg.lockStrategy==='S2'?'on':''} ${s2ok?'':'dis'}" data-action="cfg-lock" data-value="S2" type="button" ${s2ok?'':'disabled'}>S2：まとめてロック</button>
+          </div>
+          <div class="small muted">※S2は「残りロック可能数 ≥ 2」の間のみ有効（現在：残り ${remainingLock}）</div>
+        </div>
+
+        <div class="form-block">
+          <div class="form-title">優先基準</div>
+          <div class="seg">
+            <button class="seg-btn ${cfg.tieBreaker==='score'?'on':''}" data-action="cfg-tie" data-value="score" type="button">評価点</button>
+            <button class="seg-btn ${cfg.tieBreaker==='number'?'on':''}" data-action="cfg-tie" data-value="number" type="button">番号</button>
+          </div>
+          <div class="small muted">評価点：評価点DESC → 番号ASC / 番号：番号ASC → 評価点DESC</div>
+        </div>
+
+        <div class="form-block">
+          <label class="check">
+            <input type="checkbox" data-action="cfg-prefer" ${cfg.preferC1DontLockC2?'checked':''} />
+            <span>第1候補が狙える間は、第2候補をロックしない</span>
+          </label>
+          <div class="small muted">※「ロック枠が残っている」＆「第1候補が出現する可能性がある状況で第2候補が出た」場合に、第1を優先します</div>
+        </div>
+
+        <div class="form-block">
+          <div class="form-title">終了条件（確保数）</div>
+          <div class="end-grid">
+            <div class="end-item">
+              <div class="end-k">N1</div>
+              <div class="end-d">スロット1〜3で<br/>第1候補一致</div>
+              <select class="sel" data-action="end-n" data-key="N1">
+                ${renderNOptions(3, cfg.end.N1)}
+              </select>
+            </div>
+            <div class="end-item">
+              <div class="end-k">N2</div>
+              <div class="end-d">スロット1〜5で<br/>第2候補一致</div>
+              <select class="sel" data-action="end-n" data-key="N2">
+                ${renderNOptions(5, cfg.end.N2)}
+              </select>
+            </div>
+            <div class="end-item">
+              <div class="end-k">N3</div>
+              <div class="end-d">スロット4〜5で<br/>第3候補一致</div>
+              <select class="sel" data-action="end-n" data-key="N3">
+                ${renderNOptions(2, cfg.end.N3)}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-block">
+          <button class="acc-btn" data-action="acc-toggle" type="button">${app.state.ui.accOpen?'▲':'▼'}人形の番号を確認</button>
+          ${app.state.ui.accOpen ? renderIdList() : ''}
+        </div>
+
+        <div class="cta-row">
+          <button class="btn reset" data-action="reset-step" data-step="6">リセット</button>
+          <button class="btn primary wide" data-action="confirm-step" data-step="6">⑥確定</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderNOptions(max, cur){
+    const v = clampInt(cur||0, 0, max);
+    let html = '';
+    for (let i=0;i<=max;i++){
+      html += `<option value="${i}" ${i===v?'selected':''}>${i}</option>`;
+    }
+    return html;
+  }
+
+  function renderIdList(){
+    let rows = '';
+    for (let i=1;i<=30;i++){
+      const m = app.masterByNumber.get(i);
+      if (!m) continue;
+      rows += `<div class="id-row"><div class="id-n">${String(i).padStart(2,'0')}</div><div class="id-name">${escapeHtml(m.name)}</div><div class="id-desc">${escapeHtml(singleLine(m.basetxt||''))}</div></div>`;
+    }
+    return `<div class="id-list">${rows}</div>`;
+  }
+
+  function renderSituTile(num){
+    const m = app.masterByNumber.get(num);
+    const img = (m && m.picurl) ? m.picurl : PLACEHOLDER_IMG;
+    const st = getSituStatus(num);
+    const cls = st.cls;
+    const badge = st.badge ? `<div class="situ-badge">${escapeHtml(st.badge)}</div>` : '';
+    return `<div class="situ-tile ${cls}">
+      <img src="${escapeAttr(img)}" alt="" loading="lazy" />
+      <div class="situ-num">${String(num).padStart(2,'0')}</div>
+      ${badge}
+    </div>`;
+  }
+
+  function getSituStatus(num){
+    const n = Number(num);
+    const locked = new Set(app.state.slot.slice(0,3).filter(x=>x.locked && x.number).map(x=>Number(x.number)));
+    if (locked.has(n)) return { cls:'lock', badge:'ロック中' };
+    const c1 = new Set((app.state.candidate1||[]).map(x=>Number(x.number)));
+    const c2 = new Set((app.state.candidate2||[]).map(x=>Number(x.number)));
+    const c3 = new Set((app.state.candidate3||[]).map(x=>Number(x.number)));
+    if (c1.has(n)) return { cls:'c1', badge:'第1候補' };
+    if (c2.has(n)) return { cls:'c2', badge:'第2候補' };
+    if (c3.has(n)) return { cls:'c3', badge:'第3候補' };
+    return { cls:'other', badge:'' };
+  }
+
+
 
   function renderSelectedPanel(step){
     const st = getStepState(step);
@@ -1672,13 +1895,72 @@ function isDirtyStep(step){
         render();
         return;
       }
+
+      if (action === 'keypad-target'){
+        app.state.ui.step5Target = t.dataset.target === 'gauge' ? 'gauge' : 'key';
+        render();
+        return;
+      }
+      if (action === 'keypad-digit'){
+        keypadApplyDigit(t.dataset.digit);
+        render();
+        return;
+      }
+      if (action === 'keypad-bs'){
+        keypadBackspace();
+        render();
+        return;
+      }
+      if (action === 'cfg-lock'){
+        const v = t.dataset.value;
+        const lockedCount = app.state.slot.slice(0,3).filter(x => x.locked && x.number).length;
+        const remainingLock = 3 - lockedCount;
+        if (v === 'S2' && remainingLock < 2) return;
+        if (app.state.maxReached > 6) app.state.maxReached = 6;
+        app.state.simConfig.lockStrategy = (v === 'S2') ? 'S2' : 'S1';
+        render();
+        return;
+      }
+      if (action === 'cfg-tie'){
+        const v = t.dataset.value;
+        if (app.state.maxReached > 6) app.state.maxReached = 6;
+        app.state.simConfig.tieBreaker = (v === 'number') ? 'number' : 'score';
+        render();
+        return;
+      }
+      if (action === 'acc-toggle'){
+        app.state.ui.accOpen = !app.state.ui.accOpen;
+        render();
+        return;
+      }
+
     });
 
     document.addEventListener('input', (ev) => {
       const t = ev.target;
-      if (!t || t.dataset.action !== 'modal-range') return;
-      modalApplyIdx(Number(t.value));
-      render();
+      if (!t) return;
+      if (t.dataset.action === 'modal-range'){
+        modalApplyIdx(Number(t.value));
+        render();
+        return;
+      }
+      if (t.dataset.action === 'end-n'){
+        const key = t.dataset.key;
+        const v = Number(t.value);
+        if (!app.state.simConfig.end) app.state.simConfig.end = { N1:0,N2:0,N3:0 };
+        if (key === 'N1') app.state.simConfig.end.N1 = clampInt(v, 0, 3);
+        if (key === 'N2') app.state.simConfig.end.N2 = clampInt(v, 0, 5);
+        if (key === 'N3') app.state.simConfig.end.N3 = clampInt(v, 0, 2);
+        if (app.state.maxReached > 6) app.state.maxReached = 6;
+        render();
+        return;
+      }
+      if (t.dataset.action === 'cfg-prefer'){
+        app.state.simConfig.preferC1DontLockC2 = !!t.checked;
+        if (app.state.maxReached > 6) app.state.maxReached = 6;
+        render();
+        return;
+      }
     }, true);
 
     
