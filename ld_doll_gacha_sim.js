@@ -703,10 +703,9 @@ function clampNum(v, min, max){
     }
     sl.locked = true;
     enforceLockContinuity();
-  
+}
 
-
-  function applyDeleteAndClear(action){
+function applyDeleteAndClear(action){
     if (!action || action.type !== 'delete-and-clear') return;
     const names = Array.isArray(action.clearNames) ? action.clearNames.map(x => String(x||'')).filter(Boolean) : [];
     if (!names.length) return;
@@ -738,8 +737,6 @@ function clampNum(v, min, max){
     app.state.selectedSlotIndex = null;
     enforceLockContinuity();
   }
-
-}
 
   function swapSlotContentWithConfirm(i, j){
   const a = app.state.slot[i];
@@ -1785,7 +1782,10 @@ function isDirtyStep(step){
 
   // ---------- Step7 simulation ----------
   function copySlots(slots){
-    return slots.map(s => ({...s}));
+    return slots.map(s => {
+      const v = (s && s.valueMin != null) ? s.valueMin : ((s && s.value != null) ? s.value : null);
+      return {...s, valueMin: v};
+    });
   }
 
   function gradeIdx(g){
@@ -1796,26 +1796,32 @@ function isDirtyStep(step){
   function buildCandidateReqMap(list){
     const map = new Map();
     for (const it of (list||[])){
-      map.set(it.name, { grade: it.grade, gradeIdx: gradeIdx(it.grade), valueMin: Number(it.valueMin||0) });
+      map.set(it.name, { grade: it.grade, gradeIdx: gradeIdx(it.grade), valueMin: Number(it.valueMin ?? 0) });
     }
     return map;
   }
 
+  function slotValue(slot){
+    if (!slot) return 0;
+    const v = (slot.valueMin != null) ? slot.valueMin : ((slot.value != null) ? slot.value : null);
+    return Number(v ?? 0);
+  }
+
   function isMatch(slot, req){
-    if (!slot || !slot.name || !req) return false;
-    if (slot.name !== req.name && req.name!=null){} // no-op (legacy)
+    if (!slot || !req) return false;
+    if (req.name != null && slot.name !== req.name) return false;
     const sg = gradeIdx(slot.grade);
-    return (slot.name === req.name || req.name==null) ? (sg >= req.gradeIdx && Number(slot.valueMin||0) >= req.valueMin) : false;
+    return (sg >= req.gradeIdx && slotValue(slot) >= req.valueMin);
   }
 
   function classifySlot(slot, c1Map, c2Map, c3Map){
     if (!slot || !slot.name) return 'OUT';
     const r1 = c1Map.get(slot.name);
-    if (r1 && gradeIdx(slot.grade) >= r1.gradeIdx && Number(slot.valueMin||0) >= r1.valueMin) return 'C1';
+    if (r1 && isMatch(slot, r1)) return 'C1';
     const r2 = c2Map.get(slot.name);
-    if (r2 && gradeIdx(slot.grade) >= r2.gradeIdx && Number(slot.valueMin||0) >= r2.valueMin) return 'C2';
+    if (r2 && isMatch(slot, r2)) return 'C2';
     const r3 = c3Map.get(slot.name);
-    if (r3 && gradeIdx(slot.grade) >= r3.gradeIdx && Number(slot.valueMin||0) >= r3.valueMin) return 'C3';
+    if (r3 && isMatch(slot, r3)) return 'C3';
     return 'OUT';
   }
 
@@ -1907,7 +1913,7 @@ function isDirtyStep(step){
       const sl = slots[i];
       if (!sl || !sl.name) continue;
       const req = cmap.get(sl.name);
-      if (req && gradeIdx(sl.grade) >= req.gradeIdx && Number(sl.valueMin||0) >= req.valueMin) n++;
+      if (req && isMatch(sl, req)) n++;
     }
     return n;
   }
@@ -1939,6 +1945,33 @@ function isDirtyStep(step){
     const c1Now = countMatchesInRange(slots, 0, 2, c1Map);
     const missingC1 = c1Now < n1Need;
 
+    // Special case (S2 endgame): when only 1 lock capacity remains (slot3 focus),
+    // lock slot3 only if N1 is still missing and:
+    //  - slot3 matches C1, OR
+    //  - slot3 is within N2 range (a..b) and matches C2.
+    // Agreed interpretation A: when remaining lock < 2, S2 does not add locks,
+    // except for this slot3 rule while N1 is still missing.
+    if (strat === 'S2' && cap === 1 && missingC1){
+      const sl3 = slots[2];
+      const r1 = sl3 && sl3.name ? c1Map.get(sl3.name) : null;
+      if (r1 && isMatch(sl3, r1)){
+        return 3;
+      }
+      const a3 = clampInt(end.N2a ?? 1, 1, 5);
+      const b3 = clampInt(end.N2b ?? 5, 1, 5);
+      const lo = Math.min(a3, b3), hi = Math.max(a3, b3);
+      const slot3InN2 = (lo <= 3 && 3 <= hi);
+      if (slot3InN2){
+        const r2 = sl3 && sl3.name ? c2Map.get(sl3.name) : null;
+        if (r2 && isMatch(sl3, r2)){
+          return 3;
+        }
+      }
+      // Otherwise, do not add lock in this endgame state.
+      return curK;
+    }
+
+
     // c1Possible: exists C1 target name not in locked slots (excluded by name sampling)
     let c1Possible = false;
     const lockedNames = new Set();
@@ -1954,7 +1987,7 @@ function isDirtyStep(step){
     for (let i=0;i<3;i++){
       const sl = slots[i];
       const req = c2Map.get(sl.name);
-      if (req && gradeIdx(sl.grade) >= req.gradeIdx && Number(sl.valueMin||0) >= req.valueMin){ hasC2=true; break; }
+      if (req && isMatch(sl, req)){ hasC2=true; break; }
     }
 
     const blockC2 = prefer && cap>0 && missingC1 && c1Possible && hasC2;
@@ -1968,7 +2001,7 @@ function isDirtyStep(step){
       for (let i=targetK;i<3 && canExtend();i++){
         const sl = slots[i];
         const req = (wantCls==='C1') ? c1Map.get(sl.name) : c2Map.get(sl.name);
-        if (req && gradeIdx(sl.grade) >= req.gradeIdx && Number(sl.valueMin||0) >= req.valueMin){
+        if (req && isMatch(sl, req)){
           targetK = i+1;
         } else {
           // stop if ordering ensures later won't match? no, continue.
@@ -1976,19 +2009,24 @@ function isDirtyStep(step){
       }
     };
 
-    if (strat === 'S2' && cap >= 2){
-      // count new C1 matches in unlocked part
-      let newC1 = 0;
-      for (let i=targetK;i<3;i++){
-        const sl = slots[i];
-        const req = c1Map.get(sl.name);
-        if (req && gradeIdx(sl.grade) >= req.gradeIdx && Number(sl.valueMin||0) >= req.valueMin) newC1++;
+    if (strat === 'S1'){
+      extendFor('C1');
+    } else if (strat === 'S2'){
+      if (cap >= 2){
+        // count new C1 matches in unlocked part
+        let newC1 = 0;
+        for (let i=targetK;i<3;i++){
+          const sl = slots[i];
+          const req = c1Map.get(sl.name);
+          if (req && isMatch(sl, req)) newC1++;
+        }
+        if (newC1 >= 2){
+          extendFor('C1');
+        }
       }
-      if (newC1 >= 2){
-        extendFor('C1');
-      }
+      // cap < 2 の間は、S2の条件を満たせないので追加ロックしない
     } else {
-      // S1, or S2 with cap<2
+      // fallback
       extendFor('C1');
     }
 
@@ -2033,7 +2071,7 @@ function isDirtyStep(step){
     let lockSum = 0;
     let pullEvents = 0;
 
-    const maxPulls = useKey ? 999999 : 20000;
+    const maxPulls = useKey ? 999999 : 200000;
 
     for (let step=0; step<maxPulls; step++){
       const curLock = lockPrefixLen(slots);
@@ -2243,7 +2281,7 @@ function isDirtyStep(step){
     sim.running = false;
 
     const done = sim.done;
-    const totalUsed = total; // intended trials
+    const totalUsed = done; // completed trials
     const pullsSorted = pulls.slice().sort((a,b)=>a-b);
     const keysSorted = keys.slice().sort((a,b)=>a-b);
 
