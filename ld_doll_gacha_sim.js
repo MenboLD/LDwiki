@@ -49,6 +49,8 @@
     return {
       currentStep: 1,
       maxReached: 1,
+      step5Confirmed: false,
+      step6Confirmed: false,
       confirmedSlotsSig: null,
       slot: [makeBlankSlot(),makeBlankSlot(),makeBlankSlot(),makeBlankSlot(),makeBlankSlot()],
       selectedSlotIndex: null,
@@ -830,8 +832,8 @@ function isDirtyStep(step){
   if (s === 2) return selectionSignature(2) !== candidateSignature(app.state.candidate1);
   if (s === 3) return selectionSignature(3) !== candidateSignature(app.state.candidate2);
   if (s === 4) return selectionSignature(4) !== candidateSignature(app.state.candidate3);
-  if (s === 5) return app.state.maxReached < 6; // not confirmed yet
-  if (s === 6) return app.state.maxReached < 7; // not confirmed yet
+  if (s === 5) return !app.state.step5Confirmed; // not confirmed yet
+  if (s === 6) return !app.state.step6Confirmed; // not confirmed yet
   return false;
 }
 
@@ -848,6 +850,8 @@ function isDirtyStep(step){
       app.state.candidate1 = [];
       app.state.candidate2 = [];
       app.state.candidate3 = [];
+      app.state.step5Confirmed = false;
+      app.state.step6Confirmed = false;
       app.state.confirmedSlotsSig = slotSignature();
       app.state.currentStep = 2;
       app.state.maxReached = 2;
@@ -882,6 +886,8 @@ function isDirtyStep(step){
         app.state.candidate1 = list;
         app.state.candidate2 = [];
         app.state.candidate3 = [];
+        app.state.step5Confirmed = false;
+        app.state.step6Confirmed = false;
         app.state.currentStep = 3;
         app.state.maxReached = 3;
       } else if (s === 3){
@@ -893,6 +899,8 @@ function isDirtyStep(step){
         }
         app.state.candidate2 = list;
         app.state.candidate3 = [];
+        app.state.step5Confirmed = false;
+        app.state.step6Confirmed = false;
         app.state.currentStep = 4;
         app.state.maxReached = 4;
       } else if (s === 4){
@@ -903,6 +911,8 @@ function isDirtyStep(step){
           return;
         }
         app.state.candidate3 = list;
+        app.state.step5Confirmed = false;
+        app.state.step6Confirmed = false;
         app.state.currentStep = 5;
         app.state.maxReached = 5;
       }
@@ -917,6 +927,8 @@ function isDirtyStep(step){
 
       // (re)confirm -> invalidate step6/7
       app.state.currentStep = 6;
+      app.state.step5Confirmed = true;
+      app.state.step6Confirmed = false;
       app.state.maxReached = Math.max(app.state.maxReached, 6);
       return;
     }
@@ -925,10 +937,15 @@ function isDirtyStep(step){
       // basic sanity for end condition values
       const e = app.state.simConfig.end || (app.state.simConfig.end = {N1:0,N2:0,N2a:1,N2b:5,N3:0});
       e.N1 = clampInt(e.N1, 0, 3);
-      e.N2 = clampInt(e.N2, 0, 5);
+      e.N2a = clampInt(e.N2a ?? 1, 1, 5);
+      e.N2b = clampInt(e.N2b ?? 5, 1, 5);
+      if (e.N2a > e.N2b){ const tmp = e.N2a; e.N2a = e.N2b; e.N2b = tmp; }
+      const width = (e.N2b - e.N2a + 1);
+      e.N2 = clampInt(e.N2, 0, width);
       e.N3 = clampInt(e.N3, 0, 2);
 
       app.state.currentStep = 7;
+      app.state.step6Confirmed = true;
       app.state.maxReached = Math.max(app.state.maxReached, 7);
       return;
     }
@@ -954,6 +971,8 @@ function isDirtyStep(step){
       app.state.candidate3 = [];
       app.state.currentStep = 1;
       app.state.maxReached = 1;
+      app.state.step5Confirmed = false;
+      app.state.step6Confirmed = false;
       app.state.confirmedSlotsSig = null;
       for (const k of [1,2,3,4]) resetStepState(k);
       return;
@@ -1378,6 +1397,7 @@ function isDirtyStep(step){
     const d = String(digit);
     if (!/^[0-9]$/.test(d)) return;
 
+    if (app.state.step5Confirmed) { app.state.step5Confirmed = false; app.state.step6Confirmed = false; }
     if (app.state.maxReached > 5) app.state.maxReached = 5;
 
     if (t === 'gauge'){
@@ -1397,6 +1417,7 @@ function isDirtyStep(step){
 
   function keypadBackspace(){
     const t = (app.state.ui.step5Target || 'key');
+    if (app.state.step5Confirmed) { app.state.step5Confirmed = false; app.state.step6Confirmed = false; }
     if (app.state.maxReached > 5) app.state.maxReached = 5;
 
     if (t === 'gauge'){
@@ -1946,14 +1967,16 @@ function isDirtyStep(step){
       }
       if (action === 'cfg-lock'){
         const v = t.dataset.value;
-        if (app.state.maxReached > 6) app.state.maxReached = 6;
+        if (app.state.step6Confirmed) { app.state.step6Confirmed = false; }
+    if (app.state.maxReached > 6) app.state.maxReached = 6;
         app.state.simConfig.lockStrategy = (v === 'S2') ? 'S2' : 'S1';
         render();
         return;
       }
       if (action === 'cfg-tie'){
         const v = t.dataset.value;
-        if (app.state.maxReached > 6) app.state.maxReached = 6;
+        if (app.state.step6Confirmed) { app.state.step6Confirmed = false; }
+    if (app.state.maxReached > 6) app.state.maxReached = 6;
         app.state.simConfig.tieBreaker = (v === 'number') ? 'number' : 'score';
         render();
         return;
@@ -1971,7 +1994,8 @@ function isDirtyStep(step){
         end.N2a = a; end.N2b = b;
         const max = (b - a + 1);
         end.N2 = clampInt(end.N2||0, 0, max);
-        if (app.state.maxReached > 6) app.state.maxReached = 6;
+        if (app.state.step6Confirmed) { app.state.step6Confirmed = false; }
+    if (app.state.maxReached > 6) app.state.maxReached = 6;
         render();
         return;
       }
@@ -2008,13 +2032,15 @@ function isDirtyStep(step){
         const maxCount = (b - a + 1);
         if (key === 'N2') end.N2 = clampInt(v, 0, maxCount);
         else end.N2 = clampInt(end.N2||0, 0, maxCount);
-        if (app.state.maxReached > 6) app.state.maxReached = 6;
+        if (app.state.step6Confirmed) { app.state.step6Confirmed = false; }
+    if (app.state.maxReached > 6) app.state.maxReached = 6;
         render();
         return;
       }
       if (t.dataset.action === 'cfg-prefer'){
         app.state.simConfig.preferC1DontLockC2 = !!t.checked;
-        if (app.state.maxReached > 6) app.state.maxReached = 6;
+        if (app.state.step6Confirmed) { app.state.step6Confirmed = false; }
+    if (app.state.maxReached > 6) app.state.maxReached = 6;
         render();
         return;
       }
