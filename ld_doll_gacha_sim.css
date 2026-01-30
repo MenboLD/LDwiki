@@ -981,3 +981,9 @@ body.modal-open{ touch-action: manipulation; }
 .graph-wrap{padding-top:10px}
 .graph-wrap canvas{width:100%;height:auto;border:1px solid rgba(255,255,255,0.14);border-radius:12px;background:rgba(0,0,0,0.10)}
 .btn.wide{flex:1 1 auto}
+
+
+/* Stepper for end conditions */
+.stepper{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:6px;}
+.stepper-val{min-width:28px;text-align:center;font-weight:700;}
+.btn.mini{padding:6px 10px;font-size:12px;line-height:1;border-radius:10px;}

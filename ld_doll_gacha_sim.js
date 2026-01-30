@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260131a';
+  const VERSION = '20260131d';
 
   const GRADE_JP_TO_SHORT = {
     'ノーマル':'N',
@@ -67,6 +67,8 @@
         end: { N1: 0, N2: 0, N2a: 1, N2b: 5, N3: 0 },
         useKeyCount: false,
         trials: 10000,
+        keySafetyMax: 100000,
+        maxPullsSafety: 50000,
       },
       ui: { step5Target: 'key', accOpen:false, graphOpen:false },
       sim: { running:false, stop:false, done:0, total:0, startedAt:0, results:null, xAxis:'pull' },
@@ -1517,14 +1519,17 @@ function isDirtyStep(step){
         </div>
 
         <div class="form-block">
-          <div class="form-title">終了条件（確保数）</div>
+          <div class="form-title">終了条件（必要確保数）</div>
           <div class="end-grid">
             <div class="end-item">
               <div class="end-k">N1</div>
               <div class="end-d">スロット1〜3で<br/>第1候補一致</div>
-              <select class="sel" data-action="end-n" data-key="N1">
-                ${renderNOptions(3, cfg.end.N1)}
-              </select>
+              <div class="stepper">
+                <button class="btn mini" type="button" data-action="end-step" data-key="N1" data-delta="-1">−</button>
+                <div class="stepper-val">${clampInt(cfg.end.N1,0,3)}</div>
+                <button class="btn mini" type="button" data-action="end-step" data-key="N1" data-delta="1">＋</button>
+              </div>
+              <div class="small">0=条件なし</div>
             </div>
             <div class="end-item">
               <div class="end-k">N2</div>
@@ -1543,19 +1548,25 @@ function isDirtyStep(step){
                 </div>
                 ${n2Warn?`<div class="small warn">※N1(1〜3)と範囲が重なっています</div>`:''}
                 <div class="n2-row">
-                  <span class="n2-l">確保数</span>
-                  <select class="sel" data-action="end-n" data-key="N2">
-                    ${renderNOptions(n2Max, cfg.end.N2)}
-                  </select>
+                  <span class="n2-l">必要数</span>
+                  <div class="stepper">
+                    <button class="btn mini" type="button" data-action="end-step" data-key="N2" data-delta="-1">−</button>
+                    <div class="stepper-val">${clampInt(cfg.end.N2,0,n2Max)}</div>
+                    <button class="btn mini" type="button" data-action="end-step" data-key="N2" data-delta="1">＋</button>
+                  </div>
+                  <div class="small">0=条件なし</div>
                 </div>
               </div>
             </div>
             <div class="end-item">
               <div class="end-k">N3</div>
               <div class="end-d">スロット4〜5で<br/>第3候補一致</div>
-              <select class="sel" data-action="end-n" data-key="N3">
-                ${renderNOptions(2, cfg.end.N3)}
-              </select>
+              <div class="stepper">
+                <button class="btn mini" type="button" data-action="end-step" data-key="N3" data-delta="-1">−</button>
+                <div class="stepper-val">${clampInt(cfg.end.N3,0,2)}</div>
+                <button class="btn mini" type="button" data-action="end-step" data-key="N3" data-delta="1">＋</button>
+              </div>
+              <div class="small">0=条件なし</div>
             </div>
           </div>
         </div>
@@ -1652,6 +1663,16 @@ function isDirtyStep(step){
               <input class="inp" type="number" min="1" max="200000" step="1" value="${trials}" data-action="sim-trials" ${sim.running?'disabled':''}/>
             </div>
             <div class="field">
+              <div class="field-label">安全上限（消費鍵）</div>
+              <input class="inp" type="number" min="1000" max="10000000" step="1000" value="${cfg.keySafetyMax ?? 100000}" data-action="sim-safety-keys" ${sim.running?'disabled':''}/>
+              <div class="small">※鍵考慮OFFでも、この本数に達したら失敗扱いで打ち切ります</div>
+            </div>
+            <div class="field">
+              <div class="field-label">最大ガチャ回数（1試行）</div>
+              <input class="inp" type="number" min="1000" max="2000000" step="1000" value="${cfg.maxPullsSafety ?? 50000}" data-action="sim-maxpulls" ${sim.running?'disabled':''}/>
+            
+            </div>
+            <div class="field">
               <div class="field-label">グラフ横軸</div>
               <select class="sel" data-action="sim-xaxis" ${sim.running?'disabled':''}>
                 <option value="pull" ${(xAxis==='pull')?'selected':''}>ガチャ回数</option>
@@ -1661,7 +1682,7 @@ function isDirtyStep(step){
           </div>
 
           <div class="cta-row">
-            <button class="btn primary wide" data-action="sim-start" ${canRun?'':'disabled'}>シミュレートを実行</button>
+            <button class="btn primary wide" data-action="sim-start" ${(!canRun || sim.running)?'disabled':''}>${sim.running?'シミュレート実行中':'シミュレートを実行'}</button>
             <button class="btn danger" data-action="sim-stop" ${sim.running?'':'disabled'}>停止</button>
           </div>
 
@@ -2056,7 +2077,7 @@ function isDirtyStep(step){
     return 'M';
   }
 
-  function simulateOnce(params){
+  async function simulateOnce(params){
     const { initialSlots, allNumbers, keyMax, gaugeInit, useKey, cfg, end, c1Map, c2Map, c3Map, tieBreaker } = params;
 
     let slots = copySlots(initialSlots);
@@ -2071,12 +2092,21 @@ function isDirtyStep(step){
     let lockSum = 0;
     let pullEvents = 0;
 
-    const maxPulls = useKey ? 999999 : 200000;
+    const safetyKeys = clampInt(Number(cfg.keySafetyMax ?? 100000), 1000, 10000000);
+    const maxPulls = clampInt(Number(cfg.maxPullsSafety ?? (useKey ? 999999 : 200000)), 1000, 2000000);
+    const yieldEvery = 400;
 
     for (let step=0; step<maxPulls; step++){
+      if ((step % yieldEvery) === 0){
+        if (params.sim && params.sim.stop) return { success:false, pulls, keys, mythicActs, lockSum, pullEvents };
+        await new Promise(r => setTimeout(r, 0));
+      }
       const curLock = lockPrefixLen(slots);
       const cost = Number(app.costByLockcount.get(curLock) || 0);
 
+      if (keys + cost > safetyKeys){
+        return { success:false, pulls, keys, mythicActs, lockSum, pullEvents };
+      }
       if (useKey && (keys + cost > keyMax)){
         return { success:false, pulls, keys, mythicActs, lockSum, pullEvents };
       }
@@ -2258,7 +2288,7 @@ function isDirtyStep(step){
     for (let i=0;i<total;i++){
       if (sim.stop) break;
 
-      const res = simulateOnce({ initialSlots, allNumbers, keyMax, gaugeInit, useKey, cfg, end, c1Map, c2Map, c3Map, tieBreaker });
+      const res = await simulateOnce({ initialSlots, allNumbers, keyMax, gaugeInit, useKey, cfg, end, c1Map, c2Map, c3Map, tieBreaker, sim });
       if (res.success){
         successes++;
         pulls.push(res.pulls);
@@ -2741,6 +2771,26 @@ function renderRangeOptions(max, cur){
         render();
         return;
       }
+      if (action === 'end-step'){
+        const key = (t.dataset.key||'');
+        const delta = Number(t.dataset.delta||0);
+        if (!app.state.simConfig.end) app.state.simConfig.end = { N1:0,N2:0,N2a:1,N2b:5,N3:0 };
+        const end = app.state.simConfig.end;
+        if (key === 'N1') end.N1 = clampInt(Number(end.N1||0) + delta, 0, 3);
+        if (key === 'N3') end.N3 = clampInt(Number(end.N3||0) + delta, 0, 2);
+        if (key === 'N2'){
+          const a = clampInt(Number(end.N2a||1), 1, 5);
+          const b = clampInt(Number(end.N2b||5), 1, 5);
+          const lo = Math.min(a,b);
+          const hi = Math.max(a,b);
+          const max = Math.max(0, hi - lo + 1);
+          end.N2 = clampInt(Number(end.N2||0) + delta, 0, max);
+        }
+        app.state.step6Confirmed = false;
+        if (app.state.maxReached > 6) app.state.maxReached = 6;
+        render();
+        return;
+      }
       if (action === 'end-preset'){
         const v = (t.dataset.value||'');
         if (!app.state.simConfig.end) app.state.simConfig.end = { N1:0,N2:0,N2a:1,N2b:5,N3:0 };
@@ -2825,6 +2875,18 @@ function renderRangeOptions(max, cur){
       }
       if (t.dataset.action === 'sim-usekey'){
         app.state.simConfig.useKeyCount = !!t.checked;
+        render();
+        return;
+      }
+      if (t.dataset.action === 'sim-safety-keys'){
+        const v = clampInt(Number(t.value), 1000, 10000000);
+        app.state.simConfig.keySafetyMax = v;
+        render();
+        return;
+      }
+      if (t.dataset.action === 'sim-maxpulls'){
+        const v = clampInt(Number(t.value), 1000, 2000000);
+        app.state.simConfig.maxPullsSafety = v;
         render();
         return;
       }
