@@ -848,6 +848,7 @@ body.modal-open{ touch-action: manipulation; }
 .situ-tile.c2{ border-color: rgba(255,160,55,0.95); }
 .situ-tile.c3{ border-color: rgba(255,225,80,0.95); }
 .situ-tile.other{ border-color: rgba(210,200,180,0.35); }
+.situ-tile.other img{ filter: grayscale(0.65) sepia(0.55) saturate(0.75); opacity:0.88; }
 
 .form-block{
   margin-top:12px;
@@ -946,3 +947,15 @@ body.modal-open{ touch-action: manipulation; }
 .id-n{ font-weight:1000; font-size:12px; }
 .id-name{ font-weight:900; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .id-desc{ font-size:11px; color:rgba(255,255,255,0.75); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+
+/* Step6 N2 range UI */
+.n2-range{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.n2-row{display:flex;align-items:center;gap:6px}
+.n2-row.presets{gap:8px;flex-wrap:wrap}
+.sel.mini{width:64px;padding:6px 8px}
+.n2-l{min-width:34px;font-size:12px;opacity:.9}
+.n2-mid{opacity:.8}
+.chip{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;border-radius:12px;padding:4px 10px;font-size:12px}
+.chip:active{transform:scale(.98)}
+.small.warn{color:#ff6b6b}
