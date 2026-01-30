@@ -680,17 +680,85 @@ function clampNum(v, min, max){
 
 }
 
-  function swapSlotContent(i, j){
-    const a = app.state.slot[i];
-    const b = app.state.slot[j];
-    if (!a.number || !b.number) return;
+  function swapSlotContentWithConfirm(i, j){
+  const a = app.state.slot[i];
+  const b = app.state.slot[j];
+  if (!a?.number || !b?.number) return;
 
-    const keepLockA = a.locked;
-    const keepLockB = b.locked;
-
-    app.state.slot[i] = { ...b, locked: keepLockA };
-    app.state.slot[j] = { ...a, locked: keepLockB };
+  // compute locked names before
+  const beforeLocked = new Set();
+  for (let k=0;k<=2;k++){
+    const sl = app.state.slot[k];
+    if (sl?.locked && sl?.name) beforeLocked.add(sl.name);
   }
+
+  // compute new slot state after swap (lock is position-based)
+  const keepLockA = !!a.locked;
+  const keepLockB = !!b.locked;
+  const newSlot = app.state.slot.map((s, idx) => ({...s}));
+  newSlot[i] = { ...b, locked: keepLockA };
+  newSlot[j] = { ...a, locked: keepLockB };
+
+  // compute new locked names after & detect newly-locked dolls
+  const afterLocked = new Set();
+  for (let k=0;k<=2;k++){
+    const sl = newSlot[k];
+    if (sl?.locked && sl?.name) afterLocked.add(sl.name);
+  }
+  const newlyLocked = Array.from(afterLocked).filter(name => !beforeLocked.has(name));
+
+  // Only when a NEWLY locked doll conflicts with step2-4 selections/candidates, ask confirm
+  const clearNames = newlyLocked.filter(name => findOverlapsByName(name).hasAny);
+
+  if (clearNames.length){
+    const uniq = Array.from(new Set(clearNames));
+    openConfirm({
+      title: '確認',
+      message: `移動によりロック枠に入る人形が、ステップ②〜④で選択済みです。
+選択状態を解除して移動しますか？
+（対象：${uniq.join('、')}）`,
+      yesLabel: '解除して移動',
+      noLabel: 'キャンセル',
+      action: { type:'swap-and-clear', clearNames: uniq, newSlot },
+    });
+    return;
+  }
+
+  // no conflicts => commit immediately
+  app.state.slot = newSlot.map(s => ({...s, locked: !!s.locked}));
+  enforceLockContinuity();
+}
+
+function applySwapAndClear(action){
+  if (!action || action.type !== 'swap-and-clear') return;
+  const names = Array.isArray(action.clearNames) ? action.clearNames.map(x => String(x||'')).filter(Boolean) : [];
+  const newSlot = Array.isArray(action.newSlot) && action.newSlot.length === 5 ? action.newSlot : null;
+  if (!newSlot) return;
+
+  // clear confirmed candidates
+  for (const name of names){
+    app.state.candidate1 = app.state.candidate1.filter(x => x.name !== name);
+    app.state.candidate2 = app.state.candidate2.filter(x => x.name !== name);
+    app.state.candidate3 = app.state.candidate3.filter(x => x.name !== name);
+  }
+
+  // clear in-progress selections (2-4)
+  for (const step of [2,3,4]){
+    const st = getStepState(step);
+    const removeNums = Array.from(st.selected).filter(num => {
+      const m = app.masterByNumber.get(num);
+      return m && names.includes(m.name);
+    });
+    for (const num of removeNums){
+      deselectCard(step, num);
+    }
+  }
+
+  // commit swap
+  app.state.slot = newSlot.map(s => ({ ...s, locked: !!s.locked }));
+  enforceLockContinuity();
+}
+
 
   function confirmStep(step){
     const s = Number(step);
@@ -1336,6 +1404,9 @@ function clampNum(v, min, max){
         if (a && a.type === 'delete-and-clear'){
           applyDeleteAndClear(a);
         }
+        if (a && a.type === 'swap-and-clear'){
+          applySwapAndClear(a);
+        }
         render();
         return;
       }
@@ -1403,8 +1474,8 @@ function clampNum(v, min, max){
       if (action === 'slot-swap'){
         const idx = Number(t.dataset.index);
         const dir = t.dataset.dir;
-        if (dir === 'up' && idx > 0) swapSlotContent(idx, idx-1);
-        if (dir === 'down' && idx < 4) swapSlotContent(idx, idx+1);
+        if (dir === 'up' && idx > 0) swapSlotContentWithConfirm(idx, idx-1);
+        if (dir === 'down' && idx < 4) swapSlotContentWithConfirm(idx, idx+1);
         render();
         return;
       }
