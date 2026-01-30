@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260129g';
+  const VERSION = '20260129h';
 
   const GRADE_JP_TO_SHORT = {
     'ノーマル':'N',
@@ -462,30 +462,30 @@ function clampNum(v, min, max){
     const idx = app.state.selectedSlotIndex;
     if (idx === null || idx === undefined) return;
 
-    const arr = app.state.slot.slice();
-    // remove idx, shift up filled cards below it
-    arr.splice(idx, 1);
+    const newSlot = buildSlotAfterDelete(idx);
 
-    // append blank
-    arr.push(makeBlankSlot());
-
-    // locked belongs to position: we must keep locked flags for positions,
-    // BUT spec says deletion shifts "info cards" up; blank slot becomes locked=false.
-    // We'll interpret as content shifts, positions remain.
-    // To satisfy this, shift content only, keep locked flags per position.
-    const lockedFlags = app.state.slot.map(s => !!s.locked);
-    const newSlot = [];
-    for (let i=0;i<5;i++){
-      const content = arr[i] || makeBlankSlot();
-      newSlot.push({
-        ...content,
-        locked: lockedFlags[i] && !!content.number, // blank => false
-      });
+    // if deletion causes a locked slot (1-3) to be occupied by a doll already selected in steps 2-4,
+    // ask whether to clear those selections first.
+    const clearNames = [];
+    for (let i=0;i<3;i++){
+      const sl = newSlot[i];
+      if (sl && sl.locked && sl.name){
+        const overlap = findOverlapsByName(sl.name);
+        if (overlap && overlap.hasAny){
+          if (!clearNames.includes(sl.name)) clearNames.push(sl.name);
+        }
+      }
     }
 
-    // if last became blank, force locked=false
-    for (let i=0;i<5;i++){
-      if (!newSlot[i].number) newSlot[i].locked = false;
+    if (clearNames.length){
+      openConfirm({
+        title: '確認',
+        message: `スロット削除によりロック枠に入る人形が、ステップ②〜④で選択済みです。\n選択状態を解除して削除しますか？\n（対象：${clearNames.join('、')}）`,
+        yesLabel: '解除して削除',
+        noLabel: 'キャンセル',
+        action: { type:'delete-and-clear', newSlot, clearNames },
+      });
+      return;
     }
 
     app.state.slot = newSlot;
@@ -493,8 +493,51 @@ function clampNum(v, min, max){
     enforceLockContinuity();
   }
 
+  function buildSlotAfterDelete(idx){
+    const arr = app.state.slot.slice();
+    arr.splice(idx, 1);
+    arr.push(makeBlankSlot());
+
+    const lockedFlags = app.state.slot.map(s => !!s.locked);
+    const newSlot = [];
+    for (let i=0;i<5;i++){
+      const content = arr[i] || makeBlankSlot();
+      newSlot.push({
+        ...content,
+        locked: (i <= 2) ? (lockedFlags[i] && !!content.number) : false,
+      });
+    }
+
+    // blank => locked false
+    for (let i=0;i<5;i++){
+      if (!newSlot[i].number) newSlot[i].locked = false;
+      if (i >= 3) newSlot[i].locked = false;
+    }
+
+    enforceLockContinuityOn(newSlot);
+    return newSlot;
+  }
+
+  function enforceLockContinuityOn(slots){
+    // enforce prefix lock only for 0..2; 3..4 are always unlocked
+    for (let i=3;i<5;i++){
+      if (slots[i]) slots[i].locked = false;
+    }
+    for (let i=0;i<3;i++){
+      if (!slots[i].number){
+        slots[i].locked = false;
+      }
+      if (i > 0 && !slots[i-1].locked){
+        slots[i].locked = false;
+      }
+    }
+  }
+
   function enforceLockContinuity(){
-    // only slot 0..2
+    // lock is only for slot 0..2 (1〜3). 3..4 are always unlocked.
+    for (let i=3;i<5;i++){
+      if (app.state.slot[i]) app.state.slot[i].locked = false;
+    }
     for (let i=0;i<3;i++){
       if (!app.state.slot[i].number){
         app.state.slot[i].locked = false;
@@ -599,7 +642,43 @@ function clampNum(v, min, max){
     }
     sl.locked = true;
     enforceLockContinuity();
+  
+
+
+  function applyDeleteAndClear(action){
+    if (!action || action.type !== 'delete-and-clear') return;
+    const names = Array.isArray(action.clearNames) ? action.clearNames.map(x => String(x||'')).filter(Boolean) : [];
+    if (!names.length) return;
+
+    // clear confirmed candidates
+    for (const name of names){
+      app.state.candidate1 = app.state.candidate1.filter(x => x.name !== name);
+      app.state.candidate2 = app.state.candidate2.filter(x => x.name !== name);
+      app.state.candidate3 = app.state.candidate3.filter(x => x.name !== name);
+    }
+
+    // clear in-progress selections (2-4)
+    for (const step of [2,3,4]){
+      const st = getStepState(step);
+      const removeNums = Array.from(st.selected).filter(num => {
+        const m = app.masterByNumber.get(num);
+        return m && names.includes(m.name);
+      });
+      for (const num of removeNums){
+        deselectCard(step, num);
+      }
+    }
+
+    // commit slot state after deletion
+    if (Array.isArray(action.newSlot) && action.newSlot.length === 5){
+      app.state.slot = action.newSlot.map(s => ({ ...s, locked: !!s.locked }));
+    }
+
+    app.state.selectedSlotIndex = null;
+    enforceLockContinuity();
   }
+
+}
 
   function swapSlotContent(i, j){
     const a = app.state.slot[i];
@@ -1253,6 +1332,9 @@ function clampNum(v, min, max){
         closeConfirm();
         if (a && a.type === 'lock-and-clear'){
           applyLockAndClear(a);
+        }
+        if (a && a.type === 'delete-and-clear'){
+          applyDeleteAndClear(a);
         }
         render();
         return;
