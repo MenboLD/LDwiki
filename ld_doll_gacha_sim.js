@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260130a';
+  const VERSION = '20260131a';
 
   const GRADE_JP_TO_SHORT = {
     'ノーマル':'N',
@@ -38,6 +38,7 @@
   const app = {
     supabase: null,
     masterByNumber: new Map(), // number -> {number,name,picurl,basetxt, byGrade:{N:row..}}
+    costByLockcount: new Map(), // lockcount -> costkey
     state: null,
   };
 
@@ -67,7 +68,8 @@
         useKeyCount: false,
         trials: 10000,
       },
-      ui: { step5Target: 'key', accOpen:false },
+      ui: { step5Target: 'key', accOpen:false, graphOpen:false },
+      sim: { running:false, stop:false, done:0, total:0, startedAt:0, results:null, xAxis:'pull' },
       stepStates: {
         1: { activeTab: 1, selected: new Set(), grade: new Map(), value: new Map() },
         2: { activeTab: 1, selected: new Set(), grade: new Map(), value: new Map() },
@@ -141,6 +143,28 @@
       for (const g of GRADE_ORDER){
         if (!m.byGrade[g]) throw new Error(`master missing number=${i} grade=${g}`);
       }
+    }
+  }
+
+
+  async function loadCost(){
+    const { data: cost, error } = await app.supabase
+      .from('ld_piece_cost')
+      .select('*')
+      .order('lockcount', { ascending: true });
+    if (error) throw error;
+    if (!Array.isArray(cost) || cost.length < 4) throw new Error('ld_piece_cost の取得に失敗しました。');
+    app.costByLockcount = new Map();
+    for (const row of cost){
+      const lc = Number(row.lockcount);
+      const ck = Number(row.costkey);
+      if (Number.isFinite(lc) && Number.isFinite(ck)){
+        app.costByLockcount.set(lc, ck);
+      }
+    }
+    // fallback
+    for (const lc of [0,1,2,3]){
+      if (!app.costByLockcount.has(lc)) app.costByLockcount.set(lc, [5,10,20,30][lc] || 0);
     }
   }
 
@@ -1083,6 +1107,10 @@ function isDirtyStep(step){
     renderStepTabs();
     renderMain();
     renderModal();
+    // post-render hooks
+    if (app && app.state && app.state.currentStep === 7){
+      try{ drawStep7Graph(); }catch(e){}
+    }
   }
 
   function renderStepTabs(){
@@ -1126,6 +1154,8 @@ function isDirtyStep(step){
       main.innerHTML = renderStep5();
     } else if (s === 6){
       main.innerHTML = renderStep6();
+    } else if (s === 7){
+      main.innerHTML = renderStep7();
     } else {
       main.innerHTML = `<div class="section">
         <div class="section-title">ステップ⑦（シミュレーション）は未実装</div>
@@ -1546,7 +1576,699 @@ function isDirtyStep(step){
     `;
   }
 
-  function renderRangeOptions(max, cur){
+  
+  function renderStep7(){
+    const sim = app.state.sim;
+    const cfg = app.state.simConfig;
+    const end = cfg.end || {N1:0,N2:0,N2a:1,N2b:5,N3:0};
+    const keyMax = clampInt(app.state.keyCount, 0, 99999);
+    const trials = clampInt(cfg.trials, 1, 200000);
+    cfg.trials = trials;
+
+    const useKey = !!cfg.useKeyCount;
+    const xAxis = sim.xAxis || (useKey ? 'key' : 'pull');
+
+    const canRun = app.state.step6Confirmed && !sim.running;
+
+    const progText = sim.running
+      ? `${sim.done.toLocaleString()} / ${sim.total.toLocaleString()}（${Math.floor((Date.now()-sim.startedAt)/1000)}s）`
+      : (sim.results ? `${sim.results.done.toLocaleString()} / ${sim.results.total.toLocaleString()}（完了）` : '未実行');
+
+    const r = sim.results;
+
+    let summaryHtml = '';
+    if (r){
+      const axis = (xAxis === 'key') ? 'keys' : 'pulls';
+      const stats = r.stats && r.stats[axis];
+      const succRate = (r.successes / r.total) * 100;
+      summaryHtml += `
+        <div class="panel">
+          <div class="panel-title">結果サマリー</div>
+          <div class="kv">
+            <div class="kv-row"><div class="k">達成率</div><div class="v">${succRate.toFixed(2)}%（成功 ${r.successes} / 失敗 ${r.fails}）</div></div>
+            <div class="kv-row"><div class="k">平均${xAxis==='key'?'消費鍵':'試行回数'}</div><div class="v">${stats && stats.mean!=null ? formatNum(stats.mean) : '—'}</div></div>
+            <div class="kv-row"><div class="k">中央値（50%点）</div><div class="v">${stats && stats.q50!=null ? formatNum(stats.q50) : '—'}</div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">分位点</div>
+          <div class="quant-grid">
+            ${renderQuantCell('10%', stats && stats.q10)}
+            ${renderQuantCell('20%', stats && stats.q20)}
+            ${renderQuantCell('30%', stats && stats.q30)}
+            ${renderQuantCell('40%', stats && stats.q40)}
+            ${renderQuantCell('60%', stats && stats.q60)}
+            ${renderQuantCell('70%', stats && stats.q70)}
+            ${renderQuantCell('80%', stats && stats.q80)}
+            ${renderQuantCell('90%', stats && stats.q90)}
+          </div>
+          <div class="small dim">※達成率（成功率）が分位点の%未満の場合、その分位点は「—」になります。</div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">補助情報</div>
+          <div class="kv">
+            <div class="kv-row"><div class="k">平均ロック数（1回あたり）</div><div class="v">${r.aux && r.aux.avgLockPerPull!=null ? r.aux.avgLockPerPull.toFixed(3) : '—'}</div></div>
+            <div class="kv-row"><div class="k">神話確定発動（平均/成功回）</div><div class="v">${r.aux && r.aux.avgMythicAct!=null ? r.aux.avgMythicAct.toFixed(3) : '—'}</div></div>
+            <div class="kv-row"><div class="k">平均消費鍵（成功回）</div><div class="v">${r.aux && r.aux.avgKeys!=null ? formatNum(r.aux.avgKeys) : '—'}</div></div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="section">
+        <div class="section-title">ステップ⑦ シミュレーション</div>
+        <div class="section-sub">⑥で確定した戦略・終了条件にもとづき、モンテカルロで統計を出します。</div>
+
+        <div class="panel">
+          <div class="panel-title">実行設定</div>
+          <div class="form-row">
+            <label class="chk">
+              <input type="checkbox" data-action="sim-usekey" ${useKey?'checked':''} ${sim.running?'disabled':''}/>
+              <span>所持している黄金の鍵本数を考慮して実行（上限：⑤の鍵本数 = ${keyMax}）</span>
+            </label>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <div class="field-label">試行回数</div>
+              <input class="inp" type="number" min="1" max="200000" step="1" value="${trials}" data-action="sim-trials" ${sim.running?'disabled':''}/>
+            </div>
+            <div class="field">
+              <div class="field-label">グラフ横軸</div>
+              <select class="sel" data-action="sim-xaxis" ${sim.running?'disabled':''}>
+                <option value="pull" ${(xAxis==='pull')?'selected':''}>ガチャ回数</option>
+                <option value="key" ${(xAxis==='key')?'selected':''}>消費鍵本数</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="cta-row">
+            <button class="btn primary wide" data-action="sim-start" ${canRun?'':'disabled'}>シミュレートを実行</button>
+            <button class="btn danger" data-action="sim-stop" ${sim.running?'':'disabled'}>停止</button>
+          </div>
+
+          <div class="progress">
+            <div class="progress-text">${progText}</div>
+            <div class="progress-bar"><div class="progress-bar-inner" style="width:${sim.running? (sim.total? (sim.done/sim.total*100):0) : (r? (r.done/r.total*100):0)}%"></div></div>
+          </div>
+
+          <div class="small dim">
+            ⑥終了条件：N1=${end.N1}（スロット1〜3, 候補1） / N2=${end.N2}（スロット${end.N2a}〜${end.N2b}, 候補2） / N3=${end.N3}（スロット4〜5, 候補3）
+          </div>
+        </div>
+
+        ${summaryHtml}
+
+        <div class="panel">
+          <button class="acc-btn" data-action="acc-toggle-graph" type="button">${app.state.ui.graphOpen?'▲':'▼'}グラフ（累積達成率）</button>
+          ${app.state.ui.graphOpen ? `<div class="graph-wrap"><canvas id="cdfCanvas" width="360" height="220"></canvas></div>` : ''}
+          <div class="small dim">縦軸：累積達成率（CDF） / 横軸：${xAxis==='key'?'消費鍵':'ガチャ回数'}。主要分位点（10/50/90%）を表示。</div>
+        </div>
+
+      </div>
+    `;
+  }
+
+  function renderQuantCell(label, value){
+    return `<div class="qcell"><div class="qk">${label}</div><div class="qv">${value!=null ? formatNum(value) : '—'}</div></div>`;
+  }
+
+  function formatNum(x){
+    if (x==null || !Number.isFinite(x)) return '—';
+    const v = (Math.abs(x) >= 1000) ? Math.round(x) : (Math.round(x*100)/100);
+    return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  function ensureGraphOpenDefault(){
+    if (app.state.ui.graphOpen == null) app.state.ui.graphOpen = false;
+  }
+
+  function drawStep7Graph(){
+    const sim = app.state.sim;
+    if (app.state.currentStep !== 7) return;
+    if (!app.state.ui.graphOpen) return;
+    const canvas = document.getElementById('cdfCanvas');
+    if (!canvas) return;
+    const r = sim.results;
+    if (!r || !r.cdf) return;
+
+    const xAxis = sim.xAxis || 'pull';
+    const axisKey = (xAxis === 'key') ? 'keys' : 'pulls';
+    const pts = r.cdf[axisKey] || [];
+    const q = r.stats ? r.stats[axisKey] : null;
+
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0,0,W,H);
+
+    // padding
+    const padL = 34, padR = 10, padT = 10, padB = 26;
+    const x0 = padL, y0 = H - padB, x1 = W - padR, y1 = padT;
+
+    // axes
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x0,y1); ctx.lineTo(x0,y0); ctx.lineTo(x1,y0);
+    ctx.stroke();
+
+    if (!pts.length){
+      ctx.fillText('データなし', x0+8, y1+18);
+      return;
+    }
+
+    const maxX = pts[pts.length-1].x;
+    const maxY = pts[pts.length-1].y; // <=1
+    const xScale = (x1-x0) / Math.max(1, maxX);
+    const yScale = (y0-y1) / 1.0;
+
+    // grid y 0..1
+    ctx.font = '12px system-ui, -apple-system, sans-serif';
+    for (const yv of [0,0.25,0.5,0.75,1.0]){
+      const yy = y0 - yv*yScale;
+      ctx.globalAlpha = 0.15;
+      ctx.beginPath(); ctx.moveTo(x0,yy); ctx.lineTo(x1,yy); ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.fillText(String(Math.round(yv*100))+'%', 2, yy+4);
+    }
+
+    // curve
+    ctx.beginPath();
+    for (let i=0;i<pts.length;i++){
+      const px = x0 + pts[i].x * xScale;
+      const py = y0 - pts[i].y * yScale;
+      if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+
+    // quantile lines at 10/50/90 if exist
+    const qs = [
+      {p:0.10, v:q && q.q10},
+      {p:0.50, v:q && q.q50},
+      {p:0.90, v:q && q.q90},
+    ];
+    ctx.setLineDash([4,4]);
+    for (const it of qs){
+      if (it.v == null) continue;
+      const xx = x0 + it.v * xScale;
+      ctx.globalAlpha = 0.65;
+      ctx.beginPath(); ctx.moveTo(xx,y0); ctx.lineTo(xx,y1); ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.fillText(Math.round(it.p*100)+'%', xx+2, y1+12);
+    }
+    ctx.setLineDash([]);
+
+    // x labels
+    ctx.fillText('0', x0-4, y0+14);
+    ctx.fillText(String(maxX), x1-16, y0+14);
+  }
+
+  // ---------- Step7 simulation ----------
+  function copySlots(slots){
+    return slots.map(s => ({...s}));
+  }
+
+  function gradeIdx(g){
+    const i = GRADE_ORDER.indexOf(g);
+    return i >= 0 ? i : 0;
+  }
+
+  function buildCandidateReqMap(list){
+    const map = new Map();
+    for (const it of (list||[])){
+      map.set(it.name, { grade: it.grade, gradeIdx: gradeIdx(it.grade), valueMin: Number(it.valueMin||0) });
+    }
+    return map;
+  }
+
+  function isMatch(slot, req){
+    if (!slot || !slot.name || !req) return false;
+    if (slot.name !== req.name && req.name!=null){} // no-op (legacy)
+    const sg = gradeIdx(slot.grade);
+    return (slot.name === req.name || req.name==null) ? (sg >= req.gradeIdx && Number(slot.valueMin||0) >= req.valueMin) : false;
+  }
+
+  function classifySlot(slot, c1Map, c2Map, c3Map){
+    if (!slot || !slot.name) return 'OUT';
+    const r1 = c1Map.get(slot.name);
+    if (r1 && gradeIdx(slot.grade) >= r1.gradeIdx && Number(slot.valueMin||0) >= r1.valueMin) return 'C1';
+    const r2 = c2Map.get(slot.name);
+    if (r2 && gradeIdx(slot.grade) >= r2.gradeIdx && Number(slot.valueMin||0) >= r2.valueMin) return 'C2';
+    const r3 = c3Map.get(slot.name);
+    if (r3 && gradeIdx(slot.grade) >= r3.gradeIdx && Number(slot.valueMin||0) >= r3.valueMin) return 'C3';
+    return 'OUT';
+  }
+
+  function cmpTie(a, b, mode){
+    // mode: 'score' or 'number'
+    if (mode === 'number'){
+      if (a.number !== b.number) return a.number - b.number;
+      return (b.score||0) - (a.score||0);
+    } else {
+      const ds = (b.score||0) - (a.score||0);
+      if (ds !== 0) return ds;
+      return (a.number||0) - (b.number||0);
+    }
+  }
+
+  function reorderSlots(slots, c1Map, c2Map, c3Map, tieBreaker){
+    const fixed = new Array(5).fill(null);
+    const movable = [];
+    for (let i=0;i<5;i++){
+      const sl = slots[i];
+      if (i<=2 && sl.locked){
+        fixed[i] = sl;
+      } else {
+        movable.push(sl);
+      }
+    }
+
+    function pickBestForPos(pos){
+      const isLockPos = (pos <= 2);
+      const pref = isLockPos ? ['C1','C2','OUT'] : ['C3','C2','OUT'];
+      const rank = (cls) => {
+        const idx = pref.indexOf(cls);
+        return idx>=0 ? idx : 2;
+      };
+
+      let bestIdx = 0;
+      let best = movable[0];
+      let bestKey = { r: rank(classifySlot(best,c1Map,c2Map,c3Map)), s: best.score||0, n: best.number||0 };
+      for (let i=1;i<movable.length;i++){
+        const it = movable[i];
+        const k = { r: rank(classifySlot(it,c1Map,c2Map,c3Map)), s: it.score||0, n: it.number||0 };
+        if (k.r < bestKey.r){
+          bestIdx = i; best = it; bestKey = k;
+        } else if (k.r === bestKey.r){
+          const c = cmpTie(it, best, tieBreaker);
+          if (c < 0){ bestIdx=i; best=it; bestKey=k; }
+        }
+      }
+      movable.splice(bestIdx,1);
+      return best;
+    }
+
+    const out = new Array(5).fill(null);
+    for (let pos=0; pos<5; pos++){
+      if (fixed[pos]){
+        out[pos] = fixed[pos];
+      } else {
+        const picked = pickBestForPos(pos);
+        // ensure unlocked flags on placed slots (lock positions will be set later)
+        picked.locked = false;
+        out[pos] = picked;
+      }
+    }
+    return out;
+  }
+
+  function lockPrefixLen(slots){
+    let k=0;
+    for (let i=0;i<3;i++){
+      if (slots[i].locked) k++;
+      else break;
+    }
+    return k;
+  }
+
+  function setLockPrefix(slots, k){
+    k = clampInt(k, 0, 3);
+    for (let i=0;i<3;i++){
+      slots[i].locked = (i < k);
+    }
+    for (let i=3;i<5;i++){
+      slots[i].locked = false;
+    }
+  }
+
+  function countMatchesInRange(slots, a, b, cmap){
+    let n=0;
+    for (let i=a;i<=b;i++){
+      const sl = slots[i];
+      if (!sl || !sl.name) continue;
+      const req = cmap.get(sl.name);
+      if (req && gradeIdx(sl.grade) >= req.gradeIdx && Number(sl.valueMin||0) >= req.valueMin) n++;
+    }
+    return n;
+  }
+
+  function isEndSatisfied(slots, end, c1Map, c2Map, c3Map){
+    const n1 = clampInt(end.N1||0, 0, 3);
+    const n2 = clampInt(end.N2||0, 0, 5);
+    const n3 = clampInt(end.N3||0, 0, 2);
+    const a = clampInt(end.N2a ?? 1, 1, 5) - 1;
+    const b = clampInt(end.N2b ?? 5, 1, 5) - 1;
+    const aa = Math.min(a,b), bb = Math.max(a,b);
+
+    const c1 = countMatchesInRange(slots, 0, 2, c1Map);
+    const c2 = countMatchesInRange(slots, aa, bb, c2Map);
+    const c3 = countMatchesInRange(slots, 3, 4, c3Map);
+    return (c1 >= n1) && (c2 >= n2) && (c3 >= n3);
+  }
+
+  function lockDecision(slots, cfg, end, c1Map, c2Map){
+    const strat = cfg.lockStrategy || 'S1';
+    const prefer = !!cfg.preferC1DontLockC2;
+
+    const curK = lockPrefixLen(slots);
+    const cap = 3 - curK;
+    if (cap <= 0) return curK;
+
+    // status
+    const n1Need = clampInt(end.N1||0, 0, 3);
+    const c1Now = countMatchesInRange(slots, 0, 2, c1Map);
+    const missingC1 = c1Now < n1Need;
+
+    // c1Possible: exists C1 target name not in locked slots (excluded by name sampling)
+    let c1Possible = false;
+    const lockedNames = new Set();
+    for (let i=0;i<3;i++){
+      if (slots[i].locked && slots[i].name) lockedNames.add(slots[i].name);
+    }
+    for (const [name,_] of c1Map.entries()){
+      if (!lockedNames.has(name)){ c1Possible = true; break; }
+    }
+
+    // has any C2 match in lock area
+    let hasC2 = false;
+    for (let i=0;i<3;i++){
+      const sl = slots[i];
+      const req = c2Map.get(sl.name);
+      if (req && gradeIdx(sl.grade) >= req.gradeIdx && Number(sl.valueMin||0) >= req.valueMin){ hasC2=true; break; }
+    }
+
+    const blockC2 = prefer && cap>0 && missingC1 && c1Possible && hasC2;
+
+    let targetK = curK;
+
+    // helper: extend lock to include matches up to capacity
+    const canExtend = () => targetK < 3;
+
+    const extendFor = (wantCls) => {
+      for (let i=targetK;i<3 && canExtend();i++){
+        const sl = slots[i];
+        const req = (wantCls==='C1') ? c1Map.get(sl.name) : c2Map.get(sl.name);
+        if (req && gradeIdx(sl.grade) >= req.gradeIdx && Number(sl.valueMin||0) >= req.valueMin){
+          targetK = i+1;
+        } else {
+          // stop if ordering ensures later won't match? no, continue.
+        }
+      }
+    };
+
+    if (strat === 'S2' && cap >= 2){
+      // count new C1 matches in unlocked part
+      let newC1 = 0;
+      for (let i=targetK;i<3;i++){
+        const sl = slots[i];
+        const req = c1Map.get(sl.name);
+        if (req && gradeIdx(sl.grade) >= req.gradeIdx && Number(sl.valueMin||0) >= req.valueMin) newC1++;
+      }
+      if (newC1 >= 2){
+        extendFor('C1');
+      }
+    } else {
+      // S1, or S2 with cap<2
+      extendFor('C1');
+    }
+
+    if (!blockC2){
+      // If still capacity, allow C2 locking (fallback)
+      extendFor('C2');
+    }
+
+    return targetK;
+  }
+
+  function randInt(min, max){
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function chooseUniform(arr){
+    return arr[randInt(0, arr.length-1)];
+  }
+
+  function drawGrade(forceMythic){
+    if (forceMythic) return 'M';
+    const r = Math.random();
+    if (r < 0.35) return 'N';
+    if (r < 0.65) return 'R';
+    if (r < 0.90) return 'E';
+    if (r < 0.99) return 'L';
+    return 'M';
+  }
+
+  function simulateOnce(params){
+    const { initialSlots, allNumbers, keyMax, gaugeInit, useKey, cfg, end, c1Map, c2Map, c3Map, tieBreaker } = params;
+
+    let slots = copySlots(initialSlots);
+    // normalize lock prefix
+    const initK = lockPrefixLen(slots);
+    setLockPrefix(slots, initK);
+
+    let gauge = clampInt(gaugeInit, 0, 1000000);
+    let keys = 0;
+    let pulls = 0;
+    let mythicActs = 0;
+    let lockSum = 0;
+    let pullEvents = 0;
+
+    const maxPulls = useKey ? 999999 : 20000;
+
+    for (let step=0; step<maxPulls; step++){
+      const curLock = lockPrefixLen(slots);
+      const cost = Number(app.costByLockcount.get(curLock) || 0);
+
+      if (useKey && (keys + cost > keyMax)){
+        return { success:false, pulls, keys, mythicActs, lockSum, pullEvents };
+      }
+      keys += cost;
+      gauge += cost;
+      let forceMythic = false;
+      if (gauge >= 500){
+        forceMythic = true;
+        gauge -= 500;
+        mythicActs++;
+      }
+
+      lockSum += curLock;
+      pullEvents++;
+
+      // draw names for unlocked slots without replacement, excluding locked names
+      const lockedNums = new Set();
+      for (let i=0;i<3;i++){
+        if (slots[i].locked && slots[i].number!=null) lockedNums.add(slots[i].number);
+      }
+      const drawnNums = new Set();
+      let firstUnlockedDone = false;
+
+      for (let i=0;i<5;i++){
+        if (i<=2 && slots[i].locked) continue;
+        // available pool
+        const pool = [];
+        for (const n of allNumbers){
+          if (lockedNums.has(n)) continue;
+          if (drawnNums.has(n)) continue;
+          pool.push(n);
+        }
+        if (!pool.length){
+          // should not happen
+          continue;
+        }
+        const num = chooseUniform(pool);
+        drawnNums.add(num);
+
+        const m = app.masterByNumber.get(num);
+        const grade = drawGrade(forceMythic && !firstUnlockedDone);
+        if (!firstUnlockedDone) firstUnlockedDone = true;
+
+        const row = (m && m.byGrade && m.byGrade[grade]) ? m.byGrade[grade] : null;
+        const stepmax = row ? Math.max(1, Number(row.stepmax||1)) : 1;
+        const stepmin = row ? Number(row.stepmin||1) : 1;
+        const paramemin = row ? Number(row.paramemin||0) : 0;
+        const paramemax = row ? Number(row.paramemax||paramemin) : paramemin;
+        const coef = randInt(1, stepmax);
+        let value = paramemin + stepmin * (coef - 1);
+        if (value < paramemin) value = paramemin;
+        if (value > paramemax) value = paramemax;
+
+        const score = calcScore(num, grade, value);
+        const desc = buildDesc(num, grade, value);
+
+        slots[i] = {
+          number: num,
+          name: m ? m.name : String(num),
+          picurl: m ? m.picurl : null,
+          grade: grade,
+          valueMin: value,
+          score: score,
+          desc: desc,
+          locked: slots[i].locked || false,
+        };
+      }
+
+      pulls++;
+
+      // classify+reorder
+      slots = reorderSlots(slots, c1Map, c2Map, c3Map, tieBreaker);
+
+      // lock decision
+      const nextK = lockDecision(slots, cfg, end, c1Map, c2Map);
+      setLockPrefix(slots, nextK);
+
+      // end check
+      if (isEndSatisfied(slots, end, c1Map, c2Map, c3Map)){
+        return { success:true, pulls, keys, mythicActs, lockSum, pullEvents };
+      }
+    }
+
+    // max loops
+    return { success:false, pulls, keys, mythicActs, lockSum, pullEvents };
+  }
+
+  function buildCdf(values, total){
+    // values: array of numbers (success only). total: trials total. CDF y uses total (includes failures)
+    const arr = values.slice().sort((a,b)=>a-b);
+    const pts = [];
+    let i=0;
+    while (i < arr.length){
+      const x = arr[i];
+      let j = i;
+      while (j < arr.length && arr[j] === x) j++;
+      const y = j / total;
+      pts.push({x, y});
+      i = j;
+    }
+    return pts;
+  }
+
+  function quantileFromCdf(valuesSorted, total, p){
+    // overall quantile against total trials; returns null if not reachable
+    if (!valuesSorted.length) return null;
+    const target = p * total;
+    const k = Math.ceil(target);
+    if (k <= 0) return valuesSorted[0];
+    if (k > valuesSorted.length) return null;
+    return valuesSorted[k-1];
+  }
+
+  function computeStats(values, total){
+    const arr = values.slice().sort((a,b)=>a-b);
+    const n = arr.length;
+    const sum = arr.reduce((a,b)=>a+b, 0);
+    const mean = (n>0) ? (sum / n) : null;
+    const q = (p)=>quantileFromCdf(arr, total, p);
+    return {
+      mean,
+      q10: q(0.10),
+      q20: q(0.20),
+      q30: q(0.30),
+      q40: q(0.40),
+      q50: q(0.50),
+      q60: q(0.60),
+      q70: q(0.70),
+      q80: q(0.80),
+      q90: q(0.90),
+    };
+  }
+
+  async function startSimulation(){
+    if (!app.state.step6Confirmed){
+      toast('先に⑥を確定してください');
+      return;
+    }
+    ensureGraphOpenDefault();
+
+    const sim = app.state.sim;
+    if (sim.running) return;
+
+    const total = clampInt(app.state.simConfig.trials, 1, 200000);
+    const useKey = !!app.state.simConfig.useKeyCount;
+    const keyMax = clampInt(app.state.keyCount, 0, 99999);
+    const gaugeInit = clampInt(app.state.mythicGaugeInit, 0, 1000000);
+
+    const cfg = app.state.simConfig;
+    const end = cfg.end || {N1:0,N2:0,N2a:1,N2b:5,N3:0};
+    const tieBreaker = cfg.tieBreaker || 'score';
+
+    const c1Map = buildCandidateReqMap(app.state.candidate1);
+    const c2Map = buildCandidateReqMap(app.state.candidate2);
+    const c3Map = buildCandidateReqMap(app.state.candidate3);
+
+    const allNumbers = Array.from(app.masterByNumber.keys()).sort((a,b)=>a-b);
+
+    const initialSlots = copySlots(app.state.slot);
+
+    sim.running = true;
+    sim.stop = false;
+    sim.done = 0;
+    sim.total = total;
+    sim.startedAt = Date.now();
+    sim.results = null;
+    render();
+
+    const pulls = [];
+    const keys = [];
+    let successes = 0;
+    let fails = 0;
+    let sumMythic = 0;
+    let sumKeys = 0;
+    let sumLock = 0;
+    let sumPullEvents = 0;
+
+    const chunk = 200;
+    for (let i=0;i<total;i++){
+      if (sim.stop) break;
+
+      const res = simulateOnce({ initialSlots, allNumbers, keyMax, gaugeInit, useKey, cfg, end, c1Map, c2Map, c3Map, tieBreaker });
+      if (res.success){
+        successes++;
+        pulls.push(res.pulls);
+        keys.push(res.keys);
+        sumMythic += res.mythicActs;
+        sumKeys += res.keys;
+        sumLock += res.lockSum;
+        sumPullEvents += res.pullEvents;
+      } else {
+        fails++;
+      }
+
+      sim.done = i+1;
+      if ((i % chunk) === 0){
+        render();
+        await new Promise(r => setTimeout(r, 0));
+      }
+    }
+
+    sim.running = false;
+
+    const done = sim.done;
+    const totalUsed = total; // intended trials
+    const pullsSorted = pulls.slice().sort((a,b)=>a-b);
+    const keysSorted = keys.slice().sort((a,b)=>a-b);
+
+    const stats = {
+      pulls: computeStats(pulls, totalUsed),
+      keys: computeStats(keys, totalUsed),
+    };
+
+    const cdf = {
+      pulls: buildCdf(pulls, totalUsed),
+      keys: buildCdf(keys, totalUsed),
+    };
+
+    const aux = {
+      avgLockPerPull: (sumPullEvents>0) ? (sumLock / sumPullEvents) : null,
+      avgMythicAct: (successes>0) ? (sumMythic / successes) : null,
+      avgKeys: (successes>0) ? (sumKeys / successes) : null,
+    };
+
+    sim.results = { total: totalUsed, done, successes, fails: (totalUsed - successes), pulls, keys, stats, cdf, aux };
+
+    render();
+  }
+
+function renderRangeOptions(max, cur){
     const v = clampInt(cur||1, 1, max);
     let html='';
     for (let i=1;i<=max;i++){
@@ -2005,6 +2727,25 @@ function isDirtyStep(step){
         return;
       }
 
+      if (action === 'acc-toggle-graph'){
+        ensureGraphOpenDefault();
+        app.state.ui.graphOpen = !app.state.ui.graphOpen;
+        render();
+        return;
+      }
+      if (action === 'sim-start'){
+        startSimulation();
+        return;
+      }
+      if (action === 'sim-stop'){
+        if (app.state.sim && app.state.sim.running){
+          app.state.sim.stop = true;
+          toast('停止要求を受け付けました');
+          render();
+        }
+        return;
+      }
+
     });
 
     document.addEventListener('input', (ev) => {
@@ -2037,7 +2778,25 @@ function isDirtyStep(step){
         render();
         return;
       }
-      if (t.dataset.action === 'cfg-prefer'){
+      
+      if (t.dataset.action === 'sim-trials'){
+        const v = clampInt(Number(t.value), 1, 200000);
+        app.state.simConfig.trials = v;
+        render();
+        return;
+      }
+      if (t.dataset.action === 'sim-usekey'){
+        app.state.simConfig.useKeyCount = !!t.checked;
+        render();
+        return;
+      }
+      if (t.dataset.action === 'sim-xaxis'){
+        const v = String(t.value||'pull');
+        app.state.sim.xAxis = (v==='key') ? 'key' : 'pull';
+        render();
+        return;
+      }
+if (t.dataset.action === 'cfg-prefer'){
         app.state.simConfig.preferC1DontLockC2 = !!t.checked;
         if (app.state.step6Confirmed) { app.state.step6Confirmed = false; }
     if (app.state.maxReached > 6) app.state.maxReached = 6;
@@ -2105,6 +2864,7 @@ function isDirtyStep(step){
       assertSupabaseConfig();
       app.supabase = window.supabase.createClient(window.LD_SUPABASE_URL, window.LD_SUPABASE_ANON_KEY);
       await loadMaster();
+      await loadCost();
       app.state.loading = false;
       render();
     } catch (e){
