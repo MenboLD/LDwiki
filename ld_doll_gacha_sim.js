@@ -254,6 +254,9 @@
     st.grade.set(number, grade);
     const r = app.masterByNumber.get(number).byGrade[grade];
     st.value.set(number, r.paramemin);
+    if (step === 1){
+      upsertSlotFromStep1(number, false);
+    }
   }
 
   function deselectCard(step, num){
@@ -279,6 +282,9 @@
       deselectCard(step, number);
     } else {
       selectCard(step, number, step === 1 ? 'N' : 'M');
+      if (step === 1){
+        upsertSlotFromStep1(number, true);
+      }
     }
   }
 
@@ -293,6 +299,9 @@
         for (const old of Array.from(st.selected)) deselectCard(1, old);
       }
       selectCard(step, number, grade);
+      if (step === 1){
+        upsertSlotFromStep1(number, true);
+      }
       return;
     }
 
@@ -307,6 +316,9 @@
     st.grade.set(number, grade);
     const r = app.masterByNumber.get(number).byGrade[grade];
     st.value.set(number, r.paramemin);
+    if (step === 1){
+      upsertSlotFromStep1(number, false);
+    }
   }
 
   function openModal(step, num){
@@ -404,10 +416,110 @@ function clampNum(v, min, max){
     const value = r.paramemin + (r.stepmin * m.idx);
 
     st.value.set(number, clampNum(value, r.paramemin, r.paramemax));
+    if (m.step === 1){
+      upsertSlotFromStep1(number, false);
+    }
     closeModal();
   }
 
-  function transferToSlot(){
+  
+  function findSlotIndexByNumber(number){
+    const n = Number(number);
+    for (let i=0;i<5;i++){
+      const sl = app.state.slot[i];
+      if (sl && sl.number && Number(sl.number) === n) return i;
+    }
+    return -1;
+  }
+
+  function upsertSlotFromStep1(number, allowInsert){
+    const st = getStepState(1);
+    const n = Number(number);
+    const m = app.masterByNumber.get(n);
+    if (!m) return;
+
+    const grade = st.grade.get(n);
+    const value = st.value.get(n);
+    if (!grade || value == null) return;
+
+    const desc = buildDesc(n, grade, value);
+    const score = calcScore(n, grade, value);
+
+    // find existing same number/name
+    let idx = -1;
+    for (let i=0;i<5;i++){
+      const sl = app.state.slot[i];
+      if (sl && sl.number && Number(sl.number) === n){ idx = i; break; }
+      if (sl && sl.name && sl.name === m.name){ idx = i; break; }
+    }
+    if (idx === -1){
+      if (!allowInsert) return;
+      for (let i=0;i<5;i++){
+        if (!app.state.slot[i].number){ idx = i; break; }
+      }
+    }
+    if (idx === -1){
+      toast('スロットが満杯です（空きを作ってください）');
+      return;
+    }
+
+    const keepLocked = app.state.slot[idx].locked === true;
+    app.state.slot[idx] = {
+      number: m.number,
+      name: m.name,
+      grade,
+      value,
+      score,
+      picurl: m.picurl,
+      desc,
+      locked: keepLocked,
+    };
+    enforceLockContinuity();
+  }
+
+  function deleteSlotAt(idx){
+    const index = Number(idx);
+    if (!(index >= 0 && index < 5)) return;
+    if (!app.state.slot[index] || !app.state.slot[index].number) return;
+
+    const newSlot = buildSlotAfterDelete(index);
+
+    const clearNames = [];
+    for (let i=0;i<3;i++){
+      const sl = newSlot[i];
+      if (sl && sl.locked && sl.name){
+        const overlap = findOverlapsByName(sl.name);
+        if (overlap && overlap.hasAny){
+          if (!clearNames.includes(sl.name)) clearNames.push(sl.name);
+        }
+      }
+    }
+
+    if (clearNames.length){
+      openConfirm({
+        title: '確認',
+        message: `スロット削除によりロック枠に入る人形が、ステップ②〜④で選択済みです。\n選択状態を解除して削除しますか？\n（対象：${clearNames.join('、')}）`,
+        yesLabel: '解除して削除',
+        noLabel: 'キャンセル',
+        action: { type:'delete-and-clear', slotAfter: newSlot, clearNames },
+      });
+      return;
+    }
+
+    // apply directly
+    app.state.slot = newSlot;
+    if (app.state.selectedSlotIndex === index) app.state.selectedSlotIndex = null;
+    enforceLockContinuity();
+  }
+  function deleteSelectedSlot(){
+    const idx = app.state.selectedSlotIndex;
+    if (idx === null || idx === undefined) return;
+    deleteSlotAt(idx);
+  }
+
+
+
+function transferToSlot(){
     const st = getStepState(1);
     if (st.selected.size < 1) return;
 
@@ -459,22 +571,7 @@ function clampNum(v, min, max){
     enforceLockContinuity();
   }
 
-  function deleteSelectedSlot(){
-    const idx = app.state.selectedSlotIndex;
-    if (idx === null || idx === undefined) return;
-
-    const newSlot = buildSlotAfterDelete(idx);
-
-    // if deletion causes a locked slot (1-3) to be occupied by a doll already selected in steps 2-4,
-    // ask whether to clear those selections first.
-    const clearNames = [];
-    for (let i=0;i<3;i++){
-      const sl = newSlot[i];
-      if (sl && sl.locked && sl.name){
-        const overlap = findOverlapsByName(sl.name);
-        if (overlap && overlap.hasAny){
-          if (!clearNames.includes(sl.name)) clearNames.push(sl.name);
-        }
+  
       }
     }
 
@@ -1039,8 +1136,7 @@ function isDirtyStep(step){
   }
   function renderStep1(){
     const st = getStepState(1);
-    const tab = st.activeTab;
-    const selectedNumber = st.selected.size ? Array.from(st.selected)[0] : null;
+    const tab = st.activeTab; 
 
     const transferred = getTransferredGradeByNumber();
 
@@ -1068,9 +1164,7 @@ function isDirtyStep(step){
     }).join('');
 
     // slots (bottom)
-    const slotHtml = app.state.slot.map((sl, i) => renderSlotCard(sl, i)).join('');
-
-    const canTransfer = selectedNumber !== null;
+    const slotHtml = app.state.slot.map((sl, i) => renderSlotCard(sl, i)).join(''); 
     const allFilled = app.state.slot.every(x => !!x.number);
 
     return `
@@ -1078,7 +1172,7 @@ function isDirtyStep(step){
         <div class="section-title list-head">
           <span class="head-left"><span class="caret">▲</span>人形一覧</span>
           <div class="head-right">
-            <span class="section-sub">画像タップで選択</span>
+            <span class="section-sub">画像タップで自動転写</span>
           </div>
         </div>
 
@@ -1086,10 +1180,6 @@ function isDirtyStep(step){
         <div class="doll-grid">${gridHtml}</div>
       </div>
 
-      <div class="between-bar" aria-label="転写・削除">
-        <button class="arrow-btn down" data-action="transfer" ${canTransfer?'':'disabled'}>▼<span>転写</span></button>
-        <button class="arrow-btn up" data-action="slot-delete" ${app.state.selectedSlotIndex===null?'disabled':''}>▲<span>削除</span></button>
-      </div>
 
       <div class="section">
         <div class="section-title">
@@ -1126,6 +1216,7 @@ function isDirtyStep(step){
 
     return `
       <div class="slot-card ${selected?'selected':''} ${grade?RARITY_BG_CLASS[grade]:''}" data-action="slot-select" data-index="${index}">
+        ${filled ? `<button class="xbtn x-slot" data-action="slot-delete-at" data-index="${index}" aria-label="削除">×</button>` : ``}
         ${filled ? `
           <div class="slot-move" aria-label="入替">
             <button class="move-btn" data-action="slot-swap" data-dir="up" data-index="${index}" ${upEnabled?'':'disabled'}>▲</button>
@@ -1302,8 +1393,12 @@ function isDirtyStep(step){
       ? `<div class="card-block-label">${escapeHtml(overlayLabel)}</div>`
       : '';
 
+    const inSlot = (step === 1) ? (findSlotIndexByNumber(number) >= 0) : false;
+    const xBtn = inSlot ? `<button class="xbtn x-list" data-action="list-remove" data-number="${number}" aria-label="削除">×</button>` : '';
+
     return `
       <div class="${classes.join(' ')}" data-card="${number}">
+        ${xBtn}
         <div class="card-top">
           <div class="card-left" data-action="card-toggle" data-step="${step}" data-number="${number}">
             <img alt="" src="${escapeAttr(picurl || PLACEHOLDER_IMG)}" />
@@ -1498,13 +1593,7 @@ function isDirtyStep(step){
         openModal(step, num);
         render();
         return;
-      }
-      if (action === 'transfer'){
-        transferToSlot();
-        render();
-        return;
-      }
-      if (action === 'slot-select'){
+      }      if (action === 'slot-select'){
         const idx = Number(t.dataset.index);
         if (idx === app.state.selectedSlotIndex) app.state.selectedSlotIndex = null;
         else app.state.selectedSlotIndex = idx;
@@ -1513,6 +1602,20 @@ function isDirtyStep(step){
       }
       if (action === 'slot-delete'){
         deleteSelectedSlot();
+        render();
+        return;
+      }
+
+      if (action === 'slot-delete-at'){
+        const idx = Number(t.dataset.index);
+        deleteSlotAt(idx);
+        render();
+        return;
+      }
+      if (action === 'list-remove'){
+        const num = Number(t.dataset.number);
+        const idx = findSlotIndexByNumber(num);
+        if (idx >= 0) deleteSlotAt(idx);
         render();
         return;
       }

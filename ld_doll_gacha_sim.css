@@ -387,6 +387,7 @@ body{
 }
 
 .slot-card{
+  position:relative;
   border:1px solid var(--border2);
   border-radius:16px;
   background:rgba(0,0,0,0.15);
@@ -710,3 +711,30 @@ body{
 
 body.modal-open{ touch-action: manipulation; }
 .modal-backdrop{ touch-action: manipulation; }
+
+
+/* small delete buttons (do not change card size) */
+.xbtn{
+  position:absolute;
+  top:5px;
+  right:5px;
+  width:18px;
+  height:18px;
+  border-radius:9px;
+  border:1px solid rgba(255,255,255,0.25);
+  background:rgba(0,0,0,0.35);
+  color:rgba(255,255,255,0.95);
+  font-weight:900;
+  font-size:13px;
+  line-height:16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  padding:0;
+  z-index:3;
+}
+.xbtn:active{ transform:scale(0.96); }
+.card .xbtn{ z-index:2; }
+.card.disabled .xbtn{ pointer-events:auto; }
+.xbtn.x-slot{ top:6px; right:6px; }
