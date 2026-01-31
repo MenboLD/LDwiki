@@ -174,7 +174,7 @@ function countMatchesInRange(slots, a, b, cmap){
   return n;
 }
 
-function isEndSatisfied(slots, endSets, c1Map, c2Map, c3Map){
+function isEndSatisfied(slots, end, c1Map, c2Map, c3Map){
   if (!Array.isArray(endSets) || endSets.length === 0) return false;
   for (let si=0; si<endSets.length; si++){
     const set = endSets[si] || {};
@@ -214,7 +214,7 @@ function needC1InLockRange(slots, set1, c1Map){
   return have < reqIdx.length;
 }
 
-function lockDecision(slots, cfg, endSets, c1Map, c2Map){
+function lockDecision(slots, cfg, end, c1Map, c2Map){
   const strat = cfg.lockStrategy || 'S1';
   const prefer = !!cfg.preferC1DontLockC2;
 
@@ -434,10 +434,10 @@ async function simulateOnce(params){
 
     slots = reorderSlots(slots, c1Map, c2Map, c3Map, tieBreaker);
 
-    const nextK = lockDecision(slots, cfg, endSets, c1Map, c2Map);
+    const nextK = lockDecision(slots, cfg, end, c1Map, c2Map);
     setLockPrefix(slots, nextK);
 
-    if (isEndSatisfied(slots, endSets, c1Map, c2Map, c3Map)){
+    if (isEndSatisfied(slots, end, c1Map, c2Map, c3Map)){
       return { success:true, pulls, keys, mythicActs, lockSum, pullEvents };
     }
   }
