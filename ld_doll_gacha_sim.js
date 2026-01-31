@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260201a';
+  const VERSION = '20260201b';
 
   const GRADE_JP_TO_SHORT = {
     'ノーマル':'N',
@@ -84,6 +84,7 @@
       },
       modal: { open:false, step:null, number:null, idx:0 },
       rarityModal: { open:false, number:null, slotIndex:null },
+      saveModal: { open:false },
       confirm: { open:false, title:'', message:'', yesLabel:'', noLabel:'', action:null },
       error: null,
       loading: true,
@@ -448,6 +449,277 @@
       }
     });
   }
+
+  // ---------- save / load (localStorage) ----------
+  const SAVE_SCHEMA = 1;
+  const SAVE_KEY_PREFIX = 'ld_doll_gacha_sim_save_';
+
+  function saveKey(slotNo){
+    return `${SAVE_KEY_PREFIX}${slotNo}`;
+  }
+
+  function serializeStepState(st){
+    return {
+      activeTab: Number(st.activeTab)||1,
+      selected: Array.from(st.selected||[]),
+      grade: Array.from((st.grade||new Map()).entries()),
+      value: Array.from((st.value||new Map()).entries()),
+    };
+  }
+
+  function deserializeStepState(obj){
+    const o = obj || {};
+    return {
+      activeTab: Number(o.activeTab)||1,
+      selected: new Set(Array.isArray(o.selected)? o.selected.map(Number) : []),
+      grade: new Map(Array.isArray(o.grade)? o.grade.map(([k,v])=>[Number(k), v]) : []),
+      value: new Map(Array.isArray(o.value)? o.value.map(([k,v])=>[Number(k), Number(v)]) : []),
+    };
+  }
+
+  function slotSignatureFromSlots(slots){
+    return (slots||[]).map(s => {
+      const num = s?.number ?? '';
+      const grade = s?.grade ?? '';
+      const v = (s?.valueMin ?? s?.value ?? '');
+      return `${num}:${grade}:${v}`;
+    }).join('|');
+  }
+
+  function getSaveMeta(slotNo){
+    try{
+      const raw = localStorage.getItem(saveKey(slotNo));
+      if (!raw) return { exists:false, ts:null, ver:null };
+      const obj = JSON.parse(raw);
+      const ts = obj && obj.ts ? Number(obj.ts) : null;
+      const ver = obj && obj.ver ? String(obj.ver) : null;
+      return { exists:true, ts: ts && isFinite(ts) ? ts : null, ver };
+    }catch(e){
+      return { exists:false, ts:null, ver:null };
+    }
+  }
+
+  function fmtTs(ts){
+    if (!ts) return '—';
+    try{
+      const d = new Date(ts);
+      const y = d.getFullYear();
+      const mo = String(d.getMonth()+1).padStart(2,'0');
+      const da = String(d.getDate()).padStart(2,'0');
+      const hh = String(d.getHours()).padStart(2,'0');
+      const mm = String(d.getMinutes()).padStart(2,'0');
+      return `${y}/${mo}/${da} ${hh}:${mm}`;
+    }catch(e){
+      return '—';
+    }
+  }
+
+  function buildSavePayload(){
+    const s = app.state;
+
+    const slots = (s.slot||[]).map(x => {
+      const b = makeBlankSlot();
+      return {
+        number: x?.number ?? null,
+        name: x?.name ?? null,
+        grade: x?.grade ?? null,
+        value: (x?.valueMin ?? x?.value ?? null),
+        valueMin: (x?.valueMin ?? x?.value ?? null),
+        score: x?.score ?? null,
+        picurl: x?.picurl ?? null,
+        desc: x?.desc ?? null,
+        locked: !!x?.locked,
+      };
+    });
+
+    const payload = {
+      schema: SAVE_SCHEMA,
+      ver: VERSION,
+      ts: Date.now(),
+      slot: slots,
+      selectedSlotIndex: s.selectedSlotIndex ?? null,
+      stepStates: {
+        1: serializeStepState(s.stepStates?.[1]),
+        2: serializeStepState(s.stepStates?.[2]),
+        3: serializeStepState(s.stepStates?.[3]),
+        4: serializeStepState(s.stepStates?.[4]),
+      },
+      candidate1: Array.isArray(s.candidate1) ? s.candidate1 : [],
+      candidate2: Array.isArray(s.candidate2) ? s.candidate2 : [],
+      candidate3: Array.isArray(s.candidate3) ? s.candidate3 : [],
+      keyCount: clampInt(s.keyCount||0, 0, 99999),
+      mythicGaugeInit: clampInt(s.mythicGaugeInit||0, 0, 500),
+      simConfig: {
+        lockStrategy: s.simConfig?.lockStrategy || 'S1',
+        tieBreaker: s.simConfig?.tieBreaker || 'score',
+        preferC1DontLockC2: !!s.simConfig?.preferC1DontLockC2,
+        endSets: Array.isArray(s.simConfig?.endSets) ? s.simConfig.endSets : null,
+        useKeyCount: !!s.simConfig?.useKeyCount,
+        trials: clampInt(s.simConfig?.trials||10000, 1, 200000),
+        keySafetyMax: clampInt(s.simConfig?.keySafetyMax||100000, 1, 1000000),
+        maxPullsSafety: clampInt(s.simConfig?.maxPullsSafety||50000, 1, 500000),
+      },
+      step5Confirmed: !!s.step5Confirmed,
+      step6Confirmed: !!s.step6Confirmed,
+      confirmedSlotsSig: s.confirmedSlotsSig || null,
+      maxReached: clampInt(s.maxReached||1, 1, 7),
+      currentStep: clampInt(s.currentStep||1, 1, 7),
+    };
+
+    return payload;
+  }
+
+  function normalizeSequentialLocks(slots){
+    // Only allow locked in order from slot1 -> slot2 -> slot3. If a gap exists, clear subsequent locks.
+    let allow = true;
+    for (let i=0;i<3;i++){
+      if (!allow){
+        slots[i].locked = false;
+        continue;
+      }
+      if (slots[i].locked){
+        allow = true;
+      }else{
+        // if current is not locked, subsequent cannot be locked
+        allow = false;
+      }
+    }
+  }
+
+  function applySaveLoadPayload(p){
+    const base = initState(); // keep defaults for ui/sim, etc.
+
+    const payload = p || {};
+
+    // restore step states (1-4)
+    base.stepStates = {
+      1: deserializeStepState(payload.stepStates?.[1]),
+      2: deserializeStepState(payload.stepStates?.[2]),
+      3: deserializeStepState(payload.stepStates?.[3]),
+      4: deserializeStepState(payload.stepStates?.[4]),
+    };
+
+    // restore slots
+    base.slot = Array.from({length:5}, (_,i) => {
+      const src = (payload.slot && payload.slot[i]) ? payload.slot[i] : null;
+      const b = makeBlankSlot();
+      if (!src) return b;
+      b.number = src.number ?? null;
+      b.name = src.name ?? null;
+      b.grade = src.grade ?? null;
+      b.value = (src.valueMin ?? src.value ?? null);
+      b.valueMin = (src.valueMin ?? src.value ?? null);
+      b.score = src.score ?? null;
+      b.picurl = src.picurl ?? null;
+      b.desc = src.desc ?? null;
+      b.locked = !!src.locked;
+      return b;
+    });
+    normalizeSequentialLocks(base.slot);
+
+    base.selectedSlotIndex = payload.selectedSlotIndex ?? null;
+
+    base.candidate1 = Array.isArray(payload.candidate1) ? payload.candidate1 : [];
+    base.candidate2 = Array.isArray(payload.candidate2) ? payload.candidate2 : [];
+    base.candidate3 = Array.isArray(payload.candidate3) ? payload.candidate3 : [];
+
+    base.keyCount = clampInt(payload.keyCount||0, 0, 99999);
+    base.mythicGaugeInit = clampInt(payload.mythicGaugeInit||0, 0, 500);
+
+    // simConfig
+    base.simConfig.lockStrategy = payload.simConfig?.lockStrategy || base.simConfig.lockStrategy;
+    base.simConfig.tieBreaker = payload.simConfig?.tieBreaker || base.simConfig.tieBreaker;
+    base.simConfig.preferC1DontLockC2 = !!payload.simConfig?.preferC1DontLockC2;
+    base.simConfig.useKeyCount = !!payload.simConfig?.useKeyCount;
+    base.simConfig.trials = clampInt(payload.simConfig?.trials || base.simConfig.trials, 1, 200000);
+    base.simConfig.keySafetyMax = clampInt(payload.simConfig?.keySafetyMax || base.simConfig.keySafetyMax, 1, 1000000);
+    base.simConfig.maxPullsSafety = clampInt(payload.simConfig?.maxPullsSafety || base.simConfig.maxPullsSafety, 1, 500000);
+    if (payload.simConfig?.endSets){
+      base.simConfig.endSets = payload.simConfig.endSets;
+    }
+    normalizeEndSets(base.simConfig);
+
+    // workflow
+    base.step5Confirmed = !!payload.step5Confirmed;
+    base.step6Confirmed = !!payload.step6Confirmed;
+    base.maxReached = clampInt(payload.maxReached||1, 1, 7);
+    base.currentStep = clampInt(payload.currentStep||1, 1, 7);
+    if (base.currentStep > base.maxReached) base.currentStep = base.maxReached;
+
+    // signatures: recompute from restored slots
+    base.confirmedSlotsSig = slotSignatureFromSlots(base.slot);
+
+    // clear running sim results
+    base.sim.running = false;
+    base.sim.stop = false;
+    base.sim.done = 0;
+    base.sim.total = 0;
+    base.sim.results = null;
+
+    app.state = base;
+  }
+
+  function requestSaveTo(slotNo){
+    const meta = getSaveMeta(slotNo);
+    if (meta.exists){
+      app.state.confirm = {
+        open:true,
+        title:'上書き保存',
+        message:`セーブ${slotNo}を上書きしますか？\n（前回：${fmtTs(meta.ts)}）`,
+        yesLabel:'上書き',
+        noLabel:'キャンセル',
+        action:{ type:'save-overwrite', slotNo }
+      };
+      return;
+    }
+    doSaveTo(slotNo);
+  }
+
+  function doSaveTo(slotNo){
+    try{
+      const payload = buildSavePayload();
+      localStorage.setItem(saveKey(slotNo), JSON.stringify(payload));
+      toast(`セーブ${slotNo}に保存しました`);
+    }catch(e){
+      toast('保存に失敗しました（容量不足の可能性）');
+    }
+  }
+
+  function openLoadModal(){
+    app.state.saveModal = { open:true };
+  }
+
+  function requestLoadFrom(slotNo){
+    const meta = getSaveMeta(slotNo);
+    if (!meta.exists){
+      toast(`セーブ${slotNo}がありません`);
+      return;
+    }
+    app.state.confirm = {
+      open:true,
+      title:'ロード',
+      message:`セーブ${slotNo}をロードしますか？\n（現在の入力状態は上書きされます）\n（保存：${fmtTs(meta.ts)}）`,
+      yesLabel:'ロード',
+      noLabel:'キャンセル',
+      action:{ type:'load-state', slotNo }
+    };
+  }
+
+  function doLoadFrom(slotNo){
+    try{
+      const raw = localStorage.getItem(saveKey(slotNo));
+      if (!raw){
+        toast(`セーブ${slotNo}がありません`);
+        return;
+      }
+      const payload = JSON.parse(raw);
+      applySaveLoadPayload(payload);
+      toast(`セーブ${slotNo}をロードしました`);
+    }catch(e){
+      toast('ロードに失敗しました（データ破損の可能性）');
+    }
+  }
+
 
   function isEndPriorityToken(v){
     return v === 'c1' || v === 'c2' || v === 'c3';
@@ -1397,6 +1669,24 @@ function isDirtyStep(step){
         <div class="cta-row">
           <button class="btn reset" data-action="reset-step" data-step="1">リセット</button>
           <button class="btn primary" data-action="confirm-step" data-step="1" ${allFilled?'':'disabled'}>①確定</button>
+        </div>
+      </div>
+          <div class="section">
+        <div class="section-title">
+          <span>保存 / ロード</span>
+          <span class="pill">localStorage</span>
+        </div>
+        <div class="section-sub">ステップ①（スロット/ロック）とステップ②〜④（候補選択）などを保存できます</div>
+        <div class="save-row">
+          <button class="btn" data-action="save-state" data-slot="1">セーブ1</button>
+          <button class="btn" data-action="save-state" data-slot="2">セーブ2</button>
+          <button class="btn" data-action="save-state" data-slot="3">セーブ3</button>
+          <button class="btn primary" data-action="open-load">ロード</button>
+        </div>
+        <div class="save-meta">
+          <span>1:${fmtTs(getSaveMeta(1).ts)}</span>
+          <span>2:${fmtTs(getSaveMeta(2).ts)}</span>
+          <span>3:${fmtTs(getSaveMeta(3).ts)}</span>
         </div>
       </div>
     `;
@@ -2840,7 +3130,9 @@ function renderRangeOptions(max, cur){
     const host = $('#modalHost');
     const c = app.state.confirm;
     const m = app.state.modal;
-    if (!c.open && !m.open){
+    const rm = app.state.rarityModal;
+    const sm = app.state.saveModal;
+    if (!c.open && !(rm && rm.open) && !(sm && sm.open) && !m.open){
       host.innerHTML = '';
       document.body.classList.remove('modal-open');
       return;
@@ -2863,7 +3155,28 @@ function renderRangeOptions(max, cur){
       return;
     }
 
-    const rm = app.state.rarityModal;
+
+    if (sm && sm.open){
+      const m1 = getSaveMeta(1), m2 = getSaveMeta(2), m3 = getSaveMeta(3);
+      host.innerHTML = `
+        <div class="modal-backdrop">
+          <div class="modal" role="dialog" aria-modal="true" aria-label="ロード">
+            <div class="modal-title">ロード</div>
+            <div class="small" style="white-space:pre-line; margin-top:8px;">ロードするセーブ枠を選択してください</div>
+            <div class="save-modal-list" style="margin-top:12px;">
+              <button class="btn ${m1.exists?'primary':''}" data-action="saveload-load" data-slot="1" ${m1.exists?'':'disabled'}>セーブ1（${fmtTs(m1.ts)}）</button>
+              <button class="btn ${m2.exists?'primary':''}" data-action="saveload-load" data-slot="2" ${m2.exists?'':'disabled'}>セーブ2（${fmtTs(m2.ts)}）</button>
+              <button class="btn ${m3.exists?'primary':''}" data-action="saveload-load" data-slot="3" ${m3.exists?'':'disabled'}>セーブ3（${fmtTs(m3.ts)}）</button>
+            </div>
+            <div class="modal-actions" style="margin-top:16px;">
+              <button class="btn" data-action="saveload-close">閉じる</button>
+            </div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
     if (rm && rm.open){
       const num = Number(rm.number);
       const st1 = getStepState(1);
@@ -3008,6 +3321,12 @@ function renderRangeOptions(max, cur){
         if (a && a.type === 'swap-and-clear'){
           applySwapAndClear(a);
         }
+        if (a && a.type === 'save-overwrite'){
+          doSaveTo(a.slotNo);
+        }
+        if (a && a.type === 'load-state'){
+          doLoadFrom(a.slotNo);
+        }
         render();
         return;
       }
@@ -3070,6 +3389,34 @@ function renderRangeOptions(max, cur){
       }
       if (action === 'slot-delete'){
         deleteSelectedSlot();
+        render();
+        return;
+      }
+
+      if (action === 'save-state'){
+        const slotNo = Number(t.dataset.slot);
+        if (slotNo>=1 && slotNo<=3){
+          requestSaveTo(slotNo);
+        }
+        render();
+        return;
+      }
+      if (action === 'open-load'){
+        openLoadModal();
+        render();
+        return;
+      }
+      if (action === 'saveload-close'){
+        app.state.saveModal = { open:false };
+        render();
+        return;
+      }
+      if (action === 'saveload-load'){
+        const slotNo = Number(t.dataset.slot);
+        app.state.saveModal = { open:false };
+        if (slotNo>=1 && slotNo<=3){
+          requestLoadFrom(slotNo);
+        }
         render();
         return;
       }
