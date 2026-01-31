@@ -174,21 +174,47 @@ function countMatchesInRange(slots, a, b, cmap){
   return n;
 }
 
-function isEndSatisfied(slots, end, c1Map, c2Map, c3Map){
-  const n1 = clampInt(end.N1||0, 0, 3);
-  const n2 = clampInt(end.N2||0, 0, 5);
-  const n3 = clampInt(end.N3||0, 0, 2);
-  const a = clampInt(end.N2a ?? 1, 1, 5) - 1;
-  const b = clampInt(end.N2b ?? 5, 1, 5) - 1;
-  const aa = Math.min(a,b), bb = Math.max(a,b);
-
-  const c1 = countMatchesInRange(slots, 0, 2, c1Map);
-  const c2 = countMatchesInRange(slots, aa, bb, c2Map);
-  const c3 = countMatchesInRange(slots, 3, 4, c3Map);
-  return (c1 >= n1) && (c2 >= n2) && (c3 >= n3);
+function isEndSatisfied(slots, endSets, c1Map, c2Map, c3Map){
+  if (!Array.isArray(endSets) || endSets.length === 0) return false;
+  for (let si=0; si<endSets.length; si++){
+    const set = endSets[si] || {};
+    const enabled = (si===0) ? true : !!set.enabled;
+    if (!enabled) continue;
+    const tokArr = Array.isArray(set.slots) ? set.slots : [];
+    let ok = true;
+    for (let i=0;i<5;i++){
+      const tok = tokArr[i] || 'none';
+      if (tok === 'none') continue;
+      const sl = slots[i];
+      if (!sl || !sl.name){ ok = false; break; }
+      let req = null;
+      if (tok === 'c1') req = c1Map.get(sl.name);
+      if (tok === 'c2') req = c2Map.get(sl.name);
+      if (tok === 'c3') req = c3Map.get(sl.name);
+      if (!req || !isMatch(sl, req)){ ok = false; break; }
+    }
+    if (ok) return true;
+  }
+  return false;
 }
 
-function lockDecision(slots, cfg, end, c1Map, c2Map){
+function needC1InLockRange(slots, set1, c1Map){
+  const tokArr = (set1 && Array.isArray(set1.slots)) ? set1.slots : [];
+  const reqIdx = [];
+  for (let i=0;i<3;i++){
+    if ((tokArr[i]||'none') === 'c1') reqIdx.push(i);
+  }
+  if (reqIdx.length === 0) return false;
+  let have = 0;
+  for (const i of reqIdx){
+    const sl = slots[i];
+    const req = sl && sl.name ? c1Map.get(sl.name) : null;
+    if (req && isMatch(sl, req)) have++;
+  }
+  return have < reqIdx.length;
+}
+
+function lockDecision(slots, cfg, endSets, c1Map, c2Map){
   const strat = cfg.lockStrategy || 'S1';
   const prefer = !!cfg.preferC1DontLockC2;
 
@@ -196,28 +222,24 @@ function lockDecision(slots, cfg, end, c1Map, c2Map){
   const cap = 3 - curK;
   if (cap <= 0) return curK;
 
-  const n1Need = clampInt(end.N1||0, 0, 3);
-  const c1Now = countMatchesInRange(slots, 0, 2, c1Map);
-  const missingC1 = c1Now < n1Need;
+  const set1 = (Array.isArray(endSets) && endSets[0]) ? endSets[0] : { slots: [] };
+  const missingC1 = needC1InLockRange(slots, set1, c1Map);
 
-  // S2 endgame (slot3 focus) – agreed interpretation A
+  // S2 endgame (slot3 focus)
   if (strat === 'S2' && cap === 1 && missingC1){
     const sl3 = slots[2];
-    const r1 = sl3 && sl3.name ? c1Map.get(sl3.name) : null;
-    if (r1 && isMatch(sl3, r1)) return 3;
-
-    const a3 = clampInt(end.N2a ?? 1, 1, 5);
-    const b3 = clampInt(end.N2b ?? 5, 1, 5);
-    const lo = Math.min(a3, b3), hi = Math.max(a3, b3);
-    const slot3InN2 = (lo <= 3 && 3 <= hi);
-    if (slot3InN2){
+    const tok3 = (set1 && Array.isArray(set1.slots)) ? (set1.slots[2]||'none') : 'none';
+    if (tok3 === 'c1'){
+      const r1 = sl3 && sl3.name ? c1Map.get(sl3.name) : null;
+      if (r1 && isMatch(sl3, r1)) return 3;
+    }
+    if (tok3 === 'c2'){
       const r2 = sl3 && sl3.name ? c2Map.get(sl3.name) : null;
       if (r2 && isMatch(sl3, r2)) return 3;
     }
     return curK;
   }
-
-  // Determine whether C1 is still possible (not already locked in 1-3)
+// Determine whether C1 is still possible (not already locked in 1-3)
   let c1Possible = false;
   const lockedNames = new Set();
   for (let i=0;i<3;i++){
@@ -412,10 +434,10 @@ async function simulateOnce(params){
 
     slots = reorderSlots(slots, c1Map, c2Map, c3Map, tieBreaker);
 
-    const nextK = lockDecision(slots, cfg, end, c1Map, c2Map);
+    const nextK = lockDecision(slots, cfg, endSets, c1Map, c2Map);
     setLockPrefix(slots, nextK);
 
-    if (isEndSatisfied(slots, end, c1Map, c2Map, c3Map)){
+    if (isEndSatisfied(slots, endSets, c1Map, c2Map, c3Map)){
       return { success:true, pulls, keys, mythicActs, lockSum, pullEvents };
     }
   }
@@ -433,7 +455,7 @@ async function startRun(msg){
   const gaugeInit = clampInt(msg.gaugeInit||0, 0, 1000000);
 
   const cfg = msg.cfg || {};
-  const end = msg.end || { N1:0, N2:0, N2a:1, N2b:5, N3:0 };
+  const endSets = msg.endSets || [];
   const tieBreaker = cfg.tieBreaker || 'score';
 
   const masters = msg.masters || {};

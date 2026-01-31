@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260131f';
+  const VERSION = '20260131g';
 
   const GRADE_JP_TO_SHORT = {
     'ノーマル':'N',
@@ -64,7 +64,11 @@
         lockStrategy: 'S1',
         tieBreaker: 'score',
         preferC1DontLockC2: false,
-        end: { N1: 0, N2: 0, N2a: 1, N2b: 5, N3: 0 },
+        endSets: [
+          { enabled: true, slots: ['none','none','none','none','none'] },
+          { enabled: false, slots: ['none','none','none','none','none'] },
+          { enabled: false, slots: ['none','none','none','none','none'] },
+        ],
         useKeyCount: false,
         trials: 10000,
         keySafetyMax: 100000,
@@ -397,6 +401,67 @@
 
   function clampInt(v, min, max){
     return Math.max(min, Math.min(max, Math.trunc(v)));
+  }
+
+  function normalizeEndSets(cfg){
+    if (!cfg.endSets || !Array.isArray(cfg.endSets) || cfg.endSets.length < 3){
+      cfg.endSets = [
+        { enabled: true, slots: ['none','none','none','none','none'] },
+        { enabled: false, slots: ['none','none','none','none','none'] },
+        { enabled: false, slots: ['none','none','none','none','none'] },
+      ];
+      return;
+    }
+    while (cfg.endSets.length < 3){
+      cfg.endSets.push({ enabled:false, slots:['none','none','none','none','none'] });
+    }
+    cfg.endSets = cfg.endSets.slice(0,3);
+    cfg.endSets.forEach((set, si) => {
+      if (!set || typeof set !== 'object'){
+        cfg.endSets[si] = set = { enabled: si===0, slots:['none','none','none','none','none'] };
+      }
+      if (si===0) set.enabled = true;
+      set.enabled = !!set.enabled;
+      if (!Array.isArray(set.slots) || set.slots.length < 5) set.slots = ['none','none','none','none','none'];
+      set.slots = set.slots.slice(0,5).map(v => (v==='c1'||v==='c2'||v==='c3') ? v : 'none');
+    });
+  }
+
+  function cycleEndToken(v){
+    if (v === 'c1') return 'c2';
+    if (v === 'c2') return 'c3';
+    if (v === 'c3') return 'none';
+    return 'c1';
+  }
+
+  function endTokenLabel(v){
+    if (v === 'c1') return '第1候補';
+    if (v === 'c2') return '第2候補';
+    if (v === 'c3') return '第3候補';
+    return '条件なし';
+  }
+
+  function endTokenClass(v){
+    if (v === 'c1') return 'endtok-c1';
+    if (v === 'c2') return 'endtok-c2';
+    if (v === 'c3') return 'endtok-c3';
+    return 'endtok-none';
+  }
+
+  function renderEndSetsSummary(endSets){
+    if (!Array.isArray(endSets) || endSets.length === 0) return '';
+    const lines = [];
+    endSets.forEach((set, si) => {
+      if (si>0 && !set.enabled) return;
+      const parts = (set.slots||[]).slice(0,5).map((tok, i) => {
+        if (tok === 'c1') return `${i+1}:第1`;
+        if (tok === 'c2') return `${i+1}:第2`;
+        if (tok === 'c3') return `${i+1}:第3`;
+        return `${i+1}:—`;
+      }).join(' ');
+      lines.push(`セット${si+1}［${parts}］`);
+    });
+    return lines.join(' / ');
   }
 
   function modalApplyIdx(newIdx){
@@ -957,19 +1022,16 @@ function isDirtyStep(step){
     }
 
     if (s === 6){
-      // basic sanity for end condition values
-      const e = app.state.simConfig.end || (app.state.simConfig.end = {N1:0,N2:0,N2a:1,N2b:5,N3:0});
-      e.N1 = clampInt(e.N1, 0, 3);
-      e.N2a = clampInt(e.N2a ?? 1, 1, 5);
-      e.N2b = clampInt(e.N2b ?? 5, 1, 5);
-      if (e.N2a > e.N2b){ const tmp = e.N2a; e.N2a = e.N2b; e.N2b = tmp; }
-      const width = (e.N2b - e.N2a + 1);
-      e.N2 = clampInt(e.N2, 0, width);
-      e.N3 = clampInt(e.N3, 0, 2);
-
-      app.state.currentStep = 7;
-      app.state.step6Confirmed = true;
-      app.state.maxReached = Math.max(app.state.maxReached, 7);
+      const cfg = app.state.simConfig;
+      normalizeEndSets(cfg);
+      for (const set of cfg.endSets){
+        for (let i=0;i<3;i++){
+          if (app.state.slot[i].locked && app.state.slot[i].number){
+            set.slots[i] = 'none';
+          }
+        }
+      }
+      app.state.maxReached = Math.max(app.state.maxReached, 6);
       return;
     }
 
@@ -1165,7 +1227,7 @@ function isDirtyStep(step){
           <div class="panel-item ref"><div><div class="t">候補1</div><div class="d">${escapeHtml(summaryCandidate(app.state.candidate1))}</div></div></div>
           <div class="panel-item ref"><div><div class="t">候補2</div><div class="d">${escapeHtml(summaryCandidate(app.state.candidate2))}</div></div></div>
           <div class="panel-item ref"><div><div class="t">候補3</div><div class="d">${escapeHtml(summaryCandidate(app.state.candidate3))}</div></div></div>
-          <div class="panel-item ref"><div><div class="t">終了条件</div><div class="d">N1=${escapeHtml(String(app.state.simConfig.end.N1))} / N2(${escapeHtml(String(app.state.simConfig.end.N2a??1))}〜${escapeHtml(String(app.state.simConfig.end.N2b??5))})=${escapeHtml(String(app.state.simConfig.end.N2))} / N3=${escapeHtml(String(app.state.simConfig.end.N3))}</div></div></div>
+          <div class="panel-item ref"><div><div class="t">終了条件</div><div class="d">${escapeHtml(renderEndSetsSummary(app.state.simConfig.endSets))}</div></div></div>
         </div>
       </div>`;
     }
@@ -1465,20 +1527,21 @@ function isDirtyStep(step){
   // ---------- step 6 ----------
   function renderStep6(){
     const cfg = app.state.simConfig;
-    if (!cfg.end) cfg.end = { N1:0, N2:0, N2a:1, N2b:5, N3:0 };
+    normalizeEndSets(cfg);
+
     const lockedCount = app.state.slot.slice(0,3).filter(x => x.locked && x.number).length;
     const remainingLock = 3 - lockedCount;
 
-    // N2 range (a〜b)
-    let n2a = clampInt((cfg.end.N2a ?? 1), 1, 5);
-    let n2b = clampInt((cfg.end.N2b ?? 5), 1, 5);
-    if (n2a > n2b){ const tmp=n2a; n2a=n2b; n2b=tmp; }
-    cfg.end.N2a = n2a; cfg.end.N2b = n2b;
-    const n2Max = (n2b - n2a + 1);
-    if (cfg.end.N2 > n2Max) cfg.end.N2 = n2Max;
-    const n2Warn = !(n2b < 1 || n2a > 3) && !(n2a>3) && !(n2b<1) && (Math.max(n2a,1) <= Math.min(n2b,3));
+    // locked slots (1-3) are not part of end-condition input
+    for (const set of cfg.endSets){
+      for (let i=0;i<3;i++){
+        if (app.state.slot[i].locked && app.state.slot[i].number){
+          set.slots[i] = 'none';
+        }
+      }
+    }
 
-    return `
+return `
       <div class="section">
         <div class="section-title list-head">
           <span class="head-left"><span class="caret">▲</span>状況一覧</span>
@@ -1519,77 +1582,40 @@ function isDirtyStep(step){
         </div>
 
         <div class="form-block">
-          <div class="form-title">終了条件（必要確保数）</div>
-          <div class="end-rows">
-            <div class="end-row">
-              <div class="end-left">
-                <div class="end-k">N1</div>
-                <div class="end-d2">候補1（スロット1〜3）</div>
-              </div>
-              <div class="end-right">
-                <div class="end-right-top">
-                  <div class="stepper">
-                    <button class="btn mini" type="button" data-action="end-step" data-key="N1" data-delta="-1">−</button>
-                    <div class="stepper-val">${clampInt(cfg.end.N1,0,3)}</div>
-                    <button class="btn mini" type="button" data-action="end-step" data-key="N1" data-delta="1">＋</button>
-                  </div>
-                  <div class="small muted">0=条件なし</div>
-                </div>
-              </div>
-            </div>
+          <div class="form-title">終了条件（セット）</div>
+          <div class="small muted">セット1は常に適用。セット2/3はチェックONで追加（OR条件）。ロック中スロットは「ロック中」固定で、終了条件の入力対象外です。</div>
 
-            <div class="end-row">
-              <div class="end-left">
-                <div class="end-k">N2</div>
-                <div class="end-d2">候補2（スロット範囲）</div>
-              </div>
-              <div class="end-right">
-                <div class="end-right-top">
-                  <span class="n2-l">範囲</span>
-                  <select class="sel mini" data-action="end-n" data-key="N2a">${renderRangeOptions(5, n2a)}</select>
-                  <span class="n2-mid">〜</span>
-                  <select class="sel mini" data-action="end-n" data-key="N2b">${renderRangeOptions(5, n2b)}</select>
-
-                  <span class="n2-sp"></span>
-
-                  <span class="n2-l">必要数</span>
-                  <div class="stepper">
-                    <button class="btn mini" type="button" data-action="end-step" data-key="N2" data-delta="-1">−</button>
-                    <div class="stepper-val">${clampInt(cfg.end.N2,0,n2Max)}</div>
-                    <button class="btn mini" type="button" data-action="end-step" data-key="N2" data-delta="1">＋</button>
-                  </div>
-                  <div class="small muted">0=条件なし</div>
-                </div>
-
-                <div class="n2-row presets">
-                  <button class="chip" type="button" data-action="end-preset" data-value="1-5">1〜5</button>
-                  <button class="chip" type="button" data-action="end-preset" data-value="4-5">4〜5</button>
-                  <button class="chip" type="button" data-action="end-preset" data-value="1-3">1〜3</button>
-                </div>
-                ${n2Warn?`<div class="small warn">※N1(1〜3)と範囲が重なっています</div>`:''}
-              </div>
-            </div>
-
-            <div class="end-row">
-              <div class="end-left">
-                <div class="end-k">N3</div>
-                <div class="end-d2">候補3（スロット4〜5）</div>
-              </div>
-              <div class="end-right">
-                <div class="end-right-top">
-                  <div class="stepper">
-                    <button class="btn mini" type="button" data-action="end-step" data-key="N3" data-delta="-1">−</button>
-                    <div class="stepper-val">${clampInt(cfg.end.N3,0,2)}</div>
-                    <button class="btn mini" type="button" data-action="end-step" data-key="N3" data-delta="1">＋</button>
-                  </div>
-                  <div class="small muted">0=条件なし</div>
-                </div>
-              </div>
-            </div>
+          <div class="endsets">
+            ${cfg.endSets.map((set, si) => {
+              const enabled = (si===0) ? true : !!set.enabled;
+              const head = (si===0)
+                ? `<div class="endset-head"><div class="endset-name">セット1</div><div class="endset-note muted">（常に適用）</div></div>`
+                : `<div class="endset-head">
+                     <div class="endset-name">セット${si+1}</div>
+                     <label class="check mini">
+                       <input type="checkbox" data-action="endset-enable" data-set="${si}" ${enabled?'checked':''}/>
+                       <span>終了条件に含める</span>
+                     </label>
+                   </div>`;
+              const cards = Array.from({length:5}, (_,i) => {
+                const isLocked = (i<3) && app.state.slot[i].locked && app.state.slot[i].number;
+                const tok = isLocked ? 'locked' : (set.slots[i] || 'none');
+                const cls = isLocked ? 'endtok-locked' : endTokenClass(tok);
+                const val = isLocked ? 'ロック中' : endTokenLabel(tok);
+                return `<button class="endcard ${cls}" type="button" data-action="endset-cycle" data-set="${si}" data-idx="${i}" ${isLocked?'disabled':''}>
+                          <div class="endcard-top">スロット${i+1}</div>
+                          <div class="endcard-val">${val}</div>
+                        </button>`;
+              }).join('');
+              return `<div class="endset">
+                        ${head}
+                        <div class="endset-cards">${cards}</div>
+                      </div>`;
+            }).join('')}
           </div>
         </div>
 
-        <div class="form-block">
+<div class="form-block">
           <button class="acc-btn" data-action="acc-toggle" type="button">${app.state.ui.accOpen?'▲':'▼'}人形の番号を確認</button>
           ${app.state.ui.accOpen ? renderIdList() : ''}
         </div>
@@ -1606,7 +1632,8 @@ function isDirtyStep(step){
   function renderStep7(){
     const sim = app.state.sim;
     const cfg = app.state.simConfig;
-    const end = cfg.end || {N1:0,N2:0,N2a:1,N2b:5,N3:0};
+    normalizeEndSets(cfg);
+    const endSets = cfg.endSets;
     const keyMax = clampInt(app.state.keyCount, 0, 99999);
     const trials = clampInt(cfg.trials, 1, 200000);
     cfg.trials = trials;
@@ -1709,7 +1736,7 @@ function isDirtyStep(step){
           </div>
 
           <div class="small dim">
-            ⑥終了条件：N1=${end.N1}（スロット1〜3, 候補1） / N2=${end.N2}（スロット${end.N2a}〜${end.N2b}, 候補2） / N3=${end.N3}（スロット4〜5, 候補3）
+            ⑥終了条件：${renderEndSetsSummary(endSets)}
           </div>
         </div>
 
@@ -1960,21 +1987,47 @@ function isDirtyStep(step){
     return n;
   }
 
-  function isEndSatisfied(slots, end, c1Map, c2Map, c3Map){
-    const n1 = clampInt(end.N1||0, 0, 3);
-    const n2 = clampInt(end.N2||0, 0, 5);
-    const n3 = clampInt(end.N3||0, 0, 2);
-    const a = clampInt(end.N2a ?? 1, 1, 5) - 1;
-    const b = clampInt(end.N2b ?? 5, 1, 5) - 1;
-    const aa = Math.min(a,b), bb = Math.max(a,b);
-
-    const c1 = countMatchesInRange(slots, 0, 2, c1Map);
-    const c2 = countMatchesInRange(slots, aa, bb, c2Map);
-    const c3 = countMatchesInRange(slots, 3, 4, c3Map);
-    return (c1 >= n1) && (c2 >= n2) && (c3 >= n3);
+  function isEndSatisfied(slots, endSets, c1Map, c2Map, c3Map){
+    if (!Array.isArray(endSets) || endSets.length === 0) return false;
+    for (let si=0; si<endSets.length; si++){
+      const set = endSets[si] || {};
+      const enabled = (si===0) ? true : !!set.enabled;
+      if (!enabled) continue;
+      const tokArr = Array.isArray(set.slots) ? set.slots : [];
+      let ok = true;
+      for (let i=0;i<5;i++){
+        const tok = tokArr[i] || 'none';
+        if (tok === 'none') continue;
+        const sl = slots[i];
+        if (!sl || !sl.name){ ok = false; break; }
+        let req = null;
+        if (tok === 'c1') req = c1Map.get(sl.name);
+        if (tok === 'c2') req = c2Map.get(sl.name);
+        if (tok === 'c3') req = c3Map.get(sl.name);
+        if (!req || !isMatch(sl, req)){ ok = false; break; }
+      }
+      if (ok) return true;
+    }
+    return false;
   }
 
-  function lockDecision(slots, cfg, end, c1Map, c2Map){
+  function needC1InLockRange(slots, set1, c1Map){
+    const tokArr = (set1 && Array.isArray(set1.slots)) ? set1.slots : [];
+    const reqIdx = [];
+    for (let i=0;i<3;i++){
+      if ((tokArr[i]||'none') === 'c1') reqIdx.push(i);
+    }
+    if (reqIdx.length === 0) return false;
+    let have = 0;
+    for (const i of reqIdx){
+      const sl = slots[i];
+      const req = sl && sl.name ? c1Map.get(sl.name) : null;
+      if (req && isMatch(sl, req)) have++;
+    }
+    return have < reqIdx.length;
+  }
+
+function lockDecision(slots, cfg, endSets, c1Map, c2Map){
     const strat = cfg.lockStrategy || 'S1';
     const prefer = !!cfg.preferC1DontLockC2;
 
@@ -1983,39 +2036,25 @@ function isDirtyStep(step){
     if (cap <= 0) return curK;
 
     // status
-    const n1Need = clampInt(end.N1||0, 0, 3);
-    const c1Now = countMatchesInRange(slots, 0, 2, c1Map);
-    const missingC1 = c1Now < n1Need;
+    const set1 = (Array.isArray(endSets) && endSets[0]) ? endSets[0] : { slots: [] };
+    const missingC1 = needC1InLockRange(slots, set1, c1Map);
 
-    // Special case (S2 endgame): when only 1 lock capacity remains (slot3 focus),
-    // lock slot3 only if N1 is still missing and:
-    //  - slot3 matches C1, OR
-    //  - slot3 is within N2 range (a..b) and matches C2.
-    // Agreed interpretation A: when remaining lock < 2, S2 does not add locks,
-    // except for this slot3 rule while N1 is still missing.
+    // S2 endgame (slot3 focus)
     if (strat === 'S2' && cap === 1 && missingC1){
       const sl3 = slots[2];
-      const r1 = sl3 && sl3.name ? c1Map.get(sl3.name) : null;
-      if (r1 && isMatch(sl3, r1)){
-        return 3;
+      const tok3 = (set1 && Array.isArray(set1.slots)) ? (set1.slots[2]||'none') : 'none';
+      if (tok3 === 'c1'){
+        const r1 = sl3 && sl3.name ? c1Map.get(sl3.name) : null;
+        if (r1 && isMatch(sl3, r1)) return 3;
       }
-      const a3 = clampInt(end.N2a ?? 1, 1, 5);
-      const b3 = clampInt(end.N2b ?? 5, 1, 5);
-      const lo = Math.min(a3, b3), hi = Math.max(a3, b3);
-      const slot3InN2 = (lo <= 3 && 3 <= hi);
-      if (slot3InN2){
+      if (tok3 === 'c2'){
         const r2 = sl3 && sl3.name ? c2Map.get(sl3.name) : null;
-        if (r2 && isMatch(sl3, r2)){
-          return 3;
-        }
+        if (r2 && isMatch(sl3, r2)) return 3;
       }
-      // Otherwise, do not add lock in this endgame state.
       return curK;
     }
 
-
-    // c1Possible: exists C1 target name not in locked slots (excluded by name sampling)
-    let c1Possible = false;
+let c1Possible = false;
     const lockedNames = new Set();
     for (let i=0;i<3;i++){
       if (slots[i].locked && slots[i].name) lockedNames.add(slots[i].name);
@@ -2099,7 +2138,7 @@ function isDirtyStep(step){
   }
 
   async function simulateOnce(params){
-    const { initialSlots, allNumbers, keyMax, gaugeInit, useKey, cfg, end, c1Map, c2Map, c3Map, tieBreaker } = params;
+    const { initialSlots, allNumbers, keyMax, gaugeInit, useKey, cfg, endSets, c1Map, c2Map, c3Map, tieBreaker } = params;
 
     let slots = copySlots(initialSlots);
     // normalize lock prefix
@@ -2202,11 +2241,11 @@ function isDirtyStep(step){
       slots = reorderSlots(slots, c1Map, c2Map, c3Map, tieBreaker);
 
       // lock decision
-      const nextK = lockDecision(slots, cfg, end, c1Map, c2Map);
+      const nextK = lockDecision(slots, cfg, endSets, c1Map, c2Map);
       setLockPrefix(slots, nextK);
 
       // end check
-      if (isEndSatisfied(slots, end, c1Map, c2Map, c3Map)){
+      if (isEndSatisfied(slots, endSets, c1Map, c2Map, c3Map)){
         return { success:true, pulls, keys, mythicActs, lockSum, pullEvents };
       }
     }
@@ -2282,6 +2321,7 @@ function isDirtyStep(step){
 
   function buildWorkerSnapshot(){
     const masters = {};
+;
     for (const [num, m] of app.masterByNumber.entries()){
       const byGrade = {};
       for (const g of GRADE_ORDER){
@@ -2412,7 +2452,8 @@ function isDirtyStep(step){
     const gaugeInit = clampInt(app.state.mythicGaugeInit, 0, 1000000);
 
     const cfg = app.state.simConfig;
-    const end = cfg.end || {N1:0,N2:0,N2a:1,N2b:5,N3:0};
+    normalizeEndSets(cfg);
+    const endSets = cfg.endSets;
     const tieBreaker = cfg.tieBreaker || 'score';
 
     const initialSlots = copySlots(app.state.slot);
@@ -2455,7 +2496,7 @@ function isDirtyStep(step){
         keySafetyMax: clampInt(Number(cfg.keySafetyMax ?? 100000), 1000, 10000000),
         maxPullsSafety: clampInt(Number(cfg.maxPullsSafety ?? 50000), 1000, 2000000),
       },
-      end,
+      endSets,
       candidates: {
         c1: (app.state.candidate1||[]).map(x=>({ name:x.name, grade:x.grade, valueMin:Number(x.valueMin??0) })),
         c2: (app.state.candidate2||[]).map(x=>({ name:x.name, grade:x.grade, valueMin:Number(x.valueMin??0) })),
@@ -2477,7 +2518,8 @@ function isDirtyStep(step){
     const gaugeInit = clampInt(app.state.mythicGaugeInit, 0, 1000000);
 
     const cfg = app.state.simConfig;
-    const end = cfg.end || {N1:0,N2:0,N2a:1,N2b:5,N3:0};
+    normalizeEndSets(cfg);
+    const endSets = cfg.endSets;
     const tieBreaker = cfg.tieBreaker || 'score';
 
     const c1Map = buildCandidateReqMap(app.state.candidate1);
@@ -2977,41 +3019,26 @@ function renderRangeOptions(max, cur){
         render();
         return;
       }
-      if (action === 'end-step'){
-        const key = (t.dataset.key||'');
-        const delta = Number(t.dataset.delta||0);
-        if (!app.state.simConfig.end) app.state.simConfig.end = { N1:0,N2:0,N2a:1,N2b:5,N3:0 };
-        const end = app.state.simConfig.end;
-        if (key === 'N1') end.N1 = clampInt(Number(end.N1||0) + delta, 0, 3);
-        if (key === 'N3') end.N3 = clampInt(Number(end.N3||0) + delta, 0, 2);
-        if (key === 'N2'){
-          const a = clampInt(Number(end.N2a||1), 1, 5);
-          const b = clampInt(Number(end.N2b||5), 1, 5);
-          const lo = Math.min(a,b);
-          const hi = Math.max(a,b);
-          const max = Math.max(0, hi - lo + 1);
-          end.N2 = clampInt(Number(end.N2||0) + delta, 0, max);
-        }
+      if (action === 'endset-cycle'){
+        const si = clampInt(Number(t.dataset.set||0), 0, 2);
+        const idx = clampInt(Number(t.dataset.idx||0), 0, 4);
+        const cfg = app.state.simConfig;
+        normalizeEndSets(cfg);
+        const isLocked = (idx < 3) && app.state.slot[idx].locked && app.state.slot[idx].number;
+        if (isLocked) return;
+        cfg.endSets[si].slots[idx] = cycleEndToken(cfg.endSets[si].slots[idx]);
         app.state.step6Confirmed = false;
         if (app.state.maxReached > 6) app.state.maxReached = 6;
         render();
         return;
       }
-      if (action === 'end-preset'){
-        const v = (t.dataset.value||'');
-        if (!app.state.simConfig.end) app.state.simConfig.end = { N1:0,N2:0,N2a:1,N2b:5,N3:0 };
-        const end = app.state.simConfig.end;
-        if (v === '1-5'){ end.N2a = 1; end.N2b = 5; }
-        if (v === '4-5'){ end.N2a = 4; end.N2b = 5; }
-        if (v === '1-3'){ end.N2a = 1; end.N2b = 3; }
-        // clamp N2 by new range
-        const a = Math.min(end.N2a, end.N2b);
-        const b = Math.max(end.N2a, end.N2b);
-        end.N2a = a; end.N2b = b;
-        const max = (b - a + 1);
-        end.N2 = clampInt(end.N2||0, 0, max);
-        if (app.state.step6Confirmed) { app.state.step6Confirmed = false; }
-    if (app.state.maxReached > 6) app.state.maxReached = 6;
+      if (action === 'endset-enable'){
+        const si = clampInt(Number(t.dataset.set||1), 1, 2);
+        const cfg = app.state.simConfig;
+        normalizeEndSets(cfg);
+        cfg.endSets[si].enabled = !!t.checked;
+        app.state.step6Confirmed = false;
+        if (app.state.maxReached > 6) app.state.maxReached = 6;
         render();
         return;
       }
@@ -3046,28 +3073,12 @@ function renderRangeOptions(max, cur){
         render();
         return;
       }
-      if (t.dataset.action === 'end-n'){
-        const key = t.dataset.key;
-        const v = Number(t.value);
-        if (!app.state.simConfig.end) app.state.simConfig.end = { N1:0,N2:0,N2a:1,N2b:5,N3:0 };
-        const end = app.state.simConfig.end;
-        if (key === 'N1') end.N1 = clampInt(v, 0, 3);
-        if (key === 'N3') end.N3 = clampInt(v, 0, 2);
-        if (key === 'N2a') end.N2a = clampInt(v, 1, 5);
-        if (key === 'N2b') end.N2b = clampInt(v, 1, 5);
-        // normalize a〜b and clamp N2 by range width
-        let a = clampInt((end.N2a ?? 1), 1, 5);
-        let b = clampInt((end.N2b ?? 5), 1, 5);
-        if (a > b){ const tmp=a; a=b; b=tmp; }
-        end.N2a = a; end.N2b = b;
-        const maxCount = (b - a + 1);
-        if (key === 'N2') end.N2 = clampInt(v, 0, maxCount);
-        else end.N2 = clampInt(end.N2||0, 0, maxCount);
-        if (app.state.step6Confirmed) { app.state.step6Confirmed = false; }
-    if (app.state.maxReached > 6) app.state.maxReached = 6;
-        render();
+      if (t.dataset.action === 'end-n-removed'){
+        // (removed) legacy end-condition inputs
         return;
       }
+
+      
       
       if (t.dataset.action === 'sim-trials'){
         const v = clampInt(Number(t.value), 1, 200000);

@@ -1005,9 +1005,100 @@ body.modal-open{ touch-action: manipulation; }
 .end-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;}
 .end-right-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 .end-row .stepper{margin-top:0;justify-content:flex-start;}
+
+.n2-range-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.n2-range-label{min-width:34px;font-size:12px;opacity:.9}
 .end-row .sel.mini{width:56px;padding:6px 8px}
 .end-row .chip{font-size:11px}
 .n2-sp{flex:1 1 8px;min-width:8px;}
 @media (max-width:360px){
   .end-left{min-width:74px}
+}
+
+
+/* Step6 end-condition sets */
+.endsets{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.endset{
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:8px;
+  background: rgba(255,255,255,0.03);
+}
+.endset-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:6px;
+}
+.endset-name{
+  font-weight:800;
+  font-size:13px;
+}
+.endset-note{
+  font-size:12px;
+}
+.endset-cards{
+  display:grid;
+  grid-template-columns: repeat(5, minmax(0,1fr));
+  gap:6px;
+}
+.endcard{
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:6px 6px 7px;
+  background: rgba(0,0,0,0.18);
+  min-height:54px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+.endcard:disabled{
+  opacity:0.85;
+  cursor:not-allowed;
+}
+.endcard-top{
+  font-size:11px;
+  opacity:0.85;
+  margin-bottom:4px;
+}
+.endcard-val{
+  font-size:12px;
+  font-weight:800;
+  max-width:100%;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.endtok-none{
+  color: rgba(255,255,255,0.75);
+}
+.endtok-c1{
+  border-color: rgba(255,80,80,0.8);
+  background: rgba(255,80,80,0.15);
+  color: rgba(255,160,160,1);
+}
+.endtok-c2{
+  border-color: rgba(255,165,0,0.75);
+  background: rgba(255,165,0,0.14);
+  color: rgba(255,210,120,1);
+}
+.endtok-c3{
+  border-color: rgba(255,215,0,0.70);
+  background: rgba(255,215,0,0.12);
+  color: rgba(255,240,150,1);
+}
+.endtok-locked{
+  border-color: rgba(255,0,0,0.85);
+  background: rgba(255,0,0,0.20);
+  color: rgba(255,170,170,1);
+}
+.check.mini{
+  font-size:12px;
 }
