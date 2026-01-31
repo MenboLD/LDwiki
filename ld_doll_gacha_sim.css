@@ -1090,9 +1090,9 @@ body.modal-open{ touch-action: manipulation; }
   color: rgba(255,210,120,1);
 }
 .endtok-c3{
-  border-color: rgba(255,215,0,0.70);
-  background: rgba(255,215,0,0.12);
-  color: rgba(255,240,150,1);
+  border-color: rgba(80,180,255,0.75);
+  background: rgba(80,180,255,0.14);
+  color: rgba(170,220,255,1);
 }
 .endtok-locked{
   border-color: rgba(255,0,0,0.85);

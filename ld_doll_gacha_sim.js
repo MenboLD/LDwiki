@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260131g';
+  const VERSION = '20260131i';
 
   const GRADE_JP_TO_SHORT = {
     'ノーマル':'N',
@@ -20,7 +20,7 @@
   };
   const GRADE_ORDER = ['N','R','E','L','M'];
   const STEP_LABEL = {
-    1:'①',2:'②',3:'③',4:'④',5:'⑤',6:'⑥',7:'⑦'
+    1:'1',2:'2',3:'3',4:'4',5:'5',6:'6',7:'7'
   };
 
   const RARITY_BG_CLASS = { N:'card-bgN', R:'card-bgR', E:'card-bgE', L:'card-bgL', M:'card-bgM' };
@@ -176,6 +176,15 @@
 
   function getStepState(step){
     return app.state.stepStates[step];
+  }
+
+  function clearStepCardState(step, number){
+    const st = getStepState(step);
+    const num = Number(number);
+    if (!st) return;
+    try{ st.selected && st.selected.delete(num); }catch(e){}
+    try{ st.grade && st.grade.delete(num); }catch(e){}
+    try{ st.value && st.value.delete(num); }catch(e){}
   }
 
   function formatValue(v, fp){
@@ -424,21 +433,54 @@
       set.enabled = !!set.enabled;
       if (!Array.isArray(set.slots) || set.slots.length < 5) set.slots = ['none','none','none','none','none'];
       set.slots = set.slots.slice(0,5).map(v => (v==='c1'||v==='c2'||v==='c3') ? v : 'none');
+
+      // enforce: left to right cannot increase priority (c1>c2>c3). 'none' is excluded.
+      let leftTok = null;
+      for (let i=0;i<5;i++){
+        const tok = set.slots[i];
+        if (tok === 'none') continue;
+        if (leftTok && endPriorityValue(tok) > endPriorityValue(leftTok)){
+          set.slots[i] = 'none'; // invalid persisted state => clear
+          continue;
+        }
+        leftTok = tok;
+      }
     });
   }
 
-  function cycleEndToken(v){
-    if (v === 'c1') return 'c2';
-    if (v === 'c2') return 'c3';
-    if (v === 'c3') return 'none';
-    return 'c1';
+  function isEndPriorityToken(v){
+    return v === 'c1' || v === 'c2' || v === 'c3';
+  }
+  function endPriorityValue(v){
+    if (v === 'c1') return 3;
+    if (v === 'c2') return 2;
+    if (v === 'c3') return 1;
+    return 0; // none/locked
+  }
+  function isEndTokenAllowed(nextTok, leftLimitTok){
+    if (nextTok === 'none') return true; // 未指定は常にOK（優先順位の対象外）
+    if (!isEndPriorityToken(nextTok)) return false;
+    if (!leftLimitTok) return true; // 左側に優先指定がない
+    // 左側より高い優先（c1>c2>c3）を置けない
+    return endPriorityValue(nextTok) <= endPriorityValue(leftLimitTok);
+  }
+
+  function cycleEndTokenConstrained(currentTok, leftLimitTok){
+    const cycle = ['c1','c2','c3','none'];
+    const cur = cycle.includes(currentTok) ? currentTok : 'none';
+    const start = cycle.indexOf(cur);
+    for (let k=1; k<=cycle.length; k++){
+      const cand = cycle[(start + k) % cycle.length];
+      if (isEndTokenAllowed(cand, leftLimitTok)) return cand;
+    }
+    return 'none';
   }
 
   function endTokenLabel(v){
-    if (v === 'c1') return '第1候補';
-    if (v === 'c2') return '第2候補';
-    if (v === 'c3') return '第3候補';
-    return '条件なし';
+    if (v === 'c1') return '第１';
+    if (v === 'c2') return '第２';
+    if (v === 'c3') return '第３';
+    return '未指定';
   }
 
   function endTokenClass(v){
@@ -454,10 +496,10 @@
     endSets.forEach((set, si) => {
       if (si>0 && !set.enabled) return;
       const parts = (set.slots||[]).slice(0,5).map((tok, i) => {
-        if (tok === 'c1') return `${i+1}:第1`;
-        if (tok === 'c2') return `${i+1}:第2`;
-        if (tok === 'c3') return `${i+1}:第3`;
-        return `${i+1}:—`;
+        if (tok === 'c1') return `${i+1}:第１`;
+        if (tok === 'c2') return `${i+1}:第２`;
+        if (tok === 'c3') return `${i+1}:第３`;
+        return `${i+1}:未`;
       }).join(' ');
       lines.push(`セット${si+1}［${parts}］`);
     });
@@ -586,6 +628,7 @@ function clampNum(v, min, max){
     if (!(index >= 0 && index < 5)) return;
     if (!app.state.slot[index] || !app.state.slot[index].number) return;
 
+    const deletedNumber = app.state.slot[index].number;
     const newSlot = buildSlotAfterDelete(index);
 
     const clearNames = [];
@@ -605,13 +648,14 @@ function clampNum(v, min, max){
         message: `スロット削除によりロック枠に入る人形が、ステップ②〜④で選択済みです。\n選択状態を解除して削除しますか？\n（対象：${clearNames.join('、')}）`,
         yesLabel: '解除して削除',
         noLabel: 'キャンセル',
-        action: { type:'delete-and-clear', slotAfter: newSlot, clearNames },
+        action: { type:'delete-and-clear', slotAfter: newSlot, clearNames, deletedNumber },
       });
       return;
     }
 
     // apply directly
     app.state.slot = newSlot;
+    clearStepCardState(1, deletedNumber);
     if (app.state.selectedSlotIndex === index) app.state.selectedSlotIndex = null;
     enforceLockContinuity();
   }
@@ -797,10 +841,16 @@ function applyDeleteAndClear(action){
     }
 
     // commit slot state after deletion
-    if (Array.isArray(action.newSlot) && action.newSlot.length === 5){
-      app.state.slot = action.newSlot.map(s => ({ ...s, locked: !!s.locked }));
+    const nextSlot = (Array.isArray(action.newSlot) && action.newSlot.length === 5) ? action.newSlot
+                  : ((Array.isArray(action.slotAfter) && action.slotAfter.length === 5) ? action.slotAfter : null);
+    if (nextSlot){
+      app.state.slot = nextSlot.map(s => ({ ...s, locked: !!s.locked }));
     }
 
+    // clear step1 card state for removed doll (list background reset)
+    if (action.deletedNumber != null){
+      clearStepCardState(1, action.deletedNumber);
+    }
     app.state.selectedSlotIndex = null;
     enforceLockContinuity();
   }
@@ -3026,7 +3076,20 @@ function renderRangeOptions(max, cur){
         normalizeEndSets(cfg);
         const isLocked = (idx < 3) && app.state.slot[idx].locked && app.state.slot[idx].number;
         if (isLocked) return;
-        cfg.endSets[si].slots[idx] = cycleEndToken(cfg.endSets[si].slots[idx]);
+        // enforce monotone priority (left side cannot be lower priority than right)
+        const set = cfg.endSets[si] || { slots: [] };
+        let leftLimitTok = null;
+        for (let j = idx - 1; j >= 0; j--){
+          const lockedJ = (j < 3) && app.state.slot[j].locked && app.state.slot[j].number;
+          if (lockedJ) continue; // ロック中は優先順位の対象外
+          const t0 = (set.slots && set.slots[j]) ? set.slots[j] : 'none';
+          if (t0 === 'c1' || t0 === 'c2' || t0 === 'c3'){
+            leftLimitTok = t0;
+            break;
+          }
+        }
+        const curTok = (set.slots && set.slots[idx]) ? set.slots[idx] : 'none';
+        cfg.endSets[si].slots[idx] = cycleEndTokenConstrained(curTok, leftLimitTok);
         app.state.step6Confirmed = false;
         if (app.state.maxReached > 6) app.state.maxReached = 6;
         render();
