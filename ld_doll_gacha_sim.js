@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260131j';
+  const VERSION = '20260131k';
 
   const GRADE_JP_TO_SHORT = {
     'ノーマル':'N',

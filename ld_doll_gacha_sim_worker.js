@@ -493,7 +493,7 @@ async function startRun(msg){
       gaugeInit,
       useKey,
       cfg,
-      end,
+      end: endSets,
       c1Map,
       c2Map,
       c3Map,
