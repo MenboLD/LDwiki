@@ -987,3 +987,27 @@ body.modal-open{ touch-action: manipulation; }
 .stepper{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:6px;}
 .stepper-val{min-width:28px;text-align:center;font-weight:700;}
 .btn.mini{padding:6px 10px;font-size:12px;line-height:1;border-radius:10px;}
+
+
+/* Step6 end condition UI: 3 horizontal rows */
+.end-rows{display:flex;flex-direction:column;gap:10px;}
+.end-row{
+  border:1px solid rgba(255,255,255,0.14);
+  border-radius:14px;
+  padding:10px;
+  background:rgba(0,0,0,0.12);
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+}
+.end-left{min-width:86px}
+.end-d2{font-size:11px;color:rgba(255,255,255,0.75);margin-top:4px;line-height:1.2;}
+.end-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;}
+.end-right-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.end-row .stepper{margin-top:0;justify-content:flex-start;}
+.end-row .sel.mini{width:56px;padding:6px 8px}
+.end-row .chip{font-size:11px}
+.n2-sp{flex:1 1 8px;min-width:8px;}
+@media (max-width:360px){
+  .end-left{min-width:74px}
+}

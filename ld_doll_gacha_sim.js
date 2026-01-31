@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260131e';
+  const VERSION = '20260131f';
 
   const GRADE_JP_TO_SHORT = {
     'ノーマル':'N',
@@ -1520,53 +1520,71 @@ function isDirtyStep(step){
 
         <div class="form-block">
           <div class="form-title">終了条件（必要確保数）</div>
-          <div class="end-grid">
-            <div class="end-item">
-              <div class="end-k">N1</div>
-              <div class="end-d">スロット1〜3で<br/>第1候補一致</div>
-              <div class="stepper">
-                <button class="btn mini" type="button" data-action="end-step" data-key="N1" data-delta="-1">−</button>
-                <div class="stepper-val">${clampInt(cfg.end.N1,0,3)}</div>
-                <button class="btn mini" type="button" data-action="end-step" data-key="N1" data-delta="1">＋</button>
+          <div class="end-rows">
+            <div class="end-row">
+              <div class="end-left">
+                <div class="end-k">N1</div>
+                <div class="end-d2">候補1（スロット1〜3）</div>
               </div>
-              <div class="small">0=条件なし</div>
+              <div class="end-right">
+                <div class="end-right-top">
+                  <div class="stepper">
+                    <button class="btn mini" type="button" data-action="end-step" data-key="N1" data-delta="-1">−</button>
+                    <div class="stepper-val">${clampInt(cfg.end.N1,0,3)}</div>
+                    <button class="btn mini" type="button" data-action="end-step" data-key="N1" data-delta="1">＋</button>
+                  </div>
+                  <div class="small muted">0=条件なし</div>
+                </div>
+              </div>
             </div>
-            <div class="end-item">
-              <div class="end-k">N2</div>
-              <div class="end-d">スロット範囲で<br/>第2候補一致</div>
-              <div class="n2-range">
-                <div class="n2-row">
+
+            <div class="end-row">
+              <div class="end-left">
+                <div class="end-k">N2</div>
+                <div class="end-d2">候補2（スロット範囲）</div>
+              </div>
+              <div class="end-right">
+                <div class="end-right-top">
                   <span class="n2-l">範囲</span>
                   <select class="sel mini" data-action="end-n" data-key="N2a">${renderRangeOptions(5, n2a)}</select>
                   <span class="n2-mid">〜</span>
                   <select class="sel mini" data-action="end-n" data-key="N2b">${renderRangeOptions(5, n2b)}</select>
-                </div>
-                <div class="n2-row presets">
-                  <button class="chip" type="button" data-action="end-preset" data-value="1-5">1〜5</button>
-                  <button class="chip" type="button" data-action="end-preset" data-value="4-5">4〜5</button>
-                  <button class="chip" type="button" data-action="end-preset" data-value="1-3">1〜3</button>
-                </div>
-                ${n2Warn?`<div class="small warn">※N1(1〜3)と範囲が重なっています</div>`:''}
-                <div class="n2-row">
+
+                  <span class="n2-sp"></span>
+
                   <span class="n2-l">必要数</span>
                   <div class="stepper">
                     <button class="btn mini" type="button" data-action="end-step" data-key="N2" data-delta="-1">−</button>
                     <div class="stepper-val">${clampInt(cfg.end.N2,0,n2Max)}</div>
                     <button class="btn mini" type="button" data-action="end-step" data-key="N2" data-delta="1">＋</button>
                   </div>
-                  <div class="small">0=条件なし</div>
+                  <div class="small muted">0=条件なし</div>
                 </div>
+
+                <div class="n2-row presets">
+                  <button class="chip" type="button" data-action="end-preset" data-value="1-5">1〜5</button>
+                  <button class="chip" type="button" data-action="end-preset" data-value="4-5">4〜5</button>
+                  <button class="chip" type="button" data-action="end-preset" data-value="1-3">1〜3</button>
+                </div>
+                ${n2Warn?`<div class="small warn">※N1(1〜3)と範囲が重なっています</div>`:''}
               </div>
             </div>
-            <div class="end-item">
-              <div class="end-k">N3</div>
-              <div class="end-d">スロット4〜5で<br/>第3候補一致</div>
-              <div class="stepper">
-                <button class="btn mini" type="button" data-action="end-step" data-key="N3" data-delta="-1">−</button>
-                <div class="stepper-val">${clampInt(cfg.end.N3,0,2)}</div>
-                <button class="btn mini" type="button" data-action="end-step" data-key="N3" data-delta="1">＋</button>
+
+            <div class="end-row">
+              <div class="end-left">
+                <div class="end-k">N3</div>
+                <div class="end-d2">候補3（スロット4〜5）</div>
               </div>
-              <div class="small">0=条件なし</div>
+              <div class="end-right">
+                <div class="end-right-top">
+                  <div class="stepper">
+                    <button class="btn mini" type="button" data-action="end-step" data-key="N3" data-delta="-1">−</button>
+                    <div class="stepper-val">${clampInt(cfg.end.N3,0,2)}</div>
+                    <button class="btn mini" type="button" data-action="end-step" data-key="N3" data-delta="1">＋</button>
+                  </div>
+                  <div class="small muted">0=条件なし</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1738,6 +1756,10 @@ function isDirtyStep(step){
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
     ctx.clearRect(0,0,W,H);
+
+    // colors for dark background
+    ctx.strokeStyle = 'rgba(255,255,255,0.82)';
+    ctx.fillStyle = 'rgba(255,255,255,0.86)';
 
     // padding
     const padL = 34, padR = 10, padT = 10, padB = 26;
