@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260131i';
+  const VERSION = '20260131j';
 
   const GRADE_JP_TO_SHORT = {
     'ノーマル':'N',
@@ -1081,7 +1081,11 @@ function isDirtyStep(step){
           }
         }
       }
-      app.state.maxReached = Math.max(app.state.maxReached, 6);
+      app.state.step6Confirmed = true;
+      // invalidate old results
+      app.state.sim.results = null;
+      app.state.currentStep = 7;
+      app.state.maxReached = Math.max(app.state.maxReached, 7);
       return;
     }
 
@@ -1113,28 +1117,21 @@ function isDirtyStep(step){
       return;
     }
 
+    // Step 2-4: reset should only clear *this step's* current list selection state.
+    // (Do NOT delete confirmed candidate lists / progress.)
     if (s === 2){
-      app.state.candidate1 = [];
-      app.state.candidate2 = [];
-      app.state.candidate3 = [];
-      for (const k of [2,3,4]) resetStepState(k);
+      resetStepState(2);
       app.state.currentStep = 2;
-      app.state.maxReached = 2;
       return;
     }
     if (s === 3){
-      app.state.candidate2 = [];
-      app.state.candidate3 = [];
-      for (const k of [3,4]) resetStepState(k);
+      resetStepState(3);
       app.state.currentStep = 3;
-      app.state.maxReached = 3;
       return;
     }
     if (s === 4){
-      app.state.candidate3 = [];
       resetStepState(4);
       app.state.currentStep = 4;
-      app.state.maxReached = 4;
       return;
     }
 
@@ -1142,31 +1139,48 @@ function isDirtyStep(step){
       // reset key/gauge and later configs
       app.state.keyCount = 0;
       app.state.mythicGaugeInit = 0;
+      app.state.step5Confirmed = false;
+      app.state.step6Confirmed = false;
+      app.state.sim.results = null;
       app.state.simConfig = {
         lockStrategy: 'S1',
         tieBreaker: 'score',
         preferC1DontLockC2: false,
-        end: { N1: 0, N2: 0, N2a: 1, N2b: 5, N3: 0 },
+        endSets: [
+          { enabled: true, slots: ['none','none','none','none','none'] },
+          { enabled: false, slots: ['none','none','none','none','none'] },
+          { enabled: false, slots: ['none','none','none','none','none'] },
+        ],
         useKeyCount: false,
         trials: 10000,
+        keySafetyMax: 100000,
+        maxPullsSafety: 50000,
       };
       app.state.currentStep = 5;
-      app.state.maxReached = 5;
+      app.state.maxReached = Math.min(app.state.maxReached, 5);
       return;
     }
 
     if (s === 6){
       // reset strategy / end condition only
+      app.state.step6Confirmed = false;
+      app.state.sim.results = null;
       app.state.simConfig = {
         lockStrategy: 'S1',
         tieBreaker: 'score',
         preferC1DontLockC2: false,
-        end: { N1: 0, N2: 0, N2a: 1, N2b: 5, N3: 0 },
+        endSets: [
+          { enabled: true, slots: ['none','none','none','none','none'] },
+          { enabled: false, slots: ['none','none','none','none','none'] },
+          { enabled: false, slots: ['none','none','none','none','none'] },
+        ],
         useKeyCount: false,
         trials: 10000,
+        keySafetyMax: 100000,
+        maxPullsSafety: 50000,
       };
       app.state.currentStep = 6;
-      app.state.maxReached = 6;
+      app.state.maxReached = Math.min(app.state.maxReached, 6);
       return;
     }
 
@@ -2913,19 +2927,22 @@ function renderRangeOptions(max, cur){
       }
 
       if (action === 'go-step'){
-  const target = Number(t.dataset.step);
-  const cur = app.state.currentStep;
-  // When moving forward via the step list, auto-confirm the current step if it has unsaved changes.
-  if (target > cur && isDirtyStep(cur)){
-    const before = app.state.currentStep;
-    confirmStep(before);
-    render();
-    return;
-  }
-  goStep(target);
-  render();
-  return;
-}
+        const target = Number(t.dataset.step);
+        const cur = app.state.currentStep;
+        // When moving forward via the step list, auto-confirm the current step if it has unsaved changes.
+        // If confirmation succeeds and the target becomes reachable, jump in the same click.
+        if (target > cur && isDirtyStep(cur)){
+          confirmStep(cur);
+          if (target <= app.state.maxReached && !isDirtyStep(cur)){
+            goStep(target);
+          }
+          render();
+          return;
+        }
+        goStep(target);
+        render();
+        return;
+      }
       if (action === 'tab'){
         setActiveTab(Number(t.dataset.step), Number(t.dataset.tab));
         render();
