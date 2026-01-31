@@ -175,9 +175,10 @@ function countMatchesInRange(slots, a, b, cmap){
 }
 
 function isEndSatisfied(slots, end, c1Map, c2Map, c3Map){
-  if (!Array.isArray(endSets) || endSets.length === 0) return false;
-  for (let si=0; si<endSets.length; si++){
-    const set = endSets[si] || {};
+  // end: Array<{enabled?:boolean, slots: ('c1'|'c2'|'c3'|'none')[] }>
+  if (!Array.isArray(end) || end.length === 0) return false;
+  for (let si=0; si<end.length; si++){
+    const set = end[si] || {};
     const enabled = (si===0) ? true : !!set.enabled;
     if (!enabled) continue;
     const tokArr = Array.isArray(set.slots) ? set.slots : [];
@@ -222,7 +223,7 @@ function lockDecision(slots, cfg, end, c1Map, c2Map){
   const cap = 3 - curK;
   if (cap <= 0) return curK;
 
-  const set1 = (Array.isArray(endSets) && endSets[0]) ? endSets[0] : { slots: [] };
+  const set1 = (Array.isArray(end) && end[0]) ? end[0] : { slots: [] };
   const missingC1 = needC1InLockRange(slots, set1, c1Map);
 
   // S2 endgame (slot3 focus)
