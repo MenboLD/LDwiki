@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260131n';
+  const VERSION = '20260201a';
 
   const GRADE_JP_TO_SHORT = {
     'ノーマル':'N',
@@ -83,6 +83,7 @@
         4: { activeTab: 1, selected: new Set(), grade: new Map(), value: new Map() },
       },
       modal: { open:false, step:null, number:null, idx:0 },
+      rarityModal: { open:false, number:null, slotIndex:null },
       confirm: { open:false, title:'', message:'', yesLabel:'', noLabel:'', action:null },
       error: null,
       loading: true,
@@ -578,7 +579,38 @@ function clampNum(v, min, max){
     return -1;
   }
 
-  function upsertSlotFromStep1(number, allowInsert){
+  
+  function focusStep1FromSlotIndex(idx){
+    const index = Number(idx);
+    const sl = app.state.slot[index];
+    if (!sl || !sl.number) return null;
+    const n = Number(sl.number);
+    const st = getStepState(1);
+    if (!st.selected.has(n)){
+      // keep Step① "single focus" behavior
+      for (const old of Array.from(st.selected)) deselectCard(1, old);
+      st.selected.add(n);
+    }
+    // sync current values from the slot so modal edits reflect the actual slot values
+    st.grade.set(n, sl.grade);
+    st.value.set(n, sl.value);
+    return n;
+  }
+
+  function setStep1GradeFromRarityModal(number, grade){
+    const n = Number(number);
+    const st = getStepState(1);
+    if (!st.selected.has(n)){
+      for (const old of Array.from(st.selected)) deselectCard(1, old);
+      st.selected.add(n);
+    }
+    st.grade.set(n, grade);
+    const r = app.masterByNumber.get(n).byGrade[grade];
+    st.value.set(n, r.paramemin);
+    // reflect to slot (keep locked flag)
+    upsertSlotFromStep1(n, false);
+  }
+function upsertSlotFromStep1(number, allowInsert){
     const st = getStepState(1);
     const n = Number(number);
     const m = app.masterByNumber.get(n);
@@ -1384,12 +1416,20 @@ function isDirtyStep(step){
     const upEnabled = filled && index > 0 && !!app.state.slot[index-1].number;
     const downEnabled = filled && index < 4 && !!app.state.slot[index+1].number;
 
-    const gradeChip = filled ? `<span class="chip grade ${grade}">${grade}</span>` : '';
+    const gradeChip = filled
+      ? `<button class="chip grade ${grade}" data-action="slot-edit-grade" data-index="${index}" aria-label="レアリティ変更">${grade}</button>`
+      : '';
     const scoreChip = filled ? `<span class="chip">${sl.score ?? '-'}</span>` : '';
+    const delBtn = filled
+      ? `<button class="xbtn-inline" data-action="slot-delete-at" data-index="${index}" aria-label="削除">×</button>`
+      : '';
+
+    const descHtml = filled
+      ? `<button class="slot-desc-btn" data-action="slot-edit-desc" data-index="${index}" title="${escapeAttr(desc)}">${escapeHtml(desc)}</button>`
+      : `<div class="slot-desc">${escapeHtml(desc)}</div>`;
 
     return `
       <div class="slot-card ${selected?'selected':''} ${grade?RARITY_BG_CLASS[grade]:''}" data-action="slot-select" data-index="${index}">
-        ${filled ? `<button class="xbtn x-slot" data-action="slot-delete-at" data-index="${index}" aria-label="削除">×</button>` : ``}
         ${filled ? `
           <div class="slot-move" aria-label="入替">
             <button class="move-btn" data-action="slot-swap" data-dir="up" data-index="${index}" ${upEnabled?'':'disabled'}>▲</button>
@@ -1402,13 +1442,14 @@ function isDirtyStep(step){
 
         <div class="slot-mid">
           <div class="slot-name">${escapeHtml(name)}</div>
-          <div class="slot-desc">${escapeHtml(desc)}</div>
+          ${descHtml}
         </div>
 
         <div class="slot-tail">
           ${lockVisible ? `<button class="icon-btn lock ${lockOn?'on':''}" data-action="slot-lock" data-index="${index}" ${lockCanToggle?'':'disabled'}>${lockOn?'🔒':'🔓'}</button>` : `<span class="slot-tail-spacer"></span>`}
           ${scoreChip}
           ${gradeChip}
+          ${delBtn}
         </div>
       </div>
     `;
@@ -2821,6 +2862,34 @@ function renderRangeOptions(max, cur){
       `;
       return;
     }
+
+    const rm = app.state.rarityModal;
+    if (rm && rm.open){
+      const num = Number(rm.number);
+      const st1 = getStepState(1);
+      const cur = st1.grade.get(num) || (app.state.slot[Number(rm.slotIndex)] && app.state.slot[Number(rm.slotIndex)].grade) || 'N';
+      const master = app.masterByNumber.get(num);
+      const avail = (master && master.byGrade)
+        ? GRADE_ORDER.filter(g => master.byGrade[g] && master.byGrade[g].paramemin != null)
+        : GRADE_ORDER;
+      const grades = avail.length ? avail : GRADE_ORDER;
+
+      host.innerHTML = `
+        <div class="modal-backdrop">
+          <div class="modal" role="dialog" aria-modal="true" aria-label="レアリティ変更">
+            <div class="modal-title">${escapeHtml(master.name)}：レアリティ</div>
+            <div class="row" style="flex-wrap:wrap; gap:8px; margin-top:10px;">
+              ${grades.map(g => `<button class="btn ${cur===g?'primary':''}" data-action="rmodal-grade" data-grade="${g}">${g}</button>`).join('')}
+            </div>
+            <div class="modal-actions" style="margin-top:16px;">
+              <button class="btn" data-action="rmodal-cancel">閉じる</button>
+            </div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
     const st = getStepState(m.step);
     const num = m.number;
     const grade = st.grade.get(num);
@@ -2896,6 +2965,23 @@ function renderRangeOptions(max, cur){
       if (!t) return;
 
       const action = t.dataset.action;
+
+      // rarity modal
+      if (action === 'rmodal-cancel'){
+        app.state.rarityModal = { open:false, number:null, slotIndex:null };
+        render();
+        return;
+      }
+      if (action === 'rmodal-grade'){
+        const grade = t.dataset.grade;
+        const rm = app.state.rarityModal;
+        if (rm && rm.open && rm.number != null){
+          setStep1GradeFromRarityModal(rm.number, grade);
+        }
+        app.state.rarityModal = { open:false, number:null, slotIndex:null };
+        render();
+        return;
+      }
 
       // modal backdrop: allow click to cancel
       if (action === 'modal-cancel'){
@@ -3003,6 +3089,22 @@ function renderRangeOptions(max, cur){
       }
       if (action === 'slot-lock'){
         toggleLock(t.dataset.index);
+        render();
+        return;
+      }
+      if (action === 'slot-edit-grade'){
+        const idx = Number(t.dataset.index);
+        const num = focusStep1FromSlotIndex(idx);
+        if (num == null) return;
+        app.state.rarityModal = { open:true, number:num, slotIndex: idx };
+        render();
+        return;
+      }
+      if (action === 'slot-edit-desc'){
+        const idx = Number(t.dataset.index);
+        const num = focusStep1FromSlotIndex(idx);
+        if (num == null) return;
+        openModal(1, num);
         render();
         return;
       }

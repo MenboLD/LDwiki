@@ -470,6 +470,23 @@ body{
   text-overflow:ellipsis;
 }
 
+
+.slot-desc-btn{
+  width:100%;
+  text-align:left;
+  border:0;
+  background:transparent;
+  padding:0;
+  margin-top:3px;
+  font-size:12px;
+  color:rgba(255,255,255,0.92);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  cursor:pointer;
+}
+.slot-desc-btn:active{ opacity:0.85; }
+
 @media (max-width: 380px){
   .main{padding:8px;}
   .section{padding:8px;}
@@ -701,7 +718,7 @@ body{
   height:34px;
 }
 
-.slot-card .slot-desc{
+.slot-card .slot-desc-btn{
   border:0;
   background:transparent;
   padding:0;
@@ -738,6 +755,25 @@ body.modal-open{ touch-action: manipulation; }
 .card .xbtn{ z-index:2; }
 .card.disabled .xbtn{ pointer-events:auto; }
 .xbtn.x-slot{ top:6px; right:6px; }
+
+/* inline delete button for slots (placed next to grade) */
+.xbtn-inline{
+  width:18px;
+  height:18px;
+  border-radius:9px;
+  border:1px solid rgba(255,255,255,0.25);
+  background:rgba(0,0,0,0.35);
+  color:rgba(255,255,255,0.95);
+  font-weight:900;
+  font-size:13px;
+  line-height:16px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  padding:0;
+}
+.xbtn-inline:active{ transform:scale(0.96); }
 
 
 /* --- Step5: keypad --- */
@@ -1101,4 +1137,17 @@ body.modal-open{ touch-action: manipulation; }
 }
 .check.mini{
   font-size:12px;
+}
+
+
+/* chip as a button */
+button.chip{
+  cursor:pointer;
+  appearance:none;
+  -webkit-appearance:none;
+  font-family:inherit;
+}
+button.chip:focus{
+  outline:2px solid rgba(255,255,255,0.22);
+  outline-offset:2px;
 }
