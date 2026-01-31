@@ -481,7 +481,7 @@ async function startRun(msg){
 
   const failBreakdown = { key_max:0, safety_keys:0, max_pulls:0 };
 
-  const progressEvery = 200;
+  const progressEvery = 50;
   const yieldEveryTrials = 25;
 
   for (let i=0;i<total;i++){
