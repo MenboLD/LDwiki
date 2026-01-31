@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260131d';
+  const VERSION = '20260131e';
 
   const GRADE_JP_TO_SHORT = {
     'ノーマル':'N',
@@ -1635,7 +1635,6 @@ function isDirtyStep(step){
         <div class="panel">
           <div class="panel-title">補助情報</div>
           <div class="kv">
-            <div class="kv-row"><div class="k">平均ロック数（1回あたり）</div><div class="v">${r.aux && r.aux.avgLockPerPull!=null ? r.aux.avgLockPerPull.toFixed(3) : '—'}</div></div>
             <div class="kv-row"><div class="k">神話確定発動（平均/成功回）</div><div class="v">${r.aux && r.aux.avgMythicAct!=null ? r.aux.avgMythicAct.toFixed(3) : '—'}</div></div>
             <div class="kv-row"><div class="k">平均消費鍵（成功回）</div><div class="v">${r.aux && r.aux.avgKeys!=null ? formatNum(r.aux.avgKeys) : '—'}</div></div>
           </div>
@@ -2250,6 +2249,206 @@ function isDirtyStep(step){
     const sim = app.state.sim;
     if (sim.running) return;
 
+    // Prefer Web Worker for step7 (avoid UI freeze). Fallback to main-thread loop if Worker unsupported.
+    if (window.Worker){
+      return startSimulationWithWorker();
+    }
+
+    // Fallback (legacy) – keep the previous behavior when Worker is unavailable.
+    return startSimulationOnMainThread();
+  }
+
+  function buildWorkerSnapshot(){
+    const masters = {};
+    for (const [num, m] of app.masterByNumber.entries()){
+      const byGrade = {};
+      for (const g of GRADE_ORDER){
+        const r = (m.byGrade && m.byGrade[g]) ? m.byGrade[g] : {};
+        const stepmin = Number(r.stepmin ?? 1);
+        const stepmax = Number(r.stepmax ?? 1);
+        const paramemin = Number(r.paramemin ?? 0);
+        const paramemax = Number(r.paramemax ?? paramemin);
+        const paramebase = Number(r.paramebase ?? paramemin);
+        byGrade[g] = {
+          stepmin,
+          stepmax,
+          paramemin,
+          paramemax,
+          paramebase,
+          fp: Number(r.fp||0),
+        };
+      }
+      masters[num] = { number: Number(num), name: String(m.name||''), byGrade };
+    }
+    const costByLockcount = {};
+    for (const [lc, ck] of app.costByLockcount.entries()){
+      costByLockcount[String(lc)] = Number(ck);
+    }
+    return { masters, costByLockcount };
+  }
+
+  function ensureSimWorker(){
+    if (app.simWorker){
+      try { app.simWorker.terminate(); } catch(_e) {}
+      app.simWorker = null;
+    }
+    const url = `ld_doll_gacha_sim_worker.js?v=${VERSION}`;
+    const w = new Worker(url);
+    w.onmessage = onSimWorkerMessage;
+    w.onerror = (ev) => {
+      console.error(ev);
+      toast('シミュレーションでエラーが発生しました（Worker）');
+      const sim = app.state.sim;
+      sim.running = false;
+      render();
+    };
+    app.simWorker = w;
+    return w;
+  }
+
+  function stopSimulation(){
+    const sim = app.state.sim;
+    if (!sim || !sim.running) return;
+    sim.stop = true;
+    if (app.simWorker && sim.runId){
+      try { app.simWorker.postMessage({ type:'stop', runId: sim.runId }); } catch(_e) {}
+    }
+    toast('停止要求を受け付けました');
+    render();
+  }
+
+  function onSimWorkerMessage(ev){
+    const msg = ev.data || {};
+    const sim = app.state.sim;
+    if (!sim || !sim.running) return;
+    if (msg.runId && sim.runId && msg.runId !== sim.runId) return;
+
+    if (msg.type === 'progress'){
+      sim.done = clampInt(msg.done||0, 0, sim.total||0);
+      render();
+      return;
+    }
+    if (msg.type === 'done'){
+      sim.running = false;
+      sim.done = clampInt(msg.done||0, 0, sim.total||0);
+
+      const totalUsed = clampInt(msg.done||0, 0, sim.total||0);
+      const successes = clampInt(msg.successes||0, 0, totalUsed);
+      const pulls = Array.isArray(msg.pulls) ? msg.pulls : [];
+      const keys = Array.isArray(msg.keys) ? msg.keys : [];
+
+      const stats = {
+        pulls: computeStats(pulls, totalUsed),
+        keys: computeStats(keys, totalUsed),
+      };
+      const cdf = {
+        pulls: buildCdf(pulls, totalUsed),
+        keys: buildCdf(keys, totalUsed),
+      };
+
+      const sumMythic = Number(msg.sumMythic||0);
+      const sumKeys = Number(msg.sumKeys||0);
+      const sumLock = Number(msg.sumLock||0);
+      const sumPullEvents = Number(msg.sumPullEvents||0);
+
+      const aux = {
+        avgLockPerPull: (sumPullEvents>0) ? (sumLock / sumPullEvents) : null,
+        avgMythicAct: (successes>0) ? (sumMythic / successes) : null,
+        avgKeys: (successes>0) ? (sumKeys / successes) : null,
+      };
+
+      sim.results = {
+        total: totalUsed,
+        done: totalUsed,
+        successes,
+        fails: (totalUsed - successes),
+        pulls,
+        keys,
+        stats,
+        cdf,
+        aux,
+        failBreakdown: msg.failBreakdown || null,
+      };
+      render();
+      return;
+    }
+    if (msg.type === 'error'){
+      console.error('worker error', msg);
+      sim.running = false;
+      toast('シミュレーションでエラーが発生しました');
+      render();
+      return;
+    }
+  }
+
+  async function startSimulationWithWorker(){
+    const sim = app.state.sim;
+
+    const total = clampInt(app.state.simConfig.trials, 1, 200000);
+    const useKey = !!app.state.simConfig.useKeyCount;
+    const keyMax = clampInt(app.state.keyCount, 0, 99999);
+    const gaugeInit = clampInt(app.state.mythicGaugeInit, 0, 1000000);
+
+    const cfg = app.state.simConfig;
+    const end = cfg.end || {N1:0,N2:0,N2a:1,N2b:5,N3:0};
+    const tieBreaker = cfg.tieBreaker || 'score';
+
+    const initialSlots = copySlots(app.state.slot);
+
+    // build snapshot (plain objects only)
+    const snap = buildWorkerSnapshot();
+    const allNumbers = Object.keys(snap.masters).map(n=>Number(n)).sort((a,b)=>a-b);
+
+    sim.running = true;
+    sim.stop = false;
+    sim.done = 0;
+    sim.total = total;
+    sim.startedAt = Date.now();
+    sim.results = null;
+    sim.runId = `run_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    render();
+
+    let w;
+    try {
+      w = ensureSimWorker();
+    } catch(e){
+      console.error(e);
+      toast('Workerが使えないため、メインスレッドで実行します');
+      sim.running = false;
+      render();
+      return startSimulationOnMainThread();
+    }
+
+    w.postMessage({
+      type: 'start',
+      runId: sim.runId,
+      total,
+      useKey,
+      keyMax,
+      gaugeInit,
+      cfg: {
+        lockStrategy: cfg.lockStrategy || 'S1',
+        tieBreaker,
+        preferC1DontLockC2: !!cfg.preferC1DontLockC2,
+        keySafetyMax: clampInt(Number(cfg.keySafetyMax ?? 100000), 1000, 10000000),
+        maxPullsSafety: clampInt(Number(cfg.maxPullsSafety ?? 50000), 1000, 2000000),
+      },
+      end,
+      candidates: {
+        c1: (app.state.candidate1||[]).map(x=>({ name:x.name, grade:x.grade, valueMin:Number(x.valueMin??0) })),
+        c2: (app.state.candidate2||[]).map(x=>({ name:x.name, grade:x.grade, valueMin:Number(x.valueMin??0) })),
+        c3: (app.state.candidate3||[]).map(x=>({ name:x.name, grade:x.grade, valueMin:Number(x.valueMin??0) })),
+      },
+      initialSlots,
+      allNumbers,
+      masters: snap.masters,
+      costByLockcount: snap.costByLockcount,
+    });
+  }
+
+  async function startSimulationOnMainThread(){
+    // Legacy fallback: keep previous main-thread simulation (with yielding).
+    const sim = app.state.sim;
     const total = clampInt(app.state.simConfig.trials, 1, 200000);
     const useKey = !!app.state.simConfig.useKeyCount;
     const keyMax = clampInt(app.state.keyCount, 0, 99999);
@@ -2262,9 +2461,7 @@ function isDirtyStep(step){
     const c1Map = buildCandidateReqMap(app.state.candidate1);
     const c2Map = buildCandidateReqMap(app.state.candidate2);
     const c3Map = buildCandidateReqMap(app.state.candidate3);
-
     const allNumbers = Array.from(app.masterByNumber.keys()).sort((a,b)=>a-b);
-
     const initialSlots = copySlots(app.state.slot);
 
     sim.running = true;
@@ -2278,7 +2475,6 @@ function isDirtyStep(step){
     const pulls = [];
     const keys = [];
     let successes = 0;
-    let fails = 0;
     let sumMythic = 0;
     let sumKeys = 0;
     let sumLock = 0;
@@ -2287,7 +2483,6 @@ function isDirtyStep(step){
     const chunk = 200;
     for (let i=0;i<total;i++){
       if (sim.stop) break;
-
       const res = await simulateOnce({ initialSlots, allNumbers, keyMax, gaugeInit, useKey, cfg, end, c1Map, c2Map, c3Map, tieBreaker, sim });
       if (res.success){
         successes++;
@@ -2297,10 +2492,7 @@ function isDirtyStep(step){
         sumKeys += res.keys;
         sumLock += res.lockSum;
         sumPullEvents += res.pullEvents;
-      } else {
-        fails++;
       }
-
       sim.done = i+1;
       if ((i % chunk) === 0){
         render();
@@ -2310,29 +2502,21 @@ function isDirtyStep(step){
 
     sim.running = false;
 
-    const done = sim.done;
-    const totalUsed = done; // completed trials
-    const pullsSorted = pulls.slice().sort((a,b)=>a-b);
-    const keysSorted = keys.slice().sort((a,b)=>a-b);
-
+    const totalUsed = sim.done;
     const stats = {
       pulls: computeStats(pulls, totalUsed),
       keys: computeStats(keys, totalUsed),
     };
-
     const cdf = {
       pulls: buildCdf(pulls, totalUsed),
       keys: buildCdf(keys, totalUsed),
     };
-
     const aux = {
       avgLockPerPull: (sumPullEvents>0) ? (sumLock / sumPullEvents) : null,
       avgMythicAct: (successes>0) ? (sumMythic / successes) : null,
       avgKeys: (successes>0) ? (sumKeys / successes) : null,
     };
-
-    sim.results = { total: totalUsed, done, successes, fails: (totalUsed - successes), pulls, keys, stats, cdf, aux };
-
+    sim.results = { total: totalUsed, done: totalUsed, successes, fails: (totalUsed - successes), pulls, keys, stats, cdf, aux };
     render();
   }
 
@@ -2826,11 +3010,7 @@ function renderRangeOptions(max, cur){
         return;
       }
       if (action === 'sim-stop'){
-        if (app.state.sim && app.state.sim.running){
-          app.state.sim.stop = true;
-          toast('停止要求を受け付けました');
-          render();
-        }
+        stopSimulation();
         return;
       }
 
