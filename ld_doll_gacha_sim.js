@@ -2,7 +2,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '20260201b';
+  const VERSION = '20260201c';
 
   const GRADE_JP_TO_SHORT = {
     'ノーマル':'N',
@@ -587,6 +587,8 @@
   }
 
   function applySaveLoadPayload(p){
+    // Master data is already loaded by the time the user can press "ロード".
+    // If we restore from initState() as-is, it brings back loading:true and the UI gets stuck.
     const base = initState(); // keep defaults for ui/sim, etc.
 
     const payload = p || {};
@@ -655,6 +657,10 @@
     base.sim.done = 0;
     base.sim.total = 0;
     base.sim.results = null;
+
+    // keep the UI interactive after loading
+    base.loading = false;
+    base.error = null;
 
     app.state = base;
   }
