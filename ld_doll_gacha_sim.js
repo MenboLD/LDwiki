@@ -386,11 +386,17 @@
     const r = app.masterByNumber.get(number).byGrade[grade];
     const cur = st.value.get(number);
     const idx = Math.round((Number(cur) - r.paramemin) / r.stepmin);
-    app.state.modal = { open:true, step, number, idx: clampInt(idx, 0, Math.max(0, (r.stepmax||1) - 1)) };
+    app.state.modal = {
+      open:true,
+      step,
+      number,
+      grade,
+      idx: clampInt(idx, 0, Math.max(0, (r.stepmax||1) - 1)),
+    };
   }
 
   function closeModal(){
-    app.state.modal = { open:false, step:null, number:null, idx:0 };
+    app.state.modal = { open:false, step:null, number:null, grade:null, idx:0 };
   }
 
   function openConfirm({ title, message, yesLabel, noLabel, action }){
@@ -788,9 +794,8 @@
   function modalApplyIdx(newIdx){
     const m = app.state.modal;
     if (!m.open) return;
-    const st = getStepState(m.step);
     const number = m.number;
-    const grade = st.grade.get(number);
+    const grade = m.grade;
     const r = app.masterByNumber.get(number).byGrade[grade];
     const maxIdx = Math.max(0, (r.stepmax||1) - 1);
     m.idx = clampInt(newIdx, 0, maxIdx);
@@ -799,19 +804,43 @@
   function modalCurrentValue(){
     const m = app.state.modal;
     if (!m.open) return null;
-    const st = getStepState(m.step);
     const number = m.number;
-    const grade = st.grade.get(number);
+    const grade = m.grade;
     const r = app.masterByNumber.get(number).byGrade[grade];
     return r.paramemin + (r.stepmin * m.idx);
+  }
+
+  function modalSetGrade(newGrade){
+    const m = app.state.modal;
+    if (!m.open) return;
+    const number = m.number;
+    const master = app.masterByNumber.get(number);
+    if (!master || !master.byGrade || !master.byGrade[newGrade] || master.byGrade[newGrade].paramemin == null) return;
+
+    const oldGrade = m.grade;
+    const oldR = master.byGrade[oldGrade];
+    const oldVal = (oldGrade && oldR) ? (oldR.paramemin + oldR.stepmin * m.idx) : null;
+    let pct = 0;
+    if (oldVal != null && oldR && (oldR.paramemax - oldR.paramemin) > 0){
+      pct = (oldVal - oldR.paramemin) / (oldR.paramemax - oldR.paramemin);
+      pct = clampNum(pct, 0, 1);
+    }
+
+    m.grade = newGrade;
+    const r = master.byGrade[newGrade];
+    const span = (r.paramemax - r.paramemin);
+    const target = r.paramemin + span * pct;
+    const k = (r.stepmin > 0) ? Math.round((target - r.paramemin) / r.stepmin) : 0;
+    const value = clampNum(r.paramemin + k * r.stepmin, r.paramemin, r.paramemax);
+    const idx = (r.stepmin > 0) ? Math.round((value - r.paramemin) / r.stepmin) : 0;
+    modalApplyIdx(idx);
   }
 
   function modalPreset(p){
     const m = app.state.modal;
     if (!m.open) return;
-    const st = getStepState(m.step);
     const number = m.number;
-    const grade = st.grade.get(number);
+    const grade = m.grade;
     const r = app.masterByNumber.get(number).byGrade[grade];
 
     // Percent is within this rarity band: [paramemin, paramemax]
@@ -836,10 +865,11 @@ function clampNum(v, min, max){
 
     const st = getStepState(m.step);
     const number = m.number;
-    const grade = st.grade.get(number);
+    const grade = m.grade;
     const r = app.masterByNumber.get(number).byGrade[grade];
     const value = r.paramemin + (r.stepmin * m.idx);
 
+    st.grade.set(number, grade);
     st.value.set(number, clampNum(value, r.paramemin, r.paramemax));
     if (m.step === 1){
       upsertSlotFromStep1(number, false);
@@ -1713,9 +1743,9 @@ function isDirtyStep(step){
     const downEnabled = filled && index < 4 && !!app.state.slot[index+1].number;
 
     const gradeChip = filled
-      ? `<button class="chip grade ${grade}" data-action="slot-edit-grade" data-index="${index}" aria-label="レアリティ変更">${grade}</button>`
+      ? `<button class="chip grade ${grade}" data-action="slot-edit-grade" data-index="${index}" aria-label="レアリティ/下限変更">${grade}</button>`
       : '';
-    const scoreChip = filled ? `<span class="chip">${sl.score ?? '-'}</span>` : '';
+    const scoreChip = filled ? `<span class="chip score">${escapeHtml(String(sl.score ?? '-'))}</span>` : '';
     const delBtn = filled
       ? `<button class="xbtn-inline" data-action="slot-delete-at" data-index="${index}" aria-label="削除">×</button>`
       : '';
@@ -1742,10 +1772,14 @@ function isDirtyStep(step){
         </div>
 
         <div class="slot-tail">
-          ${lockVisible ? `<button class="icon-btn lock ${lockOn?'on':''}" data-action="slot-lock" data-index="${index}" ${lockCanToggle?'':'disabled'}>${lockOn?'🔒':'🔓'}</button>` : `<span class="slot-tail-spacer"></span>`}
-          ${scoreChip}
-          ${gradeChip}
-          ${delBtn}
+          <div class="slot-tail-top">
+            ${lockVisible ? `<button class="icon-btn lock ${lockOn?'on':''}" data-action="slot-lock" data-index="${index}" ${lockCanToggle?'':'disabled'}>${lockOn?'🔒':'🔓'}</button>` : `<span class="slot-tail-spacer"></span>`}
+            ${gradeChip}
+            ${delBtn}
+          </div>
+          <div class="slot-tail-bottom">
+            ${scoreChip}
+          </div>
         </div>
       </div>
     `;
@@ -3209,12 +3243,19 @@ function renderRangeOptions(max, cur){
       return;
     }
 
-    const st = getStepState(m.step);
     const num = m.number;
-    const grade = st.grade.get(num);
+    const grade = m.grade;
     const master = app.masterByNumber.get(num);
+    const avail = (master && master.byGrade)
+      ? GRADE_ORDER.filter(g => master.byGrade[g] && master.byGrade[g].paramemin != null)
+      : GRADE_ORDER;
+    const grades = avail.length ? avail : GRADE_ORDER;
+
     const r = master.byGrade[grade];
     const maxIdx = Math.max(0, (r.stepmax||1) - 1);
+    // keep idx within current grade's range (e.g. after grade change)
+    m.idx = clampInt(m.idx, 0, maxIdx);
+
     const value = modalCurrentValue();
     const vText = formatValue(value, r.fp);
 
@@ -3222,6 +3263,13 @@ function renderRangeOptions(max, cur){
       <div class="modal-backdrop">
         <div class="modal" role="dialog" aria-modal="true" aria-label="能力値下限">
           <div class="modal-title">${escapeHtml(master.name)} / ${grade}（${escapeHtml(GRADE_SHORT_TO_JP[grade]||'')}）</div>
+
+          <div class="row" style="justify-content:space-between; align-items:center; margin-top:8px;">
+            <div class="small">レアリティ</div>
+            <div class="grade-row" style="justify-content:flex-end;">
+              ${grades.map(g => `<button class="gbtn ${g===grade?'on':''}" data-action="modal-grade" data-grade="${g}">${g}</button>`).join('')}
+            </div>
+          </div>
           <div class="row" style="justify-content:space-between;">
             <div class="small">下限値</div>
             <div class="modal-value">${escapeHtml(vText)}</div>
@@ -3449,7 +3497,7 @@ function renderRangeOptions(max, cur){
         const idx = Number(t.dataset.index);
         const num = focusStep1FromSlotIndex(idx);
         if (num == null) return;
-        app.state.rarityModal = { open:true, number:num, slotIndex: idx };
+        openModal(1, num);
         render();
         return;
       }
@@ -3496,6 +3544,11 @@ function renderRangeOptions(max, cur){
         } else {
           modalApplyIdx(app.state.modal.idx + delta);
         }
+        render();
+        return;
+      }
+      if (action === 'modal-grade'){
+        modalSetGrade(t.dataset.grade);
         render();
         return;
       }

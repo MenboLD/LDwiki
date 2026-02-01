@@ -590,6 +590,30 @@ body{
   font-size:14px;
   margin-bottom:10px;
 }
+
+.modal-grade-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:2px 0 8px;
+}
+.modal-grade-row .label{
+  font-size:12px;
+  color:rgba(255,255,255,0.7);
+  flex:0 0 auto;
+}
+.modal-grade-row .btn-group{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:6px;
+  flex:1 1 auto;
+}
+.modal-grade-row .gbtn{
+  height:28px;
+  min-width:28px;
+}
 .modal-value{
   font-weight:900;
   font-size:18px;
@@ -705,12 +729,34 @@ body{
 }
 .slot-tail{
   display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:6px;
+  flex:0 0 auto;
+  align-self:stretch;
+  padding-top:0;
+}
+
+.slot-tail-top{
+  display:flex;
   align-items:center;
   justify-content:flex-end;
-  gap:8px;
-  flex:0 0 auto;
-  align-self:flex-start;
-  padding-top:2px;
+  gap:6px;
+}
+
+.slot-tail-bottom{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  margin-top:auto;
+}
+
+.slot-tail-bottom .chip.score{
+  min-width:64px;
+  text-align:right;
+  padding:6px 10px;
+  font-weight:700;
 }
 .slot-tail-spacer{
   display:inline-block;
