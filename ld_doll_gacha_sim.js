@@ -250,6 +250,12 @@
   }
 
   function isDisabledInStep(step, number){
+    // 候補2が未選択の場合、候補3（ステップ4）では新規選択を不可（解除は可）
+    if (step === 4 && (app.state.candidate2||[]).length === 0){
+      const st4 = getStepState(4);
+      const num4 = Number(number);
+      if (!st4 || !st4.selected || !st4.selected.has(num4)) return true;
+    }
     if (step < 2 || step > 4) return false;
     const num = Number(number);
     const m = app.masterByNumber.get(num);
@@ -742,16 +748,50 @@
     if (v === 'c3') return 1;
     return 0; // none/locked
   }
+  function isCandidateTokenAvailable(tok){
+    if (tok === 'c1') return (app.state.candidate1||[]).length > 0;
+    if (tok === 'c2') return (app.state.candidate2||[]).length > 0;
+    // 候補3は、候補2が存在している場合のみ有効
+    if (tok === 'c3') return (app.state.candidate3||[]).length > 0 && (app.state.candidate2||[]).length > 0;
+    return true;
+  }
+
+  function availableEndPriorityTokens(){
+    const out = [];
+    if (isCandidateTokenAvailable('c1')) out.push('c1');
+    if (isCandidateTokenAvailable('c2')) out.push('c2');
+    if (isCandidateTokenAvailable('c3')) out.push('c3');
+    return out;
+  }
+
+  function pruneEndSetsUnavailableTokens(cfg){
+    if (!cfg || !Array.isArray(cfg.endSets)) return;
+    const avail = new Set(availableEndPriorityTokens());
+    for (const set of cfg.endSets){
+      if (!set || !Array.isArray(set.slots)) continue;
+      set.slots = set.slots.map(v => {
+        if (v === 'none') return 'none';
+        if (!isEndPriorityToken(v)) return 'none';
+        if (!avail.has(v)) return 'none';
+        return v;
+      });
+    }
+  }
+
   function isEndTokenAllowed(nextTok, leftLimitTok){
     if (nextTok === 'none') return true; // 未指定は常にOK（優先順位の対象外）
     if (!isEndPriorityToken(nextTok)) return false;
-    if (!leftLimitTok) return true; // 左側に優先指定がない
+    if (!isCandidateTokenAvailable(nextTok)) return false;
+
+    const left = (leftLimitTok && isEndPriorityToken(leftLimitTok) && isCandidateTokenAvailable(leftLimitTok)) ? leftLimitTok : null;
+    if (!left) return true; // 左側に優先指定がない
     // 左側より高い優先（c1>c2>c3）を置けない
-    return endPriorityValue(nextTok) <= endPriorityValue(leftLimitTok);
+    return endPriorityValue(nextTok) <= endPriorityValue(left);
   }
 
   function cycleEndTokenConstrained(currentTok, leftLimitTok){
-    const cycle = ['c1','c2','c3','none'];
+    const pri = availableEndPriorityTokens();
+    const cycle = (pri.length ? pri.slice() : []).concat(['none']);
     const cur = cycle.includes(currentTok) ? currentTok : 'none';
     const start = cycle.indexOf(cur);
     for (let k=1; k<=cycle.length; k++){
@@ -1347,10 +1387,25 @@ function isDirtyStep(step){
     if (s >= 2 && s <= 4){
       const st = getStepState(s);
       const n = st.selected.size;
-      if (n < 1 || n > 10){
-        toast('このステップで選択中の人形を 1〜10 個にしてください');
-        return;
+
+      // 選択数バリデーション：候補1は必須、候補2/3は未選択でもOK
+      if (s === 2){
+        if (n < 1 || n > 10){
+          toast('このステップで選択中の人形を 1〜10 個にしてください');
+          return;
+        }
+      } else {
+        if (n > 10){
+          toast('このステップで選択中の人形を 0〜10 個にしてください');
+          return;
+        }
+        // 候補2が未選択なら、候補3は設定不可（0件のみ許可）
+        if (s === 4 && (app.state.candidate2||[]).length === 0 && n > 0){
+          toast('第2候補が未選択のため、第3候補は設定できません');
+          return;
+        }
       }
+
       const list = Array.from(st.selected).sort((a,b)=>a-b).map(num => {
         const m = app.masterByNumber.get(num);
         const grade = st.grade.get(num);
@@ -1364,36 +1419,72 @@ function isDirtyStep(step){
         app.state.candidate1 = list;
         app.state.candidate2 = [];
         app.state.candidate3 = [];
+
+        // 候補1を確定し直したら、以降の選択状態は破棄
+        resetStepState(3);
+        resetStepState(4);
+
         app.state.step5Confirmed = false;
         app.state.step6Confirmed = false;
         app.state.currentStep = 3;
         app.state.maxReached = 3;
-      } else if (s === 3){
-        // ensure no overlap with candidate1 (should already be blocked)
-        const c1 = getCandidateNameSet(app.state.candidate1);
-        if (list.some(x => c1.has(x.name))){
-          toast('候補1と同名は候補2で選べません');
-          return;
-        }
-        app.state.candidate2 = list;
-        app.state.candidate3 = [];
-        app.state.step5Confirmed = false;
-        app.state.step6Confirmed = false;
-        app.state.currentStep = 4;
-        app.state.maxReached = 4;
-      } else if (s === 4){
-        const c1 = getCandidateNameSet(app.state.candidate1);
-        const c2 = getCandidateNameSet(app.state.candidate2);
-        if (list.some(x => c1.has(x.name) || c2.has(x.name))){
-          toast('候補1/2と同名は候補3で選べません');
-          return;
-        }
-        app.state.candidate3 = list;
-        app.state.step5Confirmed = false;
-        app.state.step6Confirmed = false;
-        app.state.currentStep = 5;
-        app.state.maxReached = 5;
+
+        // 終了条件に残っている候補指定を掃除
+        try { pruneEndSetsUnavailableTokens(app.state.simConfig); } catch(e){}
+        return;
       }
+
+      if (s === 3){
+        const c1 = new Set((app.state.candidate1||[]).map(x=>x.name));
+        // candidate3 は確定前に必ず空にする（残骸を避ける）
+        app.state.candidate3 = [];
+        resetStepState(4);
+
+        if (n > 0){
+          for (const it of list){
+            if (c1.has(it.name)){
+              toast('候補1と同じ人形は選択できません');
+              return;
+            }
+          }
+        }
+
+        app.state.candidate2 = list;
+        app.state.step5Confirmed = false;
+        app.state.step6Confirmed = false;
+
+        // 候補2が未選択なら、候補3はスキップしてステップ⑤へ
+        if (n === 0){
+          app.state.currentStep = 5;
+          app.state.maxReached = 5;
+        } else {
+          app.state.currentStep = 4;
+          app.state.maxReached = 4;
+        }
+
+        try { pruneEndSetsUnavailableTokens(app.state.simConfig); } catch(e){}
+        return;
+      }
+
+      // s === 4
+      const c1 = new Set((app.state.candidate1||[]).map(x=>x.name));
+      const c2 = new Set((app.state.candidate2||[]).map(x=>x.name));
+      if (n > 0){
+        for (const it of list){
+          if (c1.has(it.name) || c2.has(it.name)){
+            toast('候補1・2と同じ人形は選択できません');
+            return;
+          }
+        }
+      }
+      app.state.candidate3 = list;
+      app.state.step5Confirmed = false;
+      app.state.step6Confirmed = false;
+      app.state.currentStep = 5;
+      app.state.maxReached = 5;
+
+      try { pruneEndSetsUnavailableTokens(app.state.simConfig); } catch(e){}
+      return;
     }
 
     if (s === 5){
@@ -1822,7 +1913,14 @@ function isDirtyStep(step){
       });
     }).join('');
 
-    const canConfirm = st.selected.size >= 1 && st.selected.size <= 10;
+    let canConfirm = false;
+    if (step === 2) {
+      canConfirm = st.selected.size >= 1 && st.selected.size <= 10;
+    } else if (step === 3 || step === 4) {
+      // 候補2/3は未選択（0件）でも確定可
+      canConfirm = st.selected.size <= 10;
+    }
+
 
     const panel = renderSelectedPanel(step);
 
@@ -1962,6 +2060,8 @@ function isDirtyStep(step){
   // ---------- step 6 ----------
   function renderStep6(){
     const cfg = app.state.simConfig;
+    // 候補2/3が未選択の場合、終了条件で指定できないようにする
+    pruneEndSetsUnavailableTokens(cfg);
     normalizeEndSets(cfg);
 
     const lockedCount = app.state.slot.slice(0,3).filter(x => x.locked && x.number).length;
@@ -1975,6 +2075,8 @@ function isDirtyStep(step){
         }
       }
     }
+    // ロック反映後に単調性を再適用
+    normalizeEndSets(cfg);
 
 return `
       <div class="section">
@@ -2067,6 +2169,8 @@ return `
   function renderStep7(){
     const sim = app.state.sim;
     const cfg = app.state.simConfig;
+    // 候補2/3が未選択の場合、終了条件で指定できないようにする
+    pruneEndSetsUnavailableTokens(cfg);
     normalizeEndSets(cfg);
     const endSets = cfg.endSets;
     const keyMax = clampInt(app.state.keyCount, 0, 99999);
@@ -2887,6 +2991,8 @@ let c1Possible = false;
     const gaugeInit = clampInt(app.state.mythicGaugeInit, 0, 1000000);
 
     const cfg = app.state.simConfig;
+    // 候補2/3が未選択の場合、終了条件で指定できないようにする
+    pruneEndSetsUnavailableTokens(cfg);
     normalizeEndSets(cfg);
     const endSets = cfg.endSets;
     const tieBreaker = cfg.tieBreaker || 'score';
@@ -2953,6 +3059,8 @@ let c1Possible = false;
     const gaugeInit = clampInt(app.state.mythicGaugeInit, 0, 1000000);
 
     const cfg = app.state.simConfig;
+    // 候補2/3が未選択の場合、終了条件で指定できないようにする
+    pruneEndSetsUnavailableTokens(cfg);
     normalizeEndSets(cfg);
     const endSets = cfg.endSets;
     const tieBreaker = cfg.tieBreaker || 'score';
