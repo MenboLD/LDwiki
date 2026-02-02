@@ -60,11 +60,19 @@ function clearError(){
 }
 
 function ensureSupabase(){
+  if (STATE.sb) return STATE.sb;
+
   const url = window.LD_SUPABASE_URL;
   const key = window.LD_SUPABASE_ANON_KEY;
   if(!url || !key) throw new Error('supabase_config.js に LD_SUPABASE_URL / LD_SUPABASE_ANON_KEY がありません');
   if(!window.supabase) throw new Error('supabase-js CDN が読み込めませんでした');
-  const sb = window.supabase.createClient(url, key, { db: { schema: 'public' } });
+
+  // 認証は使わないため、セッション永続化を切って警告/副作用を避ける
+  const sb = window.supabase.createClient(url, key, {
+    db: { schema: 'public' },
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+  });
+
   STATE.sb = sb;
   return sb;
 }
@@ -133,7 +141,7 @@ async function loadMasters(){
       fetchAll('ld_dmg_pet_3', 'pet_name'),
       fetchAll('ld_dmg_relic', 'relic_name'),
       fetchAll('ld_dmg_piece', 'piece_name'),
-      fetchAll('ld_dmg_treasure', 'treasurename'),
+      fetchAll('ld_dmg_treasure', 'treasure_name'),
       fetchAll('ld_dmg_dff', 'mode'),
     ]);
 

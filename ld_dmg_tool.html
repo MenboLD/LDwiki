@@ -8,7 +8,11 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="title">ダメージ検証ツール（UI試作）</div>
+    <div class="title">
+      ダメージ検証ツール（UI試作）
+      <div id="status" class="status">初期化中...</div>
+    </div>
+
     <div class="actions">
       <label class="chk">
         <input id="dbgToggle" type="checkbox" />
@@ -18,21 +22,9 @@
     </div>
   </header>
 
-  <main class="wrap">
-    <section class="card">
-      <div class="row">
-        <div>
-          <div class="label">状態</div>
-          <div id="status" class="pill mono">初期化中...</div>
-        </div>
-        <div class="grow">
-          <div class="label">メモ</div>
-          <div class="pill">接続テストUIは省略（ロード失敗時はログに表示）</div>
-        </div>
-      </div>
-      <div id="err" class="err hidden"></div>
-    </section>
+  <div id="err" class="err hidden"></div>
 
+  <main class="wrap">
     <section class="card">
       <div class="row">
         <h2 class="h">入力</h2>
