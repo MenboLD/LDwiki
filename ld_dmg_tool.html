@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ダメージ検証ツール（UI試作）</title>
+  <link rel="stylesheet" href="./ld_dmg_tool.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="title">ダメージ検証ツール（UI試作）</div>
+    <div class="actions">
+      <label class="chk">
+        <input id="dbgToggle" type="checkbox" />
+        <span>デバッグ</span>
+      </label>
+      <button id="btnReload" class="btn">マスタ再読み込み</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <div class="row">
+        <div>
+          <div class="label">状態</div>
+          <div id="status" class="pill mono">初期化中...</div>
+        </div>
+        <div class="grow">
+          <div class="label">メモ</div>
+          <div class="pill">接続テストUIは省略（ロード失敗時はログに表示）</div>
+        </div>
+      </div>
+      <div id="err" class="err hidden"></div>
+    </section>
+
+    <section class="card">
+      <div class="row">
+        <h2 class="h">入力</h2>
+        <div class="grow"></div>
+        <button id="btnReset" class="btn btn-small">デフォルトへ戻す</button>
+      </div>
+      <div id="form" class="form"></div>
+    </section>
+
+    <section class="card">
+      <div class="row">
+        <h2 class="h">現在の値</h2>
+        <div class="grow"></div>
+        <button id="btnCopy" class="btn btn-small btn-primary">コピー</button>
+      </div>
+      <pre id="out" class="box mono"></pre>
+      <div class="muted mt8">
+        ※表示条件で非表示の入力は <span class="mono">visible:false</span> になります（値は保持）。
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row">
+        <h2 class="h">ログ</h2>
+        <div class="grow"></div>
+        <button id="btnClearLog" class="btn btn-small">クリア</button>
+      </div>
+      <pre id="log" class="log mono"></pre>
+    </section>
+
+    <footer class="footer muted">UI試作: 入力定義 + 表示条件式を元にフォームを自動生成</footer>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase_config.js"></script>
+  <script src="./ld_dmg_tool.js"></script>
+</body>
+</html>
