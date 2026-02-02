@@ -90,6 +90,20 @@ function uniq(arr){
   return [...new Set(arr)];
 }
 
+function pickPieceMax(row){
+  if(!row || typeof row !== 'object') return 1;
+  const direct = row.parame1_max ?? row.Parame1_max ?? row.param1_max ?? row.max;
+  const d = Number(direct);
+  if(Number.isFinite(d)) return d;
+  for(const k of Object.keys(row)){
+    if(/parame1.*max/i.test(k)){
+      const v = Number(row[k]);
+      if(Number.isFinite(v)) return v;
+    }
+  }
+  return 1;
+}
+
 function buildIndexes(){
   // Exists(table,col,value) の高速化用 index
   const idx = {};
@@ -134,15 +148,16 @@ async function loadMasters(){
 
   try{
     const [unit_atk, unit_abilities, pet1, pet2, pet3, relic, piece, treasure, dff] = await Promise.all([
-      fetchAll('ld_dmg_unit_atk', 'unit_name'),
-      fetchAll('ld_dmg_unit_abilities', 'unit_name'),
-      fetchAll('ld_dmg_pet_1', 'pet_name'),
-      fetchAll('ld_dmg_pet_2', 'pet_name'),
-      fetchAll('ld_dmg_pet_3', 'pet_name'),
-      fetchAll('ld_dmg_relic', 'relic_name'),
-      fetchAll('ld_dmg_piece', 'piece_name'),
-      fetchAll('ld_dmg_treasure', 'treasure_name'),
-      fetchAll('ld_dmg_dff', 'mode'),
+      // Unit order: do NOT sort here. Expect CSV import order / table order.
+      fetchAll('ld_DMG_unit_atk'),
+      fetchAll('ld_DMG_unit_abilties', 'id_name_unit'),
+      fetchAll('ld_DMG_pet_1', 'petname'),
+      fetchAll('ld_DMG_pet_2', 'petname'),
+      fetchAll('ld_DMG_pet_3', 'petname'),
+      fetchAll('ld_DMG_relic', 'relicname'),
+      fetchAll('ld_DMG_piece', 'Piecename'),
+      fetchAll('ld_DMG_treasure', 'treasurename'),
+      fetchAll('ld_DMG_dff', 'Mode'),
     ]);
 
     STATE.masters.unit_atk = unit_atk;
@@ -424,6 +439,21 @@ function makeCheckbox(item){
 function makeSlider(item){
   const root = createFieldRoot(item);
 
+  const minus = document.createElement('button');
+  minus.type = 'button';
+  minus.className = 'stepBtn';
+  minus.textContent = '−';
+
+  const plus = document.createElement('button');
+  plus.type = 'button';
+  plus.className = 'stepBtn';
+  plus.textContent = '+';
+
+  const btns = document.createElement('div');
+  btns.className = 'stepBtns';
+  btns.appendChild(minus);
+  btns.appendChild(plus);
+
   const r = document.createElement('input');
   r.type = 'range';
 
@@ -435,11 +465,12 @@ function makeSlider(item){
 
   const row = document.createElement('div');
   row.className = 'rangeRow';
+  row.appendChild(btns);
   row.appendChild(r);
   row.appendChild(val);
+  row.appendChild(n);
 
   root.appendChild(row);
-  root.appendChild(n);
 
   function setRange(min,max,step){
     r.min = String(min);
@@ -450,10 +481,17 @@ function makeSlider(item){
     n.step = String(step);
   }
 
-  function setValue(v){
+  function quantize(num){
     const min = Number(r.min || 0);
     const max = Number(r.max || 100);
-    const num = clamp(Number(v), min, max);
+    const step = Number(r.step || 1);
+    if(!Number.isFinite(num)) num = min;
+    const q = Math.round((num - min) / step) * step + min;
+    return clamp(q, min, max);
+  }
+
+  function setValue(v){
+    const num = quantize(Number(v));
     r.value = String(num);
     n.value = String(num);
     val.textContent = String(num);
@@ -472,11 +510,20 @@ function makeSlider(item){
     addChangeHandler(item.id);
   });
 
+  function stepBy(dir){
+    const step = Number(r.step || 1);
+    const cur = Number(r.value || 0);
+    setValue(cur + dir * step);
+    addChangeHandler(item.id);
+  }
+  minus.addEventListener('click', () => stepBy(-1));
+  plus.addEventListener('click', () => stepBy(+1));
+
   return {
     root,
     setValue,
     getValue(){ return Number(r.value); },
-    setDisabled(b){ r.disabled = b; n.disabled = b; },
+    setDisabled(b){ r.disabled = b; n.disabled = b; minus.disabled = b; plus.disabled = b; },
     setOptions(opts){ /* used as dynamic range config sometimes */ 
       if(opts && opts.range){
         setRange(opts.range.min, opts.range.max, opts.range.step ?? base.step);
@@ -557,6 +604,7 @@ function buildForm(){
 
     const details = document.createElement('details');
     details.className = 'section';
+    details.dataset.category = c;
     // open the top few sections by default
     if(['ユニット','総合','環境','遺物','ペット'].includes(c)) details.open = true;
 
@@ -579,6 +627,11 @@ function buildForm(){
       STATE.controls[item.id] = ctrl;
       grid.appendChild(ctrl.root);
     }
+
+    const empty = document.createElement('div');
+    empty.className = 'sectionEmpty';
+    empty.textContent = 'このユニットでは該当なし';
+    grid.appendChild(empty);
 
     details.appendChild(grid);
     UI.form.appendChild(details);
@@ -603,7 +656,7 @@ function optionListFor(item){
   const id = item.id;
 
   if(id === 'unit_name_parts'){
-    const names = uniq(STATE.masters.unit_atk.map(r => r.unit_name ?? r.UnitName ?? r.UnitName ?? r.name).filter(Boolean).map(String));
+    const names = uniq(STATE.masters.unit_atk.map(r => r.unit_name ?? r.UnitName ?? r.name).filter(Boolean).map(String));
     return names.length ? names : [String(item.default || '')];
   }
 
@@ -622,7 +675,7 @@ function optionListFor(item){
   }
 
   if(id.startsWith('pet_name_')){
-    const names = uniq(STATE.masters.pet1.map(r => r.pet_name ?? r.PetName ?? r.name).filter(Boolean).map(String)).sort();
+    const names = uniq(STATE.masters.pet1.map(r => r.pet_name ?? r.petname ?? r.PetName ?? r.name).filter(Boolean).map(String)).sort();
     const base = ['None', ...names.filter(n => n !== 'None')];
     // mutual exclusion with other pet selects
     const others = ['pet_name_a','pet_name_b','pet_name_c'].filter(x => x !== id);
@@ -709,7 +762,7 @@ function refreshDynamicSliderRanges(){
     if(!pname || pname === 'None') continue;
     const row = STATE.masters.indexes.piece_by_name?.get(pname);
     if(!row) continue;
-    const max = Number(row.parame1_max ?? row.Parame1_max ?? row.param1_max ?? row.max ?? 1);
+    const max = pickPieceMax(row);
     if(Number.isFinite(max) && max > 0){
       ctrl.setOptions({ range: { min: 1, max: max, step: 1 } });
     }
@@ -725,6 +778,21 @@ function applyAllVisibility(){
     if(!ctrl) continue;
     ctrl.root.classList.toggle('hidden', !vis);
     ctrl.setDisabled(!vis);
+  }
+
+  // section status update: inactive / meta / empty
+  const sections = document.querySelectorAll('.section');
+  for(const sec of sections){
+    const fields = [...sec.querySelectorAll('.field[data-input-id]')];
+    const visibleCount = fields.filter(f => !f.classList.contains('hidden')).length;
+
+    const empty = sec.querySelector('.sectionEmpty');
+    if(empty) empty.style.display = (visibleCount === 0) ? 'block' : 'none';
+
+    sec.classList.toggle('inactive', visibleCount === 0);
+
+    const meta = sec.querySelector('.sectionMeta');
+    if(meta) meta.textContent = `${visibleCount}/${fields.length}表示`;
   }
 }
 
