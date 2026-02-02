@@ -336,3 +336,30 @@ body.debug .rawOnly{ display:block; }
 .outField .fieldHeader{ align-self:center; }
 .outVal{ font-weight:700; justify-self:end; }
 .outVal.mono{ font-weight:650; }
+
+
+/* --- v6 responsive fixes (iPhone) --- */
+*, *::before, *::after{ box-sizing:border-box; }
+
+.wrap{ padding-left:12px; padding-right:12px; }
+.card{ overflow:hidden; }
+
+.form, .grid{ min-width:0; }
+.field{ min-width:0; }
+.fieldHeader{ min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fieldContent{ min-width:0; }
+
+select, input, button{ max-width:100%; }
+select, input[type="text"], input[type="number"]{ width:100%; min-width:0; }
+.rangeRow{ display:grid; grid-template-columns:auto auto 1fr auto; gap:10px; align-items:center; min-width:0; }
+.rangeRow input[type="range"]{ min-width:0; width:100%; }
+.rangeVal{ min-width:2.5em; text-align:right; }
+
+/* Make label/control in one row more aggressively */
+.field{ grid-template-columns: minmax(110px, 38%) 1fr; }
+@media(max-width:420px){
+  .field{ grid-template-columns: minmax(96px, 40%) 1fr; }
+  .stepBtn{ width:34px; }
+  .rangeRow{ grid-template-columns:auto auto 1fr; }
+  .rangeRow input[type="number"]{ display:none; } /* keep one-line on very small screens */
+}
