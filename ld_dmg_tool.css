@@ -325,3 +325,14 @@ select:focus, input:focus{ border-color: rgba(77,163,255,.75); }
 }
 .stepBtn:active{ transform: translateY(1px); }
 .rangeRow input[type="number"]{ width:88px; }
+
+
+/* Debug-only blocks */
+.rawOnly{ display:none; }
+body.debug .rawOnly{ display:block; }
+
+
+/* Output label rows */
+.outField .fieldHeader{ align-self:center; }
+.outVal{ font-weight:700; justify-self:end; }
+.outVal.mono{ font-weight:650; }

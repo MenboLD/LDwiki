@@ -10,6 +10,7 @@ const UI = {
   status: document.getElementById('status'),
   err: document.getElementById('err'),
   form: document.getElementById('form'),
+  outputs: document.getElementById('outputs'),
   out: document.getElementById('out'),
   log: document.getElementById('log'),
   btnReload: document.getElementById('btnReload'),
@@ -35,7 +36,10 @@ const STATE = {
   },
   values: {},     // inputId -> value
   visible: {},    // inputId -> bool
-  controls: {},   // inputId -> { root, setValue(), getValue(), setDisabled(bool), setOptions(list) }
+  controls: {},   // inputId -> { root, setValue(), getValue(),
+  outRows: {},   // inputId -> output row element
+  outVals: {},   // inputId -> output value element
+ setDisabled(bool), setOptions(list) }
   debug: false,
 };
 
@@ -185,6 +189,7 @@ async function loadMasters(){
     refreshAllOptions();
     applyAllVisibility();
     renderOutput();
+  renderLabelOutputs();
   }catch(e){
     setStatus('マスタ読み込み失敗');
     showError(String(e.message || e));
@@ -346,6 +351,7 @@ function addChangeHandler(inputId){
   applyAllVisibility();
   refreshAllOptions(); // options dependent fields
   renderOutput();
+  renderLabelOutputs();
 }
 
 function makeSelect(item){
@@ -638,6 +644,100 @@ function buildForm(){
   }
 }
 
+
+function buildOutputs(){
+  if(!UI.outputs) return;
+  UI.outputs.innerHTML = '';
+  STATE.outRows = {};
+  STATE.outVals = {};
+
+  const byCat = new Map();
+  for(const c of DEF.categories) byCat.set(c, []);
+  for(const it of DEF.inputs){
+    const c = it.category;
+    if(!byCat.has(c)) byCat.set(c, []);
+    byCat.get(c).push(it);
+  }
+
+  for(const c of DEF.categories){
+    const items = byCat.get(c) || [];
+    if(!items.length) continue;
+
+    const details = document.createElement('details');
+    details.className = 'section outSection';
+    details.dataset.category = c;
+    if(['ユニット','総合','環境','遺物','ペット'].includes(c)) details.open = true;
+
+    const summary = document.createElement('summary');
+    const t = document.createElement('div');
+    t.className = 'sectionTitle';
+    t.textContent = c;
+    const meta = document.createElement('div');
+    meta.className = 'sectionMeta';
+    meta.textContent = `${items.length}項目`;
+    summary.appendChild(t);
+    summary.appendChild(meta);
+    details.appendChild(summary);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+
+    for(const item of items){
+      const row = document.createElement('div');
+      row.className = 'field outField';
+      row.dataset.outputId = item.id;
+
+      const head = document.createElement('div');
+      head.className = 'fieldHeader';
+      const label = document.createElement('div');
+      label.className = 'fieldLabel';
+      label.textContent = item.label;
+      head.appendChild(label);
+
+      const content = document.createElement('div');
+      content.className = 'fieldContent';
+      const v = document.createElement('div');
+      v.className = 'outVal mono';
+      v.textContent = '—';
+      content.appendChild(v);
+
+      row.appendChild(head);
+      row.appendChild(content);
+
+      grid.appendChild(row);
+
+      STATE.outRows[item.id] = row;
+      STATE.outVals[item.id] = v;
+    }
+
+    const empty = document.createElement('div');
+    empty.className = 'sectionEmpty';
+    empty.textContent = 'このユニットでは該当なし';
+    grid.appendChild(empty);
+
+    details.appendChild(grid);
+    UI.outputs.appendChild(details);
+  }
+}
+
+function formatOutValue(item, v){
+  if(v === undefined || v === null) return '—';
+  if(item.ui === 'checkbox') return v ? 'ON' : 'OFF';
+  if(typeof v === 'boolean') return v ? 'ON' : 'OFF';
+  if(typeof v === 'number' && Number.isFinite(v)) return String(v);
+  const s = String(v);
+  return s === '' ? '—' : s;
+}
+
+function renderLabelOutputs(){
+  if(!UI.outputs) return;
+  for(const item of DEF.inputs){
+    const el = STATE.outVals[item.id];
+    if(!el) continue;
+    el.textContent = formatOutValue(item, STATE.values[item.id]);
+  }
+}
+
 function setDefaults(){
   for(const item of DEF.inputs){
     const ctrl = STATE.controls[item.id];
@@ -771,19 +871,27 @@ function refreshDynamicSliderRanges(){
 
 // --- Visibility application ---
 function applyAllVisibility(){
+  // Inputs + Output-label visibility (same expr)
   for(const item of DEF.inputs){
     const vis = evalExpr(item.expr);
     STATE.visible[item.id] = !!vis;
+
     const ctrl = STATE.controls[item.id];
-    if(!ctrl) continue;
-    ctrl.root.classList.toggle('hidden', !vis);
-    ctrl.setDisabled(!vis);
+    if(ctrl){
+      ctrl.root.classList.toggle('hidden', !vis);
+      ctrl.setDisabled(!vis);
+    }
+
+    const outRow = STATE.outRows[item.id];
+    if(outRow){
+      outRow.classList.toggle('hidden', !vis);
+    }
   }
 
   // section status update: inactive / meta / empty
   const sections = document.querySelectorAll('.section');
   for(const sec of sections){
-    const fields = [...sec.querySelectorAll('.field[data-input-id]')];
+    const fields = [...sec.querySelectorAll('.field[data-input-id], .field[data-output-id]')];
     const visibleCount = fields.filter(f => !f.classList.contains('hidden')).length;
 
     const empty = sec.querySelector('.sectionEmpty');
@@ -824,6 +932,7 @@ function resetToDefaults(){
   refreshAllOptions();
   applyAllVisibility();
   renderOutput();
+  renderLabelOutputs();
   log('デフォルトへ戻しました');
 }
 
@@ -835,10 +944,12 @@ function setDebug(on){
 // --- Boot ---
 function boot(){
   buildForm();
+  buildOutputs();
   setDefaults();
   refreshAllOptions();
   applyAllVisibility();
   renderOutput();
+  renderLabelOutputs();
 
   UI.btnReload.addEventListener('click', loadMasters);
   UI.btnReset.addEventListener('click', resetToDefaults);

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ダメージ検証ツール（UI試作）</title>
-  <link rel="stylesheet" href="./ld_dmg_tool.css" />
+  <link rel="stylesheet" href="./ld_dmg_tool_ui_v5_20260203.css" />
 </head>
 <body>
   <header class="topbar">
@@ -34,9 +34,19 @@
       <div id="form" class="form"></div>
     </section>
 
+    
     <section class="card">
       <div class="row">
-        <h2 class="h">現在の値</h2>
+        <h2 class="h">出力（ラベル）</h2>
+        <div class="grow"></div>
+      </div>
+      <div id="outputs" class="form"></div>
+      <div class="muted mt8">※入力と同じ表示条件式で、出力項目も自動的に表示／非表示になります。</div>
+    </section>
+
+    <section class="card rawOnly">
+      <div class="row">
+        <h2 class="h">現在の値（デバッグ）</h2>
         <div class="grow"></div>
         <button id="btnCopy" class="btn btn-small btn-primary">コピー</button>
       </div>
@@ -60,6 +70,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase_config.js"></script>
-  <script src="./ld_dmg_tool.js"></script>
+  <script src="./ld_dmg_tool_ui_v5_20260203.js"></script>
 </body>
 </html>
