@@ -15,7 +15,7 @@ const OUT_DEF = [
   {cat:'計算', id:'calc_atk_after_tier', label:'攻撃力（段階補正後・暫定）', expr:'true'},
   {cat:'計算', id:'calc_raw_damage', label:'ダメージ（防御等前・暫定）', expr:'true'},
   {cat:'計算', id:'calc_dff', label:'敵防御(dff)', expr:'mode_parts != "None" && wave_parts != null'},
-  {cat:'計算', id:'calc_final_damage', label:'最終ダメージ（暫定）', expr:'true'},
+  {cat:'計算', id:'calc_final_damage', label:'最終ダメージ（暫定）', expr:'true'}
 ];
 
 const UI = {
@@ -29,7 +29,7 @@ const UI = {
   btnReset: document.getElementById('btnReset'),
   btnCopy: document.getElementById('btnCopy'),
   btnClearLog: document.getElementById('btnClearLog'),
-  dbgToggle: document.getElementById('dbgToggle'),
+  dbgToggle: document.getElementById('dbgToggle')
 };
 
 const STATE = {
@@ -44,7 +44,7 @@ const STATE = {
     piece: [],
     treasure: [],
     dff: [],
-    indexes: {},
+    indexes: {}
   },
   values: {},     // inputId -> value
   visible: {},    // inputId -> bool
@@ -52,7 +52,7 @@ const STATE = {
   outRows: {},   // outId -> row element
   outVals: {},   // outId -> value element
  setDisabled(bool), setOptions(list) }
-  debug: false,
+  debug: false
 };
 
 function log(msg, obj){
@@ -173,7 +173,7 @@ async function loadMasters(){
       fetchAll('ld_DMG_relic', 'relicname'),
       fetchAll('ld_DMG_piece', 'Piecename'),
       fetchAll('ld_DMG_treasure', 'treasurename'),
-      fetchAll('ld_DMG_dff', 'Mode'),
+      fetchAll('ld_DMG_dff', 'Mode')
     ]);
 
     STATE.masters.unit_atk = unit_atk;
@@ -325,7 +325,7 @@ function parseRangeConstraint(item){
   return {
     min: (c.min != null ? Number(c.min) : 0),
     max: (c.max != null ? Number(c.max) : 100),
-    step: (c.step != null ? Number(c.step) : 1),
+    step: (c.step != null ? Number(c.step) : 1)
   };
 }
 
@@ -393,7 +393,7 @@ function makeSelect(item){
     setValue(v){ sel.value = (v ?? ''); STATE.values[item.id] = sel.value; },
     getValue(){ return sel.value; },
     setDisabled(b){ sel.disabled = b; },
-    setOptions,
+    setOptions
   };
 }
 
@@ -416,7 +416,7 @@ function makeText(item){
     setValue(v){ inp.value = (v ?? ''); STATE.values[item.id] = inp.value; },
     getValue(){ return inp.value; },
     setDisabled(b){ inp.disabled = b; },
-    setOptions(){},
+    setOptions(){}
   };
 }
 
@@ -443,7 +443,7 @@ function makeCheckbox(item){
     setValue(v){ inp.checked = !!v; STATE.values[item.id] = !!inp.checked; },
     getValue(){ return !!inp.checked; },
     setDisabled(b){ inp.disabled = b; },
-    setOptions(){},
+    setOptions(){}
   };
 }
 
@@ -541,7 +541,7 @@ function makeSlider(item){
         // clamp current
         setValue(STATE.values[item.id]);
       }
-    },
+    }
   };
 }
 
@@ -583,7 +583,7 @@ function makeToggle(item){
     setValue(v){ STATE.values[item.id] = String(v ?? opts[0]); applyActive(); },
     getValue(){ return STATE.values[item.id]; },
     setDisabled(b){ for(const btn of buttons) btn.disabled = b; },
-    setOptions(){},
+    setOptions(){}
   };
 }
 
@@ -767,7 +767,7 @@ function renderCalcOutputs(){
     calc_atk_after_tier: Math.round(r.atkAfterTier*1000)/1000,
     calc_raw_damage: Math.round(r.rawDamage*1000)/1000,
     calc_dff: r.dff,
-    calc_final_damage: Math.round(r.finalDamage*1000)/1000,
+    calc_final_damage: Math.round(r.finalDamage*1000)/1000
   };
 
   for(const o of OUT_DEF){
@@ -904,7 +904,7 @@ function refreshDynamicSliderRanges(){
     piece_grow_b: 'piece_name_b',
     piece_grow_c: 'piece_name_c',
     piece_grow_d: 'piece_name_d',
-    piece_grow_e: 'piece_name_e',
+    piece_grow_e: 'piece_name_e'
   };
   for(const gid of growIds){
     const ctrl = STATE.controls[gid];
@@ -950,13 +950,13 @@ function applyAllVisibility(){
 
 function renderOutput(){
   const out = {
-    values: {},
+    values: {}
   };
   for(const item of DEF.inputs){
     const id = item.id;
     out.values[id] = {
       value: STATE.values[id],
-      visible: !!STATE.visible[id],
+      visible: !!STATE.visible[id]
     };
   }
   UI.out.textContent = JSON.stringify(out, null, 2);
