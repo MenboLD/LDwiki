@@ -181,10 +181,11 @@ async function loadMasters(){
       treasure: treasure.length
     });
 
-    // refresh option lists that depend on masters
+    // refresh derived values & option lists that depend on masters
+    refreshDerivedFromUnit();
     refreshAllOptions();
+    updateAllSelectOptions();
     applyAllVisibility();
-  updateAllSelectOptions();
     renderOutput();
   }catch(e){
     setStatus('マスタ読み込み失敗');
@@ -923,10 +924,10 @@ function setDebug(on){
 // --- Boot ---
 function boot(){
   buildForm();
+  setDefaults();
   refreshDerivedFromUnit();
   updateAllSelectOptions();
-  setDefaults();
-  refreshAllOptions();
+  // masters-dependent options will be refreshed after loadMasters
   applyAllVisibility();
   renderOutput();
 
