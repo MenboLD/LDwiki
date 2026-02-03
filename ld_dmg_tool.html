@@ -25,19 +25,28 @@
   <div id="err" class="err hidden"></div>
 
   <main class="wrap">
-    <section class="card">
+    
+    <div class="tabs" role="tablist" aria-label="入力/出力">
+      <button type="button" class="tabBtn isActive" data-tab="input" aria-selected="true">入力</button>
+      <button type="button" class="tabBtn" data-tab="output" aria-selected="false">出力</button>
+    </div>
+    <div id="tabInput" class="tabPanel">
+<section class="card">
       <div class="row">
         <h2 class="h">入力</h2>
         <div class="grow"></div>
         <button id="btnReset" class="btn btn-small">デフォルトへ戻す</button>
       </div>
       <div id="form" class="form"></div>
+      <div id="treasureDetail" class="form"></div>
     </section>
 
     <section class="card">
       <div class="row">
         
-    <section class="card">
+    </div><!-- /#tabInput -->
+    <div id="tabOutput" class="tabPanel isHidden">
+<section class="card">
       <div class="row">
         <h2 class="h">出力（計算結果）</h2>
         <div class="grow"></div>
@@ -66,7 +75,9 @@
     </section>
 
     <footer class="footer muted">UI試作: 入力定義 + 表示条件式を元にフォームを自動生成</footer>
-  </main>
+  
+    </div><!-- /#tabOutput -->
+</main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./supabase_config.js"></script>
