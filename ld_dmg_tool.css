@@ -1,14 +1,397 @@
-body{margin:0;font-family:system-ui;background:#0b0f14;color:#e6e6e6}
-.top{padding:12px}
-.tabs{display:flex;gap:8px;padding:0 12px}
-.tab{flex:1;padding:10px;border-radius:12px;border:1px solid #333;background:#151b23;color:#ccc}
-.tab.isActive{background:#22334a;color:#fff}
-main{padding:12px}
-.card{border-radius:16px;padding:12px;margin-bottom:12px}
-.card-unit{background:rgba(80,120,255,.12)}
-.card-treasure{background:rgba(160,80,255,.12)}
-.card-output{background:rgba(120,200,120,.12)}
-.row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
-label{flex:0 0 90px}
-select,button{flex:1;background:#111;border:1px solid #333;color:#fff;padding:8px;border-radius:10px}
-.hidden{display:none}
+/* UI試作 - dark minimal */
+:root{
+  --bg:#0b0f14;
+  --card:#0f1620;
+  --card2:#101a26;
+  --text:#e7eef7;
+  --muted:#9db0c6;
+  --line:#233244;
+  --accent:#4da3ff;
+  --danger:#ff6464;
+  --ok:#7dffb2;
+  --shadow: 0 8px 20px rgba(0,0,0,.35);
+  --radius:14px;
+  --pad:14px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --sans: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family:var(--sans);
+  background:linear-gradient(180deg,#0b0f14,#091018);
+  color:var(--text);
+}
+
+.topbar{
+  position:sticky;
+  top:0;
+  z-index:20;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 14px;
+  background:rgba(10,14,20,.92);
+  backdrop-filter: blur(10px);
+  border-bottom:1px solid rgba(35,50,68,.55);
+}
+.title{ font-weight:800; letter-spacing:.02em; line-height:1.1; }
+.actions{ display:flex; align-items:center; gap:10px; }
+
+.wrap{
+  max-width:1100px;
+  margin:0 auto;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.card{
+  background:linear-gradient(180deg,var(--card),var(--card2));
+  border:1px solid rgba(35,50,68,.55);
+  box-shadow:var(--shadow);
+  border-radius:var(--radius);
+  padding:var(--pad);
+}
+
+.h{ margin:0; font-size:16px; }
+
+.row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.grow{ flex:1; }
+
+.label{ font-size:12px; color:var(--muted); margin-bottom:6px; }
+.muted{ color:var(--muted); font-size:13px; line-height:1.5; }
+
+.pill{
+  border:1px solid rgba(35,50,68,.7);
+  background:rgba(0,0,0,.25);
+  border-radius:12px;
+  padding:8px 10px;
+  word-break: break-word;
+}
+.mono{ font-family:var(--mono); }
+
+.btn{
+  appearance:none;
+  border:1px solid rgba(35,50,68,.85);
+  background:rgba(0,0,0,.18);
+  color:var(--text);
+  border-radius:12px;
+  padding:10px 12px;
+  cursor:pointer;
+  font-weight:700;
+  transition: transform .06s ease, background .2s ease, border-color .2s ease;
+}
+.btn:hover{ background:rgba(255,255,255,.06); }
+.btn:active{ transform: translateY(1px); }
+.btn-primary{
+  background: linear-gradient(180deg, rgba(77,163,255,.25), rgba(77,163,255,.12));
+  border-color: rgba(77,163,255,.6);
+}
+.btn-small{ padding:6px 10px; font-size:12px; border-radius:10px; }
+
+.chk{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  color:var(--muted);
+  user-select:none;
+}
+.chk input{ transform: scale(1.1); }
+
+.form{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:10px;
+}
+
+.section{
+  border:1px solid rgba(35,50,68,.55);
+  background:rgba(0,0,0,.10);
+  border-radius:14px;
+  overflow:hidden;
+}
+.section > summary{
+  list-style:none;
+  cursor:pointer;
+  padding:12px 12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  user-select:none;
+}
+.section > summary::-webkit-details-marker{ display:none; }
+.sectionTitle{
+  font-weight:800;
+}
+.sectionMeta{
+  margin-left:auto;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:10px;
+  padding:12px;
+  border-top:1px solid rgba(35,50,68,.55);
+}
+@media(min-width:860px){
+  .grid{ grid-template-columns: 1fr 1fr; }
+}
+
+.field{
+  border:1px solid rgba(35,50,68,.55);
+  background:rgba(0,0,0,.16);
+  border-radius:12px;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.field.hidden{ display:none; }
+.fieldHeader{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.fieldLabel{
+  font-weight:800;
+}
+.badge{
+  margin-left:auto;
+  font-size:11px;
+  color:var(--muted);
+  border:1px solid rgba(35,50,68,.65);
+  background:rgba(0,0,0,.22);
+  padding:3px 8px;
+  border-radius:999px;
+}
+.dev{ display:none; }
+body.debug .dev{ display:block; }
+.devInfo{
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.35;
+  white-space:pre-wrap;
+}
+
+select, input[type="number"], input[type="text"], input[type="range"]{
+  border:1px solid rgba(35,50,68,.85);
+  background:rgba(0,0,0,.25);
+  color:var(--text);
+  border-radius:12px;
+  padding:10px 12px;
+  outline:none;
+}
+select:focus, input:focus{ border-color: rgba(77,163,255,.75); }
+
+.rangeRow{ display:flex; align-items:center; gap:10px; }
+.rangeVal{
+  width:74px;
+  text-align:right;
+  font-family:var(--mono);
+  color:var(--muted);
+  font-size:12px;
+}
+
+.toggleRow{
+  display:flex;
+  gap:10px;
+}
+.toggleBtn{
+  flex:1;
+  border:1px solid rgba(35,50,68,.85);
+  background:rgba(0,0,0,.18);
+  color:var(--text);
+  border-radius:12px;
+  padding:10px 12px;
+  cursor:pointer;
+  font-weight:800;
+}
+.toggleBtn.active{
+  border-color: rgba(77,163,255,.7);
+  background: rgba(77,163,255,.16);
+}
+
+.box{
+  border:1px solid rgba(35,50,68,.7);
+  background:rgba(0,0,0,.18);
+  border-radius:12px;
+  padding:10px 12px;
+  white-space:pre-wrap;
+  overflow:auto;
+  max-height:420px;
+}
+
+.log{
+  max-height:260px;
+  overflow:auto;
+  margin:8px 0 0 0;
+  border:1px solid rgba(35,50,68,.7);
+  background:rgba(0,0,0,.18);
+  border-radius:12px;
+  padding:10px 12px;
+  font-size:12px;
+  line-height:1.45;
+}
+
+.err{
+  margin-top:10px;
+  border:1px solid rgba(255,100,100,.35);
+  background:rgba(255,100,100,.08);
+  border-radius:12px;
+  padding:10px 12px;
+  color:var(--danger);
+  white-space:pre-wrap;
+}
+.hidden{ display:none; }
+.mt8{ margin-top:8px; }
+
+.footer{ text-align:center; padding:6px 0 14px; }
+
+
+.status{
+  margin-top:6px;
+  font-size:12px;
+  color: var(--muted);
+}
+
+
+/* --- v4 UI improvements --- */
+.section{
+  border:1px solid rgba(35,50,68,.55);
+  border-radius:14px;
+  overflow:hidden;
+  background:rgba(255,255,255,.025);
+}
+.section:nth-of-type(even){ background:rgba(255,255,255,.015); }
+.section[open]{ background:rgba(77,163,255,.06); border-color:rgba(77,163,255,.25); }
+.section > summary{ background:rgba(0,0,0,.10); }
+.section[open] > summary{ background:rgba(77,163,255,.10); }
+.section > summary::after{
+  content:"▸";
+  margin-left:10px;
+  color:var(--muted);
+  transition:transform .15s ease;
+}
+.section[open] > summary::after{ transform:rotate(90deg); }
+.section.inactive{ opacity:.45; filter:saturate(.6); }
+
+.sectionEmpty{
+  grid-column:1 / -1;
+  padding:10px 12px;
+  border:1px dashed rgba(35,50,68,.75);
+  border-radius:12px;
+  color:var(--muted);
+  background:rgba(0,0,0,.08);
+  font-size:12px;
+}
+
+/* 1-line field layout (label left, input right) */
+.field{
+  display:grid;
+  grid-template-columns: 170px 1fr;
+  gap:10px;
+  align-items:center;
+}
+@media(max-width:720px){
+  .field{ grid-template-columns:1fr; align-items:stretch; }
+}
+.fieldHeader{ margin:0; }
+.dev{ grid-column:1 / -1; }
+
+/* slider step buttons */
+.stepBtns{ display:flex; gap:8px; }
+.stepBtn{
+  width:36px;
+  padding:8px 0;
+  border-radius:12px;
+  border:1px solid rgba(35,50,68,.85);
+  background:rgba(0,0,0,.18);
+  color:var(--text);
+  font-weight:900;
+  cursor:pointer;
+}
+.stepBtn:active{ transform: translateY(1px); }
+.rangeRow input[type="number"]{ width:88px; }
+
+/* v8 no-clip + compact */
+.fieldId{ display:none !important; } /* in case legacy id element exists */
+.fieldHeader .tiny{ display:none !important; }
+select, input, button{ max-width:100%; }
+.field, .fieldHeader, .fieldContent, .grid, .form{ min-width:0; }
+.rangeRow{ min-width:0; }
+.rangeRow input[type="range"]{ min-width:0; width:100%; }
+.card{ overflow:hidden; }
+.wrap{ overflow-x:hidden; }
+
+/* --- v11 UI: row layout restore + compact --- */
+:root{
+  --fs-base: 13px;
+  --fs-title: 14px;
+  --fs-small: 12px;
+}
+body{ font-size:var(--fs-base); }
+.h{ font-size:var(--fs-title); }
+.muted{ font-size:var(--fs-small); }
+
+/* kill id badges / english ids */
+.badge, .fieldId, .dev{ display:none !important; }
+
+.wrap{ overflow-x:hidden; }
+.card{ overflow:hidden; }
+.form, .grid, .field, .fieldHeader, .fieldContent{ min-width:0; }
+select, input, button{ max-width:100%; }
+
+/* restore 1-row field layout (label left, control right) */
+.field{
+  display:grid !important;
+  grid-template-columns: minmax(96px, 40%) 1fr;
+  align-items:center;
+  column-gap:10px;
+  row-gap:6px;
+  flex-direction:unset !important;
+}
+.fieldHeader{ display:flex; align-items:center; min-width:0; }
+.fieldLabel{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fieldContent{ min-width:0; }
+
+/* slider row stays inside right column */
+.rangeRow{ display:grid; grid-template-columns:auto auto 1fr auto; gap:10px; align-items:center; min-width:0; }
+.rangeRow input[type="range"]{ width:100%; min-width:0; }
+
+/* +/- buttons slightly smaller */
+.stepBtn{ width:32px; padding:6px 0; border-radius:12px; }
+@media(max-width:420px){
+  .field{ grid-template-columns: minmax(90px, 42%) 1fr; }
+  .rangeRow{ grid-template-columns:auto auto 1fr; }
+  .rangeRow input[type="number"]{ display:none; }
+  .stepBtn{ width:30px; }
+}
+
+/* category subtle tints */
+.section[data-category="ユニット"]{ background: rgba(70,140,255,.05); }
+.section[data-category="総合"]{ background: rgba(255,210,80,.05); }
+.section[data-category="環境"]{ background: rgba(90,255,170,.05); }
+.section[data-category="攻撃力強化"]{ background: rgba(255,90,90,.05); }
+.section[data-category="攻撃力増加"]{ background: rgba(255,140,60,.05); }
+.section[data-category="特定"]{ background: rgba(200,120,255,.05); }
+.section[data-category="遺物"]{ background: rgba(120,190,255,.05); }
+.section[data-category="ペット"]{ background: rgba(120,255,210,.05); }
+.section[data-category="人形"]{ background: rgba(255,160,220,.05); }
+.section[data-category="財宝"]{ background: rgba(255,220,120,.05); }
+.section[data-category="ギルド"]{ background: rgba(160,200,255,.05); }
+.section[open]{ box-shadow: 0 0 0 1px rgba(120,180,255,.18) inset; }
+
+.outVal{ font-weight:700; text-align:right; }
