@@ -8,25 +8,33 @@
 </head>
 <body>
 <header class="top"><h1>ダメージ検証ツール</h1></header>
+
 <div class="tabs">
   <button class="tab isActive" data-tab="input">入力</button>
   <button class="tab" data-tab="output">出力</button>
 </div>
+
 <main>
 <section id="tab-input">
   <div class="card card-unit">
     <div class="row"><label>ユニット</label><select id="unitSelect"></select></div>
   </div>
+
   <div id="treasure-card" class="card card-treasure hidden">
     <div class="row"><label>財宝使用</label><button id="treasureToggle" class="toggle">OFF</button></div>
     <div class="row hidden" id="treasure-level-row"><label>財宝Lv</label><select id="treasureLevel"></select></div>
     <div id="treasure-detail"></div>
   </div>
 </section>
+
 <section id="tab-output" class="hidden">
   <div class="card card-output"><h2>計算結果</h2><pre id="output"></pre></div>
 </section>
 </main>
+
+<!-- Supabase JS (UMD) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="supabase_config.js"></script>
 <script src="ld_dmg_tool.js"></script>
-</body></html>
+</body>
+</html>

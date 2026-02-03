@@ -1,5 +1,11 @@
+(function(){
+  const sb = (window.supabase && window.supabase.createClient) ? window.supabase : null;
+  if(!sb){
+    console.error('[ld_dmg] supabase-js not loaded. Check script include order.');
+    return;
+  }
 const STATE={units:[],treasures:[],values:{unit:null,treasure_on:false,treasure_level:1}};
-const supa=window.supabase.createClient(window.LD_SUPABASE_URL,window.LD_SUPABASE_ANON_KEY);
+const supa=sb.createClient(window.LD_SUPABASE_URL,window.LD_SUPABASE_ANON_KEY);
 async function loadMasters(){
  const u=await supa.from('ld_DMG_unit_atk').select('UnitName,unitrarity');
  const t=await supa.from('ld_DMG_treasure').select('*');
@@ -44,3 +50,5 @@ function setupTabs(){
 }
 async function main(){setupTabs();await loadMasters();setupUnit();setupTreasure();updateTreasureVisibility();}
 main();
+
+})();
