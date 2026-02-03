@@ -10,14 +10,13 @@ const UI = {
   status: document.getElementById('status'),
   err: document.getElementById('err'),
   form: document.getElementById('form'),
-  outputs: document.getElementById('outputs'),
   out: document.getElementById('out'),
   log: document.getElementById('log'),
   btnReload: document.getElementById('btnReload'),
   btnReset: document.getElementById('btnReset'),
   btnCopy: document.getElementById('btnCopy'),
   btnClearLog: document.getElementById('btnClearLog'),
-  dbgToggle: document.getElementById('dbgToggle'),
+  dbgToggle: document.getElementById('dbgToggle')
 };
 
 const STATE = {
@@ -32,15 +31,12 @@ const STATE = {
     piece: [],
     treasure: [],
     dff: [],
-    indexes: {},
+    indexes: {}
   },
   values: {},     // inputId -> value
   visible: {},    // inputId -> bool
-  controls: {},   // inputId -> { root, setValue(), getValue(),
-  outRows: {},   // inputId -> output row element
-  outVals: {},   // inputId -> output value element
- setDisabled(bool), setOptions(list) }
-  debug: false,
+  controls: {},   // inputId -> { root, setValue(), getValue(), setDisabled(bool), setOptions(list) }
+  debug: false
 };
 
 function log(msg, obj){
@@ -161,7 +157,7 @@ async function loadMasters(){
       fetchAll('ld_DMG_relic', 'relicname'),
       fetchAll('ld_DMG_piece', 'Piecename'),
       fetchAll('ld_DMG_treasure', 'treasurename'),
-      fetchAll('ld_DMG_dff', 'Mode'),
+      fetchAll('ld_DMG_dff', 'Mode')
     ]);
 
     STATE.masters.unit_atk = unit_atk;
@@ -189,7 +185,6 @@ async function loadMasters(){
     refreshAllOptions();
     applyAllVisibility();
     renderOutput();
-  renderLabelOutputs();
   }catch(e){
     setStatus('マスタ読み込み失敗');
     showError(String(e.message || e));
@@ -313,7 +308,7 @@ function parseRangeConstraint(item){
   return {
     min: (c.min != null ? Number(c.min) : 0),
     max: (c.max != null ? Number(c.max) : 100),
-    step: (c.step != null ? Number(c.step) : 1),
+    step: (c.step != null ? Number(c.step) : 1)
   };
 }
 
@@ -351,7 +346,6 @@ function addChangeHandler(inputId){
   applyAllVisibility();
   refreshAllOptions(); // options dependent fields
   renderOutput();
-  renderLabelOutputs();
 }
 
 function makeSelect(item){
@@ -388,7 +382,7 @@ function makeSelect(item){
     setValue(v){ sel.value = (v ?? ''); STATE.values[item.id] = sel.value; },
     getValue(){ return sel.value; },
     setDisabled(b){ sel.disabled = b; },
-    setOptions,
+    setOptions
   };
 }
 
@@ -411,7 +405,7 @@ function makeText(item){
     setValue(v){ inp.value = (v ?? ''); STATE.values[item.id] = inp.value; },
     getValue(){ return inp.value; },
     setDisabled(b){ inp.disabled = b; },
-    setOptions(){},
+    setOptions(){}
   };
 }
 
@@ -438,7 +432,7 @@ function makeCheckbox(item){
     setValue(v){ inp.checked = !!v; STATE.values[item.id] = !!inp.checked; },
     getValue(){ return !!inp.checked; },
     setDisabled(b){ inp.disabled = b; },
-    setOptions(){},
+    setOptions(){}
   };
 }
 
@@ -536,7 +530,7 @@ function makeSlider(item){
         // clamp current
         setValue(STATE.values[item.id]);
       }
-    },
+    }
   };
 }
 
@@ -578,7 +572,7 @@ function makeToggle(item){
     setValue(v){ STATE.values[item.id] = String(v ?? opts[0]); applyActive(); },
     getValue(){ return STATE.values[item.id]; },
     setDisabled(b){ for(const btn of buttons) btn.disabled = b; },
-    setOptions(){},
+    setOptions(){}
   };
 }
 
@@ -641,100 +635,6 @@ function buildForm(){
 
     details.appendChild(grid);
     UI.form.appendChild(details);
-  }
-}
-
-
-function buildOutputs(){
-  if(!UI.outputs) return;
-  UI.outputs.innerHTML = '';
-  STATE.outRows = {};
-  STATE.outVals = {};
-
-  const byCat = new Map();
-  for(const c of DEF.categories) byCat.set(c, []);
-  for(const it of DEF.inputs){
-    const c = it.category;
-    if(!byCat.has(c)) byCat.set(c, []);
-    byCat.get(c).push(it);
-  }
-
-  for(const c of DEF.categories){
-    const items = byCat.get(c) || [];
-    if(!items.length) continue;
-
-    const details = document.createElement('details');
-    details.className = 'section outSection';
-    details.dataset.category = c;
-    if(['ユニット','総合','環境','遺物','ペット'].includes(c)) details.open = true;
-
-    const summary = document.createElement('summary');
-    const t = document.createElement('div');
-    t.className = 'sectionTitle';
-    t.textContent = c;
-    const meta = document.createElement('div');
-    meta.className = 'sectionMeta';
-    meta.textContent = `${items.length}項目`;
-    summary.appendChild(t);
-    summary.appendChild(meta);
-    details.appendChild(summary);
-
-    const grid = document.createElement('div');
-    grid.className = 'grid';
-
-    for(const item of items){
-      const row = document.createElement('div');
-      row.className = 'field outField';
-      row.dataset.outputId = item.id;
-
-      const head = document.createElement('div');
-      head.className = 'fieldHeader';
-      const label = document.createElement('div');
-      label.className = 'fieldLabel';
-      label.textContent = item.label;
-      head.appendChild(label);
-
-      const content = document.createElement('div');
-      content.className = 'fieldContent';
-      const v = document.createElement('div');
-      v.className = 'outVal mono';
-      v.textContent = '—';
-      content.appendChild(v);
-
-      row.appendChild(head);
-      row.appendChild(content);
-
-      grid.appendChild(row);
-
-      STATE.outRows[item.id] = row;
-      STATE.outVals[item.id] = v;
-    }
-
-    const empty = document.createElement('div');
-    empty.className = 'sectionEmpty';
-    empty.textContent = 'このユニットでは該当なし';
-    grid.appendChild(empty);
-
-    details.appendChild(grid);
-    UI.outputs.appendChild(details);
-  }
-}
-
-function formatOutValue(item, v){
-  if(v === undefined || v === null) return '—';
-  if(item.ui === 'checkbox') return v ? 'ON' : 'OFF';
-  if(typeof v === 'boolean') return v ? 'ON' : 'OFF';
-  if(typeof v === 'number' && Number.isFinite(v)) return String(v);
-  const s = String(v);
-  return s === '' ? '—' : s;
-}
-
-function renderLabelOutputs(){
-  if(!UI.outputs) return;
-  for(const item of DEF.inputs){
-    const el = STATE.outVals[item.id];
-    if(!el) continue;
-    el.textContent = formatOutValue(item, STATE.values[item.id]);
   }
 }
 
@@ -852,7 +752,7 @@ function refreshDynamicSliderRanges(){
     piece_grow_b: 'piece_name_b',
     piece_grow_c: 'piece_name_c',
     piece_grow_d: 'piece_name_d',
-    piece_grow_e: 'piece_name_e',
+    piece_grow_e: 'piece_name_e'
   };
   for(const gid of growIds){
     const ctrl = STATE.controls[gid];
@@ -871,27 +771,19 @@ function refreshDynamicSliderRanges(){
 
 // --- Visibility application ---
 function applyAllVisibility(){
-  // Inputs + Output-label visibility (same expr)
   for(const item of DEF.inputs){
     const vis = evalExpr(item.expr);
     STATE.visible[item.id] = !!vis;
-
     const ctrl = STATE.controls[item.id];
-    if(ctrl){
-      ctrl.root.classList.toggle('hidden', !vis);
-      ctrl.setDisabled(!vis);
-    }
-
-    const outRow = STATE.outRows[item.id];
-    if(outRow){
-      outRow.classList.toggle('hidden', !vis);
-    }
+    if(!ctrl) continue;
+    ctrl.root.classList.toggle('hidden', !vis);
+    ctrl.setDisabled(!vis);
   }
 
   // section status update: inactive / meta / empty
   const sections = document.querySelectorAll('.section');
   for(const sec of sections){
-    const fields = [...sec.querySelectorAll('.field[data-input-id], .field[data-output-id]')];
+    const fields = [...sec.querySelectorAll('.field[data-input-id]')];
     const visibleCount = fields.filter(f => !f.classList.contains('hidden')).length;
 
     const empty = sec.querySelector('.sectionEmpty');
@@ -906,13 +798,13 @@ function applyAllVisibility(){
 
 function renderOutput(){
   const out = {
-    values: {},
+    values: {}
   };
   for(const item of DEF.inputs){
     const id = item.id;
     out.values[id] = {
       value: STATE.values[id],
-      visible: !!STATE.visible[id],
+      visible: !!STATE.visible[id]
     };
   }
   UI.out.textContent = JSON.stringify(out, null, 2);
@@ -932,7 +824,6 @@ function resetToDefaults(){
   refreshAllOptions();
   applyAllVisibility();
   renderOutput();
-  renderLabelOutputs();
   log('デフォルトへ戻しました');
 }
 
@@ -944,12 +835,10 @@ function setDebug(on){
 // --- Boot ---
 function boot(){
   buildForm();
-  buildOutputs();
   setDefaults();
   refreshAllOptions();
   applyAllVisibility();
   renderOutput();
-  renderLabelOutputs();
 
   UI.btnReload.addEventListener('click', loadMasters);
   UI.btnReset.addEventListener('click', resetToDefaults);
