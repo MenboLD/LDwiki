@@ -6,17 +6,30 @@
 
 const DEF = {"categories": ["ユニット", "総合", "環境", "攻撃力強化", "攻撃力増加", "特定", "遺物", "ペット", "人形", "財宝", "ギルド"], "inputs": [{"category": "ユニット", "id": "unit_name_parts", "label": "選択ユニット", "ui": "select", "dtype": "enum", "constraint_raw": null, "constraint": {}, "default": "山賊", "depends": null, "master": "ld_DMG_unit_atk[UnitName]", "expr": "TRUE", "rule": "常に表示", "summary": "選択肢は ld_DMG_unit_atk[UnitName] を元に生成"}, {"category": "ユニット", "id": "unit_level_parts", "label": "レベル", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..15 / step 1", "constraint": {"min": 1, "max": 15, "step": 1}, "default": 15, "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": "入力制約: range 1..15 / step 1"}, {"category": "ユニット", "id": "unit_skills_parts", "label": "スキル", "ui": "select", "dtype": "enum", "constraint_raw": null, "constraint": {}, "default": "基本攻撃", "depends": "unit_name_parts", "master": "ld_DMG_unit_abilties[name_skill]", "expr": "TRUE", "rule": "常に表示", "summary": "選択肢は ld_DMG_unit_abilties[name_skill] を元に生成 / 依存: unit_name_parts"}, {"category": "総合", "id": "total_lv_unit", "label": "ユニット総合Lv", "ui": "slider", "dtype": "int", "constraint_raw": "range 10..500 / step 10", "constraint": {"min": 10, "max": 500, "step": 10}, "default": 500, "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": "入力制約: range 10..500 / step 10"}, {"category": "総合", "id": "total_lv_pet", "label": "ペット総合Lv", "ui": "slider", "dtype": "int", "constraint_raw": "range 20..500 / step 20", "constraint": {"min": 20, "max": 500, "step": 20}, "default": 500, "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": "入力制約: range 20..500 / step 20"}, {"category": "環境", "id": "stun_parts", "label": "気絶状態", "ui": "toggle", "dtype": "enum", "constraint_raw": null, "constraint": {}, "default": "通常", "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": "固定2択（トグル）"}, {"category": "環境", "id": "enemy_parts", "label": "敵の種類", "ui": "toggle", "dtype": "enum", "constraint_raw": null, "constraint": {}, "default": "雑魚", "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": "固定2択（トグル）"}, {"category": "環境", "id": "critical_parts", "label": "クリティカル", "ui": "toggle", "dtype": "enum", "constraint_raw": null, "constraint": {}, "default": "なし", "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": "固定2択（トグル）"}, {"category": "環境", "id": "element_parts", "label": "属性", "ui": "toggle", "dtype": "enum", "constraint_raw": "options sync", "constraint": {}, "default": "物理", "depends": "unit_skills_parts", "master": "ld_DMG_unit_abilties[name_skill]", "expr": "TRUE", "rule": "常に表示", "summary": "固定2択（トグル） / 依存: unit_skills_parts"}, {"category": "環境", "id": "range_parts", "label": "対象", "ui": "toggle", "dtype": "enum", "constraint_raw": "options sync", "constraint": {}, "default": "単体", "depends": "unit_skills_parts", "master": "ld_DMG_unit_abilties[name_skill]", "expr": "TRUE", "rule": "常に表示", "summary": "固定2択（トグル） / 依存: unit_skills_parts"}, {"category": "環境", "id": "mode_parts", "label": "難易度", "ui": "select", "dtype": "enum", "constraint_raw": null, "constraint": {}, "default": "ノーマル", "depends": "element_parts", "master": null, "expr": "EQ(element_parts,\"物理\")", "rule": "\"element_parts\"(トグルで決定されたtext値)が\"物理\"であるとき表示", "summary": "依存: element_parts / 表示条件: \"element_parts\"(トグルで決定されたtext値)が\"物理\"であるとき表示"}, {"category": "環境", "id": "wave_parts", "label": "Wave数", "ui": "slider", "dtype": "int", "constraint_raw": null, "constraint": {}, "default": 1, "depends": "mode_parts", "master": "ld_DMG_dff[WaveNum]", "expr": "EQ(element_parts,\"物理\")", "rule": "\"element_parts\"(トグルで決定されたtext値)が\"物理\"であるとき表示", "summary": "依存: mode_parts / 表示条件: \"element_parts\"(トグルで決定されたtext値)が\"物理\"であるとき表示"}, {"category": "環境", "id": "dff_parts", "label": "防御力減少", "ui": "slider", "dtype": "float", "constraint_raw": "range 0..500 / step 0", "constraint": {"min": 0, "max": 500, "step": 0}, "default": 30, "depends": "element_parts", "master": null, "expr": "EQ(element_parts,\"物理\")", "rule": "\"element_parts\"(トグルで決定されたtext値)が\"物理\"であるとき表示", "summary": "入力制約: range 0..500 / step 0 / 依存: element_parts / 表示条件: \"element_parts\"(トグルで決定されたtext値)が\"物理\"であるとき表示"}, {"category": "特定", "id": "sp_bounus_blob", "label": "摂取数", "ui": "text", "dtype": "int", "constraint_raw": "range 0..100000", "constraint": {"min": 0, "max": 100000}, "default": 0, "depends": "unit_name_parts", "master": null, "expr": "EQ(unit_name_parts,\"ブロッブ\")", "rule": "\"unit_name_parts\"(セレクトボックスで決定されたtext値)が\"ブロッブ\"であるとき表示", "summary": "入力制約: range 0..100000 / 依存: unit_name_parts / 表示条件: \"unit_name_parts\"(セレクトボックスで決定されたtext値)が\"ブロッブ\"であるとき表示"}, {"category": "特定", "id": "sp_bounus_tal", "label": "共食い数", "ui": "slider", "dtype": "int", "constraint_raw": "range 0..99 / step 1", "constraint": {"min": 0, "max": 99, "step": 1}, "default": 0, "depends": "unit_name_parts", "master": null, "expr": "CONTAINS(unit_name_parts,\"タール\")", "rule": "\"unit_name_parts\"(セレクトボックスで決定されたtext値)に文字列「タール」を部分一致（contains）で含む場合のみ表示", "summary": "入力制約: range 0..99 / step 1 / 依存: unit_name_parts / 表示条件: \"unit_name_parts\"(セレクトボックスで決定されたtext値)に文字列「タール」を部分一致（contains）で含む場合のみ表示"}, {"category": "特定", "id": "sp_bounus_bomba", "label": "鍛錬数値", "ui": "slider", "dtype": "int", "constraint_raw": "range 0..30 / step 1", "constraint": {"min": 0, "max": 30, "step": 1}, "default": 0, "depends": "unit_name_parts", "master": null, "expr": "EQ(unit_name_parts,\"バンバ\")", "rule": "\"unit_name_parts\"(セレクトボックスで決定されたtext値)が\"バンバ\"であるとき表示", "summary": "入力制約: range 0..30 / step 1 / 依存: unit_name_parts / 表示条件: \"unit_name_parts\"(セレクトボックスで決定されたtext値)が\"バンバ\"であるとき表示"}, {"category": "遺物", "id": "relic_a", "label": "力のポーション", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..11 / step 1", "constraint": {"min": 1, "max": 11, "step": 1}, "default": 11, "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": "入力制約: range 1..11 / step 1"}, {"category": "遺物", "id": "relic_b", "label": "マネーガン", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..11 / step 1", "constraint": {"min": 1, "max": 11, "step": 1}, "default": 11, "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": "入力制約: range 1..11 / step 1"}, {"category": "遺物", "id": "relic_d", "label": "バット", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..11 / step 1", "constraint": {"min": 1, "max": 11, "step": 1}, "default": 11, "depends": "element_parts", "master": null, "expr": "EQ(element_parts,\"物理\")", "rule": "\"element_parts\"(トグルで決定されたtext値)が\"物理\"であるとき表示", "summary": "入力制約: range 1..11 / step 1 / 依存: element_parts / 表示条件: \"element_parts\"(トグルで決定されたtext値)が\"物理\"であるとき表示"}, {"category": "遺物", "id": "relic_c", "label": "魔法使いの帽子", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..11 / step 1", "constraint": {"min": 1, "max": 11, "step": 1}, "default": 11, "depends": "element_parts", "master": null, "expr": "EQ(element_parts,\"魔法\")", "rule": "\"element_parts\"(トグルで決定されたtext値)が\"魔法\"であるとき表示", "summary": "入力制約: range 1..11 / step 1 / 依存: element_parts / 表示条件: \"element_parts\"(トグルで決定されたtext値)が\"魔法\"であるとき表示"}, {"category": "遺物", "id": "relic_e", "label": "大剣", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..11 / step 1", "constraint": {"min": 1, "max": 11, "step": 1}, "default": 11, "depends": "enemy_parts", "master": null, "expr": "EQ(enemy_parts,\"ボス\")", "rule": "\"enemy_parts\"(トグルで決定されたtext値)が\"ボス\"であるとき表示", "summary": "入力制約: range 1..11 / step 1 / 依存: enemy_parts / 表示条件: \"enemy_parts\"(トグルで決定されたtext値)が\"ボス\"であるとき表示"}, {"category": "遺物", "id": "relic_f", "label": "秘伝書", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..11 / step 1", "constraint": {"min": 1, "max": 11, "step": 1}, "default": 11, "depends": "unit_skills_parts", "master": null, "expr": "NE(unit_skills_parts,\"基本攻撃\")", "rule": "\"unit_skills_parts\"(トグルで決定されたtext値)が\"基本攻撃\"以外であるとき表示", "summary": "入力制約: range 1..11 / step 1 / 依存: unit_skills_parts / 表示条件: \"unit_skills_parts\"(トグルで決定されたtext値)が\"基本攻撃\"以外であるとき表示"}, {"category": "遺物", "id": "relic_g", "label": "爆弾", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..11 / step 1", "constraint": {"min": 1, "max": 11, "step": 1}, "default": 11, "depends": "stun_parts", "master": null, "expr": "EQ(stun_parts,\"気絶\")", "rule": "\"stun_parts\"(トグルで決定されたtext値)が\"気絶\"であるとき表示", "summary": "入力制約: range 1..11 / step 1 / 依存: stun_parts / 表示条件: \"stun_parts\"(トグルで決定されたtext値)が\"気絶\"であるとき表示"}, {"category": "遺物", "id": "relic_h", "label": "マジック籠手", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..11 / step 1", "constraint": {"min": 1, "max": 11, "step": 1}, "default": 11, "depends": "element_parts , critical_parts", "master": null, "expr": "AND(EQ(element_parts,\"魔法\"),EQ(critical_parts,\"あり\"))", "rule": "\"element_parts\"(トグルで決定されたtext値)が\"魔法\"であり、かつ\"critical_parts\"(トグルで決定されたtext値)が\"あり\"であるとき表示", "summary": "入力制約: range 1..11 / step 1 / 依存: element_parts , critical_parts / 表示条件: \"element_parts\"(トグルで決定されたtext値)が\"魔法\"であり、かつ\"critical_parts\"(トグルで決定されたtext値)が\"あり\"であるとき表示"}, {"category": "ペット", "id": "pet_name_a", "label": "aペット名", "ui": "select", "dtype": "enum", "constraint_raw": null, "constraint": {}, "default": "None", "depends": "pet_name_b , pet_name_c", "master": "ld_DMG_pet_1[PetName]", "expr": "TRUE", "rule": "常に表示", "summary": "選択肢は ld_DMG_pet_1[PetName] を元に生成 / 依存: pet_name_b , pet_name_c"}, {"category": "ペット", "id": "pet_level_a", "label": "aレベル", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..50 / step 1", "constraint": {"min": 1, "max": 50, "step": 1}, "default": 1, "depends": "pet_name_a", "master": null, "expr": "NE(pet_name_a,\"None\")", "rule": "\"pet_name_a\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示", "summary": "入力制約: range 1..50 / step 1 / 依存: pet_name_a / 表示条件: \"pet_name_a\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示"}, {"category": "ペット", "id": "pet_name_b", "label": "bペット名", "ui": "select", "dtype": "enum", "constraint_raw": null, "constraint": {}, "default": "None", "depends": "pet_name_a , pet_name_c", "master": "ld_DMG_pet_1[PetName]", "expr": "TRUE", "rule": "常に表示", "summary": "選択肢は ld_DMG_pet_1[PetName] を元に生成 / 依存: pet_name_a , pet_name_c"}, {"category": "ペット", "id": "pet_level_b", "label": "bレベル", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..50 / step 1", "constraint": {"min": 1, "max": 50, "step": 1}, "default": 1, "depends": "pet_name_b", "master": null, "expr": "NE(pet_name_b,\"None\")", "rule": "\"pet_name_b\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示", "summary": "入力制約: range 1..50 / step 1 / 依存: pet_name_b / 表示条件: \"pet_name_b\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示"}, {"category": "ペット", "id": "pet_name_c", "label": "cペット名", "ui": "select", "dtype": "enum", "constraint_raw": null, "constraint": {}, "default": "None", "depends": "pet_name_a , pet_name_b", "master": "ld_DMG_pet_1[PetName]", "expr": "TRUE", "rule": "常に表示", "summary": "選択肢は ld_DMG_pet_1[PetName] を元に生成 / 依存: pet_name_b , pet_name_c"}, {"category": "ペット", "id": "pet_level_c", "label": "cレベル", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..50 / step 1", "constraint": {"min": 1, "max": 50, "step": 1}, "default": 1, "depends": "pet_name_c", "master": null, "expr": "NE(pet_name_c,\"None\")", "rule": "\"pet_name_c\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示", "summary": "入力制約: range 1..50 / step 1 / 依存: pet_name_c / 表示条件: \"pet_name_c\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示"}, {"category": "環境", "id": "coin", "label": "コイン枚数", "ui": "text", "dtype": "int", "constraint_raw": "range 0..9999999 / step 1", "constraint": {"min": 0, "max": 9999999, "step": 1}, "default": 0, "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": "入力制約: range 0..9999999 / step 1"}, {"category": "攻撃力増加", "id": "atk_add_parts", "label": "攻撃力増加", "ui": "text", "dtype": "percent", "constraint_raw": "range 0..999999", "constraint": {"min": 0, "max": 999999}, "default": 0, "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": "入力制約: range 0..999999"}, {"category": "攻撃力強化", "id": "upgrade_level", "label": "強化Lv", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..31 / step 1", "constraint": {"min": 1, "max": 31, "step": 1}, "default": 1, "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": "入力制約: range 1..31 / step 1"}, {"category": "ギルド", "id": "guild_boss_parts", "label": "ボス", "ui": "チェックボックス", "dtype": null, "constraint_raw": null, "constraint": {}, "default": false, "depends": "enemy_parts", "master": null, "expr": "EQ(enemy_parts,\"ボス\")", "rule": "\"enemy_parts\"(トグルで決定されたtext値)が\"ボス\"であるとき表示", "summary": "依存: enemy_parts / 表示条件: \"enemy_parts\"(トグルで決定されたtext値)が\"ボス\"であるとき表示"}, {"category": "ギルド", "id": "guild_raid_parts", "label": "レイドダメージ", "ui": "チェックボックス", "dtype": null, "constraint_raw": null, "constraint": {}, "default": false, "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": null}, {"category": "ギルド", "id": "guild_damage_parts", "label": "ユニットダメージ", "ui": "チェックボックス", "dtype": null, "constraint_raw": null, "constraint": {}, "default": false, "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": null}, {"category": "人形", "id": "piece_name_a", "label": "a人形名", "ui": "select", "dtype": "enum", "constraint_raw": null, "constraint": {}, "default": "None", "depends": "piece_name_b , piece_name_c , piece_name_d , piece_name_e", "master": "ld_DMG_piece[Piecename]", "expr": "TRUE", "rule": "常に表示", "summary": "選択肢は ld_DMG_piece[Piecename] を元に生成 / 依存: piece_name_b , piece_name_c , piece_name_d , piece_name_e"}, {"category": "人形", "id": "piece_grow_a", "label": "a人形強さ", "ui": "slider", "dtype": "int", "constraint_raw": "step 1", "constraint": {"step": 1}, "default": 1, "depends": "piece_name_a", "master": "ld_DMG_piece[parame1_max]", "expr": "NE(piece_name_a,\"None\")", "rule": "\"piece_name_a\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示", "summary": "入力制約: step 1 / 依存: piece_name_a / 表示条件: \"piece_name_a\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示"}, {"category": "人形", "id": "piece_unit_a", "label": "a人形のユニット数", "ui": "slider", "dtype": "int", "constraint_raw": "range 0..35 / step 1", "constraint": {"min": 0, "max": 35, "step": 1}, "default": 0, "depends": "piece_name_a", "master": null, "expr": "IN(piece_name_a,[\"バット(神話数)\",\"片目(ユニ数)\"])", "rule": "\"piece_name_a\"(セレクトボックスで決定されたtext値)が\"バット(神話数)\"もしくは\"片目(ユニ数)\"であるとき表示", "summary": "入力制約: range 0..35 / step 1 / 依存: piece_name_a / 表示条件: \"piece_name_a\"(セレクトボックスで決定されたtext値)が\"バット(神話数)\"もしくは\"片目(ユニ数)\"であるとき表示"}, {"category": "人形", "id": "piece_name_b", "label": "b人形名", "ui": "select", "dtype": "enum", "constraint_raw": null, "constraint": {}, "default": "None", "depends": "piece_name_a , piece_name_c , piece_name_d , piece_name_e", "master": "ld_DMG_piece[Piecename]", "expr": "TRUE", "rule": "常に表示", "summary": "選択肢は ld_DMG_piece[Piecename] を元に生成 / 依存: piece_name_a , piece_name_c , piece_name_d , piece_name_e"}, {"category": "人形", "id": "piece_grow_b", "label": "b人形強さ", "ui": "slider", "dtype": "int", "constraint_raw": "step 1", "constraint": {"step": 1}, "default": 1, "depends": "piece_name_b", "master": "ld_DMG_piece[parame1_max]", "expr": "NE(piece_name_b,\"None\")", "rule": "\"piece_name_b\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示", "summary": "入力制約: step 1 / 依存: piece_name_b / 表示条件: \"piece_name_b\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示"}, {"category": "人形", "id": "piece_unit_b", "label": "b人形のユニット数", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..50 / step 1", "constraint": {"min": 1, "max": 50, "step": 1}, "default": 1, "depends": "piece_name_b", "master": null, "expr": "IN(piece_name_b,[\"バット(神話数)\",\"片目(ユニ数)\"])", "rule": "\"piece_name_b\"(セレクトボックスで決定されたtext値)が\"バット(神話数)\"もしくは\"片目(ユニ数)\"であるとき表示", "summary": "入力制約: range 1..50 / step 1 / 依存: piece_name_b / 表示条件: \"piece_name_b\"(セレクトボックスで決定されたtext値)が\"バット(神話数)\"もしくは\"片目(ユニ数)\"であるとき表示"}, {"category": "人形", "id": "piece_name_c", "label": "c人形名", "ui": "select", "dtype": "enum", "constraint_raw": null, "constraint": {}, "default": "None", "depends": "piece_name_a , piece_name_b , piece_name_d , piece_name_e", "master": "ld_DMG_piece[Piecename]", "expr": "TRUE", "rule": "常に表示", "summary": "選択肢は ld_DMG_piece[Piecename] を元に生成 / 依存: piece_name_a , piece_name_b , piece_name_d , piece_name_e"}, {"category": "人形", "id": "piece_grow_c", "label": "c人形強さ", "ui": "slider", "dtype": "int", "constraint_raw": "step 1", "constraint": {"step": 1}, "default": 1, "depends": "piece_name_c", "master": "ld_DMG_piece[parame1_max]", "expr": "NE(piece_name_c,\"None\")", "rule": "\"piece_name_c\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示", "summary": "入力制約: step 1 / 依存: piece_name_c / 表示条件: \"piece_name_c\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示"}, {"category": "人形", "id": "piece_unit_c", "label": "c人形のユニット数", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..35 / step 1", "constraint": {"min": 1, "max": 35, "step": 1}, "default": 1, "depends": "piece_name_c", "master": null, "expr": "IN(piece_name_c,[\"バット(神話数)\",\"片目(ユニ数)\"])", "rule": "\"piece_name_c\"(セレクトボックスで決定されたtext値)が\"バット(神話数)\"もしくは\"片目(ユニ数)\"であるとき表示", "summary": "入力制約: range 1..35 / step 1 / 依存: piece_name_c / 表示条件: \"piece_name_c\"(セレクトボックスで決定されたtext値)が\"バット(神話数)\"もしくは\"片目(ユニ数)\"であるとき表示"}, {"category": "人形", "id": "piece_name_d", "label": "d人形名", "ui": "select", "dtype": "enum", "constraint_raw": null, "constraint": {}, "default": "None", "depends": "piece_name_a , piece_name_b , piece_name_c , piece_name_e", "master": "ld_DMG_piece[Piecename]", "expr": "TRUE", "rule": "常に表示", "summary": "選択肢は ld_DMG_piece[Piecename] を元に生成 / 依存: piece_name_a , piece_name_b , piece_name_c , piece_name_e"}, {"category": "人形", "id": "piece_grow_d", "label": "d人形強さ", "ui": "slider", "dtype": "int", "constraint_raw": "step 1", "constraint": {"step": 1}, "default": 1, "depends": "piece_name_d", "master": "ld_DMG_piece[parame1_max]", "expr": "NE(piece_name_d,\"None\")", "rule": "\"piece_name_d\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示", "summary": "入力制約: step 1 / 依存: piece_name_d / 表示条件: \"piece_name_d\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示"}, {"category": "人形", "id": "piece_unit_d", "label": "d人形のユニット数", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..50 / step 1", "constraint": {"min": 1, "max": 50, "step": 1}, "default": 1, "depends": "piece_name_d", "master": null, "expr": "IN(piece_name_d,[\"バット(神話数)\",\"片目(ユニ数)\"])", "rule": "\"piece_name_d\"(セレクトボックスで決定されたtext値)が\"バット(神話数)\"もしくは\"片目(ユニ数)\"であるとき表示", "summary": "入力制約: range 1..50 / step 1 / 依存: piece_name_d / 表示条件: \"piece_name_d\"(セレクトボックスで決定されたtext値)が\"バット(神話数)\"もしくは\"片目(ユニ数)\"であるとき表示"}, {"category": "人形", "id": "piece_name_e", "label": "e人形名", "ui": "select", "dtype": "enum", "constraint_raw": null, "constraint": {}, "default": "None", "depends": "piece_name_a , piece_name_b , piece_name_c , piece_name_d", "master": "ld_DMG_piece[Piecename]", "expr": "TRUE", "rule": "常に表示", "summary": "選択肢は ld_DMG_piece[Piecename] を元に生成 / 依存: piece_name_a , piece_name_b , piece_name_c , piece_name_d"}, {"category": "人形", "id": "piece_grow_e", "label": "e人形強さ", "ui": "slider", "dtype": "int", "constraint_raw": "step 1", "constraint": {"step": 1}, "default": 1, "depends": "piece_name_e", "master": "ld_DMG_piece[parame1_max]", "expr": "NE(piece_name_e,\"None\")", "rule": "\"piece_name_e\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示", "summary": "入力制約: step 1 / 依存: piece_name_e / 表示条件: \"piece_name_e\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示"}, {"category": "人形", "id": "piece_unit_e", "label": "e人形のユニット数", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..35 / step 1", "constraint": {"min": 1, "max": 35, "step": 1}, "default": 1, "depends": "piece_name_e", "master": null, "expr": "IN(piece_name_e,[\"バット(神話数)\",\"片目(ユニ数)\"])", "rule": "\"piece_name_e\"(セレクトボックスで決定されたtext値)が\"バット(神話数)\"もしくは\"片目(ユニ数)\"であるとき表示", "summary": "入力制約: range 1..35 / step 1 / 依存: piece_name_e / 表示条件: \"piece_name_e\"(セレクトボックスで決定されたtext値)が\"バット(神話数)\"もしくは\"片目(ユニ数)\"であるとき表示"}, {"category": "財宝", "id": "treasure_name", "label": "財宝名", "ui": "select", "dtype": "enum", "constraint_raw": null, "constraint": {}, "default": "None", "depends": "unit_name_parts", "master": "ld_DMG_treasure[treasurename]", "expr": "EXISTS(\"ld_DMG_treasure\",\"treasurename\",unit_name_parts)", "rule": "\"unit_name_parts\"(セレクトボックスで決定されたtext値)をキーとして、\nテーブル\"ld_DMG_treasure\"のカラム\"treasurename\"に同一の値が存在する場合にのみ表示。", "summary": "選択肢は ld_DMG_treasure[treasurename] を元に生成 / 依存: unit_name_parts / 表示条件: \"unit_name_parts\"(セレクトボックスで決定されたtext値)をキーとして、\nテーブル\"ld_DMG_treasure\"のカラム\"treasurename\"に同一の値が存在する場合にのみ表示。"}, {"category": "財宝", "id": "treasure_level", "label": "祭壇レベル", "ui": "slider", "dtype": "int", "constraint_raw": "range 1..11 / step 1", "constraint": {"min": 1, "max": 11, "step": 1}, "default": 1, "depends": "treasure_name", "master": null, "expr": "NE(treasure_name,\"None\")", "rule": "\"treasure_name\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示", "summary": "入力制約: range 1..11 / step 1 / 依存: treasure_name / 表示条件: \"treasure_name\"(セレクトボックスで決定されたtext値)が\"None\"でないとき表示"}, {"category": "攻撃力増加", "id": "damage_a_parts", "label": "自由枠の係数a", "ui": "text", "dtype": "percent", "constraint_raw": "range 0..999999", "constraint": {"min": 0, "max": 999999}, "default": 0, "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": "入力制約: range 0..999999"}, {"category": "攻撃力増加", "id": "damage_b_parts", "label": "自由枠の係数b", "ui": "text", "dtype": "percent", "constraint_raw": "range 0..999999", "constraint": {"min": 0, "max": 999999}, "default": 0, "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": "入力制約: range 0..999999"}, {"category": "攻撃力増加", "id": "damage_c_parts", "label": "自由枠の係数c", "ui": "text", "dtype": "percent", "constraint_raw": "range 0..999999", "constraint": {"min": 0, "max": 999999}, "default": 0, "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": "入力制約: range 0..999999"}, {"category": "攻撃力増加", "id": "damage_d_parts", "label": "自由枠の係数d", "ui": "text", "dtype": "percent", "constraint_raw": "range 0..999999", "constraint": {"min": 0, "max": 999999}, "default": 0, "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": "入力制約: range 0..999999"}, {"category": "攻撃力増加", "id": "damage_e_parts", "label": "自由枠の係数e", "ui": "text", "dtype": "percent", "constraint_raw": "range 0..999999", "constraint": {"min": 0, "max": 999999}, "default": 0, "depends": null, "master": null, "expr": "TRUE", "rule": "常に表示", "summary": "入力制約: range 0..999999"}], "toggle_options": {"stun_parts": ["通常", "気絶"], "enemy_parts": ["雑魚", "ボス"], "critical_parts": ["なし", "あり"], "element_parts": ["物理", "魔法"], "range_parts": ["単体", "範囲"]}};
 
+
+// ---- Calculation output definitions (spec order: basic -> modifiers -> final) ----
+const OUT_DEF = [
+  {cat:'計算', id:'calc_unit_base_atk', label:'ユニット基礎攻撃力', expr:'true'},
+  {cat:'計算', id:'calc_unit_tier_mul', label:'レベル段階補正（暫定）', expr:'true'},
+  {cat:'計算', id:'calc_skill_base', label:'スキル基礎倍率(skill_dmg_base)', expr:'true'},
+  {cat:'計算', id:'calc_atk_after_tier', label:'攻撃力（段階補正後・暫定）', expr:'true'},
+  {cat:'計算', id:'calc_raw_damage', label:'ダメージ（防御等前・暫定）', expr:'true'},
+  {cat:'計算', id:'calc_dff', label:'敵防御(dff)', expr:'mode_parts != "None" && wave_parts != null'},
+  {cat:'計算', id:'calc_final_damage', label:'最終ダメージ（暫定）', expr:'true'},
+];
+
 const UI = {
   status: document.getElementById('status'),
   err: document.getElementById('err'),
   form: document.getElementById('form'),
+  outputs: document.getElementById('outputs'),
   out: document.getElementById('out'),
   log: document.getElementById('log'),
   btnReload: document.getElementById('btnReload'),
   btnReset: document.getElementById('btnReset'),
   btnCopy: document.getElementById('btnCopy'),
   btnClearLog: document.getElementById('btnClearLog'),
-  dbgToggle: document.getElementById('dbgToggle')
+  dbgToggle: document.getElementById('dbgToggle'),
 };
 
 const STATE = {
@@ -31,12 +44,15 @@ const STATE = {
     piece: [],
     treasure: [],
     dff: [],
-    indexes: {}
+    indexes: {},
   },
   values: {},     // inputId -> value
   visible: {},    // inputId -> bool
-  controls: {},   // inputId -> { root, setValue(), getValue(), setDisabled(bool), setOptions(list) }
-  debug: false
+  controls: {},   // inputId -> { root, setValue(), getValue(),
+  outRows: {},   // outId -> row element
+  outVals: {},   // outId -> value element
+ setDisabled(bool), setOptions(list) }
+  debug: false,
 };
 
 function log(msg, obj){
@@ -157,7 +173,7 @@ async function loadMasters(){
       fetchAll('ld_DMG_relic', 'relicname'),
       fetchAll('ld_DMG_piece', 'Piecename'),
       fetchAll('ld_DMG_treasure', 'treasurename'),
-      fetchAll('ld_DMG_dff', 'Mode')
+      fetchAll('ld_DMG_dff', 'Mode'),
     ]);
 
     STATE.masters.unit_atk = unit_atk;
@@ -185,6 +201,7 @@ async function loadMasters(){
     refreshAllOptions();
     applyAllVisibility();
     renderOutput();
+  renderCalcOutputs();
   }catch(e){
     setStatus('マスタ読み込み失敗');
     showError(String(e.message || e));
@@ -308,7 +325,7 @@ function parseRangeConstraint(item){
   return {
     min: (c.min != null ? Number(c.min) : 0),
     max: (c.max != null ? Number(c.max) : 100),
-    step: (c.step != null ? Number(c.step) : 1)
+    step: (c.step != null ? Number(c.step) : 1),
   };
 }
 
@@ -323,13 +340,7 @@ function createFieldRoot(item){
   const label = document.createElement('div');
   label.className = 'fieldLabel';
   label.textContent = item.label;
-
-  const badge = document.createElement('div');
-  badge.className = 'badge';
-  badge.textContent = item.id;
-
   head.appendChild(label);
-  head.appendChild(badge);
 
   const dev = document.createElement('div');
   dev.className = 'dev devInfo';
@@ -382,7 +393,7 @@ function makeSelect(item){
     setValue(v){ sel.value = (v ?? ''); STATE.values[item.id] = sel.value; },
     getValue(){ return sel.value; },
     setDisabled(b){ sel.disabled = b; },
-    setOptions
+    setOptions,
   };
 }
 
@@ -405,7 +416,7 @@ function makeText(item){
     setValue(v){ inp.value = (v ?? ''); STATE.values[item.id] = inp.value; },
     getValue(){ return inp.value; },
     setDisabled(b){ inp.disabled = b; },
-    setOptions(){}
+    setOptions(){},
   };
 }
 
@@ -432,7 +443,7 @@ function makeCheckbox(item){
     setValue(v){ inp.checked = !!v; STATE.values[item.id] = !!inp.checked; },
     getValue(){ return !!inp.checked; },
     setDisabled(b){ inp.disabled = b; },
-    setOptions(){}
+    setOptions(){},
   };
 }
 
@@ -530,7 +541,7 @@ function makeSlider(item){
         // clamp current
         setValue(STATE.values[item.id]);
       }
-    }
+    },
   };
 }
 
@@ -572,7 +583,7 @@ function makeToggle(item){
     setValue(v){ STATE.values[item.id] = String(v ?? opts[0]); applyActive(); },
     getValue(){ return STATE.values[item.id]; },
     setDisabled(b){ for(const btn of buttons) btn.disabled = b; },
-    setOptions(){}
+    setOptions(){},
   };
 }
 
@@ -635,6 +646,147 @@ function buildForm(){
 
     details.appendChild(grid);
     UI.form.appendChild(details);
+  }
+}
+
+function buildOutputsCalc(){
+  if(!UI.outputs) return;
+  UI.outputs.innerHTML = '';
+  STATE.outRows = {};
+  STATE.outVals = {};
+
+  const details = document.createElement('details');
+  details.className = 'section';
+  details.dataset.category = '計算';
+  details.open = true;
+
+  const summary = document.createElement('summary');
+  const t = document.createElement('div');
+  t.className = 'sectionTitle';
+  t.textContent = '計算';
+  const meta = document.createElement('div');
+  meta.className = 'sectionMeta';
+  meta.textContent = '';
+  summary.appendChild(t);
+  summary.appendChild(meta);
+  details.appendChild(summary);
+
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+
+  for(const o of OUT_DEF){
+    const row = document.createElement('div');
+    row.className = 'field outField';
+    row.dataset.outputId = o.id;
+
+    const head = document.createElement('div');
+    head.className = 'fieldHeader';
+    const label = document.createElement('div');
+    label.className = 'fieldLabel';
+    label.textContent = o.label;
+    head.appendChild(label);
+
+    const content = document.createElement('div');
+    content.className = 'fieldContent';
+    const v = document.createElement('div');
+    v.className = 'outVal mono';
+    v.textContent = '—';
+    content.appendChild(v);
+
+    row.appendChild(head);
+    row.appendChild(content);
+
+    grid.appendChild(row);
+
+    STATE.outRows[o.id] = row;
+    STATE.outVals[o.id] = v;
+  }
+
+  const empty = document.createElement('div');
+  empty.className = 'sectionEmpty';
+  empty.textContent = 'この条件では該当なし';
+  grid.appendChild(empty);
+
+  details.appendChild(grid);
+  UI.outputs.appendChild(details);
+}
+
+function getUnitRow(){
+  const name = STATE.values.unit_name_parts;
+  if(!name) return null;
+  return (STATE.masters.unit_atk || []).find(r => (r.UnitName ?? r.unit_name ?? r.name) === name) || null;
+}
+function getAbilRow(){
+  const unit = STATE.values.unit_name_parts;
+  const skill = STATE.values.unit_skills_parts;
+  if(!unit || !skill) return null;
+  return (STATE.masters.unit_abilities || []).find(r => (r.id_name_unit ?? r.ID_Name_Unit) === unit && (r.name_skill ?? r.Name_Skill) === skill) || null;
+}
+
+function calcTierMul(unitRow){
+  const lv = Number(STATE.values.unit_level_parts ?? 1);
+  const m3 = Number(unitRow?.Level3_ATK);
+  const m9 = Number(unitRow?.Level9_ATK);
+  const m15 = Number(unitRow?.Level15_ATK);
+  if(lv >= 15 && Number.isFinite(m15) && m15>0) return m15;
+  if(lv >= 9  && Number.isFinite(m9)  && m9>0)  return m9;
+  if(lv >= 3  && Number.isFinite(m3)  && m3>0)  return m3;
+  return 1;
+}
+function safeNum(x, d=0){
+  const n = Number(x);
+  return Number.isFinite(n) ? n : d;
+}
+function computeResults(){
+  const u = getUnitRow();
+  const a = getAbilRow();
+
+  const baseAtk = safeNum(u?.AttackDamage, 0);
+  const tierMul = calcTierMul(u);
+  const atkAfterTier = baseAtk * tierMul;
+
+  const skillBase = safeNum(a?.skill_dmg_base, 1);
+  const rawDamage = atkAfterTier * skillBase;
+
+  const dff = safeNum(STATE.values.dff_parts, 0);
+  let dffMul = 1;
+  if(dff > 1) dffMul = 1 - dff/100;
+  else dffMul = 1 - dff;
+
+  const finalDamage = rawDamage * clamp(dffMul, 0, 1);
+  return { baseAtk, tierMul, skillBase, atkAfterTier, rawDamage, dff, finalDamage };
+}
+
+function renderCalcOutputs(){
+  if(!UI.outputs) return;
+  const r = computeResults();
+  const map = {
+    calc_unit_base_atk: r.baseAtk,
+    calc_unit_tier_mul: r.tierMul,
+    calc_skill_base: r.skillBase,
+    calc_atk_after_tier: Math.round(r.atkAfterTier*1000)/1000,
+    calc_raw_damage: Math.round(r.rawDamage*1000)/1000,
+    calc_dff: r.dff,
+    calc_final_damage: Math.round(r.finalDamage*1000)/1000,
+  };
+
+  for(const o of OUT_DEF){
+    const vis = evalExpr(o.expr);
+    const row = STATE.outRows[o.id];
+    if(row) row.classList.toggle('hidden', !vis);
+    const v = STATE.outVals[o.id];
+    if(v) v.textContent = (map[o.id] === undefined ? '—' : String(map[o.id]));
+  }
+
+  const sec = document.querySelector('#outputs .section');
+  if(sec){
+    const fields = [...sec.querySelectorAll('.field[data-output-id]')];
+    const visibleCount = fields.filter(f => !f.classList.contains('hidden')).length;
+    const empty = sec.querySelector('.sectionEmpty');
+    if(empty) empty.style.display = (visibleCount===0) ? 'block' : 'none';
+    sec.classList.toggle('inactive', visibleCount===0);
+    const meta = sec.querySelector('.sectionMeta');
+    if(meta) meta.textContent = `${visibleCount}/${fields.length}表示`;
   }
 }
 
@@ -752,7 +904,7 @@ function refreshDynamicSliderRanges(){
     piece_grow_b: 'piece_name_b',
     piece_grow_c: 'piece_name_c',
     piece_grow_d: 'piece_name_d',
-    piece_grow_e: 'piece_name_e'
+    piece_grow_e: 'piece_name_e',
   };
   for(const gid of growIds){
     const ctrl = STATE.controls[gid];
@@ -798,13 +950,13 @@ function applyAllVisibility(){
 
 function renderOutput(){
   const out = {
-    values: {}
+    values: {},
   };
   for(const item of DEF.inputs){
     const id = item.id;
     out.values[id] = {
       value: STATE.values[id],
-      visible: !!STATE.visible[id]
+      visible: !!STATE.visible[id],
     };
   }
   UI.out.textContent = JSON.stringify(out, null, 2);
@@ -835,6 +987,7 @@ function setDebug(on){
 // --- Boot ---
 function boot(){
   buildForm();
+  buildOutputsCalc();
   setDefaults();
   refreshAllOptions();
   applyAllVisibility();
