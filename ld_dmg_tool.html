@@ -1,86 +1,32 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ダメージ検証ツール（UI試作）</title>
-  <link rel="stylesheet" href="./ld_dmg_tool.css" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>ダメージ検証ツール</title>
+<link rel="stylesheet" href="ld_dmg_tool.css"/>
 </head>
 <body>
-  <header class="topbar">
-    <div class="title">
-      ダメージ検証ツール（UI試作）
-      <div id="status" class="status">初期化中...</div>
-    </div>
-
-    <div class="actions">
-      <label class="chk">
-        <input id="dbgToggle" type="checkbox" />
-        <span>デバッグ</span>
-      </label>
-      <button id="btnReload" class="btn">マスタ再読み込み</button>
-    </div>
-  </header>
-
-  <div id="err" class="err hidden"></div>
-
-  <main class="wrap">
-    
-    <div class="tabs" role="tablist" aria-label="入力/出力">
-      <button type="button" class="tabBtn isActive" data-tab="input" aria-selected="true">入力</button>
-      <button type="button" class="tabBtn" data-tab="output" aria-selected="false">出力</button>
-    </div>
-    <div id="tabInput" class="tabPanel">
-<section class="card">
-      <div class="row">
-        <h2 class="h">入力</h2>
-        <div class="grow"></div>
-        <button id="btnReset" class="btn btn-small">デフォルトへ戻す</button>
-      </div>
-      <div id="form" class="form"></div>
-      <div id="treasureDetail" class="form"></div>
-    </section>
-
-    <section class="card">
-      <div class="row">
-        
-    </div><!-- /#tabInput -->
-    <div id="tabOutput" class="tabPanel isHidden">
-<section class="card">
-      <div class="row">
-        <h2 class="h">出力（計算結果）</h2>
-        <div class="grow"></div>
-      </div>
-      <div id="outputs" class="form"></div>
-      <div class="muted mt8">※表示条件式（expr）に従って、結果項目も自動で出し分けします。</div>
-    </section>
-
-      <h2 class="h">現在の値</h2>
-        <div class="grow"></div>
-        <button id="btnCopy" class="btn btn-small btn-primary">コピー</button>
-      </div>
-      <pre id="out" class="box mono"></pre>
-      <div class="muted mt8">
-        ※表示条件で非表示の入力は <span class="mono">visible:false</span> になります（値は保持）。
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="row">
-        <h2 class="h">ログ</h2>
-        <div class="grow"></div>
-        <button id="btnClearLog" class="btn btn-small">クリア</button>
-      </div>
-      <pre id="log" class="log mono"></pre>
-    </section>
-
-    <footer class="footer muted">UI試作: 入力定義 + 表示条件式を元にフォームを自動生成</footer>
-  
-    </div><!-- /#tabOutput -->
+<header class="top"><h1>ダメージ検証ツール</h1></header>
+<div class="tabs">
+  <button class="tab isActive" data-tab="input">入力</button>
+  <button class="tab" data-tab="output">出力</button>
+</div>
+<main>
+<section id="tab-input">
+  <div class="card card-unit">
+    <div class="row"><label>ユニット</label><select id="unitSelect"></select></div>
+  </div>
+  <div id="treasure-card" class="card card-treasure hidden">
+    <div class="row"><label>財宝使用</label><button id="treasureToggle" class="toggle">OFF</button></div>
+    <div class="row hidden" id="treasure-level-row"><label>財宝Lv</label><select id="treasureLevel"></select></div>
+    <div id="treasure-detail"></div>
+  </div>
+</section>
+<section id="tab-output" class="hidden">
+  <div class="card card-output"><h2>計算結果</h2><pre id="output"></pre></div>
+</section>
 </main>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./supabase_config.js"></script>
-  <script src="./ld_dmg_tool.js"></script>
-</body>
-</html>
+<script src="supabase_config.js"></script>
+<script src="ld_dmg_tool.js"></script>
+</body></html>
