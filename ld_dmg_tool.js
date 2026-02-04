@@ -143,6 +143,23 @@ async function fetchAll(viewName, orderCol){
   if(error) throw error;
   return data || [];
 }
+async function fetchAllTry(tableNames, opts){
+  const names = Array.isArray(tableNames) ? tableNames : [tableNames];
+  let lastErr = null;
+  for(const name of names){
+    try{
+      const rows = await fetchAll(name, opts);
+      STATE._resolvedTables = STATE._resolvedTables || {};
+      STATE._resolvedTables[name] = true;
+      return {name, rows};
+    }catch(e){
+      lastErr = e;
+      // continue
+    }
+  }
+  throw lastErr;
+}
+
 
 function uniq(arr){
   return [...new Set(arr)];
