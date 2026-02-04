@@ -1075,7 +1075,17 @@ function getTreasureRowsForUnit(unitName){
   return rows.filter(r => normTreasureName(r) === u);
 }
 
+
+function setTreasureLevelLabel(extra){
+  const el = document.querySelector('[data-field-id="treasure_level"] .fieldLabel');
+  if(!el) return;
+  const base = '財宝Lv';
+  const suffix = extra ? `（${extra}）` : '';
+  el.textContent = base + suffix;
+}
+
 function renderTreasureDetail(){
+  setTreasureLevelLabel('');
   const host = document.getElementById('treasureDetail');
   if(!host) return;
   host.innerHTML = '';
@@ -1102,6 +1112,7 @@ function renderTreasureDetail(){
   }
 
   const dispName = normAtkTreasureText(rowsAll[0]) || '財宝';
+  setTreasureLevelLabel(dispName);
   const coef = getTreasureCoef(unit, lvl);
   STATE.values.treasure_coef = coef;
 
@@ -1244,3 +1255,17 @@ function boot(){
 document.addEventListener('DOMContentLoaded', boot);
 
 })();
+
+function mergePetSections(){
+  const petSection = document.querySelector('[data-section-id="pet"]') || document.querySelector('[data-card-id="pet"]');
+  if(!petSection) return;
+  const first = document.querySelector('[data-group-id="pet_a"]') || petSection;
+  const dest = first.querySelector('.fields') || first;
+  for(const g of ['pet_b','pet_c']){
+    const node = document.querySelector('[data-group-id="'+g+'"]');
+    if(node && node !== first){
+      node.querySelectorAll('.field').forEach(f=>dest.appendChild(f));
+      node.remove();
+    }
+  }
+}
