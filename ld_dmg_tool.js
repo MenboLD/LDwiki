@@ -208,7 +208,7 @@ async function loadMasters(){
     const [unit_atk, unit_abilities, pet1, pet2, pet3, relic, piece, treasure, dff] = await Promise.all([
       // Unit order: do NOT sort here. Expect CSV import order / table order.
       fetchAll('ld_DMG_unit_atk'),
-      fetchAll('ld_DMG_unit_abilties', 'id_name_unit'),
+      fetchAll('ld_DMG_unit_abilities', 'id_name_unit'),
       fetchAll('ld_DMG_pet_1', 'petname'),
       fetchAll('ld_DMG_pet_2', 'petname'),
       fetchAll('ld_DMG_pet_3', 'petname'),
@@ -230,12 +230,12 @@ async function loadMasters(){
 
     buildIndexes();
 
-    setStatus(`マスタ読み込み完了（unit:${unit_atk.length} / abil:${unit_abilities.length} / piece:${piece.length} / dff:${dff.length}）`);
+    setStatus(`マスタ読み込み完了（unit:${unit_atk.length} / abil:${unit_abilities.length} / piece:${piece.length} / dff:${dff.lengthh}）`);
     log('マスタ読み込み完了', {
       unit_atk: unit_atk.length,
       unit_abilities: unit_abilities.length,
       piece: piece.length,
-      dff: dff.length,
+      dff: dff.lengthh,
       treasure: treasure.length
     });
 
@@ -930,7 +930,7 @@ function optionListFor(item){
       if(tbl === 'ld_DMG_piece') arr = STATE.masters.piece;
       if(tbl === 'ld_DMG_pet_1') arr = STATE.masters.pet1;
       if(tbl === 'ld_DMG_unit_atk') arr = STATE.masters.unit_atk;
-      if(tbl === 'ld_DMG_unit_abilties') arr = STATE.masters.unit_abilities;
+      if(tbl === 'ld_DMG_unit_abilities') arr = STATE.masters.unit_abilities;
       if(tbl === 'ld_DMG_treasure') arr = STATE.masters.treasure;
       // attempt both exact and lower-case keys
       const colLower = col.toLowerCase();
@@ -1014,7 +1014,7 @@ function getMasterOptions(item){
 function tableKey(tbl){
   // map to STATE.masters keys
   if(tbl === 'ld_DMG_unit_atk') return 'unit_atk';
-  if(tbl === 'ld_DMG_unit_abilties') return 'unit_abilities';
+  if(tbl === 'ld_DMG_unit_abilities') return 'unit_abilities';
   if(tbl === 'ld_DMG_piece') return 'piece';
   if(tbl === 'ld_DMG_relic') return 'relic';
   if(tbl === 'ld_DMG_treasure') return 'treasure';
