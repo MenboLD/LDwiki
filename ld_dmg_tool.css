@@ -423,3 +423,29 @@ select, button, input{ font-size:13px; }
 .rangeWrap input[type="range"]{ flex:1; min-width:140px; }
 .rangeVal{ width:34px; text-align:right; font-variant-numeric: tabular-nums; opacity:.9; }
 .stepBtn{ width:34px; height:34px; border-radius:12px; }
+
+
+/* v19: flatten inner containers (keep accordion headers) */
+.field{
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 6px 0 !important;
+  border-radius: 0 !important;
+}
+.field + .field{ border-top: 1px solid rgba(255,255,255,0.06) !important; }
+.fieldHeader{ opacity: .95; }
+.fieldContent{ background: transparent !important; }
+select, button, input{
+  box-shadow: none !important;
+}
+/* reduce nested card look if exists */
+.card .cardInner, .card .inner, .card .panel{
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+
+/* v19: avoid duplicate slider numbers */
+.rangeVal.dupHide, .valBadge, .valueBadge, .miniVal{ display:none !important; }

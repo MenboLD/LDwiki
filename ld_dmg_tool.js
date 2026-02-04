@@ -1269,3 +1269,14 @@ function mergePetSections(){
     }
   }
 }
+
+function fixDuplicateRangeValues(){
+  document.querySelectorAll('.rangeWrap').forEach(w=>{
+    const nums = Array.from(w.querySelectorAll('.rangeVal, .rangeNumber, .numVal, .value, .outVal'))
+      .filter(el=>el && el.textContent && el.textContent.trim().match(/^-?\d+(\.\d+)?$/));
+    // If more than one numeric display exists, hide all but the last one (keep the rightmost by DOM order).
+    if(nums.length > 1){
+      nums.slice(0, nums.length-1).forEach(el=>el.classList.add('dupHide'));
+    }
+  });
+}
