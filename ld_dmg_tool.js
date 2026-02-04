@@ -1,3 +1,41 @@
+
+const EXPECT_TABLES = [
+  'ld_DMG_unit_atk',
+  'ld_DMG_unit_abilities',
+  'ld_DMG_dff',
+  'ld_DMG_piece',
+  'ld_DMG_relic',
+  'ld_DMG_treasure',
+  'ld_DMG_pet_1',
+  'ld_DMG_pet_2',
+  'ld_DMG_pet_3'
+];
+
+async function verifyTables(){
+  const ok = [];
+  const ng = [];
+  for(const t of EXPECT_TABLES){
+    try{
+      const { error } = await supabase.from(t).select('*', { head: true }).limit(1);
+      if(error) throw error;
+      ok.push(t);
+    }catch(e){
+      ng.push({t, e});
+    }
+  }
+  return {ok, ng};
+}
+
+function updateTablesDebug(res){
+  const el = document.getElementById('dbgTables');
+  if(!el) return;
+  const ok = res?.ok || [];
+  const ng = res?.ng || [];
+  const okLine = ok.length ? `<div class="ok">tables OK: ${ok.join(', ')}</div>` : `<div class="ok">tables OK: (none)</div>`;
+  const ngLine = ng.length ? `<div class="ng">tables NG: ${ng.map(x=>x.t).join(', ')}</div>` : `<div class="ok">tables NG: (none)</div>`;
+  el.innerHTML = okLine + ngLine;
+}
+
 (function(){
   if(!window.supabase || !window.supabase.createClient){
     console.error('[ld_dmg] supabase-js not loaded. Check script include order.');
@@ -143,23 +181,6 @@ async function fetchAll(viewName, orderCol){
   if(error) throw error;
   return data || [];
 }
-async function fetchAllTry(tableNames, opts){
-  const names = Array.isArray(tableNames) ? tableNames : [tableNames];
-  let lastErr = null;
-  for(const name of names){
-    try{
-      const rows = await fetchAll(name, opts);
-      STATE._resolvedTables = STATE._resolvedTables || {};
-      STATE._resolvedTables[name] = true;
-      return {name, rows};
-    }catch(e){
-      lastErr = e;
-      // continue
-    }
-  }
-  throw lastErr;
-}
-
 
 function uniq(arr){
   return [...new Set(arr)];
@@ -217,6 +238,8 @@ function buildIndexes(){
 }
 
 async function loadMasters(){
+  try{ const vt = await verifyTables(); updateTablesDebug(vt); }catch(e){}
+
   clearError();
   setStatus('マスタ読み込み中...');
   log('マスタ読み込み開始');
@@ -231,7 +254,7 @@ async function loadMasters(){
       fetchAll('ld_DMG_pet_3', 'petname'),
       fetchAll('ld_DMG_relic', 'relicname'),
       fetchAll('ld_DMG_piece', 'Piecename'),
-      fetchAllFallback(['ld_DMG_treasure','ld_dmg_treasure','ld_DMG_TREASURE'], 'treasurename'),
+      fetchAllFallback(['ld_DMG_treasure','ld_DMG_treasure','ld_DMG_TREASURE'], 'treasurename'),
       fetchAll('ld_DMG_dff', 'Mode')
     ]);
 

@@ -475,3 +475,8 @@ select, button, input{
 .dbgLine{ font-size:12px; opacity:.85; margin-top:6px; }
 .dbgLine .ok{ color: #7CFFA1; }
 .dbgLine .ng{ color: #FF8B8B; }
+
+/* v23: table verify debug */
+#dbgTables{ font-size:12px; opacity:.9; margin-top:6px; line-height:1.35; }
+#dbgTables .ok{ color:#7CFFA1; }
+#dbgTables .ng{ color:#FF8B8B; }
