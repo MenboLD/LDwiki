@@ -1069,10 +1069,11 @@ function normTreasureText(r){ return String((r.parame_text ?? r.param_text ?? ''
 function normTreasureVal(r){ return (r.parame_2 ?? r.param_value); }
 
 function getTreasureRowsForUnit(unitName){
-  const rows = STATE.masters.treasure || [];
-  const u = String(unitName || '').trim();
-  if(!u) return [];
-  return rows.filter(r => normTreasureName(r) === u);
+  if (typeof STATE === 'undefined') return [];
+  const unit = String(unitName||'').trim();
+  if(!unit) return [];
+  const rows = (STATE.masters.treasure || []);
+  return rows.filter(r => String(r.treasurename || '').trim() === unit);
 }
 
 
@@ -1085,6 +1086,7 @@ function setTreasureLevelLabel(extra){
 }
 
 function renderTreasureDetail(){
+  if (typeof STATE === 'undefined') return;
   const unit = STATE.values.unit_name_parts;
   const exists = treasureExistsForUnit(unit);
   const labelText = getTreasureLabelText(unit);
@@ -1123,11 +1125,14 @@ function EXISTS_TREASURE_ATK(unitName, unitLevel){
   return getTreasureRowsFromTreasure(unitName).length > 0;
 }
 
-function getTreasureCoef(unitName, treasureLv){
-  const lvl = String(treasureLv ?? '').trim();
-  const rows = getTreasureRowsFromTreasure(unitName).filter(r => normAtkTreasureLv(r) === lvl);
-  if(rows.length === 0) return null;
-  return normAtkTreasureVal(rows[0]);
+function getTreasureCoef(unitName, lvl){
+  if (typeof STATE === 'undefined') return null;
+  const rows = getTreasureRowsForUnit(unitName);
+  const L = Number(lvl);
+  const row = rows.find(r => Number(r.parame_1) === L);
+  const v = row?.parame_2;
+  const n = (v===undefined || v===null || v==='') ? null : Number(v);
+  return Number.isFinite(n) ? n : null;
 }
 
 function applyAllVisibility(){
@@ -1248,6 +1253,7 @@ function fixDuplicateRangeValues(){
 }
 
 function applyTreasureVisibilityOverride(){
+  if (typeof STATE === 'undefined') return;
   const unit = STATE.values.unit_name_parts;
   const ulv  = Number(STATE.values.unit_level_parts || 1);
   const exists = treasureExistsForUnit(unit);
@@ -1257,6 +1263,7 @@ function applyTreasureVisibilityOverride(){
 }
 
 function hookTreasureRecalc(){
+  if (typeof STATE === 'undefined') return;
   const ids = ['treasure_on','treasure_level','unit_name_parts','unit_level_parts'];
   ids.forEach(id=>{
     const el = document.getElementById(id);
@@ -1268,6 +1275,7 @@ function hookTreasureRecalc(){
 }
 
 function updateTreasureDebugLine(){
+  if (typeof STATE === 'undefined') return;
   const el = document.getElementById('dbgTreasure');
   if(!el) return;
   const unit = String(STATE.values.unit_name_parts||'').trim();
