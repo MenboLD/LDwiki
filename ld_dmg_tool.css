@@ -449,3 +449,29 @@ select, button, input{
 
 /* v19: avoid duplicate slider numbers */
 .rangeVal.dupHide, .valBadge, .valueBadge, .miniVal{ display:none !important; }
+
+/* v20: remove input/output outer container card look and widen content */
+.mainWrap, main, .pageWrap{ max-width: 980px; margin: 0 auto; padding: 10px 10px 70px; }
+@media (max-width: 520px){
+  .mainWrap, main, .pageWrap{ max-width: 100%; padding: 10px 10px 70px; }
+}
+#inputCard, .inputCard, .card.input, .cardInput{
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* v20: longer sliders */
+.rangeWrap{ flex: 1; min-width: 0; }
+.rangeWrap input[type="range"]{ flex: 1; min-width: 220px; }
+@media (max-width: 520px){
+  .rangeWrap input[type="range"]{ min-width: 180px; }
+}
+.rangeInlineVal, .rangeVal.left, .rangeValInline, .rangeValSmall, .miniNum, .inlineNum{ display:none !important; }
+.dupHide{display:none !important;}
+
+/* v20: debug line */
+.dbgLine{ font-size:12px; opacity:.85; margin-top:6px; }
+.dbgLine .ok{ color: #7CFFA1; }
+.dbgLine .ng{ color: #FF8B8B; }

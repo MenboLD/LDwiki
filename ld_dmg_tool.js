@@ -247,6 +247,7 @@ async function loadMasters(){
     renderOutput();
   renderCalcOutputs();
   renderTreasureDetail();
+  updateTreasureExistsDebug();
   }catch(e){
     setStatus('マスタ読み込み失敗');
     showError(String(e.message || e));
@@ -1270,13 +1271,29 @@ function mergePetSections(){
   }
 }
 
+
 function fixDuplicateRangeValues(){
-  document.querySelectorAll('.rangeWrap').forEach(w=>{
-    const nums = Array.from(w.querySelectorAll('.rangeVal, .rangeNumber, .numVal, .value, .outVal'))
+  // Keep only the rightmost numeric badge per field (avoid duplicate numbers like "15 15")
+  document.querySelectorAll('.field').forEach(field=>{
+    const nums = Array.from(field.querySelectorAll('.rangeVal, .rangeNumber, .numVal, .value, .outVal, .pill, .badge'))
       .filter(el=>el && el.textContent && el.textContent.trim().match(/^-?\d+(\.\d+)?$/));
-    // If more than one numeric display exists, hide all but the last one (keep the rightmost by DOM order).
     if(nums.length > 1){
       nums.slice(0, nums.length-1).forEach(el=>el.classList.add('dupHide'));
     }
   });
+}
+
+
+function updateTreasureExistsDebug(){
+  const el = document.getElementById('dbgTreasureExists');
+  if(!el) return;
+  const unit = String(STATE.values.unit_name_parts || '').trim();
+  if(!unit){
+    el.textContent = '';
+    return;
+  }
+  const rows = (STATE.masters.treasure || []);
+  const c = rows.filter(r => String((r.treasurename ?? r.treasure_name ?? '')).trim() === unit).length;
+  const msg = `treasure判定: ${c>0 ? 'HIT' : 'MISS'}（unit="${unit}" / count=${c}）`;
+  el.innerHTML = c>0 ? `<span class="ok">${msg}</span>` : `<span class="ng">${msg}</span>`;
 }
