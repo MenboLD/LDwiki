@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ルーンリスト | LuckyDefense Wiki</title>
+  <meta name="description" content="ラッキー傭兵団のルーン一覧（効果・レアリティ・フィルタ・ソート対応）" />
+  <link rel="stylesheet" href="./ld_rune_list.css?v=20260207a">
+</head>
+<body data-page-name="ルーンリスト">
+  <header class="topbar">
+    <div class="topbar__title">ルーンリスト</div>
+    <div class="topbar__actions">
+      <button id="btnResetSort" class="btn btn--ghost" type="button" title="ソート初期化">ソート初期化</button>
+      <button id="btnResetRarity" class="btn btn--ghost" type="button" title="レアリティ初期化">レアリティ初期化</button>
+      <button id="btnResetWord" class="btn btn--ghost" type="button" title="キーワード初期化">キーワード初期化</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="controls">
+      <div class="controls__block">
+        <div class="controls__label">表示列</div>
+        <div id="colToggles" class="chiplist" aria-label="表示列の切替"></div>
+      </div>
+
+      <div class="controls__block">
+        <div class="controls__label">レアリティ</div>
+        <div id="rarityToggles" class="chiplist" aria-label="レアリティの切替"></div>
+      </div>
+
+      <div class="controls__status">
+        <div id="statusText" class="status">Loading...</div>
+      </div>
+    </section>
+
+    <section class="tablewrap" aria-label="ルーン一覧表">
+      <div class="tablewrap__scroll">
+        <table class="table" id="runeTable">
+          <thead>
+            <tr>
+              <th data-sort="RuneSortOrder" data-col="no" class="is-sortable">No.</th>
+              <th data-sort="RuneName" data-col="name" class="is-sortable">ルーン名</th>
+              <th data-sort="RuneType" data-col="grade" class="is-sortable">レアリティ</th>
+              <th data-sort="EffectText" data-col="effect" class="is-sortable">効果</th>
+              <th data-sort="RuneBuffType" data-col="buff" class="is-sortable">内部種目</th>
+            </tr>
+          </thead>
+          <tbody id="runeTbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Right slide panel -->
+  <button id="panelHandle" class="panel-handle" type="button" aria-label="フィルタを開く">◀</button>
+  <aside id="sidePanel" class="sidepanel" aria-label="効果キーワードフィルタ">
+    <div class="sidepanel__header">
+      <div class="sidepanel__title">効果キーワード</div>
+      <button id="panelClose" class="btn btn--ghost" type="button">閉じる</button>
+    </div>
+
+    <div class="sidepanel__body">
+      <div class="toggle">
+        <span class="toggle__label">複数選択</span>
+        <button id="btnAndOr" class="btn btn--primary" type="button" aria-pressed="false">OR</button>
+      </div>
+
+      <select id="wordSelect" class="listbox" multiple size="14" aria-label="キーワードの複数選択"></select>
+
+      <div class="help">
+        選択したキーワードが「効果」文章内に含まれる行のみ表示します。<br/>
+        OR: どれか1つでも一致 / AND: すべて一致
+      </div>
+    </div>
+  </aside>
+  <div id="panelBackdrop" class="backdrop" hidden></div>
+
+  <!-- Supabase -->
+  <script src="./supabase_config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./ld_rune_list.js?v=20260207a"></script>
+</body>
+</html>
