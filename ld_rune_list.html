@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>ルーンリスト | LuckyDefense Wiki</title>
   <meta name="description" content="ラッキー傭兵団のルーン一覧（効果・レアリティ・フィルタ・ソート対応）" />
-  <link rel="stylesheet" href="./ld_rune_list.css?v=20260207a">
+  <link rel="stylesheet" href="./ld_rune_list.css?v=20260207c">
 </head>
 <body data-page-name="ルーンリスト">
   <header class="topbar">
@@ -13,8 +13,7 @@
     <div class="topbar__actions">
       <button id="btnResetSort" class="btn btn--ghost" type="button" title="ソート初期化">ソート初期化</button>
       <button id="btnResetRarity" class="btn btn--ghost" type="button" title="レアリティ初期化">レアリティ初期化</button>
-      <button id="btnResetWord" class="btn btn--ghost" type="button" title="キーワード初期化">キーワード初期化</button>
-    </div>
+</div>
   </header>
 
   <main class="page">
@@ -66,6 +65,10 @@
         <button id="btnAndOr" class="btn btn--primary" type="button" aria-pressed="false">OR</button>
       </div>
 
+      <div class="sidepanel__tools">
+        <button id="btnResetWord" class="btn btn--ghost btn--small" type="button" title="キーワード初期化">キーワード初期化</button>
+      </div>
+
       <select id="wordSelect" class="listbox" multiple size="14" aria-label="キーワードの複数選択"></select>
 
       <div class="help">
@@ -79,6 +82,6 @@
   <!-- Supabase -->
   <script src="./supabase_config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./ld_rune_list.js?v=20260207a"></script>
+  <script src="./ld_rune_list.js?v=20260207c"></script>
 </body>
 </html>
