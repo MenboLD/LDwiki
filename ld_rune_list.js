@@ -432,7 +432,7 @@
     // Load runes
     {
       const { data, error } = await client
-        .from("ld_RUNE_list")
+        .from("ld_rune_list")
         .select("*")
         .order("RuneSortOrder", { ascending: true });
 
@@ -450,7 +450,7 @@
     // Load words
     {
       const { data, error } = await client
-        .from("ld_RUNE_word")
+        .from("ld_rune_word")
         .select("WordTxt")
         .order("WordId", { ascending: true });
 
