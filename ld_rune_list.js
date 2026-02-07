@@ -94,7 +94,7 @@ function clearColumnWidths(keys){
   }
 
   const state = {
-    sortKey: "RuneSortOrder",
+    sortKey: "RuneType",
     sortDir: "asc", // asc|desc
     colVisible: Object.fromEntries(COLS.map(c=>[c.key, c.default])),
     // Default visible rarities: Legend, Mythic, Immortal, Transcend only

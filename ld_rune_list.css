@@ -102,17 +102,31 @@ body{
 }
 
 .chiplist{
-  display:flex;
-  flex-wrap:nowrap;
-  gap:10px;
-  overflow-x:auto;
-  -webkit-overflow-scrolling:touch;
-  padding-bottom:2px;
+  display:grid;
+  width:100%;
+  row-gap:6px;
+  column-gap:10px;
+  align-items:center;
 }
-.chiplist::-webkit-scrollbar{ display:none; }
+
+/* 2段レイアウト（スマホで右にはみ出さない） */
+.chiplist--cols{
+  grid-template-columns: repeat(3, minmax(0, 1fr)); /* 6項目想定：2段×3列 */
+}
+.chiplist--rarity{
+  grid-template-columns: repeat(4, minmax(0, 1fr)); /* 8項目想定：2段×4列 */
+}
+
+@media (min-width: 680px){
+  /* PCでは少し詰めつつ横幅に余裕を持たせる */
+  .chiplist--cols{ grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .chiplist--rarity{ grid-template-columns: repeat(8, minmax(0, 1fr)); }
+}
+
 
 .chip{
-  display:inline-flex;
+  display:flex;
+  width:100%;
   align-items:center;
   gap:4px;
   padding:0;
