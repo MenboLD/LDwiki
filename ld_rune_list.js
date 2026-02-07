@@ -4,7 +4,7 @@
 (function(){
   'use strict';
 
-  const BUILD = "20260207g";
+  const BUILD = "20260207h";
   const RARITY_ORDER = ["ノマ","レア","エピ","レジェ","神話","不滅","超越"];
 
   function rarityRank(g){
@@ -14,13 +14,16 @@
   }
 
 
-  // Default visible columns: Rune name + Effect only
+  // Default visible columns: ルーン名 + 効果 のみ
+  // NOTE: 「ルーン番号」は RuneType を表示（デフォルト非表示）
+  // Order must match table header order.
   const COLS = [
-    { key:"no", label:"No.", default:false },
-    { key:"name", label:"ルーン名", default:true },
-    { key:"grade", label:"レアリティ", default:false },
-    { key:"effect", label:"効果", default:true },
-    { key:"buff", label:"内部種目", default:false },
+    { key:"no",     label:"No.",      default:false },
+    { key:"name",   label:"ルーン名",  default:true  },
+    { key:"runeno", label:"ルーン番号", default:false },
+    { key:"grade",  label:"レアリティ", default:false },
+    { key:"effect", label:"効果",      default:true  },
+    { key:"buff",   label:"内部種目",  default:false },
   ];
 
   // DOM
@@ -255,7 +258,7 @@ function applyColumnVisibility(){
     if (!nextBuff){
       elTableScroll.scrollLeft = 0;
       // Clear frozen widths when leaving horizontal-scroll mode
-      clearColumnWidths(["no","name","grade","effect"]);
+      clearColumnWidths(["no","name","runeno","grade","effect"]);
       state._frozenWidths = null;
     } else {
       // Re-apply frozen widths so existing columns don't change size
@@ -535,6 +538,16 @@ function applyColumnVisibility(){
     document.addEventListener("keydown", (e)=>{
       if (e.key === "Escape") setPanelOpen(false);
     });
+
+    // Disable iOS double-tap zoom (best-effort)
+    let lastTouchEnd = 0;
+    document.addEventListener("touchend", (e)=>{
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive:false });
   }
 
   async function loadSupabase(){

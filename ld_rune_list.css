@@ -21,7 +21,7 @@
 }
 
 *{ box-sizing:border-box; }
-html,body{ height:100%; }
+html,body{ height:100%; touch-action: manipulation; }
 body{
   margin:0;
   background:linear-gradient(180deg, rgba(125,211,252,.06), transparent 180px), var(--bg);
