@@ -1,11 +1,18 @@
 /* LDwiki Rune List JS
-   BUILD: 20260207e
+   BUILD: 20260207g
 */
 (function(){
   'use strict';
 
-  const BUILD = "20260207e";
+  const BUILD = "20260207g";
   const RARITY_ORDER = ["ノマ","レア","エピ","レジェ","神話","不滅","超越"];
+
+  function rarityRank(g){
+    const s = safeStr(g);
+    const idx = RARITY_ORDER.indexOf(s);
+    return (idx >= 0) ? idx : 999;
+  }
+
 
   // Default visible columns: Rune name + Effect only
   const COLS = [
@@ -226,13 +233,14 @@ function clearColumnWidths(keys){
 
   
 function applyColumnVisibility(){
-  const keys = ["no","name","grade","effect","buff"];
+  const keys = ["no","name","runeno","grade","effect","buff"];
   const prevBuff = !!state._buffVisibleLast;
   const nextBuff = (state.colVisible.buff !== false);
 
-  // If turning ON 内部種目, freeze current widths of existing visible columns.
+  // If turning ON 内部種目, freeze current widths of currently-visible non-buff columns.
   if (!prevBuff && nextBuff){
-    state._frozenWidths = captureColumnWidths(["no","name","grade","effect"]);
+    const toFreeze = ["no","name","runeno","grade","effect"].filter(k => state.colVisible[k] !== false);
+    state._frozenWidths = captureColumnWidths(toFreeze);
   }
 
   $$("#runeTable [data-col]").forEach(el => {
@@ -358,6 +366,7 @@ function applyColumnVisibility(){
     const getVal = (row)=>{
       if (key === "EffectText") return buildEffectPlain(row);
       if (key === "RuneType") return Number(row.RuneType ?? 0);
+      if (key === "RuneGrade") return rarityRank(row.RuneGrade);
       return row[key];
     };
 
@@ -445,6 +454,11 @@ function applyColumnVisibility(){
       tdName.setAttribute("data-col", "name");
       tdName.textContent = safeStr(r.RuneName);
 
+      const tdRuneNo = document.createElement("td");
+      tdRuneNo.className = "col-runeno";
+      tdRuneNo.setAttribute("data-col", "runeno");
+      tdRuneNo.textContent = safeStr(r.RuneType);
+
       const tdGrade = document.createElement("td");
       tdGrade.className = "col-grade";
       tdGrade.setAttribute("data-col", "grade");
@@ -462,6 +476,7 @@ function applyColumnVisibility(){
 
       tr.appendChild(tdNo);
       tr.appendChild(tdName);
+      tr.appendChild(tdRuneNo);
       tr.appendChild(tdGrade);
       tr.appendChild(tdEffect);
       tr.appendChild(tdBuff);
