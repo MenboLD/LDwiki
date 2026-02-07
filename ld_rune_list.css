@@ -289,9 +289,12 @@ tbody tr.rarity-transcend:hover td{
   top:0;
   right:0;
   height:100%;
-  width:min(340px, 92vw);
+  /* narrower, roughly half screen */
+  width: clamp(220px, 52vw, 340px);
   z-index:80;
-  background:linear-gradient(180deg, rgba(255,255,255,.03), transparent), var(--panel2);
+  /* more transparent so the table behind is faintly visible */
+  background: rgba(15,22,34,.58);
+  backdrop-filter: blur(10px) saturate(1.15);
   border-left:1px solid var(--line);
   transform: translateX(102%);
   transition: transform .22s ease;
@@ -325,7 +328,16 @@ tbody tr.rarity-transcend:hover td{
 }
 .sidepanel__tools{
   display:flex;
-  justify-content:flex-end;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.wordcount{
+  font-size:12px;
+  color:var(--muted);
+  font-weight:800;
+  white-space:nowrap;
 }
 
 .toggle{
@@ -390,7 +402,9 @@ tbody tr.rarity-transcend:hover td{
   position:fixed;
   inset:0;
   z-index:75;
-  background: rgba(0,0,0,.45);
+  /* keep the table slightly visible */
+  background: rgba(0,0,0,.18);
+  backdrop-filter: blur(2px);
 }
 
 @media (min-width: 760px){

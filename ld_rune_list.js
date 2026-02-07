@@ -58,6 +58,7 @@ function clearColumnWidths(keys){
   const elRarityToggles = $("#rarityToggles");
 
   const elWordList = $("#wordList");
+  const elWordCount = $("#wordCountLabel");
   const btnAndOr = $("#btnAndOr");
   const btnResetSort = $("#btnResetSort");
   const btnResetRarity = $("#btnResetRarity");
@@ -73,6 +74,14 @@ function clearColumnWidths(keys){
   // State
   let allRunes = [];
   let wordList = [];
+  let wordTotal = 0;
+
+  function updateWordCountLabel(){
+    if (!elWordCount) return;
+    const sel = state.selectedWords.size;
+    const total = wordTotal || wordList.length || 0;
+    elWordCount.textContent = `選択中：${sel}/${total}`;
+  }
 
   const state = {
     sortKey: "RuneSortOrder",
@@ -283,6 +292,7 @@ function applyColumnVisibility(){
     if (elWordList){
       elWordList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
     }
+    updateWordCountLabel();
     render();
   }
 
@@ -329,6 +339,7 @@ function applyColumnVisibility(){
         const word = w;
         if (e.target.checked) state.selectedWords.add(word);
         else state.selectedWords.delete(word);
+        updateWordCountLabel();
         render();
       });
 
@@ -336,6 +347,8 @@ function applyColumnVisibility(){
     });
 
     elWordList.appendChild(frag);
+    wordTotal = wordList.length;
+    updateWordCountLabel();
   }
 
   function sortRows(rows){
@@ -463,6 +476,7 @@ function applyColumnVisibility(){
   }
 
   function render(){
+    updateWordCountLabel();
     const filtered = filterRows([...allRunes]);
     const sorted = sortRows(filtered);
 
@@ -471,6 +485,7 @@ function applyColumnVisibility(){
 
     const words = state.selectedWords.size ? ` / キーワード:${state.wordMode} ${state.selectedWords.size}件` : "";
     setStatus(`表示 ${sorted.length} / 全 ${allRunes.length}${words}`);
+    updateWordCountLabel();
   }
 
   function setPanelOpen(open){
@@ -547,6 +562,7 @@ function applyColumnVisibility(){
 
       if (error) throw error;
       wordList = (data || []).map(x=>x.WordTxt).filter(Boolean);
+      wordTotal = wordList.length;
     }
   }
 
