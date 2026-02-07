@@ -457,6 +457,10 @@ function applyColumnVisibility(){
       tdName.setAttribute("data-col", "name");
       tdName.textContent = safeStr(r.RuneName);
 
+      // Highlight: RuneType > 51
+      const runeNoNum = Number(r.RuneType);
+      if (!Number.isNaN(runeNoNum) && runeNoNum > 51) tdName.classList.add("name-high");
+
       const tdRuneNo = document.createElement("td");
       tdRuneNo.className = "col-runeno";
       tdRuneNo.setAttribute("data-col", "runeno");
