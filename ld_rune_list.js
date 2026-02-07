@@ -1,10 +1,10 @@
 /* LDwiki Rune List JS
-   BUILD: 20260207d
+   BUILD: 20260207e
 */
 (function(){
   'use strict';
 
-  const BUILD = "20260207d";
+  const BUILD = "20260207e";
   const RARITY_ORDER = ["ノマ","レア","エピ","レジェ","神話","不滅","超越"];
 
   // Default visible columns: Rune name + Effect only
@@ -19,6 +19,38 @@
   // DOM
   const $ = (sel, el=document)=>el.querySelector(sel);
   const $$ = (sel, el=document)=>Array.from(el.querySelectorAll(sel));
+
+
+// Column width freezing: keep current widths when enabling 内部種目 (horizontal scroll mode)
+function captureColumnWidths(keys){
+  const widths = {};
+  keys.forEach(k=>{
+    const th = $(`#runeTable thead th[data-col="${k}"]`);
+    if (!th) return;
+    if (th.classList.contains("hidden-col")) return;
+    widths[k] = Math.max(40, Math.round(th.getBoundingClientRect().width));
+  });
+  return widths;
+}
+function applyColumnWidths(widths){
+  if (!widths) return;
+  Object.entries(widths).forEach(([k,w])=>{
+    $$(`#runeTable [data-col="${k}"]`).forEach(el=>{
+      el.style.width = w + "px";
+      el.style.minWidth = w + "px";
+      el.style.maxWidth = w + "px";
+    });
+  });
+}
+function clearColumnWidths(keys){
+  keys.forEach(k=>{
+    $$(`#runeTable [data-col="${k}"]`).forEach(el=>{
+      el.style.width = "";
+      el.style.minWidth = "";
+      el.style.maxWidth = "";
+    });
+  });
+}
 
   const elStatus = $("#statusText");
   const elTbody = $("#runeTbody");
@@ -183,29 +215,39 @@
     });
   }
 
-  function applyColumnVisibility(){
-    // th/td use data-col; map to keys
-    const map = {
-      no:"no",
-      name:"name",
-      grade:"grade",
-      effect:"effect",
-      buff:"buff"
-    };
+  
+function applyColumnVisibility(){
+  const keys = ["no","name","grade","effect","buff"];
+  const prevBuff = !!state._buffVisibleLast;
+  const nextBuff = (state.colVisible.buff !== false);
 
-    $$("#runeTable [data-col]").forEach(el => {
-      const colKey = el.getAttribute("data-col");
-      const visible = state.colVisible[colKey] !== false;
-      el.classList.toggle("hidden-col", !visible);
-    });
+  // If turning ON 内部種目, freeze current widths of existing visible columns.
+  if (!prevBuff && nextBuff){
+    state._frozenWidths = captureColumnWidths(["no","name","grade","effect"]);
+  }
 
-    // Allow horizontal scroll only when 内部種目 is visible
-    if (elTableScroll){
-      const allowX = !!state.colVisible.buff;
-      elTableScroll.classList.toggle("allow-x", allowX);
-      if (!allowX) elTableScroll.scrollLeft = 0;
+  $$("#runeTable [data-col]").forEach(el => {
+    const colKey = el.getAttribute("data-col");
+    const visible = state.colVisible[colKey] !== false;
+    el.classList.toggle("hidden-col", !visible);
+  });
+
+  // Allow horizontal scroll only when 内部種目 is visible
+  if (elTableScroll){
+    elTableScroll.classList.toggle("allow-x", nextBuff);
+    if (!nextBuff){
+      elTableScroll.scrollLeft = 0;
+      // Clear frozen widths when leaving horizontal-scroll mode
+      clearColumnWidths(["no","name","grade","effect"]);
+      state._frozenWidths = null;
+    } else {
+      // Re-apply frozen widths so existing columns don't change size
+      applyColumnWidths(state._frozenWidths);
     }
   }
+
+  state._buffVisibleLast = nextBuff;
+}
 
   function setSort(key){
     if (state.sortKey === key){
