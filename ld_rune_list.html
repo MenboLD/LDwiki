@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>ルーンリスト | LuckyDefense Wiki</title>
   <meta name="description" content="ラッキー傭兵団のルーン一覧（効果・レアリティ・フィルタ・ソート対応）" />
-  <link rel="stylesheet" href="./ld_rune_list.css?v=20260207c">
+  <link rel="stylesheet" href="./ld_rune_list.css?v=20260207d">
 </head>
 <body data-page-name="ルーンリスト">
   <header class="topbar">
@@ -69,7 +69,8 @@
         <button id="btnResetWord" class="btn btn--ghost btn--small" type="button" title="キーワード初期化">キーワード初期化</button>
       </div>
 
-      <select id="wordSelect" class="listbox" multiple size="14" aria-label="キーワードの複数選択"></select>
+      <!-- Custom listbox (mobile friendly) -->
+      <div id="wordList" class="wordlist" role="listbox" aria-label="キーワードの複数選択" aria-multiselectable="true"></div>
 
       <div class="help">
         選択したキーワードが「効果」文章内に含まれる行のみ表示します。<br/>
@@ -82,6 +83,6 @@
   <!-- Supabase -->
   <script src="./supabase_config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./ld_rune_list.js?v=20260207c"></script>
+  <script src="./ld_rune_list.js?v=20260207d"></script>
 </body>
 </html>

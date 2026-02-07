@@ -1,16 +1,17 @@
 /* LDwiki Rune List JS
-   BUILD: 20260207a
+   BUILD: 20260207d
 */
 (function(){
   'use strict';
 
-  const BUILD = "20260207a";
+  const BUILD = "20260207d";
   const RARITY_ORDER = ["ノマ","レア","エピ","レジェ","神話","不滅","超越"];
 
+  // Default visible columns: Rune name + Effect only
   const COLS = [
-    { key:"no", label:"No.", default:true },
+    { key:"no", label:"No.", default:false },
     { key:"name", label:"ルーン名", default:true },
-    { key:"grade", label:"レアリティ", default:true },
+    { key:"grade", label:"レアリティ", default:false },
     { key:"effect", label:"効果", default:true },
     { key:"buff", label:"内部種目", default:false },
   ];
@@ -24,11 +25,13 @@
   const elColToggles = $("#colToggles");
   const elRarityToggles = $("#rarityToggles");
 
-  const elWordSelect = $("#wordSelect");
+  const elWordList = $("#wordList");
   const btnAndOr = $("#btnAndOr");
   const btnResetSort = $("#btnResetSort");
   const btnResetRarity = $("#btnResetRarity");
   const btnResetWord = $("#btnResetWord");
+
+  const elTableScroll = document.querySelector(".tablewrap__scroll");
 
   const sidePanel = $("#sidePanel");
   const panelHandle = $("#panelHandle");
@@ -43,7 +46,16 @@
     sortKey: "RuneSortOrder",
     sortDir: "asc", // asc|desc
     colVisible: Object.fromEntries(COLS.map(c=>[c.key, c.default])),
-    rarityVisible: Object.fromEntries(RARITY_ORDER.map(r=>[r, true])),
+    // Default visible rarities: Legend, Mythic, Immortal, Transcend only
+    rarityVisible: {
+      "ノマ": false,
+      "レア": false,
+      "エピ": false,
+      "レジェ": true,
+      "神話": true,
+      "不滅": true,
+      "超越": true,
+    },
     wordMode: "OR", // OR|AND
     selectedWords: new Set(),
   };
@@ -186,6 +198,13 @@
       const visible = state.colVisible[colKey] !== false;
       el.classList.toggle("hidden-col", !visible);
     });
+
+    // Allow horizontal scroll only when 内部種目 is visible
+    if (elTableScroll){
+      const allowX = !!state.colVisible.buff;
+      elTableScroll.classList.toggle("allow-x", allowX);
+      if (!allowX) elTableScroll.scrollLeft = 0;
+    }
   }
 
   function setSort(key){
@@ -205,14 +224,23 @@
   }
 
   function resetRarity(){
-    RARITY_ORDER.forEach(r => state.rarityVisible[r] = true);
+    // Back to defaults (Legend/Mythic/Immortal/Transcend only)
+    state.rarityVisible["ノマ"] = false;
+    state.rarityVisible["レア"] = false;
+    state.rarityVisible["エピ"] = false;
+    state.rarityVisible["レジェ"] = true;
+    state.rarityVisible["神話"] = true;
+    state.rarityVisible["不滅"] = true;
+    state.rarityVisible["超越"] = true;
     buildRarityUI();
     render();
   }
 
   function resetWords(){
     state.selectedWords.clear();
-    for (const opt of elWordSelect.options) opt.selected = false;
+    if (elWordList){
+      elWordList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    }
     render();
   }
 
@@ -239,18 +267,33 @@
   }
 
   function buildWordUI(){
-    elWordSelect.innerHTML = "";
-    wordList.forEach(w => {
-      const opt = document.createElement("option");
-      opt.value = w;
-      opt.textContent = w;
-      elWordSelect.appendChild(opt);
+    if (!elWordList) return;
+
+    elWordList.innerHTML = "";
+    const frag = document.createDocumentFragment();
+
+    wordList.forEach((w, idx) => {
+      const id = `word_${idx}`;
+      const item = document.createElement('label');
+      item.className = 'worditem';
+      item.setAttribute('role', 'option');
+      item.innerHTML = `
+        <input type="checkbox" id="${id}" data-word="${escapeHtml(w)}" />
+        <span>${escapeHtml(w)}</span>
+      `;
+
+      const cb = item.querySelector('input');
+      cb.addEventListener('change', (e)=>{
+        const word = w;
+        if (e.target.checked) state.selectedWords.add(word);
+        else state.selectedWords.delete(word);
+        render();
+      });
+
+      frag.appendChild(item);
     });
 
-    elWordSelect.addEventListener("change", ()=>{
-      state.selectedWords = new Set(Array.from(elWordSelect.selectedOptions).map(o=>o.value));
-      render();
-    });
+    elWordList.appendChild(frag);
   }
 
   function sortRows(rows){
@@ -330,6 +373,12 @@
 
     rows.forEach(r => {
       const tr = document.createElement("tr");
+
+      // Rarity row coloring (subtle)
+      const grade = safeStr(r.RuneGrade);
+      if (grade === "神話") tr.classList.add("rarity-mythic");
+      else if (grade === "不滅") tr.classList.add("rarity-immortal");
+      else if (grade === "超越") tr.classList.add("rarity-transcend");
 
       const tdNo = document.createElement("td");
       tdNo.className = "col-no";

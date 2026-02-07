@@ -180,7 +180,12 @@ body{
 
 .tablewrap__scroll{
   max-height: calc(100vh - var(--topbar-h) - 190px);
-  overflow:auto;
+  overflow-y:auto;
+  overflow-x:hidden; /* enable only when 内部種目 is visible */
+}
+
+.tablewrap__scroll.allow-x{
+  overflow-x:auto;
 }
 
 .table{
@@ -238,6 +243,27 @@ td.col-name{ white-space:nowrap; }
   color: var(--danger);
   font-weight:900;
   font-size: 15px; /* base 13px + 2pt-ish */
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(0,0,0,.28);
+  text-shadow: 0 1px 0 rgba(0,0,0,.65);
+}
+
+/* Rarity row coloring (subtle to keep readability) */
+tbody tr.rarity-mythic td{
+  background: rgba(255,149,0,.10);
+}
+tbody tr.rarity-immortal td{
+  background: rgba(255,59,48,.10);
+}
+tbody tr.rarity-transcend td{
+  background: rgba(64,200,255,.10);
+}
+
+tbody tr.rarity-mythic:hover td,
+tbody tr.rarity-immortal:hover td,
+tbody tr.rarity-transcend:hover td{
+  background: rgba(125,211,252,.07);
 }
 
 .hidden-col{ display:none !important; }
@@ -319,19 +345,39 @@ td.col-name{ white-space:nowrap; }
   font-weight:700;
 }
 
-.listbox{
+/* Mobile-friendly listbox replacement */
+.wordlist{
   width:100%;
   border-radius:var(--radius2);
   border:1px solid var(--line);
   background:rgba(0,0,0,.15);
   color:var(--text);
-  padding:8px;
+  padding:6px;
   outline:none;
   min-height: 280px;
+  max-height: 48vh;
+  overflow:auto;
 }
 
-.listbox option{
-  padding:6px 4px;
+.worditem{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 6px;
+  border-radius:10px;
+  cursor:pointer;
+}
+
+.worditem:hover{ background: rgba(125,211,252,.06); }
+
+.worditem input{
+  width:16px;
+  height:16px;
+}
+
+.worditem span{
+  font-size:13px;
+  line-height:1.2;
 }
 
 .help{
