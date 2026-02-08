@@ -428,3 +428,26 @@ tbody tr.rarity-transcend:hover td{
     max-height: calc(100vh - var(--topbar-h) - 170px);
   }
 }
+
+/* Notice footer */
+.notice{
+  margin-top:12px;
+  padding:12px;
+  border:1px solid rgba(125,211,252,.22);
+  border-radius: var(--radius2);
+  background: rgba(255,255,255,.02);
+}
+.notice__title{
+  margin:0 0 8px 0;
+  font-size:13px;
+  color: rgba(231,238,247,.92);
+  font-weight:900;
+}
+.notice__body{
+  font-size:12px;
+  color: var(--muted);
+  line-height:1.5;
+}
+.notice__body p{ margin:0 0 8px 0; }
+.notice__body ul{ margin:0 0 0 18px; padding:0; }
+.notice__body li{ margin:0 0 4px 0; }

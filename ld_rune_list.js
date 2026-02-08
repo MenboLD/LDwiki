@@ -1,10 +1,10 @@
 /* LDwiki Rune List JS
-   BUILD: 20260207g
+   BUILD: 20260207k
 */
 (function(){
   'use strict';
 
-  const BUILD = "20260207h";
+  const BUILD = "20260207k";
   const RARITY_ORDER = ["ノマ","レア","エピ","レジェ","神話","不滅","超越"];
 
   function rarityRank(g){
@@ -608,8 +608,19 @@ function applyColumnVisibility(){
       await loadSupabase();
 
       buildWordUI();
-      resetSort(); // will render()
-      setPanelOpen(false);
+
+// 初回は読み込み順（RuneSortOrder）で一度描画してから、次フレームでデフォルトソート（ルーン番号=RuneType 昇順）を適用する
+state.sortKey = "RuneSortOrder";
+state.sortDir = "asc";
+render();
+
+requestAnimationFrame(()=>{
+  state.sortKey = "RuneType";
+  state.sortDir = "asc";
+  render();
+});
+
+setPanelOpen(false);
     } catch (err) {
       console.error("[ld_rune_list] init failed", err);
       setStatus("読み込みに失敗しました。SupabaseのRLS/テーブル名/設定を確認してください。");
