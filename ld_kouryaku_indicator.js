@@ -379,6 +379,36 @@ function findMinUpgradeLv(needU){
   return null;
 }
 
+
+function initTabs(){
+  const tabPrev = document.getElementById("tabPrev");
+  const tabTest = document.getElementById("tabTest");
+  const panelPrev = document.getElementById("panelPrev");
+  const panelTest = document.getElementById("panelTest");
+  if(!tabPrev || !tabTest || !panelPrev || !panelTest) return;
+
+  const activate = (which) => {
+    const isPrev = which === "prev";
+    tabPrev.classList.toggle("is-active", isPrev);
+    tabTest.classList.toggle("is-active", !isPrev);
+
+    tabPrev.setAttribute("aria-selected", isPrev ? "true" : "false");
+    tabTest.setAttribute("aria-selected", !isPrev ? "true" : "false");
+
+    panelPrev.hidden = !isPrev;
+    panelTest.hidden = isPrev;
+
+    // keep numbers fresh even when switching
+    calcAndRender();
+  };
+
+  tabPrev.addEventListener("click", () => activate("prev"));
+  tabTest.addEventListener("click", () => activate("test"));
+
+  // default
+  activate("prev");
+}
+
 function attachListeners(){
   // recompute on any input changes
   const ids = [
@@ -466,6 +496,7 @@ function initUI(){
 
   attachStepButtons();
   attachListeners();
+  initTabs();
 
   STATE.uiReady = true;
   calcAndRender();

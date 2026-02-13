@@ -11,7 +11,7 @@
   --warn:#ffd60a;
   --shadow: 0 10px 25px rgba(0,0,0,.35);
   --radius: 14px;
-  --pad: 14px;
+  --pad: 12px;
   --maxw: 480px;
   --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
@@ -67,13 +67,64 @@ body{
   letter-spacing:.02em;
 }
 
-.grid2{
+
+/* ---- Compact layout helpers ---- */
+.grid2-always{
   display:grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
   gap: 12px;
 }
-@media (min-width: 440px){
-  .grid2{ grid-template-columns: 1fr 1fr; }
+@media (max-width: 340px){
+  .grid2-always{ grid-template-columns: 1fr; }
+}
+
+.grid-span-2{ grid-column: 1 / -1; }
+
+/* ---- Radios (no pill containers) ---- */
+.radio-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap: 12px;
+  align-items:center;
+}
+.radio-pill{
+  display:inline-flex;
+  align-items:center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  font-size: 12px;
+  color: var(--text);
+  user-select:none;
+}
+.radio-pill input{ accent-color: #6da8ff; }
+
+/* ---- Tabs ---- */
+.tabs{
+  display:flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.tab{
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #2a3a52;
+  background: rgba(8,12,18,.45);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .03em;
+}
+.tab.is-active{
+  color: var(--text);
+  border-color: #3e5c86;
+  background: rgba(15,22,32,.70);
+  box-shadow: 0 0 0 3px rgba(62,92,134,.15);
+}
+.tabpane[hidden]{ display:none !important; }
 }
 
 .field{ display:flex; flex-direction:column; gap:6px; }
@@ -82,7 +133,7 @@ body{
 
 .input, .select{
   width:100%;
-  padding: 11px 12px;
+  padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid #2a3a52;
   background: rgba(8,12,18,.65);
@@ -103,25 +154,6 @@ body{
   font-size: 12px;
 }
 .suffix-wrap .input{ padding-right: 28px; }
-
-.radio-row{
-  display:flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.radio-pill{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  padding: 8px 10px;
-  border-radius: 999px;
-  border:1px solid #2a3a52;
-  background: rgba(8,12,18,.55);
-  font-size: 12px;
-  color: var(--text);
-  user-select:none;
-}
-.radio-pill input{ accent-color: #6da8ff; }
 
 .slider-block{
   display:flex;
