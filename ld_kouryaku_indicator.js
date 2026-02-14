@@ -513,20 +513,20 @@ function buildWheelForSelect(selectId, wheelId, {rows=5, rowH=36} = {}){
 }
 
 function initInlineWheels(){
-  buildWheelForSelect("vaultLv", "wheelVaultLv", {rows:5, rowH:32});
-  buildWheelForSelect("moneyLv", "wheelMoneyLv", {rows:5, rowH:32});
-  buildWheelForSelect("prevUpLv", "wheelPrevUpLv", {rows:5, rowH:32});
-  buildWheelForSelect("testUpLv", "wheelTestUpLv", {rows:5, rowH:32});
-  buildWheelForSelect("prevTime", "wheelPrevTime", {rows:5, rowH:32});
-  buildWheelForSelect("testTime", "wheelTestTime", {rows:5, rowH:32});
-  buildWheelForSelect("prevAtkCnt", "wheelPrevAtkCnt", {rows:5, rowH:32});
-  buildWheelForSelect("testAtkCnt", "wheelTestAtkCnt", {rows:5, rowH:32});
-  buildWheelForSelect("modeSel", "wheelMode", {rows:5, rowH:32});
-  buildWheelForSelect("buffPctSel", "wheelBuff", {rows:5, rowH:32});
-  buildWheelForSelect("coinD1", "wheelCoinD1", {rows:5, rowH:32});
-  buildWheelForSelect("coinD2", "wheelCoinD2", {rows:5, rowH:32});
-  buildWheelForSelect("coinD3", "wheelCoinD3", {rows:5, rowH:32});
-  buildWheelForSelect("coinD4", "wheelCoinD4", {rows:5, rowH:32});
+  buildWheelForSelect("vaultLv", "wheelVaultLv", {rows:5, rowH:26});
+  buildWheelForSelect("moneyLv", "wheelMoneyLv", {rows:5, rowH:26});
+  buildWheelForSelect("prevUpLv", "wheelPrevUpLv", {rows:5, rowH:26});
+  buildWheelForSelect("testUpLv", "wheelTestUpLv", {rows:5, rowH:26});
+  buildWheelForSelect("prevTime", "wheelPrevTime", {rows:5, rowH:26});
+  buildWheelForSelect("testTime", "wheelTestTime", {rows:5, rowH:26});
+  buildWheelForSelect("prevAtkCnt", "wheelPrevAtkCnt", {rows:5, rowH:26});
+  buildWheelForSelect("testAtkCnt", "wheelTestAtkCnt", {rows:5, rowH:26});
+  buildWheelForSelect("modeSel", "wheelMode", {rows:5, rowH:26});
+  buildWheelForSelect("buffPctSel", "wheelBuff", {rows:5, rowH:26});
+  buildWheelForSelect("coinD1", "wheelCoinD1", {rows:5, rowH:26});
+  buildWheelForSelect("coinD2", "wheelCoinD2", {rows:5, rowH:26});
+  buildWheelForSelect("coinD3", "wheelCoinD3", {rows:5, rowH:26});
+  buildWheelForSelect("coinD4", "wheelCoinD4", {rows:5, rowH:26});
 }
 
 function syncWheels(){

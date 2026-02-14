@@ -89,7 +89,7 @@ body{
 
 .wheel{
   --wheel-rows: 5;
-  --wheel-row-h: 32px;
+  --wheel-row-h: 26px;
   height: calc(var(--wheel-rows) * var(--wheel-row-h));
   overflow-y: auto;
   scroll-snap-type: y mandatory;
@@ -107,7 +107,7 @@ body{
   justify-content:center;
   scroll-snap-align: center;
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 12px;
   color: rgba(233,241,255,.78);
   user-select:none;
 }
@@ -317,7 +317,7 @@ input[type="range"]{
 .kv__k{ font-size: 11px; color: var(--muted); margin-bottom: 6px; }
 .kv__v{
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 12px;
   color: #eaf2ff;
   word-break: break-word;
 }
