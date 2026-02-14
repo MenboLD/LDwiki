@@ -607,7 +607,6 @@ async function loadMasters(){
   setStatus("準備完了");
 }
 
-function 
 function buildDigitSelect(selectId, defaultVal){
   const sel = $(selectId);
   sel.innerHTML = "";
