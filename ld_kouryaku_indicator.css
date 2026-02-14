@@ -157,6 +157,11 @@ body{
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  display:block;
+  line-height: 1.1;
+  min-height: 14px;
+  margin-bottom: 8px;
 }
 
 .grid3-always{
@@ -372,3 +377,5 @@ input[type="range"]{
   color: rgba(233,241,255,.95);
 }
 .subhead--mt{ margin-top: 18px; }
+
+label.field__label{ display:block; }
