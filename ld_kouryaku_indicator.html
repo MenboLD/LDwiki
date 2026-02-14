@@ -13,7 +13,7 @@
 <div class="topbar__inner">
 <div class="title">
 <div class="title__main">攻略指標ツール</div>
-<div class="title__sub">踏破Wave → 10Wave後を倒せるかの目安</div>
+<div class="title__sub">踏破ウェーブ → 10Wave後を倒せるかの目安</div>
 </div>
 <div class="status" id="status">初期化中…</div>
 </div>
@@ -21,22 +21,10 @@
 <main class="container">
 <section class="card">
 <h2 class="card__title">共通</h2>
-<div class="field">
-<div class="field__label">難易度</div>
-<div class="radio-row" id="modeRadios"></div>
-</div>
+<div class="field"><div class="field__label">難易度</div><div class="wheel-field wheel-field--tight"><select class="select select--hidden" id="modeSel"></select><div aria-hidden="true" class="wheel" data-wheel-for="modeSel" id="wheelMode"></div></div><div class="radio-row is-hidden" id="modeRadios"></div></div>
 <div class="grid2-always">
-<div class="field">
-<label class="field__label" for="coinPrev">踏破Wave コイン枚数</label>
-<input class="input" id="coinPrev" inputmode="numeric" placeholder="100〜9,999,000"/>
-</div>
-<div class="field">
-<label class="field__label" for="buffPct">共有バフ 攻撃力増加</label>
-<div class="suffix-wrap">
-<input class="input" id="buffPct" inputmode="numeric" placeholder="0〜9,999"/>
-<span class="suffix">%</span>
-</div>
-</div>
+<div class="field"><label class="field__label" for="coinPrev">踏破ウェーブ コイン枚数</label><div class="coinwheel"><div class="wheel-field wheel-field--digit"><select class="select select--hidden" id="coinD1"></select><div aria-hidden="true" class="wheel" data-wheel-for="coinD1" id="wheelCoinD1"></div></div><div class="coinwheel__sep">,</div><div class="wheel-field wheel-field--digit"><select class="select select--hidden" id="coinD2"></select><div aria-hidden="true" class="wheel" data-wheel-for="coinD2" id="wheelCoinD2"></div></div><div class="wheel-field wheel-field--digit"><select class="select select--hidden" id="coinD3"></select><div aria-hidden="true" class="wheel" data-wheel-for="coinD3" id="wheelCoinD3"></div></div><div class="wheel-field wheel-field--digit"><select class="select select--hidden" id="coinD4"></select><div aria-hidden="true" class="wheel" data-wheel-for="coinD4" id="wheelCoinD4"></div></div><div class="coinwheel__sep">,</div><div class="coinwheel__suffix">000</div></div><input class="input input--hidden" id="coinPrev" inputmode="numeric" placeholder="100〜9,999,000"/><div class="subnote" id="coinPrevDisplay">100,000</div></div>
+<div class="field"><label class="field__label" for="buffPct">共有バフ 攻撃力増加</label><div class="buffwheel"><div class="wheel-field wheel-field--buff"><select class="select select--hidden" id="buffPctSel"></select><div aria-hidden="true" class="wheel" data-wheel-for="buffPctSel" id="wheelBuff"></div></div><span class="suffix">%</span></div><input class="input input--hidden" id="buffPct" inputmode="numeric" placeholder="0〜9950"/></div>
 </div>
 <div class="grid2-always">
 <div class="field">
@@ -100,7 +88,7 @@
 </section>
 <footer class="footer">
 <div class="footer__note">
-        ※ 計算は「踏破Wave → +10Wave」での目安です。実ダメージはユニット構成や係数により変動します。
+        ※ 計算は「踏破ウェーブ → +10Wave」での目安です。実ダメージはユニット構成や係数により変動します。
       </div>
 </footer>
 </main>
