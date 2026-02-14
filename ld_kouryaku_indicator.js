@@ -2,6 +2,7 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 const $ = (id) => document.getElementById(id);
+const setText = (id, value) => { const el = $(id); if (el) el.textContent = value; };
 const statusEl = $("status");
 
 // ---- Supabase client ----
@@ -324,13 +325,13 @@ function calcAndRender(){
   const buff = getBuffAsFloat();
 
   const coinTest = computeCoinAfter10Waves({mode, coinPrev, vaultLv});
-  $("coinTestLabel").textContent = Number.isFinite(coinTest) ? formatComma(roundToThousand(coinTest)) : "-";
+  setText("coinTestLabel", Number.isFinite(coinTest) ? formatComma(roundToThousand(coinTest)) : "-");
 
   // Need enm rows
   if(!prevEnm || !testEnm){
-    $("mEnemy").textContent = "-";
-    $("mUser").textContent = "-";
-    $("judge").textContent = "データ不足";
+    setText("mEnemy", "-");
+    setText("mUser", "-");
+    setText("judge", "データ不足");
     $("judge").className = "judge";
     return;
   }
@@ -359,12 +360,12 @@ function calcAndRender(){
   const mUser = mCoin * mUp * mTime * mAtkCnt;
 
   // render
-  $("mEnemy").textContent = toFixed4(mEnemy);
-  $("mUser").textContent = toFixed4(mUser);
-  $("mCoin").textContent = toFixed4(mCoin);
-  $("mUp").textContent = toFixed4(mUp);
-  $("mTime").textContent = toFixed4(mTime);
-  $("mAtkCnt").textContent = toFixed4(mAtkCnt);
+  setText("mEnemy", toFixed4(mEnemy));
+  setText("mUser", toFixed4(mUser));
+  setText("mCoin", toFixed4(mCoin));
+  setText("mUp", toFixed4(mUp));
+  setText("mTime", toFixed4(mTime));
+  setText("mAtkCnt", toFixed4(mAtkCnt));
 
   // --- 検証ウェーブ：倍率カード & 要約テキスト ---
   const _up = $("lblUpRatio"), _ti = $("lblTimeRatio"), _at = $("lblAtkRatio");
@@ -415,7 +416,7 @@ function calcAndRender(){
       needUpText = String(minLv);
     }
   }
-  $("needUpLv").textContent = needUpText;
+  setText("needUpLv", needUpText);
 
   // Required attacker count (min)
   // a_test >= a_prev * (mEnemy / (mCoin * mUp * mTime))
@@ -430,7 +431,7 @@ function calcAndRender(){
       needAtkText = String(req);
     }
   }
-  $("needAtkCnt").textContent = needAtkText;
+  setText("needAtkCnt", needAtkText);
 }
 
 function findMinUpgradeLv(needU){
