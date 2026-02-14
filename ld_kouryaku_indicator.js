@@ -424,7 +424,7 @@ function findMinUpgradeLv(needU){
 // ---- Inline Wheel Picker ----
 const WHEELS = new Map(); // selectId -> {wheelEl, rowH, options, sync}
 
-function buildWheelForSelect(selectId, wheelId, {rows=5, rowH=36} = {}){
+function buildWheelForSelect(selectId, wheelId, {rows=5, rowH=20} = {}){
   const sel = document.getElementById(selectId);
   const wheelEl = document.getElementById(wheelId);
   if(!sel || !wheelEl) return null;
@@ -513,20 +513,20 @@ function buildWheelForSelect(selectId, wheelId, {rows=5, rowH=36} = {}){
 }
 
 function initInlineWheels(){
-  buildWheelForSelect("vaultLv", "wheelVaultLv", {rows:5, rowH:26});
-  buildWheelForSelect("moneyLv", "wheelMoneyLv", {rows:5, rowH:26});
-  buildWheelForSelect("prevUpLv", "wheelPrevUpLv", {rows:5, rowH:26});
-  buildWheelForSelect("testUpLv", "wheelTestUpLv", {rows:5, rowH:26});
-  buildWheelForSelect("prevTime", "wheelPrevTime", {rows:5, rowH:26});
-  buildWheelForSelect("testTime", "wheelTestTime", {rows:5, rowH:26});
-  buildWheelForSelect("prevAtkCnt", "wheelPrevAtkCnt", {rows:5, rowH:26});
-  buildWheelForSelect("testAtkCnt", "wheelTestAtkCnt", {rows:5, rowH:26});
-  buildWheelForSelect("modeSel", "wheelMode", {rows:5, rowH:26});
-  buildWheelForSelect("buffPctSel", "wheelBuff", {rows:5, rowH:26});
-  buildWheelForSelect("coinD1", "wheelCoinD1", {rows:5, rowH:26});
-  buildWheelForSelect("coinD2", "wheelCoinD2", {rows:5, rowH:26});
-  buildWheelForSelect("coinD3", "wheelCoinD3", {rows:5, rowH:26});
-  buildWheelForSelect("coinD4", "wheelCoinD4", {rows:5, rowH:26});
+  buildWheelForSelect("vaultLv", "wheelVaultLv", {rows:5, rowH:20});
+  buildWheelForSelect("moneyLv", "wheelMoneyLv", {rows:5, rowH:20});
+  buildWheelForSelect("prevUpLv", "wheelPrevUpLv", {rows:5, rowH:20});
+  buildWheelForSelect("testUpLv", "wheelTestUpLv", {rows:5, rowH:20});
+  buildWheelForSelect("prevTime", "wheelPrevTime", {rows:5, rowH:20});
+  buildWheelForSelect("testTime", "wheelTestTime", {rows:5, rowH:20});
+  buildWheelForSelect("prevAtkCnt", "wheelPrevAtkCnt", {rows:5, rowH:20});
+  buildWheelForSelect("testAtkCnt", "wheelTestAtkCnt", {rows:5, rowH:20});
+  buildWheelForSelect("modeSel", "wheelMode", {rows:5, rowH:20});
+  buildWheelForSelect("buffPctSel", "wheelBuff", {rows:5, rowH:20});
+  buildWheelForSelect("coinD1", "wheelCoinD1", {rows:2.5, rowH:20});
+  buildWheelForSelect("coinD2", "wheelCoinD2", {rows:2.5, rowH:20});
+  buildWheelForSelect("coinD3", "wheelCoinD3", {rows:2.5, rowH:20});
+  buildWheelForSelect("coinD4", "wheelCoinD4", {rows:2.5, rowH:20});
 }
 
 function syncWheels(){

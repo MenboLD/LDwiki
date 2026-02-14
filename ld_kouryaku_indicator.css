@@ -89,7 +89,7 @@ body{
 
 .wheel{
   --wheel-rows: 5;
-  --wheel-row-h: 26px;
+  --wheel-row-h: 20px;
   height: calc(var(--wheel-rows) * var(--wheel-row-h));
   overflow-y: auto;
   scroll-snap-type: y mandatory;
@@ -385,11 +385,7 @@ label.field__label{ display:block; }
 .input--hidden{display:none !important;}
 
 /* ---- coin digit wheels (X,XXX,000) ---- */
-.coinwheel{
-  display:flex;
-  align-items:stretch;
-  gap: 6px;
-}
+.coinwheel{ display:flex; align-items:stretch; gap: 4px; }
 .coinwheel__sep{
   align-self:center;
   opacity:.7;
@@ -402,9 +398,7 @@ label.field__label{ display:block; }
   font-weight:700;
   letter-spacing:.06em;
 }
-.wheel-field--digit{
-  width: 56px;
-}
+.wheel-field--digit{ width: 44px; }
 .wheel-field--tight{
   max-width: 220px;
 }
