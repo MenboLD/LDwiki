@@ -273,6 +273,8 @@ function calcAndRender(){
   if(testAtkCnt < prevAtkCnt){
     testAtkCntRange.value = String(prevAtkCnt);
   }
+  syncWheels();
+
   // refresh slider labels
   $("prevTimeVal").textContent = String($("prevTime").value);
   $("testTimeVal").textContent = String($("testTime").value);
@@ -409,6 +411,99 @@ function initTabs(){
   activate("prev");
 }
 
+
+// ---- Inline Wheel Picker ----
+const WHEELS = new Map(); // selectId -> {wheelEl, rowH, options, sync}
+
+function buildWheelForSelect(selectId, wheelId, {rows=5, rowH=36} = {}){
+  const sel = document.getElementById(selectId);
+  const wheelEl = document.getElementById(wheelId);
+  if(!sel || !wheelEl) return null;
+
+  wheelEl.style.setProperty("--wheel-rows", String(rows));
+  wheelEl.style.setProperty("--wheel-row-h", `${rowH}px`);
+
+  const options = Array.from(sel.options).map(o => ({value: o.value, label: o.textContent}));
+  wheelEl.innerHTML = "";
+  const items = [];
+
+  for(const opt of options){
+    const div = document.createElement("div");
+    div.className = "wheel__item";
+    div.dataset.value = opt.value;
+    div.textContent = opt.label;
+    wheelEl.appendChild(div);
+    items.push(div);
+  }
+
+  const setSelectedClass = (value) => {
+    for(const it of items){
+      it.classList.toggle("is-selected", it.dataset.value === String(value));
+    }
+  };
+
+  const scrollToValue = (value, behavior="auto") => {
+    const idx = options.findIndex(o => String(o.value) === String(value));
+    const targetIdx = idx >= 0 ? idx : 0;
+    wheelEl.scrollTo({ top: targetIdx * rowH, behavior });
+    setSelectedClass(options[targetIdx]?.value);
+  };
+
+  let stopTimer = null;
+  const settle = () => {
+    const idx = Math.round(wheelEl.scrollTop / rowH);
+    const clamped = Math.max(0, Math.min(options.length - 1, idx));
+    const value = options[clamped]?.value;
+
+    // snap to exact
+    wheelEl.scrollTo({ top: clamped * rowH, behavior: "smooth" });
+
+    if(value != null && sel.value !== String(value)){
+      sel.value = String(value);
+      sel.dispatchEvent(new Event("change", {bubbles:true}));
+      sel.dispatchEvent(new Event("input", {bubbles:true}));
+    }
+    setSelectedClass(value);
+  };
+
+  const onScroll = () => {
+    if(stopTimer) clearTimeout(stopTimer);
+    stopTimer = setTimeout(settle, 90);
+  };
+
+  wheelEl.addEventListener("scroll", onScroll, {passive:true});
+  wheelEl.addEventListener("click", (e) => {
+    const item = e.target.closest(".wheel__item");
+    if(!item) return;
+    const idx = items.indexOf(item);
+    if(idx >= 0){
+      wheelEl.scrollTo({ top: idx * rowH, behavior: "smooth" });
+    }
+  });
+
+  sel.addEventListener("change", () => scrollToValue(sel.value, "auto"));
+
+  // initial
+  scrollToValue(sel.value || options[0]?.value, "auto");
+
+  const api = { wheelEl, rowH, options, sync: ()=>scrollToValue(sel.value, "auto") };
+  WHEELS.set(selectId, api);
+  return api;
+}
+
+function initInlineWheels(){
+  buildWheelForSelect("vaultLv", "wheelVaultLv", {rows:5, rowH:36});
+  buildWheelForSelect("moneyLv", "wheelMoneyLv", {rows:5, rowH:36});
+  buildWheelForSelect("prevUpLv", "wheelPrevUpLv", {rows:5, rowH:36});
+  buildWheelForSelect("testUpLv", "wheelTestUpLv", {rows:5, rowH:36});
+}
+
+function syncWheels(){
+  for(const api of WHEELS.values()){
+    api.sync();
+  }
+}
+
 function attachListeners(){
   // recompute on any input changes
   const ids = [
@@ -484,6 +579,7 @@ function initUI(){
 
   buildVaultMoneySelects();
 
+  initInlineWheels();
   // default values
   $("coinPrev").value = "100,000";
   $("coinPrev").dataset.raw = "100000";

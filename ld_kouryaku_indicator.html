@@ -46,12 +46,12 @@
       <div class="grid2-always">
         <div class="field">
           <label class="field__label" for="vaultLv">金庫Lv</label>
-          <select id="vaultLv" class="select"></select>
+          <div class="wheel-field"><select id="vaultLv" class="select select--hidden"></select><div class="wheel" id="wheelVaultLv" data-wheel-for="vaultLv" aria-hidden="true"></div></div>
         </div>
 
         <div class="field">
           <label class="field__label" for="moneyLv">マネーガンLv</label>
-          <select id="moneyLv" class="select"></select>
+          <div class="wheel-field"><select id="moneyLv" class="select select--hidden"></select><div class="wheel" id="wheelMoneyLv" data-wheel-for="moneyLv" aria-hidden="true"></div></div>
         </div>
       </div>
     </section>
@@ -75,7 +75,7 @@
           <div class="grid2-always">
             <div class="field">
               <label class="field__label" for="prevUpLv">強化レベル</label>
-              <select id="prevUpLv" class="select"></select>
+              <div class="wheel-field"><select id="prevUpLv" class="select select--hidden"></select><div class="wheel" id="wheelPrevUpLv" data-wheel-for="prevUpLv" aria-hidden="true"></div></div>
             </div>
 
             <div class="field">
@@ -126,7 +126,7 @@
           <div class="grid2-always">
             <div class="field">
               <label class="field__label" for="testUpLv">強化レベル</label>
-              <select id="testUpLv" class="select"></select>
+              <div class="wheel-field"><select id="testUpLv" class="select select--hidden"></select><div class="wheel" id="wheelTestUpLv" data-wheel-for="testUpLv" aria-hidden="true"></div></div>
               <div class="hint">直前Waveの強化Lvを下回る場合は自動補正</div>
             </div>
 
