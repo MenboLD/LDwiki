@@ -72,33 +72,24 @@
             <div class="hint">検証Waveは「直前Wave + 10」</div>
           </div>
 
-          <div class="grid2-always">
+          <div class="grid3-always">
             <div class="field">
-              <label class="field__label" for="prevUpLv">強化レベル</label>
+              <label class="field__label" for="prevUpLv">強化</label>
               <div class="wheel-field"><select id="prevUpLv" class="select select--hidden"></select><div class="wheel" id="wheelPrevUpLv" data-wheel-for="prevUpLv" aria-hidden="true"></div></div>
             </div>
 
             <div class="field">
-              <div class="field__label">継戦時間</div>
-              <div class="slider-block">
-                <div class="slider-top">
-                  <div class="slider-value"><span id="prevTimeVal">-</span> 秒</div>
-                  <div class="step-btns">
-                    <button class="btn" data-step-target="prevTime" data-step="-10">-10</button>
-                    <button class="btn" data-step-target="prevTime" data-step="-5">-5</button>
-                    <button class="btn" data-step-target="prevTime" data-step="-1">-1</button>
-                    <button class="btn" data-step-target="prevTime" data-step="1">+1</button>
-                    <button class="btn" data-step-target="prevTime" data-step="5">+5</button>
-                    <button class="btn" data-step-target="prevTime" data-step="10">+10</button>
-                  </div>
-                </div>
-                <input id="prevTime" type="range" min="1" max="60" step="1" value="60" />
-                <div class="hint">上限はWaveごとの制限時間</div>
-              </div>
+          <div class="field__label">戦闘時間</div>
+          <div class="wheel-field">
+            <select id="prevTime" class="select select--hidden"></select>
+            <div class="wheel" id="wheelPrevTime" data-wheel-for="prevTime" aria-hidden="true"></div>
+          </div>
+          <div class="hint">上限はWaveごとの制限時間</div>
+        </div>
             </div>
 
-            <div class="field grid-span-2">
-              <div class="field__label">両面アタッカー総数</div>
+            <div class="field">
+              <div class="field__label">火力数</div>
               <div class="slider-block">
                 <div class="slider-top">
                   <div class="slider-value"><span id="prevAtkCntVal">-</span></div>
@@ -123,33 +114,24 @@
             <div class="pill">検証Wave 推定コイン：<span id="coinTestLabel">-</span></div>
           </div>
 
-          <div class="grid2-always">
+          <div class="grid3-always">
             <div class="field">
-              <label class="field__label" for="testUpLv">強化レベル</label>
+              <label class="field__label" for="testUpLv">強化</label>
               <div class="wheel-field"><select id="testUpLv" class="select select--hidden"></select><div class="wheel" id="wheelTestUpLv" data-wheel-for="testUpLv" aria-hidden="true"></div></div>
               <div class="hint">直前Waveの強化Lvを下回る場合は自動補正</div>
             </div>
 
             <div class="field">
-              <div class="field__label">継戦時間</div>
-              <div class="slider-block">
-                <div class="slider-top">
-                  <div class="slider-value"><span id="testTimeVal">-</span> 秒</div>
-                  <div class="step-btns">
-                    <button class="btn" data-step-target="testTime" data-step="-10">-10</button>
-                    <button class="btn" data-step-target="testTime" data-step="-5">-5</button>
-                    <button class="btn" data-step-target="testTime" data-step="-1">-1</button>
-                    <button class="btn" data-step-target="testTime" data-step="1">+1</button>
-                    <button class="btn" data-step-target="testTime" data-step="5">+5</button>
-                    <button class="btn" data-step-target="testTime" data-step="10">+10</button>
-                  </div>
-                </div>
-                <input id="testTime" type="range" min="1" max="60" step="1" value="60" />
-              </div>
-            </div>
+          <div class="field__label">戦闘時間</div>
+          <div class="wheel-field">
+            <select id="testTime" class="select select--hidden"></select>
+            <div class="wheel" id="wheelTestTime" data-wheel-for="testTime" aria-hidden="true"></div>
+          </div>
+          
+        </div>
 
-            <div class="field grid-span-2">
-              <div class="field__label">両面アタッカー総数</div>
+            <div class="field">
+              <div class="field__label">火力数</div>
               <div class="slider-block">
                 <div class="slider-top">
                   <div class="slider-value"><span id="testAtkCntVal">-</span></div>
@@ -163,7 +145,7 @@
                   </div>
                 </div>
                 <input id="testAtkCnt" type="range" min="1" max="24" step="1" value="12" />
-                <div class="hint">直前Waveのアタッカー数を下回る場合は自動補正</div>
+                <div class="hint">直前Waveの火力数を下回る場合は自動補正</div>
               </div>
             </div>
           </div>
@@ -211,7 +193,7 @@
             <div class="kv__v" id="mUp">-</div>
           </div>
           <div class="kv">
-            <div class="kv__k">継戦時間倍率</div>
+            <div class="kv__k">戦闘時間倍率</div>
             <div class="kv__v" id="mTime">-</div>
           </div>
           <div class="kv">

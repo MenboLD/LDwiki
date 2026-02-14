@@ -12,7 +12,7 @@
   --shadow: 0 10px 25px rgba(0,0,0,.35);
   --radius: 14px;
   --pad: 12px;
-  --maxw: 480px;
+  --maxw: 420px;
   --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 *{ box-sizing:border-box; }
@@ -47,11 +47,11 @@ body{
 .container{
   max-width: var(--maxw);
   margin: 0 auto;
-  padding: 14px;
+  padding: 12px;
   padding-bottom: 40px;
   display:flex;
   flex-direction:column;
-  gap: 14px;
+  gap: 12px;
 }
 .card{
   background: linear-gradient(180deg, rgba(17,24,35,.95), rgba(12,17,25,.95));
@@ -80,7 +80,7 @@ body{
 
 .wheel-field{
   position:relative;
-  border-radius: 14px;
+  border-radius: 12px;
   border: 1px solid rgba(140, 190, 255, .18);
   background: linear-gradient(180deg, rgba(8, 12, 18, .70), rgba(8, 12, 18, .52));
   box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
@@ -89,7 +89,7 @@ body{
 
 .wheel{
   --wheel-rows: 5;
-  --wheel-row-h: 36px;
+  --wheel-row-h: 32px;
   height: calc(var(--wheel-rows) * var(--wheel-row-h));
   overflow-y: auto;
   scroll-snap-type: y mandatory;
@@ -107,7 +107,7 @@ body{
   justify-content:center;
   scroll-snap-align: center;
   font-family: var(--mono);
-  font-size: 14px;
+  font-size: 13px;
   color: rgba(233,241,255,.78);
   user-select:none;
 }
@@ -128,8 +128,8 @@ body{
 .wheel-field::after{
   content:"";
   position:absolute;
-  left:10px;
-  right:10px;
+  left:8px;
+  right:8px;
   top:50%;
   transform: translateY(-50%);
   height: var(--wheel-row-h);
@@ -141,6 +141,16 @@ body{
 }
 
 /* ---- Compact layout helpers ---- */
+
+.grid3-always{
+  display:grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);
+  gap: 10px;
+}
+@media (max-width: 380px){
+  .grid3-always{ grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+}
+
 .grid2-always{
   display:grid;
   grid-template-columns: minmax(0,1fr) minmax(0,1fr);
@@ -285,7 +295,7 @@ input[type="range"]{
 .kv__k{ font-size: 11px; color: var(--muted); margin-bottom: 6px; }
 .kv__v{
   font-family: var(--mono);
-  font-size: 14px;
+  font-size: 13px;
   color: #eaf2ff;
   word-break: break-word;
 }

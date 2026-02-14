@@ -138,6 +138,29 @@ function getChecked(name){
   return el ? el.value : null;
 }
 
+
+function updateTimeSelect(selectId, maxVal){
+  const sel = document.getElementById(selectId);
+  const max = Number(maxVal);
+  if(!sel || !Number.isFinite(max)) return;
+
+  const cur = Number(sel.value);
+  sel.innerHTML = "";
+  for(let i=1;i<=max;i++){
+    const opt = document.createElement("option");
+    opt.value = String(i);
+    opt.textContent = String(i);
+    sel.appendChild(opt);
+  }
+  const next = clamp(Number.isFinite(cur)?cur:max, 1, max);
+  sel.value = String(next);
+
+  const api = WHEELS.get(selectId);
+  if(api && typeof api.rebuildFromSelect === "function"){
+    api.rebuildFromSelect();
+  }
+}
+
 function setRangeMax(id, max){
   const r = $(id);
   const newMax = Number(max);
@@ -256,8 +279,8 @@ function calcAndRender(){
   // battle time max
   const prevEnm = safeGetEnm(mode, prevWave);
   const testEnm = safeGetEnm(mode, testWave);
-  if(prevEnm) setRangeMax("prevTime", prevEnm.battle_time);
-  if(testEnm) setRangeMax("testTime", testEnm.battle_time);
+  if(prevEnm) updateTimeSelect("prevTime", prevEnm.battle_time);
+  if(testEnm) updateTimeSelect("testTime", testEnm.battle_time);
 
   // enforce constraints: testUpLv >= prevUpLv, testAtkCnt >= prevAtkCnt
   const prevUpLv = Number($("prevUpLv").value);
@@ -276,10 +299,6 @@ function calcAndRender(){
   syncWheels();
 
   // refresh slider labels
-  $("prevTimeVal").textContent = String($("prevTime").value);
-  $("testTimeVal").textContent = String($("testTime").value);
-  $("prevAtkCntVal").textContent = String($("prevAtkCnt").value);
-  $("testAtkCntVal").textContent = String($("testAtkCnt").value);
 
   const vaultLv = Number($("vaultLv").value);
   const moneyLv = Number($("moneyLv").value);
@@ -423,18 +442,24 @@ function buildWheelForSelect(selectId, wheelId, {rows=5, rowH=36} = {}){
   wheelEl.style.setProperty("--wheel-rows", String(rows));
   wheelEl.style.setProperty("--wheel-row-h", `${rowH}px`);
 
-  const options = Array.from(sel.options).map(o => ({value: o.value, label: o.textContent}));
-  wheelEl.innerHTML = "";
+  let options = Array.from(sel.options).map(o => ({value: o.value, label: o.textContent}));
   const items = [];
 
-  for(const opt of options){
+  const renderItems = () => {
+    wheelEl.innerHTML = "";
+    items.length = 0;
+    options = Array.from(sel.options).map(o => ({value: o.value, label: o.textContent}));
+    for(const opt of options){
     const div = document.createElement("div");
     div.className = "wheel__item";
     div.dataset.value = opt.value;
     div.textContent = opt.label;
     wheelEl.appendChild(div);
-    items.push(div);
-  }
+      items.push(div);
+    }
+  };
+
+  renderItems();
 
   const setSelectedClass = (value) => {
     for(const it of items){
@@ -486,16 +511,26 @@ function buildWheelForSelect(selectId, wheelId, {rows=5, rowH=36} = {}){
   // initial
   scrollToValue(sel.value || options[0]?.value, "auto");
 
-  const api = { wheelEl, rowH, options, sync: ()=>scrollToValue(sel.value, "auto") };
+  const rebuildFromSelect = () => {
+    const cur = sel.value;
+    renderItems();
+    scrollToValue(cur || options[0]?.value, "auto");
+  };
+
+  const api = { wheelEl, rowH, get options(){ return options; }, sync: ()=>scrollToValue(sel.value, "auto"), rebuildFromSelect };
   WHEELS.set(selectId, api);
   return api;
 }
 
 function initInlineWheels(){
-  buildWheelForSelect("vaultLv", "wheelVaultLv", {rows:5, rowH:36});
-  buildWheelForSelect("moneyLv", "wheelMoneyLv", {rows:5, rowH:36});
-  buildWheelForSelect("prevUpLv", "wheelPrevUpLv", {rows:5, rowH:36});
-  buildWheelForSelect("testUpLv", "wheelTestUpLv", {rows:5, rowH:36});
+  buildWheelForSelect("vaultLv", "wheelVaultLv", {rows:5, rowH:32});
+  buildWheelForSelect("moneyLv", "wheelMoneyLv", {rows:5, rowH:32});
+  buildWheelForSelect("prevUpLv", "wheelPrevUpLv", {rows:5, rowH:32});
+  buildWheelForSelect("testUpLv", "wheelTestUpLv", {rows:5, rowH:32});
+  buildWheelForSelect("prevTime", "wheelPrevTime", {rows:5, rowH:32});
+  buildWheelForSelect("testTime", "wheelTestTime", {rows:5, rowH:32});
+  buildWheelForSelect("prevAtkCnt", "wheelPrevAtkCnt", {rows:5, rowH:32});
+  buildWheelForSelect("testAtkCnt", "wheelTestAtkCnt", {rows:5, rowH:32});
 }
 
 function syncWheels(){
@@ -576,6 +611,10 @@ function initUI(){
   buildRadioRow("prevWaveRadios", "prevWave", WAVE_OPTIONS, 10);
   buildSelectRange("prevUpLv", 1, 31, 1);
   buildSelectRange("testUpLv", 1, 31, 1);
+  buildSelectRange("prevTime", 1, 60, 60);
+  buildSelectRange("testTime", 1, 60, 60);
+  buildSelectRange("prevAtkCnt", 1, 24, 12);
+  buildSelectRange("testAtkCnt", 1, 24, 12);
 
   buildVaultMoneySelects();
 
@@ -585,12 +624,6 @@ function initUI(){
   $("coinPrev").dataset.raw = "100000";
   $("buffPct").value = "0";
 
-  setSliderLabel("prevTime","prevTimeVal");
-  setSliderLabel("testTime","testTimeVal");
-  setSliderLabel("prevAtkCnt","prevAtkCntVal");
-  setSliderLabel("testAtkCnt","testAtkCntVal");
-
-  attachStepButtons();
   attachListeners();
   initTabs();
 
