@@ -1,260 +1,109 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>攻略指標ツール</title>
-  <link rel="stylesheet" href="ld_kouryaku_indicator.css" />
-  <script src="supabase_config.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
+<title>攻略指標ツール</title>
+<link href="ld_kouryaku_indicator.css" rel="stylesheet"/>
+<script src="supabase_config.js"></script>
 </head>
 <body>
-  <header class="topbar">
-    <div class="topbar__inner">
-      <div class="title">
-        <div class="title__main">攻略指標ツール</div>
-        <div class="title__sub">踏破Wave → 10Wave後を倒せるかの目安</div>
-      </div>
-      <div class="status" id="status">初期化中…</div>
-    </div>
-  </header>
-
-  <main class="container">
-    <section class="card">
-      <h2 class="card__title">共通</h2>
-
-      <div class="field">
-        <div class="field__label">難易度</div>
-        <div class="radio-row" id="modeRadios"></div>
-      </div>
-
-      <div class="grid3-fixed">
-        <div class="field">
-          <label class="field__label" for="coinPrev">踏破Wave コイン枚数</label>
-          <input id="coinPrev" class="input" inputmode="numeric" placeholder="100〜9,999,000" />
+<header class="topbar">
+<div class="topbar__inner">
+<div class="title">
+<div class="title__main">攻略指標ツール</div>
+<div class="title__sub">踏破Wave → 10Wave後を倒せるかの目安</div>
 </div>
-
-        <div class="field">
-          <label class="field__label" for="buffPct">共有バフ 攻撃力増加</label>
-          <div class="suffix-wrap">
-            <input id="buffPct" class="input" inputmode="numeric" placeholder="0〜9,999" />
-            <span class="suffix">%</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid3-fixed">
-        <div class="field">
-          <label class="field__label" for="vaultLv">金庫Lv</label>
-          <div class="wheel-field"><select id="vaultLv" class="select select--hidden"></select><div class="wheel" id="wheelVaultLv" data-wheel-for="vaultLv" aria-hidden="true"></div></div>
-        </div>
-
-        <div class="field">
-          <label class="field__label" for="moneyLv">マネーガンLv</label>
-          <div class="wheel-field"><select id="moneyLv" class="select select--hidden"></select><div class="wheel" id="wheelMoneyLv" data-wheel-for="moneyLv" aria-hidden="true"></div></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2 class="card__title">
-<div class="grid3-fixed">
+<div class="status" id="status">初期化中…</div>
+</div>
+</header>
+<main class="container">
+<section class="card">
+<h2 class="card__title">共通</h2>
 <div class="field">
-            <div class="field__label">ウェーブ</div>
-            <div class="radio-row" id="prevWaveRadios"></div>
+<div class="field__label">難易度</div>
+<div class="radio-row" id="modeRadios"></div>
 </div>
-
-          <div class="grid3-always">
-            <div class="field">
-              <label class="field__label" for="prevUpLv">強化</label>
-              <div class="wheel-field"><select id="prevUpLv" class="select select--hidden"></select><div class="wheel" id="wheelPrevUpLv" data-wheel-for="prevUpLv" aria-hidden="true"></div>
+<div class="grid2-always">
 <div class="field">
-            <div class="field__label">ウェーブ</div>
-            <div class="radio-row" id="prevWaveRadios"></div>
+<label class="field__label" for="coinPrev">踏破Wave コイン枚数</label>
+<input class="input" id="coinPrev" inputmode="numeric" placeholder="100〜9,999,000"/>
 </div>
-
-          <div class="grid3-always">
-            <div class="field">
-              <label class="field__label" for="prevUpLv">強化</label>
-              <div class="wheel-field"><select id="prevUpLv" class="select select--hidden"></select><div class="wheel" id="wheelPrevUpLv" data-wheel-for="prevUpLv" aria-hidden="true"></div></div>
-            </div>
-
-            <div class="field">
-          <div class="field__label">戦闘時間</div>
-          <div class="wheel-field">
-            <select id="prevTime" class="select select--hidden"></select>
-            <div class="wheel" id="wheelPrevTime" data-wheel-for="prevTime" aria-hidden="true"></div>
 <div class="field">
-            <div class="field__label">ウェーブ</div>
-            <div class="radio-row" id="prevWaveRadios"></div>
+<label class="field__label" for="buffPct">共有バフ 攻撃力増加</label>
+<div class="suffix-wrap">
+<input class="input" id="buffPct" inputmode="numeric" placeholder="0〜9,999"/>
+<span class="suffix">%</span>
 </div>
-
-          <div class="grid3-always">
-            <div class="field">
-              <label class="field__label" for="prevUpLv">強化</label>
-              <div class="wheel-field"><select id="prevUpLv" class="select select--hidden"></select><div class="wheel" id="wheelPrevUpLv" data-wheel-for="prevUpLv" aria-hidden="true"></div></div>
-            </div>
-
-            <div class="field">
-          <div class="field__label">戦闘時間</div>
-          <div class="wheel-field">
-            <select id="prevTime" class="select select--hidden"></select>
-            <div class="wheel" id="wheelPrevTime" data-wheel-for="prevTime" aria-hidden="true"></div>
-          </div>
 </div>
-            </div>
-
-            <div class="field">
-              <div class="field__label">火力数</div>
-              <div class="wheel-field">
-            <select id="prevAtkCnt" class="select select--hidden"></select>
-            <div class="wheel" id="wheelPrevAtkCnt" data-wheel-for="prevAtkCnt" aria-hidden="true"></div>
 </div>
-踏破ウェーブ</h2>
-      
-          </div>
-            </div>
-
-            <div class="field">
-          <div class="field__label">戦闘時間</div>
-          <div class="wheel-field">
-            <select id="prevTime" class="select select--hidden"></select>
-            <div class="wheel" id="wheelPrevTime" data-wheel-for="prevTime" aria-hidden="true"></div>
-          </div>
-</div>
-            </div>
-
-            <div class="field">
-              <div class="field__label">火力数</div>
-              <div class="wheel-field">
-            <select id="prevAtkCnt" class="select select--hidden"></select>
-            <div class="wheel" id="wheelPrevAtkCnt" data-wheel-for="prevAtkCnt" aria-hidden="true"></div>
-          </div>
-        </div>
-          </div>
-        
-
-      <div class="subhead subhead--mt">
-<div class="grid3-fixed">
+<div class="grid2-always">
 <div class="field">
-              <label class="field__label" for="testUpLv">強化</label>
-              <div class="wheel-field"><select id="testUpLv" class="select select--hidden"></select><div class="wheel" id="wheelTestUpLv" data-wheel-for="testUpLv" aria-hidden="true"></div>
+<label class="field__label" for="vaultLv">金庫Lv</label>
+<div class="wheel-field"><select class="select select--hidden" id="vaultLv"></select><div aria-hidden="true" class="wheel" data-wheel-for="vaultLv" id="wheelVaultLv"></div></div>
+</div>
 <div class="field">
-              <label class="field__label" for="testUpLv">強化</label>
-              <div class="wheel-field"><select id="testUpLv" class="select select--hidden"></select><div class="wheel" id="wheelTestUpLv" data-wheel-for="testUpLv" aria-hidden="true"></div></div>
+<label class="field__label" for="moneyLv">マネーガンLv</label>
+<div class="wheel-field"><select class="select select--hidden" id="moneyLv"></select><div aria-hidden="true" class="wheel" data-wheel-for="moneyLv" id="wheelMoneyLv"></div></div>
 </div>
-
-            <div class="field">
-          <div class="field__label">戦闘時間</div>
-          <div class="wheel-field">
-            <select id="testTime" class="select select--hidden"></select>
-            <div class="wheel" id="wheelTestTime" data-wheel-for="testTime" aria-hidden="true"></div>
-<div class="field">
-              <label class="field__label" for="testUpLv">強化</label>
-              <div class="wheel-field"><select id="testUpLv" class="select select--hidden"></select><div class="wheel" id="wheelTestUpLv" data-wheel-for="testUpLv" aria-hidden="true"></div></div>
 </div>
-
-            <div class="field">
-          <div class="field__label">戦闘時間</div>
-          <div class="wheel-field">
-            <select id="testTime" class="select select--hidden"></select>
-            <div class="wheel" id="wheelTestTime" data-wheel-for="testTime" aria-hidden="true"></div>
-          </div>
-          
-        </div>
-
-            <div class="field">
-              <div class="field__label">火力数</div>
-              <div class="wheel-field">
-            <select id="testAtkCnt" class="select select--hidden"></select>
-            <div class="wheel" id="wheelTestAtkCnt" data-wheel-for="testAtkCnt" aria-hidden="true"></div>
-</div>
-検証ウェーブ（踏破ウェーブの10ウェーブ後）</div>
-<div class="pill">検証Wave 推定コイン：<span id="coinTestLabel">-</span></div>
-          </div>
-
-          <div class="grid3-always">
-            </div>
-</div>
-
-            <div class="field">
-          <div class="field__label">戦闘時間</div>
-          <div class="wheel-field">
-            <select id="testTime" class="select select--hidden"></select>
-            <div class="wheel" id="wheelTestTime" data-wheel-for="testTime" aria-hidden="true"></div>
-          </div>
-          
-        </div>
-
-            <div class="field">
-              <div class="field__label">火力数</div>
-              <div class="wheel-field">
-            <select id="testAtkCnt" class="select select--hidden"></select>
-            <div class="wheel" id="wheelTestAtkCnt" data-wheel-for="testAtkCnt" aria-hidden="true"></div>
-          </div>
-          
-        </div>
-          </div>
-        
 </section>
+<section class="card"><h2 class="card__title">踏破ウェーブ</h2><div class="field"><div class="field__label">ウェーブ</div><div class="radio-row" id="prevWaveRadios"></div></div><div class="grid3-compare"><div class="field"><label class="field__label" for="prevUpLv">強化</label><div class="wheel-field"><select class="select select--hidden" id="prevUpLv"></select><div aria-hidden="true" class="wheel" data-wheel-for="prevUpLv" id="wheelPrevUpLv"></div></div></div><div class="field"><div class="field__label">戦闘時間</div><div class="wheel-field"><select class="select select--hidden" id="prevTime"></select><div aria-hidden="true" class="wheel" data-wheel-for="prevTime" id="wheelPrevTime"></div></div></div><div class="field"><div class="field__label">火力数</div><div class="wheel-field"><select class="select select--hidden" id="prevAtkCnt"></select><div aria-hidden="true" class="wheel" data-wheel-for="prevAtkCnt" id="wheelPrevAtkCnt"></div></div></div></div><div class="subhead subhead--mt">検証ウェーブ（踏破ウェーブの10ウェーブ後）</div><div class="pill">検証Wave 推定コイン：<span id="coinTestLabel">-</span></div><div class="grid3-compare"><div class="field"><label class="field__label" for="testUpLv">強化</label><div class="wheel-field"><select class="select select--hidden" id="testUpLv"></select><div aria-hidden="true" class="wheel" data-wheel-for="testUpLv" id="wheelTestUpLv"></div></div></div><div class="field"><div class="field__label">戦闘時間</div><div class="wheel-field"><select class="select select--hidden" id="testTime"></select><div aria-hidden="true" class="wheel" data-wheel-for="testTime" id="wheelTestTime"></div></div></div><div class="field"><div class="field__label">火力数</div><div class="wheel-field"><select class="select select--hidden" id="testAtkCnt"></select><div aria-hidden="true" class="wheel" data-wheel-for="testAtkCnt" id="wheelTestAtkCnt"></div></div></div></div></section>
 <section class="card result">
-      <h2 class="card__title">結果</h2>
-
-      <div class="result__grid">
-        <div class="kv">
-          <div class="kv__k">敵倍率（HP）</div>
-          <div class="kv__v" id="mEnemy">-</div>
-        </div>
-        <div class="kv">
-          <div class="kv__k">ユーザー倍率</div>
-          <div class="kv__v" id="mUser">-</div>
-        </div>
-        <div class="kv kv--wide">
-          <div class="kv__k">判定</div>
-          <div class="judge" id="judge">-</div>
-        </div>
-      </div>
-
-      <div class="subgrid">
-        <div class="kv">
-          <div class="kv__k">必要検証 強化Lv（最小）</div>
-          <div class="kv__v" id="needUpLv">-</div>
-        </div>
-        <div class="kv">
-          <div class="kv__k">必要検証 アタッカー数（最小）</div>
-          <div class="kv__v" id="needAtkCnt">-</div>
-        </div>
-      </div>
-
-      <details class="details">
-        <summary>倍率の内訳</summary>
-        <div class="detail-grid">
-          <div class="kv">
-            <div class="kv__k">コイン火力倍率</div>
-            <div class="kv__v" id="mCoin">-</div>
-          </div>
-          <div class="kv">
-            <div class="kv__k">強化Lv倍率</div>
-            <div class="kv__v" id="mUp">-</div>
-          </div>
-          <div class="kv">
-            <div class="kv__k">戦闘時間倍率</div>
-            <div class="kv__v" id="mTime">-</div>
-          </div>
-          <div class="kv">
-            <div class="kv__k">アタッカー数倍率</div>
-            <div class="kv__v" id="mAtkCnt">-</div>
-          </div>
-        </div>
-      </details>
-    </section>
-
-    <footer class="footer">
-      <div class="footer__note">
+<h2 class="card__title">結果</h2>
+<div class="result__grid">
+<div class="kv">
+<div class="kv__k">敵倍率（HP）</div>
+<div class="kv__v" id="mEnemy">-</div>
+</div>
+<div class="kv">
+<div class="kv__k">ユーザー倍率</div>
+<div class="kv__v" id="mUser">-</div>
+</div>
+<div class="kv kv--wide">
+<div class="kv__k">判定</div>
+<div class="judge" id="judge">-</div>
+</div>
+</div>
+<div class="subgrid">
+<div class="kv">
+<div class="kv__k">必要検証 強化Lv（最小）</div>
+<div class="kv__v" id="needUpLv">-</div>
+</div>
+<div class="kv">
+<div class="kv__k">必要検証 アタッカー数（最小）</div>
+<div class="kv__v" id="needAtkCnt">-</div>
+</div>
+</div>
+<details class="details">
+<summary>倍率の内訳</summary>
+<div class="detail-grid">
+<div class="kv">
+<div class="kv__k">コイン火力倍率</div>
+<div class="kv__v" id="mCoin">-</div>
+</div>
+<div class="kv">
+<div class="kv__k">強化Lv倍率</div>
+<div class="kv__v" id="mUp">-</div>
+</div>
+<div class="kv">
+<div class="kv__k">戦闘時間倍率</div>
+<div class="kv__v" id="mTime">-</div>
+</div>
+<div class="kv">
+<div class="kv__k">アタッカー数倍率</div>
+<div class="kv__v" id="mAtkCnt">-</div>
+</div>
+</div>
+</details>
+</section>
+<footer class="footer">
+<div class="footer__note">
         ※ 計算は「踏破Wave → +10Wave」での目安です。実ダメージはユニット構成や係数により変動します。
       </div>
-    </footer>
-  </main>
-
-  <script type="module" src="ld_kouryaku_indicator.js"></script>
+</footer>
+</main>
+<script src="ld_kouryaku_indicator.js" type="module"></script>
 </body>
 </html>

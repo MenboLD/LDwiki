@@ -143,12 +143,22 @@ body{
 /* ---- Compact layout helpers ---- */
 
 
-/* ---- 3 wheels inline fixed (for side-by-side compare) ---- */
-.grid3-fixed{
+/* ---- 3 columns fixed for compare (prev/test) ---- */
+.grid3-compare{
   display:grid;
   grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);
-  gap: 8px;
+  gap: 10px;
 }
+
+/* Make wheels fit comfortably in narrow widths */
+.grid3-compare .field__label{
+  font-size: 12px;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .grid3-always{
   display:grid;
   grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);
