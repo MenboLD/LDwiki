@@ -415,3 +415,30 @@ label.field__label{ display:block; }
   font-size: 12px;
   opacity: .75;
 }
+
+/* --- accordion (詳細設定) --- */
+.accordion{ margin-top: 10px; }
+.accordion__summary{
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  font-size: 13px;
+  color: rgba(255,255,255,.92);
+  padding: 8px 2px;
+  border-radius: 10px;
+}
+.accordion__summary::-webkit-details-marker{ display:none; }
+.accordion__summary::before{ content:"▶ "; color: rgba(255,255,255,.75); }
+.accordion[open] .accordion__summary::before{ content:"▼ "; }
+.accordion__body{ margin-top: 8px; }
+
+.section-divider{
+  height: 1px;
+  background: rgba(255,255,255,.08);
+  margin: 14px 0 10px;
+}
+.card__title--sub{
+  margin-top: 0;
+  font-size: 18px;
+}
+.field--full{ grid-column: 1 / -1; }
