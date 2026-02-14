@@ -273,11 +273,22 @@ function computeCoinAfter10Waves({mode, coinPrev, vaultLv}){
   return coin;
 }
 
-function coinPower(coin, moneyLv, buff){
+function moneyGunBuffPct(coin, moneyLv){
+  // money_value: e.g. 1.007 (Lv1)
   const sb = STATE.masters.safeboxByMoneyLv.get(Number(moneyLv));
   if(!sb) return NaN;
-  const money = Number(sb.money_value);
-  return (Number(coin) * money) + Number(buff);
+  const moneyValue = Number(sb.money_value);
+  // Game behavior:
+  // moneyBuffPct = (money_value - 1) * coin * 100
+  // Example: coin=10000, money_value=1.007 -> 0.007*10000=70 (%)
+  return (moneyValue - 1) * Number(coin);
+}
+
+function coinPowerMult(coin, moneyLv, sharedBuffFloat){
+  // sharedBuffFloat = sharedBuffPct / 100 (e.g. 300% -> 3.0)
+  const mgPct = moneyGunBuffPct(coin, moneyLv); // percent value, e.g. 70
+  if(!Number.isFinite(mgPct)) return NaN;
+  return 1 + Number(sharedBuffFloat) + (mgPct / 100);
 }
 
 function toFixed4(x){
@@ -341,8 +352,8 @@ function calcAndRender(){
   const mEnemy = hpTest / hpPrev;
 
   // user ratios
-  const fPrev = coinPower(coinPrev, moneyLv, buff);
-  const fTest = coinPower(coinTest, moneyLv, buff);
+  const fPrev = coinPowerMult(coinPrev, moneyLv, buff);
+  const fTest = coinPowerMult(coinTest, moneyLv, buff);
   const mCoin = fTest / fPrev;
 
   const uPrev = Number(STATE.masters.atkUpById.get(prevUpLv));
@@ -379,16 +390,16 @@ function calcAndRender(){
     s1.textContent = `コイン枚数の変化：${formatComma(coinPrev)} → ${formatComma(roundToThousand(coinTest))} = ${toFixed4(coinRatio)} 倍`;
   }
   if(s2){
-    const moneyPartPrev = (Number.isFinite(fPrev) ? ((fPrev - buff) * 0.01) : NaN);
-    const moneyPartTest = (Number.isFinite(fTest) ? ((fTest - buff) * 0.01) : NaN);
-    s2.textContent = `マネーガンによるバフの変化：${formatComma(Math.round(moneyPartPrev))} % → ${formatComma(Math.round(moneyPartTest))} %`;
+    const mgPrevPct = moneyGunBuffPct(coinPrev, moneyLv);
+    const mgTestPct = moneyGunBuffPct(coinTest, moneyLv);
+    s2.textContent = `マネーガンによるバフの変化：${formatComma(Math.round(mgPrevPct))} % → ${formatComma(Math.round(mgTestPct))} %`;
   }
   if(s3){
     s3.textContent = `共有バフ「攻撃力増加」：${formatComma(Math.round(buff * 100))} %`;
   }
   if(s4){
-    const pPrev = Number.isFinite(fPrev) ? fPrev : NaN;
-    const pTest = Number.isFinite(fTest) ? fTest : NaN;
+    const pPrev = Number.isFinite(fPrev) ? (fPrev * 100) : NaN;
+    const pTest = Number.isFinite(fTest) ? (fTest * 100) : NaN;
     const pr = (pPrev > 0) ? (pTest / pPrev) : NaN;
     s4.textContent = `コイン火力の変化：${formatComma(Math.round(pPrev))} % → ${formatComma(Math.round(pTest))} % = ${toFixed4(pr)} 倍`;
   }
