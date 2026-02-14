@@ -90,21 +90,11 @@
 
             <div class="field">
               <div class="field__label">火力数</div>
-              <div class="slider-block">
-                <div class="slider-top">
-                  <div class="slider-value"><span id="prevAtkCntVal">-</span></div>
-                  <div class="step-btns">
-                    <button class="btn" data-step-target="prevAtkCnt" data-step="-10">-10</button>
-                    <button class="btn" data-step-target="prevAtkCnt" data-step="-5">-5</button>
-                    <button class="btn" data-step-target="prevAtkCnt" data-step="-1">-1</button>
-                    <button class="btn" data-step-target="prevAtkCnt" data-step="1">+1</button>
-                    <button class="btn" data-step-target="prevAtkCnt" data-step="5">+5</button>
-                    <button class="btn" data-step-target="prevAtkCnt" data-step="10">+10</button>
-                  </div>
-                </div>
-                <input id="prevAtkCnt" type="range" min="1" max="24" step="1" value="12" />
-              </div>
-            </div>
+              <div class="wheel-field">
+            <select id="prevAtkCnt" class="select select--hidden"></select>
+            <div class="wheel" id="wheelPrevAtkCnt" data-wheel-for="prevAtkCnt" aria-hidden="true"></div>
+          </div>
+        </div>
           </div>
         </div>
 
@@ -132,22 +122,12 @@
 
             <div class="field">
               <div class="field__label">火力数</div>
-              <div class="slider-block">
-                <div class="slider-top">
-                  <div class="slider-value"><span id="testAtkCntVal">-</span></div>
-                  <div class="step-btns">
-                    <button class="btn" data-step-target="testAtkCnt" data-step="-10">-10</button>
-                    <button class="btn" data-step-target="testAtkCnt" data-step="-5">-5</button>
-                    <button class="btn" data-step-target="testAtkCnt" data-step="-1">-1</button>
-                    <button class="btn" data-step-target="testAtkCnt" data-step="1">+1</button>
-                    <button class="btn" data-step-target="testAtkCnt" data-step="5">+5</button>
-                    <button class="btn" data-step-target="testAtkCnt" data-step="10">+10</button>
-                  </div>
-                </div>
-                <input id="testAtkCnt" type="range" min="1" max="24" step="1" value="12" />
-                <div class="hint">直前Waveの火力数を下回る場合は自動補正</div>
-              </div>
-            </div>
+              <div class="wheel-field">
+            <select id="testAtkCnt" class="select select--hidden"></select>
+            <div class="wheel" id="wheelTestAtkCnt" data-wheel-for="testAtkCnt" aria-hidden="true"></div>
+          </div>
+          <div class="hint">直前Waveの火力数を下回る場合は自動補正</div>
+        </div>
           </div>
         </div>
       </div>
