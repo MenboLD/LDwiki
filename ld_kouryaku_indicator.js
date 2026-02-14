@@ -79,20 +79,31 @@ function buildRadioRow(containerId, name, items, defaultValue){
 
 function buildModeRadios(){
   const modes = STATE.masters.modename.map(r => r.mode_name);
+  // keep hidden radios for compatibility (not shown)
   const root = $("modeRadios");
-  root.innerHTML = "";
-  modes.forEach((m, idx) => {
-    const id = `mode_${idx}`;
-    const label = document.createElement("label");
-    label.className = "radio-pill";
-    label.innerHTML = `
-      <input type="radio" name="mode" id="${id}" value="${m}">
-      <span>${m}</span>
-    `;
-    root.appendChild(label);
+  if(root){
+    root.innerHTML = "";
+    modes.forEach((m, idx) => {
+      const id = `mode_${idx}`;
+      const label = document.createElement("label");
+      label.className = "radio-pill";
+      label.innerHTML = `
+        <input type="radio" name="mode" id="${id}" value="${m}">
+        <span>${m}</span>
+      `;
+      root.appendChild(label);
+    });
+  }
+
+  // visible wheel select
+  const sel = $("modeSel");
+  sel.innerHTML = "";
+  modes.forEach((m) => {
+    const opt = document.createElement("option");
+    opt.value = m;
+    opt.textContent = m;
+    sel.appendChild(opt);
   });
-  const first = root.querySelector("input");
-  if(first) first.checked = true;
 }
 
 function buildSelectRange(selectId, min, max, defaultValue){
@@ -134,6 +145,10 @@ function buildVaultMoneySelects(){
 }
 
 function getChecked(name){
+  if(name === "mode"){
+    const sel = document.getElementById("modeSel");
+    if(sel) return sel.value || null;
+  }
   const el = document.querySelector(`input[name="${name}"]:checked`);
   return el ? el.value : null;
 }
@@ -222,7 +237,8 @@ function getCoinPrevRaw(){
 
 function normalizeBuff(){
   const el = $("buffPct");
-  const n = clamp(parseIntLoose(el.value), 0, 9999);
+  const raw = clamp(parseIntLoose(el.value), 0, 9950);
+  const n = Math.round(raw/50)*50;
   el.value = Number.isFinite(n) ? String(n) : "";
 }
 
@@ -505,6 +521,12 @@ function initInlineWheels(){
   buildWheelForSelect("testTime", "wheelTestTime", {rows:5, rowH:32});
   buildWheelForSelect("prevAtkCnt", "wheelPrevAtkCnt", {rows:5, rowH:32});
   buildWheelForSelect("testAtkCnt", "wheelTestAtkCnt", {rows:5, rowH:32});
+  buildWheelForSelect("modeSel", "wheelMode", {rows:5, rowH:32});
+  buildWheelForSelect("buffPctSel", "wheelBuff", {rows:5, rowH:32});
+  buildWheelForSelect("coinD1", "wheelCoinD1", {rows:5, rowH:32});
+  buildWheelForSelect("coinD2", "wheelCoinD2", {rows:5, rowH:32});
+  buildWheelForSelect("coinD3", "wheelCoinD3", {rows:5, rowH:32});
+  buildWheelForSelect("coinD4", "wheelCoinD4", {rows:5, rowH:32});
 }
 
 function syncWheels(){
@@ -516,7 +538,7 @@ function syncWheels(){
 function attachListeners(){
   // recompute on any input changes
   const ids = [
-    "coinPrev","buffPct","vaultLv","moneyLv",
+    "coinPrev","buffPct","modeSel","buffPctSel","coinD1","coinD2","coinD3","coinD4","vaultLv","moneyLv",
     "prevUpLv","testUpLv",
     "prevTime","testTime",
     "prevAtkCnt","testAtkCnt"
@@ -524,8 +546,13 @@ function attachListeners(){
   for(const id of ids){
     $(id).addEventListener("input", () => {
       if(id === "coinPrev"){
-        // allow typing; update on blur for display rounding, but compute on input using raw parse
         $("coinPrev").dataset.raw = String(parseIntLoose($("coinPrev").value.replace(/,/g,"")) || "");
+      }
+      if(id === "buffPctSel"){
+        updateBuffFromWheel();
+      }
+      if(id === "coinD1" || id === "coinD2" || id === "coinD3" || id === "coinD4"){
+        updateCoinFromDigits();
       }
       calcAndRender();
     });
@@ -580,23 +607,80 @@ async function loadMasters(){
   setStatus("準備完了");
 }
 
-function initUI(){
+function 
+function buildDigitSelect(selectId, defaultVal){
+  const sel = $(selectId);
+  sel.innerHTML = "";
+  for(let i=0;i<=9;i++){
+    const opt = document.createElement("option");
+    opt.value = String(i);
+    opt.textContent = String(i);
+    sel.appendChild(opt);
+  }
+  sel.value = String(clamp(Number(defaultVal)||0, 0, 9));
+}
+
+function buildBuffSelect(selectId, defaultVal){
+  const sel = $(selectId);
+  sel.innerHTML = "";
+  for(let v=0; v<=9950; v+=50){
+    const opt = document.createElement("option");
+    opt.value = String(v);
+    opt.textContent = String(v);
+    sel.appendChild(opt);
+  }
+  const dv = clamp(Math.round((Number(defaultVal)||0)/50)*50, 0, 9950);
+  sel.value = String(dv);
+}
+
+function updateCoinFromDigits(){
+  const d1 = Number($("coinD1").value);
+  const d2 = Number($("coinD2").value);
+  const d3 = Number($("coinD3").value);
+  const d4 = Number($("coinD4").value);
+  const coin = (d1*1000000) + (d2*100000) + (d3*10000) + (d4*1000);
+  $("coinPrev").dataset.raw = String(coin);
+  $("coinPrev").value = formatComma(coin);
+  const disp = document.getElementById("coinPrevDisplay");
+  if(disp) disp.textContent = formatComma(coin);
+}
+
+function updateBuffFromWheel(){
+  const v = Number($("buffPctSel").value);
+  $("buffPct").value = String(Number.isFinite(v)?v:0);
+}
+
+initUI(){
   buildModeRadios();
-  buildRadioRow("prevWaveRadios", "prevWave", WAVE_OPTIONS, 10);
-  buildSelectRange("prevUpLv", 1, 31, 1);
-  buildSelectRange("testUpLv", 1, 31, 1);
-  buildSelectRange("prevTime", 1, 60, 60);
-  buildSelectRange("testTime", 1, 60, 60);
+  buildRadioRow("prevWaveRadios", "prevWave", WAVE_OPTIONS, 70);
+  buildSelectRange("prevUpLv", 1, 31, 11);
+  buildSelectRange("testUpLv", 1, 31, 11);
+  buildSelectRange("prevTime", 1, 60, 30);
+  buildSelectRange("testTime", 1, 60, 30);
   buildSelectRange("prevAtkCnt", 1, 24, 12);
   buildSelectRange("testAtkCnt", 1, 24, 12);
 
   buildVaultMoneySelects();
 
+  // coin digits (X,XXX,000)
+  buildDigitSelect("coinD1", 0);
+  buildDigitSelect("coinD2", 1);
+  buildDigitSelect("coinD3", 0);
+  buildDigitSelect("coinD4", 0);
+  buildBuffSelect("buffPctSel", 0);
+
   initInlineWheels();
   // default values
-  $("coinPrev").value = "100,000";
-  $("coinPrev").dataset.raw = "100000";
-  $("buffPct").value = "0";
+  $("modeSel").value = "地獄";
+  $("vaultLv").value = "6";
+  $("moneyLv").value = "6";
+  updateBuffFromWheel();
+  updateCoinFromDigits();
+  // sync wheels to selected values
+  for(const id of ["modeSel","vaultLv","moneyLv","buffPctSel","coinD1","coinD2","coinD3","coinD4","prevUpLv","testUpLv","prevTime","testTime","prevAtkCnt","testAtkCnt"]){
+    const api = WHEELS.get(id);
+    if(api) api.sync();
+  }
 
   attachListeners();
 STATE.uiReady = true;
