@@ -379,12 +379,12 @@ function calcAndRender(){
     s1.textContent = `コイン枚数の変化：${formatComma(coinPrev)} → ${formatComma(roundToThousand(coinTest))} = ${toFixed4(coinRatio)} 倍`;
   }
   if(s2){
-    const moneyPartPrev = (Number.isFinite(fPrev) ? (fPrev - buff) : NaN);
-    const moneyPartTest = (Number.isFinite(fTest) ? (fTest - buff) : NaN);
+    const moneyPartPrev = (Number.isFinite(fPrev) ? ((fPrev - buff) * 0.01) : NaN);
+    const moneyPartTest = (Number.isFinite(fTest) ? ((fTest - buff) * 0.01) : NaN);
     s2.textContent = `マネーガンによるバフの変化：${formatComma(Math.round(moneyPartPrev))} % → ${formatComma(Math.round(moneyPartTest))} %`;
   }
   if(s3){
-    s3.textContent = `共有バフ「攻撃力増加」：${formatComma(Math.round(buff))} %`;
+    s3.textContent = `共有バフ「攻撃力増加」：${formatComma(Math.round(buff * 100))} %`;
   }
   if(s4){
     const pPrev = Number.isFinite(fPrev) ? fPrev : NaN;
