@@ -12,7 +12,7 @@
     <div class="topbar__inner">
       <div class="title">
         <div class="title__main">攻略指標ツール</div>
-        <div class="title__sub">直前Wave → 10Wave後を倒せるかの目安</div>
+        <div class="title__sub">踏破Wave → 10Wave後を倒せるかの目安</div>
       </div>
       <div class="status" id="status">初期化中…</div>
     </div>
@@ -29,10 +29,9 @@
 
       <div class="grid2-always">
         <div class="field">
-          <label class="field__label" for="coinPrev">直前Wave コイン枚数</label>
+          <label class="field__label" for="coinPrev">踏破Wave コイン枚数</label>
           <input id="coinPrev" class="input" inputmode="numeric" placeholder="100〜9,999,000" />
-          <div class="hint">表示は千単位四捨五入（計算は生値）</div>
-        </div>
+</div>
 
         <div class="field">
           <label class="field__label" for="buffPct">共有バフ 攻撃力増加</label>
@@ -57,20 +56,13 @@
     </section>
 
     <section class="card">
-      <h2 class="card__title">Wave設定</h2>
-
-      <div class="tabs" role="tablist" aria-label="Wave tabs">
-        <button class="tab is-active" id="tabPrev" type="button" role="tab" aria-selected="true" aria-controls="panelPrev">直前Wave</button>
-        <button class="tab" id="tabTest" type="button" role="tab" aria-selected="false" aria-controls="panelTest">検証Wave</button>
-      </div>
-
-      <div class="tabpanes">
-        <div class="tabpane" id="panelPrev" role="tabpanel" aria-labelledby="tabPrev">
+      <h2 class="card__title">踏破ウェーブ</h2>
+      <div class="subhead">踏破ウェーブ</div>
+      
           <div class="field">
-            <div class="field__label">直前Wave数</div>
+            <div class="field__label">踏破ウェーブ</div>
             <div class="radio-row" id="prevWaveRadios"></div>
-            <div class="hint">検証Waveは「直前Wave + 10」</div>
-          </div>
+</div>
 
           <div class="grid3-always">
             <div class="field">
@@ -84,8 +76,7 @@
             <select id="prevTime" class="select select--hidden"></select>
             <div class="wheel" id="wheelPrevTime" data-wheel-for="prevTime" aria-hidden="true"></div>
           </div>
-          <div class="hint">上限はWaveごとの制限時間</div>
-        </div>
+</div>
             </div>
 
             <div class="field">
@@ -96,20 +87,17 @@
           </div>
         </div>
           </div>
-        </div>
+        
 
-        <div class="tabpane" id="panelTest" role="tabpanel" aria-labelledby="tabTest" hidden>
-          <div class="pill-row">
-            <div class="pill">検証Wave：<span id="testWaveLabel">-</span></div>
-            <div class="pill">検証Wave 推定コイン：<span id="coinTestLabel">-</span></div>
+      <div class="subhead subhead--mt">検証ウェーブ（踏破ウェーブの10ウェーブ後）</div>
+<div class="pill">検証Wave 推定コイン：<span id="coinTestLabel">-</span></div>
           </div>
 
           <div class="grid3-always">
             <div class="field">
               <label class="field__label" for="testUpLv">強化</label>
               <div class="wheel-field"><select id="testUpLv" class="select select--hidden"></select><div class="wheel" id="wheelTestUpLv" data-wheel-for="testUpLv" aria-hidden="true"></div></div>
-              <div class="hint">直前Waveの強化Lvを下回る場合は自動補正</div>
-            </div>
+</div>
 
             <div class="field">
           <div class="field__label">戦闘時間</div>
@@ -126,12 +114,11 @@
             <select id="testAtkCnt" class="select select--hidden"></select>
             <div class="wheel" id="wheelTestAtkCnt" data-wheel-for="testAtkCnt" aria-hidden="true"></div>
           </div>
-          <div class="hint">直前Waveの火力数を下回る場合は自動補正</div>
+          <div class="hint">踏破Waveの火力数を下回る場合は自動補正</div>
         </div>
           </div>
-        </div>
-      </div>
-    </section>
+        
+</section>
 <section class="card result">
       <h2 class="card__title">結果</h2>
 
@@ -186,7 +173,7 @@
 
     <footer class="footer">
       <div class="footer__note">
-        ※ 計算は「直前Wave → +10Wave」での目安です。実ダメージはユニット構成や係数により変動します。
+        ※ 計算は「踏破Wave → +10Wave」での目安です。実ダメージはユニット構成や係数により変動します。
       </div>
     </footer>
   </main>

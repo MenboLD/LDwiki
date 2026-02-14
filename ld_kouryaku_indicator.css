@@ -346,3 +346,12 @@ input[type="range"]{
   font-size: 11px;
   text-align:center;
 }
+
+/* ---- Wave subsections (no tabs) ---- */
+.subhead{
+  margin: 6px 2px 10px;
+  font-weight: 900;
+  letter-spacing: .02em;
+  color: rgba(233,241,255,.95);
+}
+.subhead--mt{ margin-top: 18px; }

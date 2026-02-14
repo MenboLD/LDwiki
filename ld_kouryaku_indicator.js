@@ -274,7 +274,8 @@ function calcAndRender(){
   const mode = getChecked("mode");
   const prevWave = Number(getChecked("prevWave"));
   const testWave = prevWave + 10;
-  $("testWaveLabel").textContent = String(testWave);
+  const _tw = $("testWaveLabel");
+  if(_tw) _tw.textContent = String(testWave);
 
   // battle time max
   const prevEnm = safeGetEnm(mode, prevWave);
@@ -401,34 +402,7 @@ function findMinUpgradeLv(needU){
 }
 
 
-function initTabs(){
-  const tabPrev = document.getElementById("tabPrev");
-  const tabTest = document.getElementById("tabTest");
-  const panelPrev = document.getElementById("panelPrev");
-  const panelTest = document.getElementById("panelTest");
-  if(!tabPrev || !tabTest || !panelPrev || !panelTest) return;
 
-  const activate = (which) => {
-    const isPrev = which === "prev";
-    tabPrev.classList.toggle("is-active", isPrev);
-    tabTest.classList.toggle("is-active", !isPrev);
-
-    tabPrev.setAttribute("aria-selected", isPrev ? "true" : "false");
-    tabTest.setAttribute("aria-selected", !isPrev ? "true" : "false");
-
-    panelPrev.hidden = !isPrev;
-    panelTest.hidden = isPrev;
-
-    // keep numbers fresh even when switching
-    calcAndRender();
-  };
-
-  tabPrev.addEventListener("click", () => activate("prev"));
-  tabTest.addEventListener("click", () => activate("test"));
-
-  // default
-  activate("prev");
-}
 
 
 // ---- Inline Wheel Picker ----
@@ -625,9 +599,7 @@ function initUI(){
   $("buffPct").value = "0";
 
   attachListeners();
-  initTabs();
-
-  STATE.uiReady = true;
+STATE.uiReady = true;
   calcAndRender();
 }
 
