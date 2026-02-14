@@ -476,8 +476,8 @@ label.field__label{ display:block; }
   padding: 12px 14px;
 }
 .summary-line{
-  font-size: 14px;
+  font-size: 12px;
   color: rgba(217,229,246,.92);
-  line-height: 1.45;
+  line-height: 1.35;
   white-space: pre-wrap;
 }

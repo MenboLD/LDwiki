@@ -385,21 +385,24 @@ function calcAndRender(){
   if(_at) _at.textContent = toFixed4(mAtkCnt);
 
   const s1 = $("sumLine1"), s2 = $("sumLine2"), s3 = $("sumLine3"), s4 = $("sumLine4");
+  // 共通で使う値
+  const mgPrevPct = moneyGunBuffPct(coinPrev, moneyLv);
+  const mgTestPct = moneyGunBuffPct(coinTest, moneyLv);
+  const sharedPct = buff * 100; // 例: 750% -> 750
+
   if(s1){
     const coinRatio = coinPrev > 0 ? (coinTest / coinPrev) : NaN;
     s1.textContent = `コイン枚数の変化：${formatComma(coinPrev)} → ${formatComma(roundToThousand(coinTest))} = ${toFixed4(coinRatio)} 倍`;
   }
   if(s2){
-    const mgPrevPct = moneyGunBuffPct(coinPrev, moneyLv);
-    const mgTestPct = moneyGunBuffPct(coinTest, moneyLv);
     s2.textContent = `マネーガンによるバフの変化：${formatComma(Math.round(mgPrevPct))} % → ${formatComma(Math.round(mgTestPct))} %`;
   }
   if(s3){
-    s3.textContent = `共有バフ「攻撃力増加」：${formatComma(Math.round(buff * 100))} %`;
+    s3.textContent = `共有バフ「攻撃力増加」：${formatComma(Math.round(sharedPct))} %`;
   }
   if(s4){
-    const pPrev = Number.isFinite(fPrev) ? (fPrev * 100) : NaN;
-    const pTest = Number.isFinite(fTest) ? (fTest * 100) : NaN;
+    const pPrev = 100 + sharedPct + mgPrevPct;
+    const pTest = 100 + sharedPct + mgTestPct;
     const pr = (pPrev > 0) ? (pTest / pPrev) : NaN;
     s4.textContent = `コイン火力の変化：${formatComma(Math.round(pPrev))} % → ${formatComma(Math.round(pTest))} % = ${toFixed4(pr)} 倍`;
   }
