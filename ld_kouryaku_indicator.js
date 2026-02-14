@@ -366,6 +366,43 @@ function calcAndRender(){
   $("mTime").textContent = toFixed4(mTime);
   $("mAtkCnt").textContent = toFixed4(mAtkCnt);
 
+  // summary labels under 検証ウェーブ
+  const sum1 = $("sumLine1");
+  const sum2 = $("sumLine2");
+  const sum3 = $("sumLine3");
+  const sum4 = $("sumLine4");
+
+  if(sum1 && Number.isFinite(coinPrev) && Number.isFinite(coinTest) && coinPrev > 0){
+    sum1.textContent = `コイン枚数の変化：${formatComma(roundToThousand(coinPrev))} → ${formatComma(roundToThousand(coinTest))} = ${toFixed4(coinTest/coinPrev)} 倍`;
+  }else if(sum1){
+    sum1.textContent = "コイン枚数の変化：-";
+  }
+
+  // MoneyGun coefficient (common setting)
+  const moneyRow = STATE.masters.safeboxByMoneyLv.get(Number(moneyLv));
+  const moneyCoef = moneyRow ? Number(moneyRow.money_value) : NaN;
+  if(sum2 && Number.isFinite(moneyCoef)){
+    sum2.textContent = `マネーガン係数：${Math.round(moneyCoef*100)}%（Lv${moneyLv}）`;
+  }else if(sum2){
+    sum2.textContent = "マネーガン係数：-";
+  }
+
+  // shared buff
+  const buffPctRaw = parseIntLoose($("buffPct").value);
+  if(sum3 && Number.isFinite(buffPctRaw)){
+    sum3.textContent = `共有バフ「攻撃力増加」：${buffPctRaw}%`;
+  }else if(sum3){
+    sum3.textContent = `共有バフ「攻撃力増加」：0%`;
+  }
+
+  // coin power change (uses coinPower())
+  if(sum4 && Number.isFinite(fPrev) && Number.isFinite(fTest) && fPrev > 0){
+    sum4.textContent = `コイン火力の変化：${formatComma(Math.round(fPrev))} → ${formatComma(Math.round(fTest))} = ${toFixed4(fTest/fPrev)} 倍`;
+  }else if(sum4){
+    sum4.textContent = "コイン火力の変化：-";
+  }
+
+
   const judge = $("judge");
   if(Number.isFinite(mUser) && Number.isFinite(mEnemy) && mUser >= mEnemy){
     judge.textContent = "OK（倒せる目安）";
