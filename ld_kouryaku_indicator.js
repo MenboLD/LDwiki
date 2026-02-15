@@ -667,7 +667,7 @@ function buildBuffSelect(selectId, defaultVal){
   for(let v=0; v<=9950; v+=50){
     const opt = document.createElement("option");
     opt.value = String(v);
-    opt.textContent = String(v);
+    opt.textContent = String(v) + "%";
     sel.appendChild(opt);
   }
   const dv = clamp(Math.round((Number(defaultVal)||0)/50)*50, 0, 9950);

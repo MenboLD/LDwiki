@@ -112,8 +112,13 @@ body{
   user-select:none;
 }
 .wheel__item.is-selected{
-  color: rgba(233,241,255,1);
+  color: var(--ok);
   font-weight: 900;
+  font-size: 13px;
+  background: rgba(48,209,88,.12);
+  border: 1px solid rgba(48,209,88,.28);
+  border-radius: 10px;
+  margin: 0 8px;
 }
 
 .wheel-field::before{
@@ -407,9 +412,7 @@ label.field__label{ display:block; }
   align-items:center;
   gap: 8px;
 }
-.wheel-field--buff{
-  width: 120px;
-}
+.wheel-field--buff{ width: 100%; }
 .subnote{
   margin-top: 6px;
   font-size: 12px;
@@ -480,4 +483,28 @@ label.field__label{ display:block; }
   color: rgba(217,229,246,.92);
   line-height: 1.35;
   white-space: pre-wrap;
+}
+
+#prevWaveField{ margin-bottom: 6px; }
+
+/* prevent default details marker from duplicating arrows */
+.accordion__summary{
+  list-style: none;
+  display:flex;
+  align-items:center;
+  gap: 4px;
+}
+.accordion__summary::marker{ content:""; }
+
+/* unify typography for section labels (match '共通') */
+.card__title--sub,
+.subhead,
+.accordion__summary{
+  font-size: 15px;
+  font-weight: 400;
+  color: #d9e5f6;
+  letter-spacing:.02em;
+}
+.subhead{
+  margin: 6px 2px 10px;
 }
