@@ -525,3 +525,8 @@ label.field__label{ display:block; }
 .summary-line--muted{
   color: rgba(255,255,255,.78);
 }
+
+/* accordion arrow open state */
+.accordion[open] > .accordion__summary::before{ content:"▼"; }
+
+#needRow{ margin-top: 10px; }

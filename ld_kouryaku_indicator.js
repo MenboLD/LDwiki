@@ -385,9 +385,9 @@ function calcAndRender(){
   if(_at) _at.textContent = toFixed4(mAtkCnt);
 
   // --- 内訳（追加ラベル） ---
-  const dUp = $("detLineUp"), dTi = $("detLineTime"), dAt = $("detLineAtk"), dEn = $("detLineEnemy"), dJ = $("detLineJudge");
+  const dUp = $("detLineUp"), dTi = $("detLineTime"), dAt = $("detLineAtk"), dEn = $("detLineEnemy");
   if(dUp){
-    dUp.textContent = `強化倍率の変化：${formatComma(Math.round(uPrev))} % → ${formatComma(Math.round(uTest))} % = ${toFixed4(mUp)} 倍`;
+    dUp.textContent = `強化倍率の変化：${formatComma(Math.round(uPrev*100))} % → ${formatComma(Math.round(uTest*100))} % = ${toFixed4(mUp)} 倍`;
   }
   if(dTi){
     dTi.textContent = `時間倍率の変化：${formatComma(tPrev)} 秒 → ${formatComma(tTest)} 秒 = ${toFixed4(mTime)} 倍`;
@@ -400,17 +400,6 @@ function calcAndRender(){
     const hpTestText = (testEnm.hitpoint_text ?? testEnm.hitpoint_Text ?? testEnm.hitpointText ?? formatComma(hpTest));
     dEn.textContent = `敵HPの変化：${hpPrevText} → ${hpTestText} = ${toFixed4(mEnemy)} 倍`;
   }
-  if(dJ){
-    let sym = "＝";
-    if(Number.isFinite(mEnemy) && Number.isFinite(mUser)){
-      const diff = Math.abs(mEnemy - mUser);
-      if(diff <= 0.0005){
-        sym = "＝";
-      }else if(mEnemy < mUser){
-        sym = "＜";
-      }else{
-        sym = "＞";
-      }
     }
     dJ.textContent = `判定：敵HPの増加率 ${sym} ユーザー火力の増加率`;
   }
@@ -440,11 +429,24 @@ function calcAndRender(){
 
 
   const judge = $("judge");
+  // 判定メッセージ（敵HP倍率とユーザー倍率の比較）
+  let symMain = "＝";
+  if(Number.isFinite(mEnemy) && Number.isFinite(mUser)){
+    const diff = Math.abs(mEnemy - mUser);
+    if(diff <= 0.0005){
+      symMain = "＝";
+    }else if(mEnemy < mUser){
+      symMain = "＜";
+    }else{
+      symMain = "＞";
+    }
+  }
+
   if(Number.isFinite(mUser) && Number.isFinite(mEnemy) && mUser >= mEnemy){
-    judge.textContent = "OK（倒せる目安）";
+    judge.textContent = `OK（敵のHP増加率 ${symMain} ユーザー火力の増加率）`;
     judge.className = "judge ok";
   }else{
-    judge.textContent = "不足（火力が足りない目安）";
+    judge.textContent = `不足（敵のHP増加率 ${symMain} ユーザー火力の増加率）`;
     judge.className = "judge ng";
   }
 
@@ -477,6 +479,22 @@ function calcAndRender(){
     }
   }
   setText("needAtkCnt", needAtkText);
+
+  // Required time (min)
+  // t_test >= t_prev * (mEnemy / (mCoin * mUp * mAtkCnt))
+  const denomForTime = mCoin * mUp * mAtkCnt;
+  let needTimeText = "-";
+  if(Number.isFinite(denomForTime) && denomForTime > 0 && Number.isFinite(mEnemy)){
+    const reqM = mEnemy / denomForTime;
+    const reqSec = Math.ceil(tPrev * reqM);
+    const cap = Number(testEnm.battle_time);
+    if(Number.isFinite(cap) && reqSec > cap){
+      needTimeText = `到達不可（上限${cap}秒）`;
+    }else{
+      needTimeText = String(Math.max(1, reqSec));
+    }
+  }
+  setText("needTime", needTimeText);
 }
 
 function findMinUpgradeLv(needU){
