@@ -606,9 +606,11 @@ function initInlineWheels(){
   buildWheelForSelect("vaultLv", "wheelVaultLv", {rows:5, rowH:20});
   buildWheelForSelect("moneyLv", "wheelMoneyLv", {rows:5, rowH:20});
   buildWheelForSelect("prevUpLv", "wheelPrevUpLv", {rows:5, rowH:20});
+  buildWheelForSelect("testUpLv", "wheelTestUpLv", {rows:5, rowH:20});
   buildWheelForSelect("prevTime", "wheelPrevTime", {rows:5, rowH:20});
   buildWheelForSelect("testTime", "wheelTestTime", {rows:5, rowH:20});
   buildWheelForSelect("prevAtkCnt", "wheelPrevAtkCnt", {rows:5, rowH:20});
+  buildWheelForSelect("testAtkCnt", "wheelTestAtkCnt", {rows:5, rowH:20});
   buildWheelForSelect("modeSel", "wheelMode", {rows:5, rowH:20});
   buildWheelForSelect("buffPctSel", "wheelBuff", {rows:5, rowH:20});
   buildWheelForSelect("coinD1", "wheelCoinD1", {rows:2.5, rowH:20});
