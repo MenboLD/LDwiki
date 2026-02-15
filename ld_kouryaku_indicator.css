@@ -508,3 +508,20 @@ label.field__label{ display:block; }
 .subhead{
   margin: 6px 2px 10px;
 }
+
+
+/* --- Breakdown / Judge (v7t) --- */
+.kv--judge{
+  margin-top: 10px;
+}
+.breakdown{
+  margin-top: 10px;
+}
+.summary-sep{
+  height: 1px;
+  background: rgba(255,255,255,.10);
+  margin: 8px 0;
+}
+.summary-line--muted{
+  color: rgba(255,255,255,.78);
+}

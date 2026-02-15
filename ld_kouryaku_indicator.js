@@ -384,6 +384,37 @@ function calcAndRender(){
   if(_ti) _ti.textContent = toFixed4(mTime);
   if(_at) _at.textContent = toFixed4(mAtkCnt);
 
+  // --- 内訳（追加ラベル） ---
+  const dUp = $("detLineUp"), dTi = $("detLineTime"), dAt = $("detLineAtk"), dEn = $("detLineEnemy"), dJ = $("detLineJudge");
+  if(dUp){
+    dUp.textContent = `強化倍率の変化：${formatComma(Math.round(uPrev))} % → ${formatComma(Math.round(uTest))} % = ${toFixed4(mUp)} 倍`;
+  }
+  if(dTi){
+    dTi.textContent = `時間倍率の変化：${formatComma(tPrev)} 秒 → ${formatComma(tTest)} 秒 = ${toFixed4(mTime)} 倍`;
+  }
+  if(dAt){
+    dAt.textContent = `アタッカー数の変化：${formatComma(aPrev)} 体 → ${formatComma(aTest)} 体 = ${toFixed4(mAtkCnt)} 倍`;
+  }
+  if(dEn){
+    const hpPrevText = (prevEnm.hitpoint_text ?? prevEnm.hitpoint_Text ?? prevEnm.hitpointText ?? formatComma(hpPrev));
+    const hpTestText = (testEnm.hitpoint_text ?? testEnm.hitpoint_Text ?? testEnm.hitpointText ?? formatComma(hpTest));
+    dEn.textContent = `敵HPの変化：${hpPrevText} → ${hpTestText} = ${toFixed4(mEnemy)} 倍`;
+  }
+  if(dJ){
+    let sym = "＝";
+    if(Number.isFinite(mEnemy) && Number.isFinite(mUser)){
+      const diff = Math.abs(mEnemy - mUser);
+      if(diff <= 0.0005){
+        sym = "＝";
+      }else if(mEnemy < mUser){
+        sym = "＜";
+      }else{
+        sym = "＞";
+      }
+    }
+    dJ.textContent = `判定：敵HPの増加率 ${sym} ユーザー火力の増加率`;
+  }
+
   const s1 = $("sumLine1"), s2 = $("sumLine2"), s3 = $("sumLine3"), s4 = $("sumLine4");
   // 共通で使う値
   const mgPrevPct = moneyGunBuffPct(coinPrev, moneyLv);
