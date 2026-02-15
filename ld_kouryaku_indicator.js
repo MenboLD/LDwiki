@@ -465,6 +465,49 @@ function findMinUpgradeLv(needU){
 
 // ---- Inline Wheel Picker ----
 const WHEELS = new Map(); // selectId -> {wheelEl, rowH, options, sync}
+const SELECT_CACHE = new Map(); // selectId -> [{value,text}]
+
+function cacheSelectOptions(selectId){
+  if(SELECT_CACHE.has(selectId)) return;
+  const sel = $(selectId);
+  const arr = Array.from(sel.options).map(o => ({value: String(o.value), text: o.textContent || String(o.value)}));
+  SELECT_CACHE.set(selectId, arr);
+}
+
+function rebuildSelectMin(selectId, minValue){
+  cacheSelectOptions(selectId);
+  const sel = $(selectId);
+  const before = Number(sel.value);
+  const src = SELECT_CACHE.get(selectId) || [];
+  const filtered = src.filter(o => Number(o.value) >= Number(minValue));
+  // rebuild options
+  sel.innerHTML = "";
+  for(const o of filtered){
+    const opt = document.createElement("option");
+    opt.value = o.value;
+    opt.textContent = o.text;
+    sel.appendChild(opt);
+  }
+  // keep selection if possible; otherwise clamp to min
+  let next = before;
+  const has = filtered.some(o => Number(o.value) === Number(next));
+  if(!has){
+    next = filtered.length ? Number(filtered[0].value) : Number(minValue);
+  }
+  sel.value = String(next);
+}
+
+function applyTestMinConstraints(){
+  const minUp = parseIntLoose($("prevUpLv").value);
+  const minAtk = parseIntLoose($("prevAtkCnt").value);
+  if(Number.isFinite(minUp)) rebuildSelectMin("testUpLv", minUp);
+  if(Number.isFinite(minAtk)) rebuildSelectMin("testAtkCnt", minAtk);
+  // rebuild wheels for filtered selects
+  buildWheelForSelect("testUpLv", "wheelTestUpLv", {rows:5, rowH:20});
+  buildWheelForSelect("testAtkCnt", "wheelTestAtkCnt", {rows:5, rowH:20});
+  const a = WHEELS.get("testUpLv"); if(a) a.sync();
+  const b = WHEELS.get("testAtkCnt"); if(b) b.sync();
+}
 
 function buildWheelForSelect(selectId, wheelId, {rows=5, rowH=20} = {}){
   const sel = document.getElementById(selectId);
@@ -596,6 +639,9 @@ function attachListeners(){
       if(id === "coinD1" || id === "coinD2" || id === "coinD3" || id === "coinD4"){
         updateCoinFromDigits();
       }
+      if(id === "prevUpLv" || id === "prevAtkCnt"){
+        applyTestMinConstraints();
+      }
       calcAndRender();
     });
     $(id).addEventListener("change", () => calcAndRender());
@@ -711,6 +757,8 @@ function initUI(){
   buildBuffSelect("buffPctSel", 0);
 
   initInlineWheels();
+  // enforce: 検証ウェーブは踏破ウェーブ未満を表示しない
+  applyTestMinConstraints();
   // default values
   $("modeSel").value = "地獄";
   $("vaultLv").value = "6";
