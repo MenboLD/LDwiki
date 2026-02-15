@@ -643,3 +643,28 @@ label.field__label{ display:block; }
 .manual__ul li{
   margin: 4px 0;
 }
+
+
+/* modal: prevent clipping on mobile (iOS Safari) */
+.modal{
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+}
+.modal__panel{
+  max-height: calc(100dvh - 24px);
+  max-height: calc(100vh - 24px);
+  display: flex;
+  flex-direction: column;
+}
+.modal__body{
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;
+}
+.modal__actions{
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  padding-top: 10px;
+  background: linear-gradient(180deg, rgba(26,35,48,0), rgba(14,20,30,.96) 40%);
+  border-top: 1px solid rgba(255,255,255,.08);
+}
