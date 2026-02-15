@@ -329,7 +329,7 @@ input[type="range"]{
 .judge{
   font-weight: 900;
   letter-spacing: .06em;
-  font-size: 16px;
+  font-size: 11px;
   padding: 10px 12px;
   border-radius: 10px;
   border:1px solid #2a3a52;
@@ -626,4 +626,20 @@ label.field__label{ display:block; }
   display:flex;
   gap: 10px;
   justify-content:flex-end;
+}
+
+.labelSmall{ font-size: 12px; }
+.manual__h{
+  font-size: 15px;
+  font-weight: 900;
+  margin: 10px 0 6px;
+}
+.manual__p{
+  margin: 6px 0;
+}
+.manual__ul{
+  margin: 6px 0 8px 18px;
+}
+.manual__ul li{
+  margin: 4px 0;
 }
