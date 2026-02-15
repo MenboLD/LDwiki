@@ -400,9 +400,6 @@ function calcAndRender(){
     const hpTestText = (testEnm.hitpoint_text ?? testEnm.hitpoint_Text ?? testEnm.hitpointText ?? formatComma(hpTest));
     dEn.textContent = `敵HPの変化：${hpPrevText} → ${hpTestText} = ${toFixed4(mEnemy)} 倍`;
   }
-    }
-    dJ.textContent = `判定：敵HPの増加率 ${sym} ユーザー火力の増加率`;
-  }
 
   const s1 = $("sumLine1"), s2 = $("sumLine2"), s3 = $("sumLine3"), s4 = $("sumLine4");
   // 共通で使う値
