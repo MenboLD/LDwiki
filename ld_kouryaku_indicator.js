@@ -5,6 +5,45 @@ const $ = (id) => document.getElementById(id);
 const setText = (id, value) => { const el = $(id); if (el) el.textContent = value; };
 const statusEl = $("status");
 
+// ---- Modal helpers ----
+function openConfirm(message, onOk, title="確認"){
+  const modal = document.getElementById("modalConfirm");
+  const body = document.getElementById("modalConfirmBody");
+  const ttl  = document.getElementById("modalConfirmTitle");
+  const btnOk = document.getElementById("modalConfirmOk");
+  const btnNo = document.getElementById("modalConfirmNo");
+  if(!modal || !body || !ttl || !btnOk || !btnNo){
+    // Fallback
+    if(window.confirm(message)) onOk && onOk();
+    return;
+  }
+  ttl.textContent = title;
+  body.textContent = message;
+
+  const close = ()=>{
+    modal.classList.add("is-hidden");
+    btnOk.onclick = null;
+    btnNo.onclick = null;
+  };
+  btnNo.onclick = close;
+  btnOk.onclick = ()=>{
+    close();
+    onOk && onOk();
+  };
+  modal.classList.remove("is-hidden");
+}
+
+function openHelp(){
+  const modal = document.getElementById("modalHelp");
+  const closeBtn = document.getElementById("modalHelpClose");
+  if(!modal || !closeBtn) return;
+  modal.classList.remove("is-hidden");
+  closeBtn.onclick = ()=> modal.classList.add("is-hidden");
+  // click outside to close
+  modal.onclick = (e)=>{ if(e.target === modal) modal.classList.add("is-hidden"); };
+}
+// ---- /Modal helpers ----
+
 // ---- Supabase client ----
 function assertSupabaseConfig(){
   if(!window.LD_SUPABASE_URL || !window.LD_SUPABASE_ANON_KEY){
@@ -31,7 +70,7 @@ const STATE = {
 
 const WAVE_OPTIONS = [10,20,30,40,50,60,70];
 
-function setStatus(msg){ statusEl.textContent = msg; }
+function setStatus(msg){ if(statusEl) statusEl.textContent = msg; }
 
 function clamp(n, min, max){
   const x = Number.isFinite(n) ? n : min;
@@ -440,10 +479,10 @@ function calcAndRender(){
   }
 
   if(Number.isFinite(mUser) && Number.isFinite(mEnemy) && mUser >= mEnemy){
-    judge.textContent = `OK（敵のHP増加率 ${symMain} ユーザー火力の増加率）`;
+    judge.textContent = `火力十分（敵のHP増加率 ${symMain} ユーザー火力の増加率）`;
     judge.className = "judge ok";
   }else{
-    judge.textContent = `不足（敵のHP増加率 ${symMain} ユーザー火力の増加率）`;
+    judge.textContent = `火力不足（敵のHP増加率 ${symMain} ユーザー火力の増加率）`;
     judge.className = "judge ng";
   }
 
@@ -788,6 +827,74 @@ function updateBuffFromWheel(){
   $("buffPct").value = String(Number.isFinite(v)?v:0);
 }
 
+
+function syncWheel(id){
+  const api = WHEELS.get(id);
+  if(api) api.sync();
+}
+
+function setRadioChecked(name, value){
+  const el = document.querySelector(`input[name="${name}"][value="${value}"]`);
+  if(el){
+    el.checked = true;
+    el.dispatchEvent(new Event("change", {bubbles:true}));
+  }
+}
+
+function resetToDefaults(){
+  // Based on initUI defaults
+  $("modeSel").value = "地獄";
+  $("vaultLv").value = "6";
+  $("moneyLv").value = "6";
+
+  // Coin digits: 100,000
+  $("coinD1").value = "0";
+  $("coinD2").value = "1";
+  $("coinD3").value = "0";
+  $("coinD4").value = "0";
+
+  // Shared buff: 0
+  $("buffPctSel").value = "0";
+  updateBuffFromWheel();
+  updateCoinFromDigits();
+
+  // Prev/Test wheels
+  $("prevUpLv").value = "11";
+  $("prevTime").value = "30";
+  $("prevAtkCnt").value = "12";
+  $("testUpLv").value = "11";
+  $("testTime").value = "30";
+  $("testAtkCnt").value = "12";
+
+  // Prev wave radio
+  setRadioChecked("prevWave", "70");
+
+  applyTestMinConstraints();
+
+  // Sync all wheels
+  for(const id of ["modeSel","vaultLv","moneyLv","buffPctSel","coinD1","coinD2","coinD3","coinD4","prevUpLv","testUpLv","prevTime","testTime","prevAtkCnt","testAtkCnt"]){
+    syncWheel(id);
+  }
+
+  calcAndRender();
+}
+
+function setTestFromPrev(){
+  const pu = $("prevUpLv").value;
+  const pt = $("prevTime").value;
+  const pa = $("prevAtkCnt").value;
+
+  $("testUpLv").value = String(pu);
+  $("testTime").value = String(pt);
+  $("testAtkCnt").value = String(pa);
+
+  applyTestMinConstraints();
+  for(const id of ["testUpLv","testTime","testAtkCnt"]){
+    syncWheel(id);
+  }
+  calcAndRender();
+}
+
 function initUI(){
   buildModeRadios();
   buildRadioRow("prevWaveRadios", "prevWave", WAVE_OPTIONS, 70);
@@ -820,6 +927,29 @@ function initUI(){
   for(const id of ["modeSel","vaultLv","moneyLv","buffPctSel","coinD1","coinD2","coinD3","coinD4","prevUpLv","testUpLv","prevTime","testTime","prevAtkCnt","testAtkCnt"]){
     const api = WHEELS.get(id);
     if(api) api.sync();
+  }
+
+
+  // buttons
+  const btnDefaults = document.getElementById("btnDefaults");
+  if(btnDefaults){
+    btnDefaults.addEventListener("click", ()=>{
+      openConfirm("すべての値をデフォルトに戻しますか？", ()=>{
+        resetToDefaults();
+      });
+    });
+  }
+  const btnSetFromPrev = document.getElementById("btnSetFromPrev");
+  if(btnSetFromPrev){
+    btnSetFromPrev.addEventListener("click", ()=>{
+      openConfirm("踏破ウェーブの『強化・戦闘時間・アタッカー数』を、検証ウェーブにセットしますか？", ()=>{
+        setTestFromPrev();
+      });
+    });
+  }
+  const btnHelp = document.getElementById("btnHelp");
+  if(btnHelp){
+    btnHelp.addEventListener("click", openHelp);
   }
 
   attachListeners();
