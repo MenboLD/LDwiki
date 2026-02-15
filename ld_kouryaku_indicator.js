@@ -500,13 +500,18 @@ function rebuildSelectMin(selectId, minValue){
 function applyTestMinConstraints(){
   const minUp = parseIntLoose($("prevUpLv").value);
   const minAtk = parseIntLoose($("prevAtkCnt").value);
+
+  // まず select を元データから再生成（min 未満は表示しない）
   if(Number.isFinite(minUp)) rebuildSelectMin("testUpLv", minUp);
   if(Number.isFinite(minAtk)) rebuildSelectMin("testAtkCnt", minAtk);
-  // rebuild wheels for filtered selects
-  buildWheelForSelect("testUpLv", "wheelTestUpLv", {rows:5, rowH:20});
-  buildWheelForSelect("testAtkCnt", "wheelTestAtkCnt", {rows:5, rowH:20});
-  const a = WHEELS.get("testUpLv"); if(a) a.sync();
-  const b = WHEELS.get("testAtkCnt"); if(b) b.sync();
+
+  // 既存ホイールを「再描画」するだけ（イベント二重登録を避ける）
+  const wUp = WHEELS.get("testUpLv");
+  if(wUp) wUp.rebuildFromSelect();
+  const wAtk = WHEELS.get("testAtkCnt");
+  if(wAtk) wAtk.rebuildFromSelect();
+
+  // 値が min 未満だった場合のみ、rebuildSelectMin 内で min へクランプされる
 }
 
 function buildWheelForSelect(selectId, wheelId, {rows=5, rowH=20} = {}){
@@ -601,11 +606,9 @@ function initInlineWheels(){
   buildWheelForSelect("vaultLv", "wheelVaultLv", {rows:5, rowH:20});
   buildWheelForSelect("moneyLv", "wheelMoneyLv", {rows:5, rowH:20});
   buildWheelForSelect("prevUpLv", "wheelPrevUpLv", {rows:5, rowH:20});
-  buildWheelForSelect("testUpLv", "wheelTestUpLv", {rows:5, rowH:20});
   buildWheelForSelect("prevTime", "wheelPrevTime", {rows:5, rowH:20});
   buildWheelForSelect("testTime", "wheelTestTime", {rows:5, rowH:20});
   buildWheelForSelect("prevAtkCnt", "wheelPrevAtkCnt", {rows:5, rowH:20});
-  buildWheelForSelect("testAtkCnt", "wheelTestAtkCnt", {rows:5, rowH:20});
   buildWheelForSelect("modeSel", "wheelMode", {rows:5, rowH:20});
   buildWheelForSelect("buffPctSel", "wheelBuff", {rows:5, rowH:20});
   buildWheelForSelect("coinD1", "wheelCoinD1", {rows:2.5, rowH:20});
