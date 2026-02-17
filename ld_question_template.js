@@ -401,24 +401,6 @@ function toast(msg) {
         toast('画像生成に失敗（スクショでOK）');
       }
     });
-
-        const dataUrl = canvas.toDataURL('image/png');
-        // iOS Safari: direct download may not work. Open image in new tab.
-        const w = window.open();
-        if (w) {
-          w.document.write(`<title>質問テンプレート</title><img src="${dataUrl}" style="max-width:100%;height:auto;" />`);
-        } else {
-          // fallback: try download
-          const a = document.createElement('a');
-          a.href = dataUrl;
-          a.download = 'ld_question_template.png';
-          a.click();
-        }
-      } catch (err) {
-        console.error(err);
-        toast('画像生成に失敗（スクショでOK）');
-      }
-    });
   }
 
   function saveState() {
