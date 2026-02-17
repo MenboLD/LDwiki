@@ -9,12 +9,13 @@
   const el = (id) => document.getElementById(id);
 
   const state = {
-    pay: '',
-    vault: '',
+    pay: '無課金',
+    vault: '6',
     epicUnder15: false,
-    mode: '',
-    difficulty: '',
-    detail: '',
+    mode: '通常マッチ',
+    difficulty: '地獄',
+    detail: '安定周回',
+
     units: new Map(), // id -> { form:'mythic'|'immortal', level:0|6|12|15, treasure:boolean }
     unitMeta: [], // fetched list
   };
@@ -329,15 +330,24 @@
         // iOS Safari: direct download may not work. Open image in new tab.
         const w = window.open();
         if (w) {
-          w.document.write(`<title>質問テンプレート</title><img src="${dataUrl}" style="max-width:100%;height:auto;" />`);
+          w.document.write(`
+            <title>質問テンプレート</title>
+            <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+            <style>
+              body{margin:0;background:#0f1115;color:#e9edf3;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP",sans-serif;}
+              .wrap{padding:12px}
+              .hint{font-size:12px;color:rgba(233,237,243,.78);line-height:1.35;margin:0 0 10px}
+              img{max-width:100%;height:auto;display:block;border-radius:12px;border:1px solid rgba(255,255,255,.10)}
+            </style>
+            <div class="wrap">
+              <p class="hint">画像を長押し →「写真に保存」でカメラロールへ保存できます。</p>
+              <img src="${dataUrl}" />
+            </div>
+          `);
         } else {
-          // fallback: try download
-          const a = document.createElement('a');
-          a.href = dataUrl;
-          a.download = 'ld_question_template.png';
-          a.click();
+          toast('ポップアップがブロックされました（この画面をスクショでもOK）');
         }
-      } catch (err) {
+} catch (err) {
         console.error(err);
         toast('画像生成に失敗（スクショでOK）');
       }
@@ -362,12 +372,12 @@
     if (!raw) return;
     try {
       const obj = JSON.parse(raw);
-      state.pay = obj.pay || '';
-      state.vault = obj.vault || '';
+      state.pay = (obj.pay && String(obj.pay).trim()) ? String(obj.pay) : state.pay;
+      state.vault = (obj.vault && String(obj.vault).trim()) ? String(obj.vault) : state.vault;
       state.epicUnder15 = !!obj.epicUnder15;
-      state.mode = obj.mode || '';
-      state.difficulty = obj.difficulty || '';
-      state.detail = obj.detail || '';
+      state.mode = (obj.mode && String(obj.mode).trim()) ? String(obj.mode) : state.mode;
+      state.difficulty = (obj.difficulty && String(obj.difficulty).trim()) ? String(obj.difficulty) : state.difficulty;
+      state.detail = (obj.detail && String(obj.detail).trim()) ? String(obj.detail) : state.detail;
       state.units = new Map((obj.units || []).map(([id, s]) => [Number(id), s]));
     } catch {
       // ignore
