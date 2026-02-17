@@ -29,7 +29,7 @@
     out.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  function toast(msg) {
+function toast(msg) {
     const t = el('toast');
     t.textContent = msg;
     t.classList.add('show');
@@ -47,8 +47,7 @@
   }
 
   function getUnitImgCandidates(num) {
-    // If you place SVG files in ./svg/ (same folder level as this html),
-    // it becomes same-origin and export tends to work better on iPhone.
+    // Prefer same-origin SVG on GitHub Pages: /LDwiki/svg/xxxx.svg
     return [`svg/${num}.svg`, getStorageUrl(num)];
   }
 
@@ -338,13 +337,14 @@
 
     // export
     el('btnExport').addEventListener('click', async () => {
-      // Reset previous error UI
-      el('exportErr').hidden = true;
-      el('exportErr').textContent = '';
+      // reset error box
+      const errBox = el('exportErr');
+      if (errBox) { errBox.hidden = true; errBox.textContent = ''; }
 
       if (!window.html2canvas) {
-        showExportError('画像保存機能（html2canvas）の読み込みに失敗しました。通信環境の良い状態で開き直してください。
-※それでも無理なら、表示中の画面をスクショでもOKです。');
+        showExportError(`画像保存機能（html2canvas）の読み込みに失敗しました。
+通信環境の良い状態で開き直してください。
+※それでも無理なら、表示中の画面をスクショでもOKです。`);
         toast('画像保存機能が読み込めませんでした');
         return;
       }
@@ -364,14 +364,13 @@
           logging: false,
         });
 
-        // Prefer Blob/ObjectURL (iOS is more stable than huge data URL)
         const blob = await new Promise((resolve, reject) => {
-          canvas.toBlob(b => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png');
+          canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png');
         });
 
         const url = URL.createObjectURL(blob);
 
-        // cleanup previous url
+        // cleanup previous
         if (state._exportUrl) {
           try { URL.revokeObjectURL(state._exportUrl); } catch {}
         }
@@ -382,13 +381,13 @@
         const link = el('exportLink');
 
         img.onerror = () => {
-          showExportError('画像の表示に失敗しました。
-端末のメモリ不足の可能性があります。難しければスクショでOKです。');
+          showExportError(`画像の表示に失敗しました。
+端末のメモリ不足の可能性があります。難しければスクショでOKです。`);
         };
 
         img.src = url;
         link.href = url;
-        link.target = '_self'; // same tab (no popup block)
+        link.target = '_self'; // same tab, not blocked
 
         out.hidden = false;
         out.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -396,22 +395,25 @@
         toast('下に画像を表示しました（長押し→写真に保存）');
       } catch (err) {
         console.error(err);
-        showExportError('画像生成に失敗しました。
+        showExportError(`画像生成に失敗しました。
 原因例：ユニット画像の読み込み制限（CORS）/ メモリ不足 など
-※うまくいかない場合は、表示中の画面をスクショでもOKです。');
+※うまくいかない場合は、表示中の画面をスクショでもOKです。`);
         toast('画像生成に失敗（スクショでOK）');
       }
     });
+
         const dataUrl = canvas.toDataURL('image/png');
-
-        const out = el('exportOut');
-        const img = el('exportImg');
-        img.src = dataUrl;
-        out.hidden = false;
-        out.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-        toast('下に画像を表示しました（長押し→写真に保存）');
-
+        // iOS Safari: direct download may not work. Open image in new tab.
+        const w = window.open();
+        if (w) {
+          w.document.write(`<title>質問テンプレート</title><img src="${dataUrl}" style="max-width:100%;height:auto;" />`);
+        } else {
+          // fallback: try download
+          const a = document.createElement('a');
+          a.href = dataUrl;
+          a.download = 'ld_question_template.png';
+          a.click();
+        }
       } catch (err) {
         console.error(err);
         toast('画像生成に失敗（スクショでOK）');

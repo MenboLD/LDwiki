@@ -238,12 +238,37 @@ body{
   opacity: .78;
 }
 .unitTile img{
-  position:relative;
-  z-index:1;
   width:100%;
   height:100%;
   display:block;
   object-fit:contain;
+}
+.overlayLv, .overlayTreasure{
+  z-index:2;
+  right:4px;
+  color: var(--treasure);
+  /* thinner white outline than Lv */
+  text-shadow:
+    -0.8px 0 0 #fff,
+     0.8px 0 0 #fff,
+     0 -0.8px 0 #fff,
+     0  0.8px 0 #fff,
+     0  1px 2px rgba(0,0,0,.35);
+}
+.overlayLv{
+  left:4px;
+  color: var(--danger);
+  text-shadow:
+    -1px 0 0 #fff,
+     1px 0 0 #fff,
+     0 -1px 0 #fff,
+     0  1px 0 #fff,
+     0  1px 2px rgba(0,0,0,.35);
+}
+.overlayTreasure{
+  right:4px;
+  -webkit-text-stroke: 2px #fff;
+  color: var(--ok);
 }
 .unitTile--disabled{
   opacity:.45;
@@ -328,7 +353,9 @@ body{
 
 @media (max-width: 360px){
   .unitGrid{ gap:5px; }
-  }
+  .overlayLv, .overlayTreasure{
+  z-index:2; font-size:13px; }
+}
 
 #exportImg{
   width:100%;
@@ -337,42 +364,6 @@ body{
   border-radius:12px;
   border:1px solid rgba(255,255,255,.10);
 }
-
-
-.overlayLv, .overlayTreasure{
-  position:absolute;
-  top:4px;
-  z-index:2;
-  font-weight:900;
-  font-size:13px;
-  line-height:1;
-  pointer-events:none;
-}
-
-.overlayLv{
-  left:4px;
-  color: var(--danger);
-  text-shadow:
-    -1px 0 0 #fff,
-     1px 0 0 #fff,
-     0 -1px 0 #fff,
-     0  1px 0 #fff,
-     0  1px 2px rgba(0,0,0,.35);
-}
-
-.overlayTreasure{
-  right:4px;
-  color: var(--treasure);
-  /* thinner white outline than Lv */
-  text-shadow:
-    -0.8px 0 0 #fff,
-     0.8px 0 0 #fff,
-     0 -0.8px 0 #fff,
-     0  0.8px 0 #fff,
-     0  1px 2px rgba(0,0,0,.35);
-}
-
-
 .exportActions{
   display:flex;
   gap:10px;
