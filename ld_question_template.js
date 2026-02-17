@@ -327,27 +327,15 @@
           useCORS: true,
         });
         const dataUrl = canvas.toDataURL('image/png');
-        // iOS Safari: direct download may not work. Open image in new tab.
-        const w = window.open();
-        if (w) {
-          w.document.write(`
-            <title>質問テンプレート</title>
-            <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-            <style>
-              body{margin:0;background:#0f1115;color:#e9edf3;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP",sans-serif;}
-              .wrap{padding:12px}
-              .hint{font-size:12px;color:rgba(233,237,243,.78);line-height:1.35;margin:0 0 10px}
-              img{max-width:100%;height:auto;display:block;border-radius:12px;border:1px solid rgba(255,255,255,.10)}
-            </style>
-            <div class="wrap">
-              <p class="hint">画像を長押し →「写真に保存」でカメラロールへ保存できます。</p>
-              <img src="${dataUrl}" />
-            </div>
-          `);
-        } else {
-          toast('ポップアップがブロックされました（この画面をスクショでもOK）');
-        }
-} catch (err) {
+
+        const out = el('exportOut');
+        const img = el('exportImg');
+        img.src = dataUrl;
+        out.hidden = false;
+        out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        toast('下に画像を表示しました（長押し→写真に保存）');
+      } catch (err) {
         console.error(err);
         toast('画像生成に失敗（スクショでOK）');
       }

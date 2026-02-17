@@ -354,3 +354,11 @@ body{
   .unitGrid{ gap:5px; }
   .overlayLv, .overlayTreasure{ font-size:13px; }
 }
+
+#exportImg{
+  width:100%;
+  height:auto;
+  display:block;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.10);
+}
