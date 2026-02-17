@@ -335,6 +335,7 @@
         out.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
         toast('下に画像を表示しました（長押し→写真に保存）');
+
       } catch (err) {
         console.error(err);
         toast('画像生成に失敗（スクショでOK）');
