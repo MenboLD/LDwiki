@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>ラッキー傭兵団 質問テンプレート</title>
+
+  <!-- Optional: 画像として保存（PNG出力） -->
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <link rel="stylesheet" href="ld_question_template.css" />
+  <script defer src="supabase_config.js"></script>
+  <script defer src="ld_question_template.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__title">質問テンプレート</div>
+    <div class="topbar__actions">
+      <button class="btn btn--ghost" id="btnExport" type="button">画像として保存</button>
+      <button class="btn btn--ghost" id="btnReset" type="button">リセット</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="block" id="capture">
+      <div class="block__title">現在のユーザー状況</div>
+
+      <div class="row">
+        <div class="label">課金度</div>
+        <div class="controls" role="radiogroup" aria-label="課金度">
+          <label class="chip"><input type="radio" name="pay" value="無課金">無課金</label>
+          <label class="chip"><input type="radio" name="pay" value="微課金">微課金</label>
+          <label class="chip"><input type="radio" name="pay" value="重課金">重課金</label>
+        </div>
+      </div>
+
+      <div class="row row--stack">
+        <div class="label">金庫Lv</div>
+        <div class="controls controls--wrap" role="radiogroup" aria-label="金庫レベル(1-5)">
+          <label class="chip chip--small"><input type="radio" name="vault" value="1">1</label>
+          <label class="chip chip--small"><input type="radio" name="vault" value="2">2</label>
+          <label class="chip chip--small"><input type="radio" name="vault" value="3">3</label>
+          <label class="chip chip--small"><input type="radio" name="vault" value="4">4</label>
+          <label class="chip chip--small"><input type="radio" name="vault" value="5">5</label>
+        </div>
+        <div class="controls controls--wrap" role="radiogroup" aria-label="金庫レベル(6-11)">
+          <label class="chip chip--small"><input type="radio" name="vault" value="6">6</label>
+          <label class="chip chip--small"><input type="radio" name="vault" value="7">7</label>
+          <label class="chip chip--small"><input type="radio" name="vault" value="8">8</label>
+          <label class="chip chip--small"><input type="radio" name="vault" value="9">9</label>
+          <label class="chip chip--small"><input type="radio" name="vault" value="10">10</label>
+          <label class="chip chip--small"><input type="radio" name="vault" value="11">11</label>
+        </div>
+      </div>
+
+      <div class="row">
+        <label class="check">
+          <input type="checkbox" id="epicUnder15" />
+          Lv15未満のエピックがいる
+        </label>
+      </div>
+
+      <div class="block__title block__title--spaced">育成の目的</div>
+
+      <div class="row">
+        <div class="label">対象モード</div>
+        <div class="controls" role="radiogroup" aria-label="対象モード">
+          <label class="chip"><input type="radio" name="mode" value="通常マッチ">通常マッチ</label>
+          <label class="chip"><input type="radio" name="mode" value="レイド">レイド</label>
+          <label class="chip"><input type="radio" name="mode" value="対戦">対戦</label>
+        </div>
+      </div>
+
+      <div class="row" id="difficultyRow" hidden>
+        <div class="label">難易度</div>
+        <div class="controls controls--wrap" role="radiogroup" aria-label="難易度">
+          <label class="chip chip--small"><input type="radio" name="difficulty" value="ノーマル">ノーマル</label>
+          <label class="chip chip--small"><input type="radio" name="difficulty" value="ハード">ハード</label>
+          <label class="chip chip--small"><input type="radio" name="difficulty" value="地獄">地獄</label>
+          <label class="chip chip--small"><input type="radio" name="difficulty" value="神">神</label>
+          <label class="chip chip--small"><input type="radio" name="difficulty" value="太初">太初</label>
+        </div>
+      </div>
+
+      <div class="row" id="detailRow" hidden>
+        <div class="label">詳細</div>
+        <div class="controls" role="radiogroup" aria-label="詳細">
+          <label class="chip"><input type="radio" name="detail" value="80wクリア">80wクリア</label>
+          <label class="chip"><input type="radio" name="detail" value="安定周回">安定周回</label>
+          <label class="chip"><input type="radio" name="detail" value="ソロクリア">ソロクリア</label>
+        </div>
+      </div>
+
+      <div class="row row--between">
+        <div class="block__title block__title--inline">ユニット</div>
+        <button class="btn btn--primary" id="btnTreasure" type="button">財宝の選択</button>
+      </div>
+
+      <div class="hint">
+        Lv表示：未 / 6 / 12 / 15　　専用財宝：<span class="badgeEx">専</span>（設定可能：神話Lv12/15、不滅Lv6/12/15）
+      </div>
+
+      <div class="unitGrid" id="unitGrid" aria-label="ユニット一覧"></div>
+    </section>
+
+    <section class="block block--note">
+      <div class="note">
+        このページの入力内容は自動で端末に保存されます。<br/>
+        画像保存がうまくいかない場合は、表示中の画面をスクショしてください。
+      </div>
+    </section>
+  </main>
+
+  <!-- Treasure Modal -->
+  <div class="modal" id="treasureModal" aria-hidden="true">
+    <div class="modal__backdrop" data-close="1"></div>
+    <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="treasureTitle">
+      <div class="modal__header">
+        <div class="modal__title" id="treasureTitle">専用財宝</div>
+        <button class="btn btn--ghost" type="button" data-close="1">閉じる</button>
+      </div>
+      <div class="modal__sub">
+        タップでON/OFF（NG：未所持、神話Lv6）
+      </div>
+      <div class="unitGrid unitGrid--modal" id="treasureGrid" aria-label="財宝ユニット一覧"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" aria-live="polite"></div>
+</body>
+</html>
