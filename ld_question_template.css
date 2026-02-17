@@ -238,6 +238,8 @@ body{
   opacity: .78;
 }
 .unitTile img{
+  position:relative;
+  z-index:1;
   width:100%;
   height:100%;
   display:block;
@@ -340,6 +342,7 @@ body{
 .overlayLv, .overlayTreasure{
   position:absolute;
   top:4px;
+  z-index:2;
   font-weight:900;
   font-size:13px;
   line-height:1;
@@ -369,3 +372,20 @@ body{
      0  1px 2px rgba(0,0,0,.35);
 }
 
+
+.exportActions{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin: 0 0 10px;
+}
+.exportErr{
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 59, 48, .35);
+  background: rgba(255, 59, 48, .10);
+  color: rgba(255,255,255,.92);
+  font-size: 12px;
+  line-height: 1.4;
+}

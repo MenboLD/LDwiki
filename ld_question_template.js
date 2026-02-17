@@ -20,6 +20,15 @@
     unitMeta: [], // fetched list
   };
 
+  function showExportError(msg) {
+    const out = el('exportOut');
+    const err = el('exportErr');
+    out.hidden = false;
+    err.hidden = false;
+    err.textContent = msg;
+    out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function toast(msg) {
     const t = el('toast');
     t.textContent = msg;
@@ -143,6 +152,8 @@
     img.src = getStorageUrl(num);
     img.alt = meta.mythic_name || `unit-${meta.id}`;
     img.loading = 'lazy';
+    img.crossOrigin = 'anonymous';
+    img.referrerPolicy = 'no-referrer';
     btn.appendChild(img);
 
     const lv = document.createElement('div');
@@ -314,18 +325,70 @@
 
     // export
     el('btnExport').addEventListener('click', async () => {
+      // Reset previous error UI
+      el('exportErr').hidden = true;
+      el('exportErr').textContent = '';
+
       if (!window.html2canvas) {
-        toast('画像保存機能が読み込めませんでした（スクショでOK）');
+        showExportError('画像保存機能（html2canvas）の読み込みに失敗しました。通信環境の良い状態で開き直してください。
+※それでも無理なら、表示中の画面をスクショでもOKです。');
+        toast('画像保存機能が読み込めませんでした');
         return;
       }
+
       const node = el('capture');
       toast('画像を生成中…');
+
       try {
+        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        const scale = isIOS ? 1.5 : 2;
+
         const canvas = await window.html2canvas(node, {
           backgroundColor: '#0f1115',
-          scale: 2,
+          scale,
           useCORS: true,
+          imageTimeout: 15000,
+          logging: false,
         });
+
+        // Prefer Blob/ObjectURL (iOS is more stable than huge data URL)
+        const blob = await new Promise((resolve, reject) => {
+          canvas.toBlob(b => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png');
+        });
+
+        const url = URL.createObjectURL(blob);
+
+        // cleanup previous url
+        if (state._exportUrl) {
+          try { URL.revokeObjectURL(state._exportUrl); } catch {}
+        }
+        state._exportUrl = url;
+
+        const out = el('exportOut');
+        const img = el('exportImg');
+        const link = el('exportLink');
+
+        img.onerror = () => {
+          showExportError('画像の表示に失敗しました。
+端末のメモリ不足の可能性があります。難しければスクショでOKです。');
+        };
+
+        img.src = url;
+        link.href = url;
+        link.target = '_self'; // same tab (no popup block)
+
+        out.hidden = false;
+        out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        toast('下に画像を表示しました（長押し→写真に保存）');
+      } catch (err) {
+        console.error(err);
+        showExportError('画像生成に失敗しました。
+原因例：ユニット画像の読み込み制限（CORS）/ メモリ不足 など
+※うまくいかない場合は、表示中の画面をスクショでもOKです。');
+        toast('画像生成に失敗（スクショでOK）');
+      }
+    });
         const dataUrl = canvas.toDataURL('image/png');
 
         const out = el('exportOut');
