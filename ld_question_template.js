@@ -46,6 +46,13 @@
     return `${getSupabaseBase()}/storage/v1/object/public/svg/${num}.svg`;
   }
 
+  function getUnitImgCandidates(num) {
+    // If you place SVG files in ./svg/ (same folder level as this html),
+    // it becomes same-origin and export tends to work better on iPhone.
+    return [`svg/${num}.svg`, getStorageUrl(num)];
+  }
+
+
   async function fetchUnitsFromSupabase() {
     if (!window.LD_SUPABASE_URL || !window.LD_SUPABASE_ANON_KEY) {
       return null;
@@ -149,11 +156,17 @@
 
     const img = document.createElement('img');
     const num = (s.form === 'immortal' && meta.immortal_num != null) ? meta.immortal_num : meta.mythic_num;
-    img.src = getStorageUrl(num);
+    const candidates = getUnitImgCandidates(num);
+    let candIdx = 0;
+    img.src = candidates[candIdx];
+    img.onerror = () => {
+      candIdx++;
+      if (candIdx < candidates.length) {
+        img.src = candidates[candIdx];
+      }
+    };
     img.alt = meta.mythic_name || `unit-${meta.id}`;
     img.loading = 'lazy';
-    img.crossOrigin = 'anonymous';
-    img.referrerPolicy = 'no-referrer';
     btn.appendChild(img);
 
     const lv = document.createElement('div');
