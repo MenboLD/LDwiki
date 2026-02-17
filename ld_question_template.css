@@ -234,20 +234,42 @@ body{
   border-color: rgba(255, 69, 58, .22);
 }
 .unitTile--unowned{
-  filter: sepia(1) saturate(.45) brightness(.85);
-  opacity: .78;
+  filter: none;
+  opacity: 1;
+}
+.unitTile--unowned img{
+  opacity: .28;
+}
+.unitTile--unowned::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius: inherit;
+  background: rgba(170, 125, 70, .35);
+  pointer-events:none;
+  z-index:1;
 }
 .unitTile img{
+  position:relative;
+  z-index:0;
   width:100%;
   height:100%;
   display:block;
   object-fit:contain;
 }
+.unitTile--disabled{
+  opacity:.45;
+}
+
+/* --- overlay badges (Lv / 専) --- */
 .overlayLv, .overlayTreasure{
-  z-index:2;
-  right:4px;
-  color: var(--treasure);
-  /* thinner white outline than Lv */
+  position:absolute;
+  top:4px;
+  z-index:4;
+  font-weight:900;
+  font-size:13px;
+  line-height:1;
+  pointer-events:none;
   text-shadow:
     -0.8px 0 0 #fff,
      0.8px 0 0 #fff,
@@ -257,6 +279,7 @@ body{
 }
 .overlayLv{
   left:4px;
+  right:auto;
   color: var(--danger);
   text-shadow:
     -1px 0 0 #fff,
@@ -267,17 +290,17 @@ body{
 }
 .overlayTreasure{
   right:4px;
-  -webkit-text-stroke: 2px #fff;
-  color: var(--ok);
+  left:auto;
+  color: #4da3ff; /* blue */
 }
-.unitTile--disabled{
-  opacity:.45;
-}
+
 .unitTile--disabled::after{
   content:"";
   position:absolute;
   inset:0;
   background: rgba(0,0,0,.22);
+  z-index:3;
+  pointer-events:none;
 }
 
 .block--note{
@@ -353,17 +376,9 @@ body{
 
 @media (max-width: 360px){
   .unitGrid{ gap:5px; }
-  .overlayLv, .overlayTreasure{
-  z-index:2; font-size:13px; }
+  .overlayLv, .overlayTreasure{ font-size:13px; }
 }
 
-#exportImg{
-  width:100%;
-  height:auto;
-  display:block;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.10);
-}
 .exportActions{
   display:flex;
   gap:10px;
@@ -379,4 +394,11 @@ body{
   color: rgba(255,255,255,.92);
   font-size: 12px;
   line-height: 1.4;
+}
+#exportImg{
+  width:100%;
+  height:auto;
+  display:block;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.10);
 }
