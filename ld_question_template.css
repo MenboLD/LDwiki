@@ -474,3 +474,33 @@ body.shotMode #btnTreasure{
 body.shotMode #unitGrid{
   margin-top: 6px;
 }
+
+/* --- shot summary rich formatting --- */
+.shotKey{
+  font-size:11px;
+  font-weight:800;
+  color: rgba(255,255,255,.72);
+}
+.shotVal{
+  font-size:13px;
+  font-weight:900;
+  color: rgba(125, 235, 160, .98);
+}
+.shotEpic{
+  font-size:13px;
+  font-weight:900;
+}
+.shotEpic--on{ color: rgba(255,90,90,.98); }
+.shotEpic--off{ color: rgba(255,255,255,.35); }
+
+.shotHint--below{
+  display:none;
+  margin-top:8px;
+  padding-top:6px;
+  border-top:1px dashed rgba(255,255,255,.10);
+}
+body.shotMode #shotHintBelow{ display:block; }
+
+
+/* In shot mode, hide any modal UI (e.g., treasure modal close button) */
+body.shotMode .modal{ display:none !important; }

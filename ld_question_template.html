@@ -25,7 +25,6 @@
       <div class="shotSummary" id="shotSummary" aria-label="スクショ用サマリー">
         <div class="shotLine" id="shotLine1"></div>
         <div class="shotLine" id="shotLine2"></div>
-        <div class="shotHint">※この表示のままスクリーンショットを撮って投稿してください</div>
       </div>
 
       <div class="row">
@@ -62,10 +61,13 @@
       </div>
 
       <div class="row">
-        <label class="check">
-          <input type="checkbox" id="epicUnder15" />
-          Lv15未満のエピックがいる
-        </label>
+        <div class="label">エピック</div>
+        <div class="controls">
+          <label class="check">
+            <input type="checkbox" id="epicUnder15" />
+            Lv15未満のエピックがいる
+          </label>
+        </div>
       </div>
 
       <div class="block__title block__title--spaced">育成の目的</div>
@@ -104,6 +106,7 @@
         <button class="btn btn--primary" id="btnTreasure" type="button">財宝の選択</button>
       </div>
 <div class="unitGrid" id="unitGrid" aria-label="ユニット一覧"></div>
+      <div class="shotHint shotHint--below" id="shotHintBelow">※この表示のままスクリーンショットを撮って投稿してください</div>
     </section>
 
 <section class="block block--note">

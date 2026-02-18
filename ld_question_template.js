@@ -61,12 +61,23 @@
     }
   }
 
-  function setShotMode(on) {(on) {
-    document.body.classList.toggle('shotMode', !!on);
+  function setShotMode(on) {
+    const enable = !!on;
+
+    // If treasure modal is open, close it to keep shot mode clean.
+    try { closeModal(); } catch (e) {}
+
+    document.body.classList.toggle('shotMode', enable);
+
     const btn = el('btnShot');
-    if (btn) btn.textContent = on ? '入力に戻る' : 'スクショ用表示';
+    if (btn) btn.textContent = enable ? '入力に戻る' : 'スクショ用表示';
+
     updateShotSummary();
-    if (on) window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (enable) {
+      // ensure top is visible for a clean screenshot
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
 function toast(msg) {
