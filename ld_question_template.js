@@ -166,7 +166,6 @@ function toast(msg) {
 
   function setImgByNum(img, num) {
     const candidates = getUnitImgCandidates(num);
-    // Keep state on the element to avoid recreating closures
     img._cands = candidates;
     img._candIdx = 0;
     img.src = candidates[0];
@@ -186,22 +185,17 @@ function toast(msg) {
     btn.classList.toggle('unitTile--immortal', isImmortal);
     btn.classList.toggle('unitTile--unowned', isUnowned);
 
-    // Disabled (treasure modal only)
     const disabled = !!opts.disabled;
     btn.classList.toggle('unitTile--disabled', disabled);
     btn.disabled = disabled;
 
-    // Image
     const num = (s.form === 'immortal' && meta.immortal_num != null) ? meta.immortal_num : meta.mythic_num;
     if (String(num) !== refs.img.dataset.num) {
       refs.img.dataset.num = String(num);
       setImgByNum(refs.img, num);
     }
 
-    // Lv overlay
     refs.lv.textContent = (s.level === 0) ? '未' : String(s.level);
-
-    // Treasure overlay (always present)
     refs.tr.textContent = s.treasure ? '専' : '';
   }
 
@@ -249,7 +243,6 @@ function toast(msg) {
       state.mainTileById.set(meta.id, tile);
     }
 
-    // Event delegation: one handler only
     if (!grid._bound) {
       grid.addEventListener('click', (e) => {
         const tile = e.target.closest('.unitTile');
@@ -258,20 +251,18 @@ function toast(msg) {
         const meta = state.metaById.get(id);
         if (!meta) return;
 
+        cycleLevel(meta); // includes sanitizeTreasure
         const s = ensureUnitState(meta);
-        cycleLevel(meta);
-        sanitizeTreasure(meta, s);
 
-        // Update only this tile
         applyTileView(tile, meta, s);
 
-        // Keep treasure modal tile in sync if open
+        // if modal open, update corresponding modal tile (allowed/disabled may change)
         if (el('treasureModal').getAttribute('aria-hidden') === 'false') {
           const t = state.treasureTileById && state.treasureTileById.get(id);
           if (t) applyTileView(t, meta, s, { disabled: !isTreasureAllowed(meta, s) });
         }
 
-        markChanged();
+        saveState();
       });
       grid._bound = true;
     }
@@ -285,8 +276,7 @@ function toast(msg) {
     for (const meta of state.unitMeta) {
       const s = ensureUnitState(meta);
       sanitizeTreasure(meta, s);
-      const allowed = isTreasureAllowed(meta, s);
-      const tile = renderUnitTile(meta, s, { disabled: !allowed });
+      const tile = renderUnitTile(meta, s, { disabled: !isTreasureAllowed(meta, s) });
       grid.appendChild(tile);
       state.treasureTileById.set(meta.id, tile);
     }
@@ -300,16 +290,18 @@ function toast(msg) {
         if (!meta) return;
 
         const s = ensureUnitState(meta);
-        // toggle treasure (modal is for treasure only)
+        sanitizeTreasure(meta, s);
         if (!isTreasureAllowed(meta, s)) return;
-        s.treasure = !s.treasure;
 
-        // Update modal tile + main tile
-        applyTileView(tile, meta, s, { disabled:false });
-        const main = state.mainTileById.get(id);
+        s.treasure = !s.treasure;
+        sanitizeTreasure(meta, s);
+
+        // Update both tiles
+        applyTileView(tile, meta, s, { disabled: !isTreasureAllowed(meta, s) });
+        const main = state.mainTileById && state.mainTileById.get(id);
         if (main) applyTileView(main, meta, s);
 
-        markChanged();
+        saveState();
       });
       grid._bound = true;
     }
@@ -322,22 +314,6 @@ function toast(msg) {
       sanitizeTreasure(meta, s);
       const t = state.treasureTileById.get(meta.id);
       if (t) applyTileView(t, meta, s, { disabled: !isTreasureAllowed(meta, s) });
-    }
-  }
-
-      tile.addEventListener('click', () => {
-        const cur = ensureUnitState(meta);
-        sanitizeTreasure(meta, cur);
-        if (!isTreasureAllowed(meta, cur)) {
-          toast('財宝は「神話Lv12/15」または「不滅」で設定できます');
-          return;
-        }
-        cur.treasure = !cur.treasure;
-        markChanged();
-        initTreasureGrid();
-        initMainGrid();
-      });
-      grid.appendChild(tile);
     }
   }
 
@@ -366,7 +342,7 @@ function toast(msg) {
       i.addEventListener('change', () => {
         if (i.checked) {
           state.pay = i.value;
-          markChanged();
+          saveState();
         }
       });
     });
@@ -376,7 +352,7 @@ function toast(msg) {
       i.addEventListener('change', () => {
         if (i.checked) {
           state.vault = i.value;
-          markChanged();
+          saveState();
         }
       });
     });
@@ -384,7 +360,7 @@ function toast(msg) {
     // epic checkbox
     el('epicUnder15').addEventListener('change', (e) => {
       state.epicUnder15 = !!e.target.checked;
-      markChanged();
+      saveState();
     });
 
     // mode
@@ -392,7 +368,7 @@ function toast(msg) {
       i.addEventListener('change', () => {
         if (i.checked) {
           state.mode = i.value;
-          markChanged();
+          saveState();
           updatePurposeVisibility();
         }
       });
@@ -404,7 +380,7 @@ function toast(msg) {
         if (i.checked) {
           state.difficulty = i.value;
           // when difficulty changes, keep detail but show it
-          markChanged();
+          saveState();
           updatePurposeVisibility();
         }
       });
@@ -415,7 +391,7 @@ function toast(msg) {
       i.addEventListener('change', () => {
         if (i.checked) {
           state.detail = i.value;
-          markChanged();
+          saveState();
         }
       });
     });
@@ -464,17 +440,13 @@ function toast(msg) {
     localStorage.setItem(LS_KEY, JSON.stringify(obj));
   }
 
-  function scheduleSaveState() {
-    window.clearTimeout(scheduleSaveState._tm);
-    scheduleSaveState._tm = window.setTimeout(() => {
+  function saveState() {
+    // Update shot summary immediately (lightweight)
+    updateShotSummary();
+    window.clearTimeout(saveState._tm);
+    saveState._tm = window.setTimeout(() => {
       try { saveStateImmediate(); } catch (e) { /* ignore */ }
     }, 450);
-  }
-
-  function markChanged() {
-    // summary is cheap; keep it up to date forスクショ用表示
-    updateShotSummary();
-    scheduleSaveState();
   }
 
   function loadState() {
@@ -524,8 +496,6 @@ function toast(msg) {
     const m = el('treasureModal');
     m.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
-
-    // Build once, then only refresh (fast)
     if (!state.treasureTileById) initTreasureGrid();
     refreshTreasureGridAll();
   }
@@ -548,8 +518,6 @@ function toast(msg) {
     }
     state.unitMeta = list || FALLBACK_UNITS;
 
-    initMetaIndex();
-
     // Ensure map has entries so order stable
     for (const meta of state.unitMeta) {
       const s = ensureUnitState(meta);
@@ -568,6 +536,7 @@ function toast(msg) {
 
     applyStateToUI();
     updateShotSummary();
+    initMetaIndex();
     initMainGrid();
     initTreasureGrid();
   }
