@@ -72,6 +72,19 @@
     const btn = el('btnShot');
     if (btn) btn.textContent = enable ? '入力に戻る' : 'スクショ用表示';
 
+    // Hard-hide shot-only UI in input mode (override any stale CSS).
+    const ss = el('shotSummary');
+    if (ss) {
+      if (enable) ss.style.removeProperty('display');
+      else ss.style.setProperty('display', 'none', 'important');
+    }
+    const sh = el('shotHintBelow');
+    if (sh) {
+      if (enable) sh.style.removeProperty('display');
+      else sh.style.setProperty('display', 'none', 'important');
+    }
+
+
     updateShotSummary();
 
     if (enable) {
@@ -576,6 +589,8 @@ function toast(msg) {
     }
 
     applyStateToUI();
+    // Ensure initial render is input mode (no screenshot summary shown).
+    setShotMode(false);
     updateShotSummary();
     initMetaIndex();
     initMainGrid();
