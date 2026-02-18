@@ -439,43 +439,14 @@ function toast(msg) {
     });
 
 
-        const blob = await new Promise((resolve, reject) => {
-          canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png');
-        });
+    // fullscreen viewer close
+    {
+      const c = document.getElementById('fsClose');
+      if (c) c.addEventListener('click', closeFsViewer);
+      const fs = document.getElementById('fsViewer');
+      if (fs) fs.addEventListener('click', (e) => { if (e.target === fs) closeFsViewer(); });
+    }
 
-        const url = URL.createObjectURL(blob);
-
-        // cleanup previous
-        if (state._exportUrl) {
-          try { URL.revokeObjectURL(state._exportUrl); } catch {}
-        }
-        state._exportUrl = url;
-
-        const out = el('exportOut');
-        const img = el('exportImg');
-        const link = el('exportLink');
-
-        img.onerror = () => {
-          showExportError(`画像の表示に失敗しました。
-端末のメモリ不足の可能性があります。難しければスクショでOKです。`);
-        };
-
-        img.src = url;
-        link.href = url;
-        link.target = '_self'; // same tab, not blocked
-
-        out.hidden = false;
-        out.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-        toast('下に画像を表示しました（長押し→写真に保存）');
-      } catch (err) {
-        console.error(err);
-        showExportError(`画像生成に失敗しました。
-原因例：ユニット画像の読み込み制限（CORS）/ メモリ不足 など
-※うまくいかない場合は、表示中の画面をスクショでもOKです。`);
-        toast('画像生成に失敗（スクショでOK）');
-      }
-    });
   }
 
   function saveState() {
@@ -581,5 +552,3 @@ function toast(msg) {
 
   window.addEventListener('DOMContentLoaded', boot, { once:true });
 })();
-
-  try { el('fsClose')?.addEventListener('click', closeFsViewer); } catch {}
