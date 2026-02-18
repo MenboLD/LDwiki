@@ -426,7 +426,8 @@ body{
   color: rgba(255,255,255,.65);
 }
 
-body.shotMode #shotSummary{ display:block; }
+body.shotMode body:not(.shotMode) #shotSummary{ display:none !important; }
+body.shotMode #shotSummary{ display:block !important; }
 
 body.shotMode #capture .row,
 body.shotMode #capture .vaultBlock,
