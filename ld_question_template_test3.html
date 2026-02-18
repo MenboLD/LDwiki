@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>質問テンプレート 画像生成テスト(3ユニット)</title>
+  <link rel="stylesheet" href="ld_question_template_test3.css?v=1">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__title">質問テンプレート（画像生成テスト：3ユニット）</div>
+    <div class="topbar__actions">
+      <button class="btn" id="btnExport">画像として保存</button>
+      <button class="btn btn--ghost" id="btnReset">リセット</button>
+    </div>
+  </header>
+
+  <!-- ここだけを画像化します -->
+  <main class="page">
+    <section class="card" id="capture">
+      <div class="card__title">キャプチャ対象</div>
+
+      <div class="row">
+        <div class="label">ユニットID</div>
+        <div class="help">GitHub Pages に置いた SVG の番号（例：5009）。<br>このテストでは、まず全部 5009 でOKです。</div>
+      </div>
+
+      <div class="ids">
+        <label class="idBox">#1 <input id="id1" type="number" inputmode="numeric" value="5009"></label>
+        <label class="idBox">#2 <input id="id2" type="number" inputmode="numeric" value="5009"></label>
+        <label class="idBox">#3 <input id="id3" type="number" inputmode="numeric" value="5009"></label>
+        <button class="btn btn--ghost" id="btnApplyIds">反映</button>
+      </div>
+
+      <div class="row">
+        <div class="label">状態</div>
+        <div class="help">未所持/所持、Lv表示、専表示がキャンバスに載るかも確認できます。</div>
+      </div>
+
+      <div class="units" id="unitGrid"></div>
+
+      <div class="note">
+        ※iPhoneで生成画像が出ない場合、ここが小さくても失敗するなら「表示方式」問題の可能性が高いです。
+      </div>
+    </section>
+
+    <section class="card" id="exportOut" hidden>
+      <div class="card__title">作成した画像</div>
+      <div class="note">
+        画像を長押し →「写真に保存」でカメラロールに保存できます。<br>
+        もし表示が重い場合は、下の「全画面で開く」を押してから保存してください。
+      </div>
+      <div class="exportActions">
+        <a class="btn btn--ghost" id="exportLink" href="#" rel="noopener">全画面で開く</a>
+      </div>
+      <div class="exportErr" id="exportErr" hidden></div>
+      <img id="exportImg" alt="exported image" />
+      <div class="meta" id="exportMeta" hidden></div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="ld_question_template_test3.js?v=1"></script>
+</body>
+</html>
