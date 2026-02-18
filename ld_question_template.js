@@ -21,17 +21,47 @@
   };
 
 
+  function escHtml(s) {
+    return String(s)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
   function updateShotSummary() {
     const l1 = el('shotLine1');
     const l2 = el('shotLine2');
     if (!l1 || !l2) return;
 
-    const epicText = state.epicUnder15 ? 'Lv15未満のエピックがいる' : 'Lv15未満のエピックはいない';
-    l1.textContent = `課金度 ${state.pay}　金庫Lv ${state.vault}　${epicText}`;
-    l2.textContent = `対象モード ${state.mode}　難易度 ${state.difficulty}　詳細 ${state.detail}`;
+    const pay = escHtml(state.pay);
+    const vault = escHtml(state.vault);
+    const mode = escHtml(state.mode);
+    const diff = escHtml(state.difficulty);
+    const detail = escHtml(state.detail);
+
+    const epicOn = !!state.epicUnder15;
+    const epicText = epicOn ? 'Lv15未満のエピックがいる' : 'Lv15未満のエピックはいない';
+    const epicClass = epicOn ? 'shotEpic shotEpic--on' : 'shotEpic shotEpic--off';
+
+    l1.innerHTML =
+      `<span class="shotKey">課金度：</span><span class="shotVal">${pay}</span>` +
+      `　<span class="shotKey">金庫Lv：</span><span class="shotVal">${vault}</span>` +
+      `　<span class="${epicClass}">${epicText}</span>`;
+
+    const isRaidOrPvp = (state.mode === 'レイド' || state.mode === '対戦');
+    if (isRaidOrPvp) {
+      l2.innerHTML = `<span class="shotKey">対象モード：</span><span class="shotVal">${mode}</span>`;
+    } else {
+      l2.innerHTML =
+        `<span class="shotKey">対象モード：</span><span class="shotVal">${mode}</span>` +
+        `　<span class="shotKey">難易度：</span><span class="shotVal">${diff}</span>` +
+        `　<span class="shotKey">詳細：</span><span class="shotVal">${detail}</span>`;
+    }
   }
 
-  function setShotMode(on) {
+  function setShotMode(on) {(on) {
     document.body.classList.toggle('shotMode', !!on);
     const btn = el('btnShot');
     if (btn) btn.textContent = on ? '入力に戻る' : 'スクショ用表示';
