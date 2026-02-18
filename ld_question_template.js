@@ -29,6 +29,20 @@
     out.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+
+  function openFsViewer(dataUrl) {
+    const fs = el('fsViewer');
+    const img = el('fsImg');
+    if (!fs || !img) return;
+    img.src = dataUrl;
+    fs.hidden = false;
+  }
+  function closeFsViewer() {
+    const fs = el('fsViewer');
+    if (!fs) return;
+    fs.hidden = true;
+  }
+
 function toast(msg) {
     const t = el('toast');
     t.textContent = msg;
@@ -336,10 +350,12 @@ function toast(msg) {
     });
 
     // export
-
     el('btnExport').addEventListener('click', async () => {
       const errBox = el('exportErr');
       if (errBox) { errBox.hidden = true; errBox.textContent = ''; }
+
+      const out = el('exportOut');
+      if (out) out.hidden = false;
 
       if (!window.html2canvas) {
         showExportError(`画像保存機能（html2canvas）の読み込みに失敗しました。
@@ -350,110 +366,114 @@ function toast(msg) {
       }
 
       const node = el('capture');
-      const out = el('exportOut');
-      if (out) out.hidden = false;
-
-      const img = el('exportImg');
-      const link = el('exportLink');
-
-      // clear current image (avoid showing old result)
-      img.removeAttribute('src');
-
       toast('画像を生成中…');
 
       const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
 
-      const attempts = isIOS
-        ? [
-            { scale: 1.0, mime: 'image/jpeg', quality: 0.85, label: '通常' },
-            { scale: 0.75, mime: 'image/jpeg', quality: 0.80, label: '軽量' },
-          ]
-        : [
-            { scale: 2.0, mime: 'image/png', quality: 1, label: '通常' },
-          ];
+      try {
+        const rect = node.getBoundingClientRect();
+        const baseW = Math.max(1, Math.round(rect.width));
+        const baseH = Math.max(1, Math.round(rect.height));
 
-      async function renderToObjectUrl(opt) {
-        const canvas = await window.html2canvas(node, {
+        const MAX_DIM = isIOS ? 4096 : 16384;
+        const maxSide = Math.max(baseW, baseH);
+        const renderScale = Math.min(isIOS ? 1.2 : 2.0, MAX_DIM / maxSide);
+
+        const srcCanvas = await window.html2canvas(node, {
           backgroundColor: '#0f1115',
-          scale: opt.scale,
+          scale: renderScale,
           useCORS: true,
           imageTimeout: 20000,
           logging: false,
         });
 
-        const blob = await new Promise((resolve, reject) => {
-          try {
-            canvas.toBlob(
-              (b) => (b ? resolve(b) : reject(new Error('toBlob failed'))),
-              opt.mime,
-              opt.quality
-            );
-          } catch (e) {
-            reject(e);
-          }
-        });
+        // ---- Final output: fixed 770x1080 (contain) ----
+        const OUT_W = 770;
+        const OUT_H = 1080;
 
-        return URL.createObjectURL(blob);
-      }
+        const outCanvas = document.createElement('canvas');
+        outCanvas.width = OUT_W;
+        outCanvas.height = OUT_H;
 
-      async function setImgAndWait(url) {
-        return await new Promise((resolve) => {
-          let done = false;
+        const ctx = outCanvas.getContext('2d');
+        ctx.fillStyle = '#0f1115';
+        ctx.fillRect(0, 0, OUT_W, OUT_H);
 
-          img.onload = () => { done = true; resolve(true); };
-          img.onerror = () => { done = true; resolve(false); };
+        const sW = srcCanvas.width;
+        const sH = srcCanvas.height;
 
-          img.src = url;
-          link.href = url;
-          link.target = '_self';
+        const fit = Math.min(OUT_W / sW, OUT_H / sH);
+        const dW = Math.round(sW * fit);
+        const dH = Math.round(sH * fit);
+        const dx = Math.round((OUT_W - dW) / 2);
+        const dy = Math.round((OUT_H - dH) / 2);
 
-          // WebKit sometimes doesn't fire onerror/onload reliably for blob URLs.
-          // Use a timeout + naturalWidth check.
-          setTimeout(() => {
-            if (done) return;
-            resolve(img.naturalWidth > 0);
-          }, isIOS ? 2200 : 1200);
-        });
-      }
+        ctx.drawImage(srcCanvas, dx, dy, dW, dH);
 
-      try {
-        for (let i = 0; i < attempts.length; i++) {
-          const opt = attempts[i];
-          if (i === 1) toast('iPhone向けに軽量版で再生成中…');
+        // JPEG is smaller and stable on iOS
+        const dataUrl = outCanvas.toDataURL('image/jpeg', 0.92);
 
-          const url = await renderToObjectUrl(opt);
-          const ok = await setImgAndWait(url);
+        const img = el('exportImg');
+        const link = el('exportLink');
 
-          if (ok) {
-            // cleanup previous successful url
-            if (state._exportUrl) {
-              try { URL.revokeObjectURL(state._exportUrl); } catch {}
-            }
-            state._exportUrl = url;
+        img.src = dataUrl;
 
-            el('exportOut').hidden = false;
-            el('exportOut').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        link.href = '#';
+        link.target = '_self';
+        link.onclick = (e) => {
+          e.preventDefault();
+          openFsViewer(dataUrl);
+        };
 
-            toast('下に画像を表示しました（長押し→写真に保存）');
-            return;
-          }
+        out.hidden = false;
+        out.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-          // failed: revoke this attempt url and try next
-          try { URL.revokeObjectURL(url); } catch {}
-        }
-
-        showExportError(`画像を表示できませんでした（iPhone側のメモリ制限の可能性が高いです）
-対策：
-・不要なアプリを閉じてから再試行
-・ページを上に戻して、表示項目を減らしてから再試行
-・それでも無理ならスクショでもOKです`);
-        toast('画像の表示に失敗（スクショでもOK）');
+        toast('下に画像を表示しました（長押し→写真に保存）');
       } catch (err) {
         console.error(err);
         showExportError(`画像生成に失敗しました。
-原因例：端末のメモリ不足 / 画像の読み込み制限（CORS） など
+原因例：端末のメモリ不足 / SVG描画の相性 / 通信状態 など
 ※うまくいかない場合は、表示中の画面をスクショでもOKです。`);
-        toast('画像生成に失敗（スクショでもOK）');
+        toast('画像生成に失敗（スクショでOK）');
+      }
+    });
+
+
+        const blob = await new Promise((resolve, reject) => {
+          canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png');
+        });
+
+        const url = URL.createObjectURL(blob);
+
+        // cleanup previous
+        if (state._exportUrl) {
+          try { URL.revokeObjectURL(state._exportUrl); } catch {}
+        }
+        state._exportUrl = url;
+
+        const out = el('exportOut');
+        const img = el('exportImg');
+        const link = el('exportLink');
+
+        img.onerror = () => {
+          showExportError(`画像の表示に失敗しました。
+端末のメモリ不足の可能性があります。難しければスクショでOKです。`);
+        };
+
+        img.src = url;
+        link.href = url;
+        link.target = '_self'; // same tab, not blocked
+
+        out.hidden = false;
+        out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        toast('下に画像を表示しました（長押し→写真に保存）');
+      } catch (err) {
+        console.error(err);
+        showExportError(`画像生成に失敗しました。
+原因例：ユニット画像の読み込み制限（CORS）/ メモリ不足 など
+※うまくいかない場合は、表示中の画面をスクショでもOKです。`);
+        toast('画像生成に失敗（スクショでOK）');
       }
     });
   }
@@ -561,3 +581,5 @@ function toast(msg) {
 
   window.addEventListener('DOMContentLoaded', boot, { once:true });
 })();
+
+  try { el('fsClose')?.addEventListener('click', closeFsViewer); } catch {}
