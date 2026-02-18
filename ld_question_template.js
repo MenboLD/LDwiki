@@ -350,6 +350,8 @@ function toast(msg) {
       }
 
       const node = el('capture');
+      const out = el('exportOut');
+      if (out) { out.hidden = false; }
       toast('画像を生成中…');
 
       try {
@@ -360,23 +362,35 @@ function toast(msg) {
           backgroundColor: '#0f1115',
           scale,
           useCORS: true,
-          imageTimeout: 15000,
+          imageTimeout: 20000,
           logging: false,
         });
 
+        // iOS(WebKit) sometimes fails to display large PNG blob URLs.
+        // Use JPEG for iOS to reduce memory footprint, with a fallback path.
+        const mime = isIOS ? 'image/jpeg' : 'image/png';
+        const quality = isIOS ? 0.92 : 1;
+
         const blob = await new Promise((resolve, reject) => {
-          canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png');
+          try {
+            canvas.toBlob(
+              (b) => (b ? resolve(b) : reject(new Error('toBlob failed'))),
+              mime,
+              quality
+            );
+          } catch (e) {
+            reject(e);
+          }
         });
 
         const url = URL.createObjectURL(blob);
-
-        // cleanup previous
+// cleanup previous
         if (state._exportUrl) {
           try { URL.revokeObjectURL(state._exportUrl); } catch {}
         }
         state._exportUrl = url;
 
-        const out = el('exportOut');
+        const out2 = el('exportOut');
         const img = el('exportImg');
         const link = el('exportLink');
 
@@ -385,12 +399,28 @@ function toast(msg) {
 端末のメモリ不足の可能性があります。難しければスクショでOKです。`);
         };
 
+        let displayed = false;
+        img.onload = () => { displayed = true; };
         img.src = url;
         link.href = url;
         link.target = '_self'; // same tab, not blocked
 
-        out.hidden = false;
-        out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Fallback: if blob URL doesn't render on iOS, try data URL (JPEG) after a short delay
+        if (isIOS) {
+          setTimeout(() => {
+            if (displayed) return;
+            try {
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+              img.src = dataUrl;
+              link.href = dataUrl;
+            } catch (e) {
+              // ignore (tainted canvas etc.)
+            }
+          }, 500);
+        }
+
+        out2.hidden = false;
+        out2.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
         toast('下に画像を表示しました（長押し→写真に保存）');
       } catch (err) {
