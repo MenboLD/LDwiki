@@ -83,6 +83,8 @@ h1{
   margin: 0;
   padding-left: 20px;
 }
+.toc li > ol{ margin-top: 6px; }
+.toc ol ol{ margin-top: 6px; padding-left: 18px; }
 .toc li{ margin: 6px 0; }
 .toc a{ color: var(--text); }
 .toc a:hover{ color: var(--accent2); }
@@ -105,6 +107,20 @@ h2{
 p{ margin: 10px 0; }
 strong{ color: #ffffff; }
 
+
+pre{
+  margin: 10px 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(0,0,0,.25);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+code{ font-family: var(--mono); }
 .small{ font-size: 13px; }
 .muted{ color: var(--muted); }
 
