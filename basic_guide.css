@@ -37,6 +37,13 @@ a:hover{ text-decoration: underline; }
   margin: 0 auto;
 }
 
+main.wrap{
+  padding: 18px 0 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
 .site-header{
   padding: 28px 0 18px;
   border-bottom: 1px solid var(--line);
@@ -64,7 +71,7 @@ h1{
 }
 
 .toc{
-  margin: 18px 0 14px;
+  margin: 0;
   padding: 0 0 12px;
   background: transparent;
   border: 0;
@@ -95,14 +102,8 @@ h1{
   border: 0;
   border-radius: 0;
   padding: 0;
-  margin: 18px 0;
+  margin: 0;
   box-shadow: none;
-}
-/* section separator (no “box”) */
-.card + .card{
-  border-top: 1px solid var(--line);
-  padding-top: 16px;
-  margin-top: 16px;
 }
 
 h2{
