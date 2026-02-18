@@ -153,83 +153,166 @@ function toast(msg) {
     sanitizeTreasure(meta, s);
   }
 
+  function setImgByNum(img, num) {
+    const candidates = getUnitImgCandidates(num);
+    // Keep state on the element to avoid recreating closures
+    img._cands = candidates;
+    img._candIdx = 0;
+    img.src = candidates[0];
+    img.onerror = () => {
+      img._candIdx = (img._candIdx || 0) + 1;
+      if (img._cands && img._candIdx < img._cands.length) {
+        img.src = img._cands[img._candIdx];
+      }
+    };
+  }
+
+  function applyTileView(btn, meta, s, opts={}) {
+    const refs = btn._refs;
+    const isUnowned = s.level === 0;
+    const isImmortal = s.form === 'immortal' && s.level !== 0;
+
+    btn.classList.toggle('unitTile--immortal', isImmortal);
+    btn.classList.toggle('unitTile--unowned', isUnowned);
+
+    // Disabled (treasure modal only)
+    const disabled = !!opts.disabled;
+    btn.classList.toggle('unitTile--disabled', disabled);
+    btn.disabled = disabled;
+
+    // Image
+    const num = (s.form === 'immortal' && meta.immortal_num != null) ? meta.immortal_num : meta.mythic_num;
+    if (String(num) !== refs.img.dataset.num) {
+      refs.img.dataset.num = String(num);
+      setImgByNum(refs.img, num);
+    }
+
+    // Lv overlay
+    refs.lv.textContent = (s.level === 0) ? '未' : String(s.level);
+
+    // Treasure overlay (always present)
+    refs.tr.textContent = s.treasure ? '専' : '';
+  }
+
   function renderUnitTile(meta, s, opts={}) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'unitTile';
-
-    const isUnowned = s.level === 0;
-    const isImmortal = s.form === 'immortal' && s.level !== 0;
-    if (isImmortal) btn.classList.add('unitTile--immortal');
-    if (isUnowned) btn.classList.add('unitTile--unowned');
+    btn.dataset.uid = String(meta.id);
 
     const img = document.createElement('img');
-    const num = (s.form === 'immortal' && meta.immortal_num != null) ? meta.immortal_num : meta.mythic_num;
-    const candidates = getUnitImgCandidates(num);
-    let candIdx = 0;
-    img.src = candidates[candIdx];
-    img.onerror = () => {
-      candIdx++;
-      if (candIdx < candidates.length) {
-        img.src = candidates[candIdx];
-      }
-    };
     img.alt = meta.mythic_name || `unit-${meta.id}`;
     img.loading = 'lazy';
+    img.decoding = 'async';
     btn.appendChild(img);
 
     const lv = document.createElement('div');
     lv.className = 'overlayLv';
-    lv.textContent = (s.level === 0) ? '未' : String(s.level);
     btn.appendChild(lv);
 
-    if (s.treasure) {
-      const tr = document.createElement('div');
-      tr.className = 'overlayTreasure';
-      tr.textContent = '専';
-      btn.appendChild(tr);
-    }
+    const tr = document.createElement('div');
+    tr.className = 'overlayTreasure';
+    btn.appendChild(tr);
 
-    if (opts.disabled) {
-      btn.classList.add('unitTile--disabled');
-      btn.disabled = true;
-    }
+    btn._refs = { img, lv, tr };
 
+    applyTileView(btn, meta, s, opts);
     return btn;
   }
 
-  function renderMainGrid() {
+  function initMetaIndex() {
+    state.metaById = new Map();
+    for (const m of state.unitMeta) state.metaById.set(m.id, m);
+  }
+
+  function initMainGrid() {
     const grid = el('unitGrid');
     grid.innerHTML = '';
+    state.mainTileById = new Map();
+
     for (const meta of state.unitMeta) {
       const s = ensureUnitState(meta);
       sanitizeTreasure(meta, s);
       const tile = renderUnitTile(meta, s);
-      tile.addEventListener('click', () => {
-        cycleLevel(meta);
-        saveState();
-        renderMainGrid();
-        // Keep treasure modal in sync if open
-        if (el('treasureModal').getAttribute('aria-hidden') === 'false') {
-          renderTreasureGrid();
-        }
-      });
       grid.appendChild(tile);
+      state.mainTileById.set(meta.id, tile);
+    }
+
+    // Event delegation: one handler only
+    if (!grid._bound) {
+      grid.addEventListener('click', (e) => {
+        const tile = e.target.closest('.unitTile');
+        if (!tile || tile.disabled) return;
+        const id = Number(tile.dataset.uid);
+        const meta = state.metaById.get(id);
+        if (!meta) return;
+
+        const s = ensureUnitState(meta);
+        cycleLevel(meta);
+        sanitizeTreasure(meta, s);
+
+        // Update only this tile
+        applyTileView(tile, meta, s);
+
+        // Keep treasure modal tile in sync if open
+        if (el('treasureModal').getAttribute('aria-hidden') === 'false') {
+          const t = state.treasureTileById && state.treasureTileById.get(id);
+          if (t) applyTileView(t, meta, s, { disabled: !isTreasureAllowed(meta, s) });
+        }
+
+        markChanged();
+      });
+      grid._bound = true;
     }
   }
 
-  function renderTreasureGrid() {
+  function initTreasureGrid() {
     const grid = el('treasureGrid');
     grid.innerHTML = '';
+    state.treasureTileById = new Map();
+
     for (const meta of state.unitMeta) {
       const s = ensureUnitState(meta);
       sanitizeTreasure(meta, s);
-
       const allowed = isTreasureAllowed(meta, s);
-      const tile = renderUnitTile(meta, s, { disabled:false });
-      if (!allowed) {
-        tile.classList.add('unitTile--disabled');
-      }
+      const tile = renderUnitTile(meta, s, { disabled: !allowed });
+      grid.appendChild(tile);
+      state.treasureTileById.set(meta.id, tile);
+    }
+
+    if (!grid._bound) {
+      grid.addEventListener('click', (e) => {
+        const tile = e.target.closest('.unitTile');
+        if (!tile || tile.disabled) return;
+        const id = Number(tile.dataset.uid);
+        const meta = state.metaById.get(id);
+        if (!meta) return;
+
+        const s = ensureUnitState(meta);
+        // toggle treasure (modal is for treasure only)
+        if (!isTreasureAllowed(meta, s)) return;
+        s.treasure = !s.treasure;
+
+        // Update modal tile + main tile
+        applyTileView(tile, meta, s, { disabled:false });
+        const main = state.mainTileById.get(id);
+        if (main) applyTileView(main, meta, s);
+
+        markChanged();
+      });
+      grid._bound = true;
+    }
+  }
+
+  function refreshTreasureGridAll() {
+    if (!state.treasureTileById) return;
+    for (const meta of state.unitMeta) {
+      const s = ensureUnitState(meta);
+      sanitizeTreasure(meta, s);
+      const t = state.treasureTileById.get(meta.id);
+      if (t) applyTileView(t, meta, s, { disabled: !isTreasureAllowed(meta, s) });
+    }
+  }
 
       tile.addEventListener('click', () => {
         const cur = ensureUnitState(meta);
@@ -239,9 +322,9 @@ function toast(msg) {
           return;
         }
         cur.treasure = !cur.treasure;
-        saveState();
-        renderTreasureGrid();
-        renderMainGrid();
+        markChanged();
+        initTreasureGrid();
+        initMainGrid();
       });
       grid.appendChild(tile);
     }
@@ -272,7 +355,7 @@ function toast(msg) {
       i.addEventListener('change', () => {
         if (i.checked) {
           state.pay = i.value;
-          saveState();
+          markChanged();
         }
       });
     });
@@ -282,7 +365,7 @@ function toast(msg) {
       i.addEventListener('change', () => {
         if (i.checked) {
           state.vault = i.value;
-          saveState();
+          markChanged();
         }
       });
     });
@@ -290,7 +373,7 @@ function toast(msg) {
     // epic checkbox
     el('epicUnder15').addEventListener('change', (e) => {
       state.epicUnder15 = !!e.target.checked;
-      saveState();
+      markChanged();
     });
 
     // mode
@@ -298,7 +381,7 @@ function toast(msg) {
       i.addEventListener('change', () => {
         if (i.checked) {
           state.mode = i.value;
-          saveState();
+          markChanged();
           updatePurposeVisibility();
         }
       });
@@ -310,7 +393,7 @@ function toast(msg) {
         if (i.checked) {
           state.difficulty = i.value;
           // when difficulty changes, keep detail but show it
-          saveState();
+          markChanged();
           updatePurposeVisibility();
         }
       });
@@ -321,7 +404,7 @@ function toast(msg) {
       i.addEventListener('change', () => {
         if (i.checked) {
           state.detail = i.value;
-          saveState();
+          markChanged();
         }
       });
     });
@@ -357,7 +440,7 @@ function toast(msg) {
 
   }
 
-  function saveState() {
+  function saveStateImmediate() {
     const obj = {
       pay: state.pay,
       vault: state.vault,
@@ -368,7 +451,19 @@ function toast(msg) {
       units: Array.from(state.units.entries()).map(([id, s]) => [id, s]),
     };
     localStorage.setItem(LS_KEY, JSON.stringify(obj));
+  }
+
+  function scheduleSaveState() {
+    window.clearTimeout(scheduleSaveState._tm);
+    scheduleSaveState._tm = window.setTimeout(() => {
+      try { saveStateImmediate(); } catch (e) { /* ignore */ }
+    }, 450);
+  }
+
+  function markChanged() {
+    // summary is cheap; keep it up to date forスクショ用表示
     updateShotSummary();
+    scheduleSaveState();
   }
 
   function loadState() {
@@ -418,7 +513,10 @@ function toast(msg) {
     const m = el('treasureModal');
     m.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
-    renderTreasureGrid();
+
+    // Build once, then only refresh (fast)
+    if (!state.treasureTileById) initTreasureGrid();
+    refreshTreasureGridAll();
   }
 
   function closeModal() {
@@ -439,6 +537,8 @@ function toast(msg) {
     }
     state.unitMeta = list || FALLBACK_UNITS;
 
+    initMetaIndex();
+
     // Ensure map has entries so order stable
     for (const meta of state.unitMeta) {
       const s = ensureUnitState(meta);
@@ -457,7 +557,8 @@ function toast(msg) {
 
     applyStateToUI();
     updateShotSummary();
-    renderMainGrid();
+    initMainGrid();
+    initTreasureGrid();
   }
 
   window.addEventListener('DOMContentLoaded', boot, { once:true });
