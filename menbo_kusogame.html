@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>menbo_kusogame - 旅の書</title>
+  <link rel="stylesheet" href="./menbo_kusogame.css" />
+</head>
+<body>
+  <main class="app" role="main">
+    <header class="top">
+      <div class="brand">
+        <div class="title">旅の書</div>
+        <div id="sub" class="sub">―― 魔王へ至る道</div>
+      </div>
+      <div class="meta">
+        <div id="day" class="day">旅程: --</div>
+        <div id="cond" class="cond">状態: --</div>
+      </div>
+    </header>
+
+    <section class="panel">
+      <div id="sceneTitle" class="sceneTitle">…</div>
+      <div id="sceneBody" class="sceneBody">読み込み中…</div>
+    </section>
+
+    <section class="choices">
+      <div id="choices"></div>
+    </section>
+
+    <footer class="foot">
+      <button id="btnRestart" class="ghost" style="display:none;">新しい旅を始める</button>
+      <div class="note">※ 数値ステータスは表示されません。選択の結果だけが残ります。</div>
+    </footer>
+  </main>
+
+  <!-- User's existing Supabase config (window.LD_SUPABASE_URL / window.LD_SUPABASE_ANON_KEY) -->
+  <script src="./supabase_config.js"></script>
+
+  <!-- supabase-js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- App -->
+  <script src="./menbo_kusogame.js"></script>
+</body>
+</html>
