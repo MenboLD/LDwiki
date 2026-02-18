@@ -51,6 +51,16 @@ function toast(msg) {
     return (window.LD_SUPABASE_URL || 'https://teggcuiyqkbcvbhdntni.supabase.co').replace(/\/$/, '');
   }
 
+  function getLdRoot() {
+    // Works even if this page is placed under a versioned subfolder.
+    const p = location.pathname || '/';
+    const key = '/LDwiki/';
+    const idx = p.indexOf(key);
+    if (idx !== -1) return p.slice(0, idx + key.length);
+    // Fallback: current directory
+    return p.replace(/[^\/]*$/, '');
+  }
+
   function getStorageUrl(num) {
     // Spec: https://.../storage/v1/object/public/svg/●●●●.svg
     return `${getSupabaseBase()}/storage/v1/object/public/svg/${num}.svg`;
@@ -58,7 +68,8 @@ function toast(msg) {
 
   function getUnitImgCandidates(num) {
     // Prefer same-origin SVG on GitHub Pages: /LDwiki/svg/xxxx.svg
-    return [`svg/${num}.svg`, getStorageUrl(num)];
+    const base = getLdRoot();
+    return [`${base}svg/${num}.svg`, getStorageUrl(num)];
   }
 
 
