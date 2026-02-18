@@ -336,8 +336,8 @@ function toast(msg) {
     });
 
     // export
+
     el('btnExport').addEventListener('click', async () => {
-      // reset error box
       const errBox = el('exportErr');
       if (errBox) { errBox.hidden = true; errBox.textContent = ''; }
 
@@ -351,84 +351,109 @@ function toast(msg) {
 
       const node = el('capture');
       const out = el('exportOut');
-      if (out) { out.hidden = false; }
+      if (out) out.hidden = false;
+
+      const img = el('exportImg');
+      const link = el('exportLink');
+
+      // clear current image (avoid showing old result)
+      img.removeAttribute('src');
+
       toast('画像を生成中…');
 
-      try {
-        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-        const scale = isIOS ? 1.5 : 2;
+      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
 
+      const attempts = isIOS
+        ? [
+            { scale: 1.0, mime: 'image/jpeg', quality: 0.85, label: '通常' },
+            { scale: 0.75, mime: 'image/jpeg', quality: 0.80, label: '軽量' },
+          ]
+        : [
+            { scale: 2.0, mime: 'image/png', quality: 1, label: '通常' },
+          ];
+
+      async function renderToObjectUrl(opt) {
         const canvas = await window.html2canvas(node, {
           backgroundColor: '#0f1115',
-          scale,
+          scale: opt.scale,
           useCORS: true,
           imageTimeout: 20000,
           logging: false,
         });
 
-        // iOS(WebKit) sometimes fails to display large PNG blob URLs.
-        // Use JPEG for iOS to reduce memory footprint, with a fallback path.
-        const mime = isIOS ? 'image/jpeg' : 'image/png';
-        const quality = isIOS ? 0.92 : 1;
-
         const blob = await new Promise((resolve, reject) => {
           try {
             canvas.toBlob(
               (b) => (b ? resolve(b) : reject(new Error('toBlob failed'))),
-              mime,
-              quality
+              opt.mime,
+              opt.quality
             );
           } catch (e) {
             reject(e);
           }
         });
 
-        const url = URL.createObjectURL(blob);
-// cleanup previous
-        if (state._exportUrl) {
-          try { URL.revokeObjectURL(state._exportUrl); } catch {}
-        }
-        state._exportUrl = url;
+        return URL.createObjectURL(blob);
+      }
 
-        const out2 = el('exportOut');
-        const img = el('exportImg');
-        const link = el('exportLink');
+      async function setImgAndWait(url) {
+        return await new Promise((resolve) => {
+          let done = false;
 
-        img.onerror = () => {
-          showExportError(`画像の表示に失敗しました。
-端末のメモリ不足の可能性があります。難しければスクショでOKです。`);
-        };
+          img.onload = () => { done = true; resolve(true); };
+          img.onerror = () => { done = true; resolve(false); };
 
-        let displayed = false;
-        img.onload = () => { displayed = true; };
-        img.src = url;
-        link.href = url;
-        link.target = '_self'; // same tab, not blocked
+          img.src = url;
+          link.href = url;
+          link.target = '_self';
 
-        // Fallback: if blob URL doesn't render on iOS, try data URL (JPEG) after a short delay
-        if (isIOS) {
+          // WebKit sometimes doesn't fire onerror/onload reliably for blob URLs.
+          // Use a timeout + naturalWidth check.
           setTimeout(() => {
-            if (displayed) return;
-            try {
-              const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-              img.src = dataUrl;
-              link.href = dataUrl;
-            } catch (e) {
-              // ignore (tainted canvas etc.)
+            if (done) return;
+            resolve(img.naturalWidth > 0);
+          }, isIOS ? 2200 : 1200);
+        });
+      }
+
+      try {
+        for (let i = 0; i < attempts.length; i++) {
+          const opt = attempts[i];
+          if (i === 1) toast('iPhone向けに軽量版で再生成中…');
+
+          const url = await renderToObjectUrl(opt);
+          const ok = await setImgAndWait(url);
+
+          if (ok) {
+            // cleanup previous successful url
+            if (state._exportUrl) {
+              try { URL.revokeObjectURL(state._exportUrl); } catch {}
             }
-          }, 500);
+            state._exportUrl = url;
+
+            el('exportOut').hidden = false;
+            el('exportOut').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            toast('下に画像を表示しました（長押し→写真に保存）');
+            return;
+          }
+
+          // failed: revoke this attempt url and try next
+          try { URL.revokeObjectURL(url); } catch {}
         }
 
-        out2.hidden = false;
-        out2.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-        toast('下に画像を表示しました（長押し→写真に保存）');
+        showExportError(`画像を表示できませんでした（iPhone側のメモリ制限の可能性が高いです）
+対策：
+・不要なアプリを閉じてから再試行
+・ページを上に戻して、表示項目を減らしてから再試行
+・それでも無理ならスクショでもOKです`);
+        toast('画像の表示に失敗（スクショでもOK）');
       } catch (err) {
         console.error(err);
         showExportError(`画像生成に失敗しました。
-原因例：ユニット画像の読み込み制限（CORS）/ メモリ不足 など
+原因例：端末のメモリ不足 / 画像の読み込み制限（CORS） など
 ※うまくいかない場合は、表示中の画面をスクショでもOKです。`);
-        toast('画像生成に失敗（スクショでOK）');
+        toast('画像生成に失敗（スクショでもOK）');
       }
     });
   }
