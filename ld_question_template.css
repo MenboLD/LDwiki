@@ -405,7 +405,7 @@ body{
 
 /* --- screenshot mode --- */
 .shotSummary{
-  display:none;
+  display:none !important;
   padding:10px 12px;
   border:1px solid rgba(255,255,255,.10);
   border-radius:14px;
@@ -426,8 +426,6 @@ body{
   color: rgba(255,255,255,.65);
 }
 
-body.shotMode body:not(.shotMode) #shotSummary{ display:none !important; }
-body.shotMode #shotSummary{ display:block !important; }
 
 body.shotMode #capture .row,
 body.shotMode #capture .vaultBlock,
@@ -470,3 +468,5 @@ body.shotMode #shotHintBelow{ display:block; }
 /* In shot mode, hide any modal UI (e.g., treasure modal close button) */
 body.shotMode .modal{ display:none !important; }
 body.shotMode [data-close]{ display:none !important; }
+
+body.shotMode .shotSummary{ display:block !important; }
