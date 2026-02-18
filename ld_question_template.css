@@ -381,13 +381,11 @@ body{
   .overlayLv, .overlayTreasure{ font-size:13px; }
 }
 
-.exportActions{
   display:flex;
   gap:10px;
   align-items:center;
   margin: 0 0 10px;
 }
-.exportErr{
   margin: 0 0 10px;
   padding: 10px 12px;
   border-radius: 10px;
@@ -397,7 +395,6 @@ body{
   font-size: 12px;
   line-height: 1.4;
 }
-#exportImg{
   max-height: 60vh;
   width:100%;
   height:auto;
@@ -407,7 +404,6 @@ body{
 }
 
 /* --- fullscreen viewer (same tab, stable on iOS) --- */
-.fsViewer{
   position:fixed;
   inset:0;
   z-index:9999;
@@ -415,7 +411,6 @@ body{
   display:flex;
   flex-direction:column;
 }
-.fsViewer__bar{
   padding:10px 12px;
   border-bottom:1px solid rgba(255,255,255,.10);
   display:flex;
@@ -425,11 +420,9 @@ body{
   background:rgba(15,17,21,.95);
   backdrop-filter: blur(10px);
 }
-.fsViewer__title{
   font-weight:900;
   font-size:14px;
 }
-.fsViewer__body{
   flex:1;
   display:flex;
   align-items:center;
@@ -445,4 +438,39 @@ body{
   border-radius:12px;
   border:1px solid rgba(255,255,255,.10);
   background:#0f1115;
+}
+/* --- screenshot mode --- */
+.shotSummary{
+  display:none;
+  padding:10px 12px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:14px;
+  background:rgba(255,255,255,.04);
+  margin: 8px 0 10px;
+}
+.shotLine{
+  font-size:13px;
+  font-weight:800;
+  line-height:1.35;
+  letter-spacing:.01em;
+  color: rgba(255,255,255,.92);
+  margin-bottom:6px;
+}
+.shotLine:last-of-type{ margin-bottom:8px; }
+.shotHint{
+  font-size:11px;
+  color: rgba(255,255,255,.65);
+}
+
+body.shotMode #shotSummary{ display:block; }
+
+body.shotMode #capture .row,
+body.shotMode #capture .vaultBlock,
+body.shotMode #capture .block__title,
+body.shotMode #btnTreasure{
+  display:none !important;
+}
+
+body.shotMode #unitGrid{
+  margin-top: 6px;
 }

@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
   <meta name="format-detection" content="telephone=no" />
   <title>ラッキー傭兵団 質問テンプレート</title>
-
-  <!-- Optional: 画像として保存（PNG出力） -->
-  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-
   <link rel="stylesheet" href="ld_question_template.css" />
   <script defer src="supabase_config.js"></script>
   <script defer src="ld_question_template.js"></script>
@@ -17,7 +13,7 @@
   <header class="topbar">
     <div class="topbar__title">質問テンプレート</div>
     <div class="topbar__actions">
-      <button class="btn btn--ghost" id="btnExport" type="button">画像として保存</button>
+      <button class="btn btn--primary" id="btnShot" type="button">スクショ用表示</button>
       <button class="btn btn--ghost" id="btnReset" type="button">リセット</button>
     </div>
   </header>
@@ -25,6 +21,12 @@
   <main class="page">
     <section class="block" id="capture">
       <div class="block__title">現在のユーザー状況</div>
+
+      <div class="shotSummary" id="shotSummary" aria-label="スクショ用サマリー">
+        <div class="shotLine" id="shotLine1"></div>
+        <div class="shotLine" id="shotLine2"></div>
+        <div class="shotHint">※この表示のままスクリーンショットを撮って投稿してください</div>
+      </div>
 
       <div class="row">
         <div class="label">課金度</div>
@@ -104,23 +106,10 @@
 <div class="unitGrid" id="unitGrid" aria-label="ユニット一覧"></div>
     </section>
 
-    <section class="block" id="exportOut" hidden>
-      <div class="block__title">作成した画像</div>
-      <div class="note" style="margin-bottom:10px;">
-        画像を長押し →「写真に保存」でカメラロールに保存できます。<br/>
-        もし表示が重い場合は、下の「全画面で開く」を押してから保存してください。
-      </div>
-      <div class="exportActions">
-        <a class="btn btn--ghost" id="exportLink" href="#" rel="noopener">全画面で開く</a>
-      </div>
-      <div class="exportErr" id="exportErr" hidden></div>
-      <img id="exportImg" alt="exported image" />
-    </section>
-
-    <section class="block block--note">
+<section class="block block--note">
       <div class="note">
         このページの入力内容は自動で端末に保存されます。<br/>
-        画像保存がうまくいかない場合は、表示中の画面をスクショしてください。
+        スクショ用表示に切り替えて、表示中の画面をスクリーンショットで撮って投稿してください。
       </div>
     </section>
   </main>
@@ -142,13 +131,7 @@
 
   <div class="toast" id="toast" aria-live="polite"></div>
 
-  <div class="fsViewer" id="fsViewer" hidden>
-    <div class="fsViewer__bar">
-      <div class="fsViewer__title">全画面プレビュー</div>
       <button class="btn btn--ghost" id="fsClose" type="button">閉じる</button>
-    </div>
-    <div class="fsViewer__body">
-      <img id="fsImg" alt="exported image" />
     </div>
   </div>
 

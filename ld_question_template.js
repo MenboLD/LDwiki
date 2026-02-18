@@ -20,27 +20,23 @@
     unitMeta: [], // fetched list
   };
 
-  function showExportError(msg) {
-    const out = el('exportOut');
-    const err = el('exportErr');
-    out.hidden = false;
-    err.hidden = false;
-    err.textContent = msg;
-    out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  function updateShotSummary() {
+    const l1 = el('shotLine1');
+    const l2 = el('shotLine2');
+    if (!l1 || !l2) return;
+
+    const epicText = state.epicUnder15 ? 'Lv15未満のエピックがいる' : 'Lv15未満のエピックはいない';
+    l1.textContent = `課金度 ${state.pay}　金庫Lv ${state.vault}　${epicText}`;
+    l2.textContent = `対象モード ${state.mode}　難易度 ${state.difficulty}　詳細 ${state.detail}`;
   }
 
-
-  function openFsViewer(dataUrl) {
-    const fs = el('fsViewer');
-    const img = el('fsImg');
-    if (!fs || !img) return;
-    img.src = dataUrl;
-    fs.hidden = false;
-  }
-  function closeFsViewer() {
-    const fs = el('fsViewer');
-    if (!fs) return;
-    fs.hidden = true;
+  function setShotMode(on) {
+    document.body.classList.toggle('shotMode', !!on);
+    const btn = el('btnShot');
+    if (btn) btn.textContent = on ? '入力に戻る' : 'スクショ用表示';
+    updateShotSummary();
+    if (on) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
 function toast(msg) {
@@ -349,102 +345,14 @@ function toast(msg) {
       window.location.reload();
     });
 
-    // export
-    el('btnExport').addEventListener('click', async () => {
-      const errBox = el('exportErr');
-      if (errBox) { errBox.hidden = true; errBox.textContent = ''; }
-
-      const out = el('exportOut');
-      if (out) out.hidden = false;
-
-      if (!window.html2canvas) {
-        showExportError(`画像保存機能（html2canvas）の読み込みに失敗しました。
-通信環境の良い状態で開き直してください。
-※それでも無理なら、表示中の画面をスクショでもOKです。`);
-        toast('画像保存機能が読み込めませんでした');
-        return;
-      }
-
-      const node = el('capture');
-      toast('画像を生成中…');
-
-      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-
-      try {
-        const rect = node.getBoundingClientRect();
-        const baseW = Math.max(1, Math.round(rect.width));
-        const baseH = Math.max(1, Math.round(rect.height));
-
-        const MAX_DIM = isIOS ? 4096 : 16384;
-        const maxSide = Math.max(baseW, baseH);
-        const renderScale = Math.min(isIOS ? 1.2 : 2.0, MAX_DIM / maxSide);
-
-        const srcCanvas = await window.html2canvas(node, {
-          backgroundColor: '#0f1115',
-          scale: renderScale,
-          useCORS: true,
-          imageTimeout: 20000,
-          logging: false,
-        });
-
-        // ---- Final output: fixed 770x1080 (contain) ----
-        const OUT_W = 770;
-        const OUT_H = 1080;
-
-        const outCanvas = document.createElement('canvas');
-        outCanvas.width = OUT_W;
-        outCanvas.height = OUT_H;
-
-        const ctx = outCanvas.getContext('2d');
-        ctx.fillStyle = '#0f1115';
-        ctx.fillRect(0, 0, OUT_W, OUT_H);
-
-        const sW = srcCanvas.width;
-        const sH = srcCanvas.height;
-
-        const fit = Math.min(OUT_W / sW, OUT_H / sH);
-        const dW = Math.round(sW * fit);
-        const dH = Math.round(sH * fit);
-        const dx = Math.round((OUT_W - dW) / 2);
-        const dy = Math.round((OUT_H - dH) / 2);
-
-        ctx.drawImage(srcCanvas, dx, dy, dW, dH);
-
-        // JPEG is smaller and stable on iOS
-        const dataUrl = outCanvas.toDataURL('image/jpeg', 0.92);
-
-        const img = el('exportImg');
-        const link = el('exportLink');
-
-        img.src = dataUrl;
-
-        link.href = '#';
-        link.target = '_self';
-        link.onclick = (e) => {
-          e.preventDefault();
-          openFsViewer(dataUrl);
-        };
-
-        out.hidden = false;
-        out.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-        toast('下に画像を表示しました（長押し→写真に保存）');
-      } catch (err) {
-        console.error(err);
-        showExportError(`画像生成に失敗しました。
-原因例：端末のメモリ不足 / SVG描画の相性 / 通信状態 など
-※うまくいかない場合は、表示中の画面をスクショでもOKです。`);
-        toast('画像生成に失敗（スクショでOK）');
-      }
-    });
-
-
-    // fullscreen viewer close
-    {
-      const c = document.getElementById('fsClose');
-      if (c) c.addEventListener('click', closeFsViewer);
-      const fs = document.getElementById('fsViewer');
-      if (fs) fs.addEventListener('click', (e) => { if (e.target === fs) closeFsViewer(); });
+    // screenshot mode toggle (ユーザーは端末のスクショで投稿)
+    const btnShot = el('btnShot');
+    if (btnShot) {
+      btnShot.addEventListener('click', () => {
+        const on = !document.body.classList.contains('shotMode');
+        setShotMode(on);
+        toast(on ? 'スクショ用表示に切り替えました' : '入力表示に戻しました');
+      });
     }
 
   }
@@ -460,6 +368,7 @@ function toast(msg) {
       units: Array.from(state.units.entries()).map(([id, s]) => [id, s]),
     };
     localStorage.setItem(LS_KEY, JSON.stringify(obj));
+    updateShotSummary();
   }
 
   function loadState() {
@@ -547,6 +456,7 @@ function toast(msg) {
     }
 
     applyStateToUI();
+    updateShotSummary();
     renderMainGrid();
   }
 
