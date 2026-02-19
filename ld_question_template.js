@@ -2,6 +2,62 @@
 (() => {
   'use strict';
 
+
+  // --- Tap feedback: blink the tapped button/tile ---
+  function flashTap(node) {
+    try {
+      if (!node) return;
+      if (node.disabled) return;
+      if (node.classList && node.classList.contains('unitTile--disabled')) return;
+      node.classList.remove('tapFlash');
+      // restart animation
+      requestAnimationFrame(() => node.classList.add('tapFlash'));
+      window.setTimeout(() => { try { node.classList.remove('tapFlash'); } catch (e) {} }, 260);
+    } catch (e) { /* ignore */ }
+  }
+
+  // Faster taps on iOS: handle pointerup (avoid click delay), and ignore the subsequent click.
+  function bindFastTileTap(grid, onTap) {
+    if (!grid || grid._fastTapBound) return;
+    let lastFast = 0;
+
+    const getTile = (e) => {
+      const t = e.target && e.target.closest ? e.target.closest('.unitTile') : null;
+      if (!t) return null;
+      if (t.disabled) return null;
+      if (t.classList && t.classList.contains('unitTile--disabled')) return null;
+      return t;
+    };
+
+    grid.addEventListener('pointerup', (e) => {
+      const tile = getTile(e);
+      if (!tile) return;
+      lastFast = Date.now();
+      try { e.preventDefault(); } catch (err) {}
+      onTap(tile, e);
+    }, { passive: false });
+
+    grid.addEventListener('click', (e) => {
+      if (Date.now() - lastFast < 450) return;
+      const tile = getTile(e);
+      if (!tile) return;
+      onTap(tile, e);
+    });
+
+    grid._fastTapBound = true;
+  }
+
+  // global press feedback (runs even before boot)
+  if (!window.__ldqtTapFlashBound) {
+    document.addEventListener('pointerdown', (e) => {
+      const node = e.target && e.target.closest ? e.target.closest('.btn, .unitTile') : null;
+      if (!node) return;
+      flashTap(node);
+    }, { passive: true });
+    window.__ldqtTapFlashBound = true;
+  }
+
+
   // Fallback list from the attached spec sheet.
   const FALLBACK_UNITS = [{"id": 1, "mythic_num": 3004, "mythic_name": "重力弾", "immortal_num": 13004, "immortal_name": "スーパー重力弾"}, {"id": 2, "mythic_num": 3007, "mythic_name": "忍者", "immortal_num": 13007, "immortal_name": "鬼神忍者"}, {"id": 3, "mythic_num": 4001, "mythic_name": "オークシャーマン", "immortal_num": null, "immortal_name": ""}, {"id": 4, "mythic_num": 4002, "mythic_name": "パルス発生器", "immortal_num": 14002, "immortal_name": "ドクターパルス"}, {"id": 5, "mythic_num": 4006, "mythic_name": "猫の魔法使い", "immortal_num": null, "immortal_name": ""}, {"id": 6, "mythic_num": 5001, "mythic_name": "バンバ", "immortal_num": 15001, "immortal_name": "原始バンバ"}, {"id": 7, "mythic_num": 5002, "mythic_name": "コルディ", "immortal_num": 15002, "immortal_name": "女王コルディ"}, {"id": 8, "mythic_num": 5003, "mythic_name": "ランスロット", "immortal_num": null, "immortal_name": ""}, {"id": 9, "mythic_num": 5004, "mythic_name": "アイアンニャン", "immortal_num": 15004, "immortal_name": "アイアムニャン"}, {"id": 10, "mythic_num": 5005, "mythic_name": "ブロッブ", "immortal_num": null, "immortal_name": ""}, {"id": 11, "mythic_num": 5006, "mythic_name": "ドラゴン", "immortal_num": 15006, "immortal_name": "魔王ドラゴン"}, {"id": 12, "mythic_num": 5007, "mythic_name": "モノポリーマン", "immortal_num": null, "immortal_name": ""}, {"id": 13, "mythic_num": 5008, "mythic_name": "ママ", "immortal_num": 15008, "immortal_name": "グランドママ"}, {"id": 14, "mythic_num": 5009, "mythic_name": "カエルの王様", "immortal_num": 15009, "immortal_name": "死神カエル"}, {"id": 15, "mythic_num": 5010, "mythic_name": "バットマン", "immortal_num": 15010, "immortal_name": "エースバットマン"}, {"id": 16, "mythic_num": 5011, "mythic_name": "ヴェイン", "immortal_num": 15011, "immortal_name": "トップヴェイン"}, {"id": 17, "mythic_num": 5012, "mythic_name": "インディ", "immortal_num": null, "immortal_name": ""}, {"id": 18, "mythic_num": 5013, "mythic_name": "ワット", "immortal_num": null, "immortal_name": ""}, {"id": 19, "mythic_num": 5014, "mythic_name": "タール", "immortal_num": null, "immortal_name": ""}, {"id": 20, "mythic_num": 5015, "mythic_name": "ロケッチュー", "immortal_num": null, "immortal_name": ""}, {"id": 21, "mythic_num": 5016, "mythic_name": "ウチ", "immortal_num": null, "immortal_name": ""}, {"id": 22, "mythic_num": 5017, "mythic_name": "ビリ", "immortal_num": null, "immortal_name": ""}, {"id": 23, "mythic_num": 5018, "mythic_name": "マスタークン", "immortal_num": null, "immortal_name": ""}, {"id": 24, "mythic_num": 5019, "mythic_name": "チョナ", "immortal_num": null, "immortal_name": ""}, {"id": 25, "mythic_num": 5020, "mythic_name": "ペンギン楽師", "immortal_num": 15020, "immortal_name": "ノイズペンギンキング"}, {"id": 26, "mythic_num": 5021, "mythic_name": "ヘイリー", "immortal_num": 15021, "immortal_name": "覚醒ヘイリー"}, {"id": 27, "mythic_num": 5022, "mythic_name": "アト", "immortal_num": 15022, "immortal_name": "時空アト"}, {"id": 28, "mythic_num": 5023, "mythic_name": "ロカ", "immortal_num": 15023, "immortal_name": "キャプテン・ロカ"}, {"id": 29, "mythic_num": 5024, "mythic_name": "選鳥師", "immortal_num": 15024, "immortal_name": "ボス選鳥師"}, {"id": 30, "mythic_num": 5025, "mythic_name": "チャド", "immortal_num": 15025, "immortal_name": "ギガチャド"}];
 
@@ -299,9 +355,8 @@ function toast(msg) {
     }
 
     if (!grid._bound) {
-      grid.addEventListener('click', (e) => {
-        const tile = e.target.closest('.unitTile');
-        if (!tile || tile.disabled) return;
+      bindFastTileTap(grid, (tile) => {
+        flashTap(tile);
         const id = Number(tile.dataset.uid);
         const meta = state.metaById.get(id);
         if (!meta) return;
@@ -311,7 +366,7 @@ function toast(msg) {
 
         applyTileView(tile, meta, s);
 
-        // if modal open, update corresponding modal tile (allowed/disabled may change)
+        // if treasure modal open, update corresponding modal tile (allowed/disabled may change)
         if (el('treasureModal').getAttribute('aria-hidden') === 'false') {
           const t = state.treasureTileById && state.treasureTileById.get(id);
           if (t) applyTileView(t, meta, s, { disabled: !isTreasureAllowed(meta, s) });
@@ -337,9 +392,8 @@ function toast(msg) {
     }
 
     if (!grid._bound) {
-      grid.addEventListener('click', (e) => {
-        const tile = e.target.closest('.unitTile');
-        if (!tile || tile.disabled) return;
+      bindFastTileTap(grid, (tile) => {
+        flashTap(tile);
         const id = Number(tile.dataset.uid);
         const meta = state.metaById.get(id);
         if (!meta) return;
@@ -643,11 +697,8 @@ window.clearTimeout(saveState._tm);
     }
 
     if (!grid._bound) {
-      grid.addEventListener('click', (e) => {
-        const tile = e.target && e.target.closest && e.target.closest('.unitTile');
-        if (!tile) return;
-        if (tile.classList.contains('unitTile--disabled')) return;
-
+      bindFastTileTap(grid, (tile) => {
+        flashTap(tile);
         const uid = Number(tile.dataset.uid);
         const meta = state.metaById.get(uid);
         if (!meta) return;

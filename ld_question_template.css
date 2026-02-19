@@ -511,3 +511,25 @@ body.shotMode #unitActions{ display:none !important; }
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* --- Tap feedback (blink) --- */
+@keyframes tapBlink {
+  0%   { transform: translateZ(0) scale(1); filter: brightness(1); opacity: 1; }
+  45%  { transform: translateZ(0) scale(0.98); filter: brightness(1.25); opacity: 0.92; }
+  100% { transform: translateZ(0) scale(1); filter: brightness(1); opacity: 1; }
+}
+.tapFlash{
+  animation: tapBlink 220ms ease-out 1;
+}
+.btn.tapFlash{
+  box-shadow: 0 0 0 2px rgba(120, 255, 210, .45), 0 0 0 6px rgba(120, 255, 210, .12);
+}
+.unitTile.tapFlash{
+  box-shadow: 0 0 0 2px rgba(120, 255, 210, .38), 0 0 0 7px rgba(120, 255, 210, .10);
+}
+
+/* reduce perceived tap delay on mobile */
+.btn, .unitTile{
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
