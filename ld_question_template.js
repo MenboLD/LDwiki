@@ -66,6 +66,7 @@
 
     // If treasure modal is open, close it to keep shot mode clean.
     try { closeModal(); } catch (e) {}
+    try { closeLevelModal(); } catch (e) {}
 
     document.body.classList.toggle('shotMode', enable);
 
@@ -249,7 +250,7 @@ function toast(msg) {
       setImgByNum(refs.img, num);
     }
 
-    refs.lv.textContent = (s.level === 0) ? '未' : String(s.level);
+    refs.lv.textContent = (s.level === 0) ? '' : String(s.level);
     refs.tr.textContent = s.treasure ? '専' : '';
   }
 
@@ -455,6 +456,40 @@ function toast(msg) {
       openModal();
     });
 
+
+    // Level preset buttons (open modal)
+    const bindPreset = (id, preset) => {
+      const b = el(id);
+      if (!b) return;
+      b.addEventListener('click', () => openLevelModal(preset));
+    };
+
+    bindPreset('btnSetUnowned', { kind:'unowned', title:'未所持を指定' });
+
+    bindPreset('btnSetMythic6',  { kind:'mythic', level:6,  title:'神話Lv.6を指定' });
+    bindPreset('btnSetMythic12', { kind:'mythic', level:12, title:'神話Lv.12を指定' });
+    bindPreset('btnSetMythic15', { kind:'mythic', level:15, title:'神話Lv.15を指定' });
+
+    bindPreset('btnSetImmortal6',  { kind:'immortal', level:6,  title:'不滅Lv.6を指定' });
+    bindPreset('btnSetImmortal12', { kind:'immortal', level:12, title:'不滅Lv.12を指定' });
+    bindPreset('btnSetImmortal15', { kind:'immortal', level:15, title:'不滅Lv.15を指定' });
+
+    // Level modal buttons
+    const bAll = el('btnLevelAll');
+    if (bAll) bAll.addEventListener('click', applyPresetToAll);
+
+    const bUndo = el('btnLevelUndo');
+    if (bUndo) bUndo.addEventListener('click', undoLevelOnce);
+
+    const bClose = el('btnLevelClose');
+    if (bClose) bClose.addEventListener('click', closeLevelModal);
+
+    // close by backdrop
+    document.addEventListener('click', (e) => {
+      const t = e.target;
+      if (t && t.matches && t.matches('[data-close="levelModal"]')) closeLevelModal();
+    });
+
     el('treasureModal').addEventListener('click', (e) => {
       const t = e.target;
       if (t && t.dataset && t.dataset.close === '1') {
@@ -546,7 +581,199 @@ function toast(msg) {
     updatePurposeVisibility();
   }
 
-  function openModal() {
+  
+  // --- Level preset modal (bulk set) ---
+  function openLevelModal(preset) {
+    state.levelPreset = preset;
+    state.levelUndo = [];
+    const title = el('levelModalTitle');
+    if (title) title.textContent = preset.title || 'レベル指定';
+    const m = el('levelModal');
+    if (!m) return;
+    m.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    if (!state.levelTileById) initLevelGrid();
+    refreshLevelGridAll();
+    updateLevelUndoBtn();
+  }
+
+  function closeLevelModal() {
+    const m = el('levelModal');
+    if (!m) return;
+    m.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  function updateLevelUndoBtn() {
+    const b = el('btnLevelUndo');
+    if (!b) return;
+    b.disabled = !(state.levelUndo && state.levelUndo.length);
+  }
+
+  function initLevelGrid() {
+    const grid = el('levelGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    state.levelTileById = new Map();
+
+    for (const meta of state.unitMeta) {
+      const s = ensureUnitState(meta);
+      sanitizeTreasure(meta, s);
+      const tile = renderUnitTile(meta, s);
+      grid.appendChild(tile);
+      state.levelTileById.set(meta.id, tile);
+    }
+
+    if (!grid._bound) {
+      grid.addEventListener('click', (e) => {
+        const tile = e.target && e.target.closest && e.target.closest('.unitTile');
+        if (!tile) return;
+        if (tile.classList.contains('unitTile--disabled')) return;
+
+        const uid = Number(tile.dataset.uid);
+        const meta = state.metaById.get(uid);
+        if (!meta) return;
+
+        const changes = applyPresetToUnit(meta);
+        if (changes && changes.length) {
+          state.levelUndo.push(changes);
+          updateLevelUndoBtn();
+          refreshAllForUnit(meta.id);
+          refreshLevelGridAll();
+          saveState();
+        }
+      });
+      grid._bound = true;
+    }
+  }
+
+  function presetAllows(meta) {
+    const p = state.levelPreset;
+    if (!p) return true;
+    if (p.kind === 'immortal' && !unitHasImmortal(meta)) return false;
+    return true;
+  }
+
+  function applyPresetToUnit(meta) {
+    const p = state.levelPreset;
+    if (!p) return [];
+    if (!presetAllows(meta)) return [];
+
+    const s = ensureUnitState(meta);
+    const prev = { level: s.level, form: s.form, treasure: !!s.treasure };
+
+    if (p.kind === 'unowned') {
+      s.form = 'mythic';
+      s.level = 0;
+      s.treasure = false;
+    } else if (p.kind === 'mythic') {
+      s.form = 'mythic';
+      s.level = p.level;
+    } else if (p.kind === 'immortal') {
+      s.form = 'immortal';
+      s.level = p.level;
+    }
+    sanitizeTreasure(meta, s);
+
+    if (prev.level === s.level && prev.form === s.form && prev.treasure === !!s.treasure) return [];
+    return [{ id: meta.id, prev }];
+  }
+
+  function applyPresetToAll() {
+    const p = state.levelPreset;
+    if (!p) return;
+    const changes = [];
+    for (const meta of state.unitMeta) {
+      if (!presetAllows(meta)) continue;
+      const s = ensureUnitState(meta);
+      const prev = { level: s.level, form: s.form, treasure: !!s.treasure };
+
+      if (p.kind === 'unowned') {
+        s.form = 'mythic';
+        s.level = 0;
+        s.treasure = false;
+      } else if (p.kind === 'mythic') {
+        s.form = 'mythic';
+        s.level = p.level;
+      } else if (p.kind === 'immortal') {
+        s.form = 'immortal';
+        s.level = p.level;
+      }
+      sanitizeTreasure(meta, s);
+
+      if (prev.level !== s.level || prev.form !== s.form || prev.treasure !== !!s.treasure) {
+        changes.push({ id: meta.id, prev });
+      }
+    }
+    if (changes.length) {
+      state.levelUndo.push(changes);
+      updateLevelUndoBtn();
+      refreshAllTiles();
+      refreshLevelGridAll();
+      refreshTreasureGridAll();
+      saveState();
+    }
+  }
+
+  function undoLevelOnce() {
+    if (!state.levelUndo || !state.levelUndo.length) return;
+    const batch = state.levelUndo.pop();
+    for (const ch of batch) {
+      const meta = state.metaById.get(ch.id);
+      if (!meta) continue;
+      const s = ensureUnitState(meta);
+      s.level = ch.prev.level;
+      s.form = ch.prev.form;
+      s.treasure = !!ch.prev.treasure;
+      sanitizeTreasure(meta, s);
+    }
+    updateLevelUndoBtn();
+    refreshAllTiles();
+    refreshLevelGridAll();
+    refreshTreasureGridAll();
+    saveState();
+  }
+
+  function refreshLevelGridAll() {
+    if (!state.levelTileById) return;
+    for (const meta of state.unitMeta) {
+      const s = ensureUnitState(meta);
+      sanitizeTreasure(meta, s);
+      const t = state.levelTileById.get(meta.id);
+      if (!t) continue;
+      const disabled = !presetAllows(meta);
+      applyTileView(t, meta, s, { disabled });
+    }
+  }
+
+  function refreshAllForUnit(uid) {
+    const meta = state.metaById.get(uid);
+    if (!meta) return;
+    const s = ensureUnitState(meta);
+    sanitizeTreasure(meta, s);
+
+    const mt = state.mainTileById && state.mainTileById.get(uid);
+    if (mt) applyTileView(mt, meta, s);
+
+    const tt = state.treasureTileById && state.treasureTileById.get(uid);
+    if (tt) applyTileView(tt, meta, s, { disabled: !isTreasureAllowed(meta, s) });
+
+    const lt = state.levelTileById && state.levelTileById.get(uid);
+    if (lt) applyTileView(lt, meta, s, { disabled: !presetAllows(meta) });
+  }
+
+  function refreshAllTiles() {
+    if (!state.mainTileById) return;
+    for (const meta of state.unitMeta) {
+      const s = ensureUnitState(meta);
+      sanitizeTreasure(meta, s);
+      const t = state.mainTileById.get(meta.id);
+      if (t) applyTileView(t, meta, s);
+    }
+  }
+
+function openModal() {
     const m = el('treasureModal');
     m.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';

@@ -470,3 +470,44 @@ body.shotMode .modal{ display:none !important; }
 body.shotMode [data-close]{ display:none !important; }
 
 body.shotMode .shotSummary{ display:block !important; }
+
+/* --- Unit preset action bar --- */
+.unitActions{
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.unitActions__row{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.unitActions__label{
+  color: rgba(235, 245, 255, .75);
+  font-weight: 800;
+  font-size: 12px;
+  min-width: 44px;
+}
+.btn--chip{
+  padding: 8px 12px;
+  border-radius: 999px;
+}
+.unitActions__row--bottom{
+  margin-top: 2px;
+}
+body.shotMode #unitActions{ display:none !important; }
+
+/* modal footer left actions */
+.modal__footer--between{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.modal__actions{
+  display:flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

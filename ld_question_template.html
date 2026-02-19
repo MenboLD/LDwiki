@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
   <meta name="format-detection" content="telephone=no" />
   <title>ラッキー傭兵団 質問テンプレート</title>
-  <link rel="stylesheet" href="ld_question_template.css?v1_31_20260218" />
+  <link rel="stylesheet" href="ld_question_template.css?v1_33_20260219" />
   <script defer src="supabase_config.js"></script>
-  <script defer src="ld_question_template.js?v1_31_20260218"></script>
+  <script defer src="ld_question_template.js?v1_33_20260219"></script>
 </head>
 <body>
   <header class="topbar">
@@ -103,9 +103,27 @@
 
       <div class="row row--between">
         <div class="block__title block__title--inline">ユニット</div>
-        <button class="btn btn--primary" id="btnTreasure" type="button">財宝の選択</button>
-      </div>
+</div>
 <div class="unitGrid" id="unitGrid" aria-label="ユニット一覧"></div>
+      <div class="unitActions" id="unitActions" aria-label="レベル・財宝の一括設定">
+        <div class="unitActions__row">
+          <div class="unitActions__label">神話：</div>
+          <button class="btn btn--chip" id="btnSetMythic6" type="button">Lv6</button>
+          <button class="btn btn--chip" id="btnSetMythic12" type="button">Lv12</button>
+          <button class="btn btn--chip" id="btnSetMythic15" type="button">Lv15</button>
+        </div>
+        <div class="unitActions__row">
+          <div class="unitActions__label">不滅：</div>
+          <button class="btn btn--chip" id="btnSetImmortal6" type="button">Lv6</button>
+          <button class="btn btn--chip" id="btnSetImmortal12" type="button">Lv12</button>
+          <button class="btn btn--chip" id="btnSetImmortal15" type="button">Lv15</button>
+        </div>
+        <div class="unitActions__row unitActions__row--bottom">
+          <button class="btn btn--ghost" id="btnSetUnowned" type="button">未所持に変更</button>
+          <button class="btn btn--primary" id="btnTreasure" type="button">財宝の選択</button>
+        </div>
+      </div>
+
       <div class="shotHint shotHint--below" id="shotHintBelow">※この表示のままスクリーンショットを撮って投稿してください</div>
     </section>
 
@@ -132,7 +150,28 @@
     </div>
   </div>
 
-  <div class="toast" id="toast" aria-live="polite"></div>
+  
+  <!-- Level Preset Modal -->
+  <div class="modal" id="levelModal" aria-hidden="true">
+    <div class="modal__backdrop" data-close="levelModal"></div>
+    <div class="modal__panel">
+      <div class="modal__header">
+        <div class="modal__title" id="levelModalTitle">レベル指定</div>
+      </div>
+      <div class="modal__body">
+        <div class="unitGrid unitGrid--modal" id="levelGrid" aria-label="レベル指定ユニット一覧"></div>
+      </div>
+      <div class="modal__footer modal__footer--between">
+        <div class="modal__actions">
+          <button class="btn btn--ghost" id="btnLevelAll" type="button">すべて選択</button>
+          <button class="btn btn--ghost" id="btnLevelUndo" type="button" disabled>１つ戻す</button>
+        </div>
+        <button class="btn" id="btnLevelClose" type="button">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+<div class="toast" id="toast" aria-live="polite"></div>
 </div>
   </div>
 
