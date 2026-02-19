@@ -348,8 +348,14 @@ function toast(msg) {
         sanitizeTreasure(meta, s);
         if (!isTreasureAllowed(meta, s)) return;
 
+        const prevTreasure = !!s.treasure;
         s.treasure = !s.treasure;
         sanitizeTreasure(meta, s);
+
+        // record undo (single change)
+        state.treasureUndo = state.treasureUndo || [];
+        state.treasureUndo.push([{ id: meta.id, prev: prevTreasure }]);
+        updateTreasureUndoBtn();
 
         // Update both tiles
         applyTileView(tile, meta, s, { disabled: !isTreasureAllowed(meta, s) });
@@ -457,6 +463,15 @@ function toast(msg) {
     });
 
 
+
+    // Treasure modal bulk buttons
+    const tAll = el('btnTreasureAll');
+    if (tAll) tAll.addEventListener('click', applyTreasureToAll);
+    const tUndo = el('btnTreasureUndo');
+    if (tUndo) tUndo.addEventListener('click', undoTreasureOnce);
+    const tClose = el('btnTreasureClose');
+    if (tClose) tClose.addEventListener('click', closeModal);
+
     // Level preset buttons (open modal)
     const bindPreset = (id, preset) => {
       const b = el(id);
@@ -530,9 +545,11 @@ function toast(msg) {
   }
 
   function saveState() {
-    // Update shot summary immediately (lightweight)
-    updateShotSummary();
-    window.clearTimeout(saveState._tm);
+    // Update shot summary only when screenshot mode is active
+    try {
+      if (document.body && document.body.classList.contains('shotMode')) updateShotSummary();
+    } catch (e) { /* ignore */ }
+window.clearTimeout(saveState._tm);
     saveState._tm = window.setTimeout(() => {
       try { saveStateImmediate(); } catch (e) { /* ignore */ }
     }, 450);
@@ -640,7 +657,6 @@ function toast(msg) {
           state.levelUndo.push(changes);
           updateLevelUndoBtn();
           refreshAllForUnit(meta.id);
-          refreshLevelGridAll();
           saveState();
         }
       });
@@ -773,7 +789,56 @@ function toast(msg) {
     }
   }
 
+
+  // --- Treasure modal bulk buttons ---
+  function updateTreasureUndoBtn() {
+    const b = el('btnTreasureUndo');
+    if (!b) return;
+    b.disabled = !(state.treasureUndo && state.treasureUndo.length);
+  }
+
+  function applyTreasureToAll() {
+    const changes = [];
+    for (const meta of state.unitMeta) {
+      const s = ensureUnitState(meta);
+      sanitizeTreasure(meta, s);
+      const allow = isTreasureAllowed(meta, s);
+      const prev = !!s.treasure;
+      const next = allow ? true : false; // enable all allowed, force off others
+      if (prev !== next) {
+        changes.push({ id: meta.id, prev });
+        s.treasure = next;
+      }
+      sanitizeTreasure(meta, s);
+    }
+    if (changes.length) {
+      state.treasureUndo.push(changes);
+      updateTreasureUndoBtn();
+      refreshTreasureGridAll();
+      refreshAllTiles();
+      saveState();
+    }
+  }
+
+  function undoTreasureOnce() {
+    if (!state.treasureUndo || !state.treasureUndo.length) return;
+    const batch = state.treasureUndo.pop();
+    for (const ch of batch) {
+      const meta = state.metaById.get(ch.id);
+      if (!meta) continue;
+      const s = ensureUnitState(meta);
+      s.treasure = !!ch.prev;
+      sanitizeTreasure(meta, s);
+    }
+    updateTreasureUndoBtn();
+    refreshTreasureGridAll();
+    refreshAllTiles();
+    saveState();
+  }
+
 function openModal() {
+    state.treasureUndo = [];
+    updateTreasureUndoBtn();
     const m = el('treasureModal');
     m.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';

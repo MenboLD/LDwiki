@@ -488,7 +488,7 @@ body.shotMode .shotSummary{ display:block !important; }
   color: rgba(235, 245, 255, .75);
   font-weight: 800;
   font-size: 12px;
-  min-width: 44px;
+  min-width: 132px;
 }
 .btn--chip{
   padding: 8px 12px;
