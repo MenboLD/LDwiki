@@ -292,8 +292,10 @@ function toast(msg) {
     const refs = btn._refs;
     const isUnowned = s.level === 0;
     const isImmortal = s.form === 'immortal' && s.level !== 0;
+    const isMythic = (s.form === 'mythic' && s.level !== 0);
 
     btn.classList.toggle('unitTile--immortal', isImmortal);
+    btn.classList.toggle('unitTile--mythic', isMythic);
     btn.classList.toggle('unitTile--unowned', isUnowned);
 
     const disabled = !!opts.disabled;
