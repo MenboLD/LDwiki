@@ -270,3 +270,32 @@ code{ font-family: var(--mono); }
 
 .toc-sub li{ margin: 6px 0; }
 .toc-sub a{ color: var(--accent); }
+
+
+/* data table (dark) */
+.table-wrap{
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.data-table{
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 13px;
+}
+.data-table th,
+.data-table td{
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  vertical-align: top;
+}
+.data-table th{
+  background: rgba(255,255,255,.04);
+  text-align: left;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.data-table td{
+  background: rgba(255,255,255,.02);
+}
