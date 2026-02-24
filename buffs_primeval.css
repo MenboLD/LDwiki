@@ -68,7 +68,7 @@ body{
 
 h1{
   margin:0;
-  font-size: 16px; /* smaller than previous */
+  font-size: 16px;
   letter-spacing: .02em;
 }
 .meta{
@@ -104,19 +104,20 @@ h1{
 }
 
 /* Column widths tuned for ~360px */
-.w-rank{ width: 64px; }
+.w-rank{ width: 34px; }   /* about half of previous */
 .w-name{ width: 92px; }
 .w-img{ width: 50px; }
 .w-desc{ width: auto; }
 
+/* header */
 .ld-table thead th{
   background: rgba(12,18,28,.96);
   text-align:left;
-  font-size: 10.5px; /* smaller */
+  font-size: 10.5px;
   letter-spacing: .02em;
   color: var(--muted);
   padding: 7px 6px;
-  border: 1px solid var(--grid); /* grid lines */
+  border: 1px solid var(--grid);
   position: sticky;
   top: 0;
   z-index: 2;
@@ -139,20 +140,35 @@ h1{
 th.is-asc .sort-ind::before{ content:"▲"; font-size: 9px; }
 th.is-desc .sort-ind::before{ content:"▼"; font-size: 9px; }
 
+/* zebra */
 .ld-table tbody tr:nth-child(odd) td{ background: var(--zebraA); }
 .ld-table tbody tr:nth-child(even) td{ background: var(--zebraB); }
 
+/* cells */
 .ld-table tbody td{
   padding: 7px 6px;
-  border: 1px solid var(--grid); /* grid lines */
+  border: 1px solid var(--grid);
   vertical-align: top;
-  font-size: 11.5px; /* smaller */
+  font-size: 11.5px;
   overflow: hidden;
 }
 
 .ld-table tbody tr:hover td{
   background: rgba(255,255,255,.06);
 }
+
+/* center align for Rank / Name / Image columns (horizontal + vertical) */
+.th-rank, .th-name, .th-img,
+.col-rank, .col-name, .col-img{
+  text-align: center;
+}
+.col-rank, .col-name, .col-img{
+  vertical-align: middle;
+}
+
+/* make badge & image truly centered */
+.col-rank .badge{ margin: 0 auto; }
+.col-img .card-img{ margin: 0 auto; }
 
 .col-name, .col-desc{
   overflow-wrap: anywhere;
@@ -171,13 +187,16 @@ th.is-desc .sort-ind::before{ content:"▼"; font-size: 9px; }
 .badge{
   display:inline-flex;
   align-items:center;
-  padding: 2px 7px;
+  justify-content:center;
+  padding: 2px 4px;           /* tighter for narrow rank col */
   border-radius: 999px;
-  font-size: 10.5px; /* smaller */
+  font-size: 10px;
   font-weight: 700;
   border: 1px solid var(--line2);
   background: rgba(255,255,255,.04);
-  white-space: nowrap;
+  line-height: 1.05;
+  white-space: normal;        /* allow wrap if needed */
+  max-width: 100%;
 }
 
 .rank-normal{ color: var(--normal); border-color: rgba(167,176,189,.35); }
@@ -204,9 +223,9 @@ th.is-desc .sort-ind::before{ content:"▼"; font-size: 9px; }
   h1{ font-size: 18px; }
   .ld-table thead th{ font-size: 11.5px; padding: 9px 10px; }
   .ld-table tbody td{ font-size: 12.5px; padding: 9px 10px; }
-  .w-rank{ width: 78px; }
+  .w-rank{ width: 44px; } /* still compact on wide screens */
   .w-name{ width: 160px; }
   .w-img{ width: 62px; }
   .card-img{ width: 44px; height: 44px; }
-  .badge{ font-size: 11.5px; }
+  .badge{ font-size: 11.5px; padding: 2px 7px; white-space: nowrap; }
 }
