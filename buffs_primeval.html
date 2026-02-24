@@ -162,6 +162,13 @@
       return /^-?\d+(\.\d+)?$/.test(v);
     }
 
+    function cmpValues(av, bv) {
+      const aNum = isNumericLike(av) ? parseFloat(av) : null;
+      const bNum = isNumericLike(bv) ? parseFloat(bv) : null;
+      if (aNum !== null && bNum !== null) return aNum - bNum;
+      return av.localeCompare(bv, 'ja', { numeric: true, sensitivity: 'base' });
+    }
+
     function sortBy(colIndex) {
       const dir = (state.col === colIndex && state.dir === 'asc') ? 'desc' : 'asc';
       state.col = colIndex;
@@ -172,15 +179,16 @@
         const av = getCellSortValue(a, colIndex);
         const bv = getCellSortValue(b, colIndex);
 
-        const aNum = isNumericLike(av) ? parseFloat(av) : null;
-        const bNum = isNumericLike(bv) ? parseFloat(bv) : null;
+        let cmp = cmpValues(av, bv);
 
-        let cmp = 0;
-        if (aNum !== null && bNum !== null) {
-          cmp = aNum - bNum;
-        } else {
-          cmp = av.localeCompare(bv, 'ja', { numeric: true, sensitivity: 'base' });
+        // secondary sort (rank/name sorts feel "not working" without this)
+        if (cmp === 0) {
+          // when sorting by Rank or Desc, use Name as tie-breaker
+          const an = getCellSortValue(a, 1);
+          const bn = getCellSortValue(b, 1);
+          cmp = cmpValues(an, bn);
         }
+
         return dir === 'asc' ? cmp : -cmp;
       });
 
@@ -203,9 +211,9 @@
       });
     });
 
-    // initial sort: name then rank (2-pass)
-    sortBy(1);
-    sortBy(0);
+    // initial sort: Rank asc, then Name asc within rank
+    sortBy(1); // name asc
+    sortBy(0); // rank asc (tie-breaks by name)
     if (!(state.col === 0 && state.dir === 'asc')) sortBy(0);
   })();
   </script>
