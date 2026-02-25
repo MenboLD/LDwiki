@@ -64,15 +64,14 @@
     return ({ L: 0, E: 1, R: 2, N: 3 }[k] ?? 9);
   }
 
-  function syncOpVisibility() {
-    const searching = !!(filterQuery && filterQuery.trim());
-    if (searching) {
-      // 検索中は操作列を強制非表示 + トグル無効
-      document.body.classList.add('hide-op');
-      if (opToggle) {
-        opToggle.checked = false;
-        opToggle.disabled = true;
-      }
+    function syncOpVisibility() {
+    // Always respect user's toggle. (Search / rarity sort does NOT force-hide anymore.)
+    if (opToggle) {
+      opToggle.disabled = false;
+      opToggle.checked = opVisibleWanted;
+    }
+    document.body.classList.toggle('hide-op', !opVisibleWanted);
+  }
       return;
     }
     if (opToggle) {
@@ -82,17 +81,23 @@
     document.body.classList.toggle('hide-op', !opVisibleWanted);
   }
 
-  function updateStatusNormal() {
-    if (filterQuery) {
-      setStatus('検索中（操作は無効）');
+    function updateStatusNormal() {
+    const searching = !!(filterQuery && filterQuery.trim());
+    if (searching) {
+      setStatus('検索中（操作はTのみ）');
     } else if (gradeSortWanted) {
-      setStatus('GradeType優先表示中（操作は無効）');
+      setStatus('レアリティ順（操作はTのみ）');
+    } else {
+      setStatus('OK');
+    }
+  } else if (gradeSortWanted) {
+      setStatus('レアリティ順（操作は無効）');
     } else {
       setStatus('OK');
     }
   }
 
-  function render() {
+    function render() {
     const items = state.items;
     const q = (filterQuery || '').trim().toLowerCase();
     const baseItems = q
@@ -103,6 +108,61 @@
       tbody.innerHTML = `<tr><td class="empty" colspan="4">データがありません</td></tr>`;
       return;
     }
+    if (!baseItems.length) {
+      tbody.innerHTML = `<tr><td class="empty" colspan="4">該当する行がありません</td></tr>`;
+      return;
+    }
+
+    const displayItems = gradeSortWanted
+      ? baseItems.slice().sort((a,b) => (gradeRank(a.master?.GradeType) - gradeRank(b.master?.GradeType)) || (a.sort_order - b.sort_order))
+      : baseItems;
+
+    let prevG = null;
+    let runParity = 0; // 0=A, 1=B (within same GradeType run)
+
+    const locked = (!!q) || gradeSortWanted;
+
+    tbody.innerHTML = displayItems.map((it, idx) => {
+      const m = it.master || {};
+      const img = (m.Imageurl ?? '').trim();
+      const name = (m.Name ?? '').trim();
+      const note = (m.Note ?? '').trim();
+
+      const gRaw = String(m.GradeType ?? 'N').trim().toUpperCase();
+      const g = (gRaw === 'L' || gRaw === 'E' || gRaw === 'R' || gRaw === 'N') ? gRaw : 'N';
+      if (g === prevG) runParity = runParity ^ 1;
+      else runParity = 0;
+      prevG = g;
+      const rowClass = `g-${g.toLowerCase()} alt-${runParity ? 'b' : 'a'}`;
+
+      // Disable based on REAL order (not display order)
+      const realIdx = items.findIndex(x => String(x.card_id) === String(it.card_id));
+      const topDisabled = (realIdx <= 0) || !user;
+
+      const imgHtml = img
+        ? `<img class="card-img" src="${escapeHtml(img)}" alt="${escapeHtml(name)}" loading="lazy" decoding="async">`
+        : `<span class="muted">—</span>`;
+
+      const opsHtml = locked
+        ? `<button class="opbtn" data-act="top" title="先頭へ" ${topDisabled?'disabled':''}>T</button>`
+        : `
+            <button class="opbtn" data-act="up" title="上へ" ${(realIdx<=0||!user)?'disabled':''}>▲</button>
+            <button class="opbtn" data-act="down" title="下へ" ${(realIdx<0||realIdx>=items.length-1||!user)?'disabled':''}>▼</button>
+            <button class="opbtn" data-act="top" title="先頭へ" ${topDisabled?'disabled':''}>T</button>
+          `;
+
+      return `
+        <tr data-card-id="${it.card_id}" class="${rowClass}">
+          <td class="col-op">
+            <div class="ops">${opsHtml}</div>
+          </td>
+          <td class="col-img">${imgHtml}</td>
+          <td class="col-name"><div class="name">${escapeHtml(name)}</div></td>
+          <td class="col-note"><div class="note">${noteToHtml(note)}</div></td>
+        </tr>
+      `;
+    }).join('');
+  }
     if (!baseItems.length) {
       tbody.innerHTML = `<tr><td class="empty" colspan="4">該当する行がありません</td></tr>`;
       return;
@@ -378,16 +438,14 @@
     const btn = ev.target.closest('button.opbtn');
     if (!btn) return;
 
-    if (filterQuery) {
-      toast('検索中は並び替えできません');
-      return;
-    }
-    if (gradeSortWanted) {
-      toast('GradeType優先表示中は並び替えできません');
+    const actPeek = btn.dataset.act;
+    const locked = !!(filterQuery && filterQuery.trim()) || gradeSortWanted;
+    if (locked && actPeek !== 'top') {
+      toast('検索/レアリティ順ではTのみ使用できます');
       return;
     }
     if (!user) {
-      toast('並び替えはログインが必要です');
+      toast('操作はログインが必要です');
       return;
     }
 

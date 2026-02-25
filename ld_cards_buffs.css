@@ -26,8 +26,8 @@
   --grade-n-b: var(--zebraB);
   --grade-e-a: rgba(176, 106, 255, .10);
   --grade-e-b: rgba(176, 106, 255, .16);
-  --grade-l-a: rgba(255, 220, 110, .14);
---grade-l-b: rgba(255, 220, 110, .22);
+  --grade-l-a: rgba(248, 231, 28, .35);
+--grade-l-b: rgba(245, 166, 35, .35);
 }
 
 *{ box-sizing:border-box; }
