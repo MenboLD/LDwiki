@@ -24,10 +24,13 @@
   /* GradeType row colors (A/B = subtle alternation within same GradeType run) */
   --grade-n-a: var(--zebraA);
   --grade-n-b: var(--zebraB);
+
   --grade-e-a: rgba(176, 106, 255, .10);
   --grade-e-b: rgba(176, 106, 255, .16);
+
+  /* Requested */
   --grade-l-a: rgba(248, 231, 28, .35);
---grade-l-b: rgba(245, 166, 35, .35);
+  --grade-l-b: rgba(245, 166, 35, .35);
 }
 
 *{ box-sizing:border-box; }

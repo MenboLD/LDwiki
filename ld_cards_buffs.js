@@ -21,12 +21,12 @@
   let supa = null;
   let user = null;
 
-  let state = { items: [] };
+  const state = { items: [] };
   let filterQuery = '';
-  let opVisibleWanted = false;   // default false (操作列: 非表示)
-  let gradeSortWanted = false;   // default false
+  let opVisibleWanted = false;   // default: hidden
+  let gradeSortWanted = false;   // default: off
 
-  // Hard default: hide operation column (even if JS runs late)
+  // Default UI states
   document.body.classList.add('hide-op');
   if (opToggle) opToggle.checked = false;
   if (gradeSortToggle) gradeSortToggle.checked = false;
@@ -53,9 +53,7 @@
 
   function noteToHtml(note) {
     const escaped = escapeHtml(note);
-    return escaped
-      .replace(/&lt;br\s*\/?&gt;/gi, '<br>')
-      .replace(/\n/g, '<br>');
+    return escaped.replace(/&lt;br\s*\/?&gt;/gi, '<br>').replace(/\n/g, '<br>');
   }
 
   function gradeRank(g) {
@@ -64,16 +62,11 @@
     return ({ L: 0, E: 1, R: 2, N: 3 }[k] ?? 9);
   }
 
-    function syncOpVisibility() {
-    // Always respect user's toggle. (Search / rarity sort does NOT force-hide anymore.)
-    if (opToggle) {
-      opToggle.disabled = false;
-      opToggle.checked = opVisibleWanted;
-    }
-    document.body.classList.toggle('hide-op', !opVisibleWanted);
+  function isLockedMode() {
+    return !!(filterQuery && filterQuery.trim()) || gradeSortWanted;
   }
-      return;
-    }
+
+  function syncOpVisibility() {
     if (opToggle) {
       opToggle.disabled = false;
       opToggle.checked = opVisibleWanted;
@@ -81,48 +74,56 @@
     document.body.classList.toggle('hide-op', !opVisibleWanted);
   }
 
-    function updateStatusNormal() {
+  function updateStatus() {
     const searching = !!(filterQuery && filterQuery.trim());
-    if (searching) {
+    if (searching && gradeSortWanted) {
+      setStatus('検索 + レアリティ順（操作はTのみ）');
+    } else if (searching) {
       setStatus('検索中（操作はTのみ）');
     } else if (gradeSortWanted) {
       setStatus('レアリティ順（操作はTのみ）');
     } else {
       setStatus('OK');
     }
-  } else if (gradeSortWanted) {
-      setStatus('レアリティ順（操作は無効）');
-    } else {
-      setStatus('OK');
-    }
   }
 
-    function render() {
-    const items = state.items;
-    const q = (filterQuery || '').trim().toLowerCase();
-    const baseItems = q
-      ? items.filter(it => String(it.master?.Note ?? '').toLowerCase().includes(q))
-      : items;
+  function buildIndexMap(items) {
+    const map = new Map();
+    for (let i = 0; i < items.length; i++) {
+      map.set(String(items[i].card_id), i);
+    }
+    return map;
+  }
 
-    if (!items.length) {
+  function render() {
+    const all = state.items;
+    const q = (filterQuery || '').trim().toLowerCase();
+
+    if (!all.length) {
       tbody.innerHTML = `<tr><td class="empty" colspan="4">データがありません</td></tr>`;
       return;
     }
-    if (!baseItems.length) {
+
+    const filtered = q
+      ? all.filter(it => String(it.master?.Note ?? '').toLowerCase().includes(q))
+      : all;
+
+    if (!filtered.length) {
       tbody.innerHTML = `<tr><td class="empty" colspan="4">該当する行がありません</td></tr>`;
       return;
     }
 
-    const displayItems = gradeSortWanted
-      ? baseItems.slice().sort((a,b) => (gradeRank(a.master?.GradeType) - gradeRank(b.master?.GradeType)) || (a.sort_order - b.sort_order))
-      : baseItems;
+    const display = gradeSortWanted
+      ? filtered.slice().sort((a,b) => (gradeRank(a.master?.GradeType) - gradeRank(b.master?.GradeType)) || (a.sort_order - b.sort_order))
+      : filtered;
+
+    const locked = isLockedMode();
+    const idxMap = buildIndexMap(all);
 
     let prevG = null;
-    let runParity = 0; // 0=A, 1=B (within same GradeType run)
+    let runParity = 0; // toggles only within consecutive same GradeType in display order
 
-    const locked = (!!q) || gradeSortWanted;
-
-    tbody.innerHTML = displayItems.map((it, idx) => {
+    tbody.innerHTML = display.map((it) => {
       const m = it.master || {};
       const img = (m.Imageurl ?? '').trim();
       const name = (m.Name ?? '').trim();
@@ -135,79 +136,29 @@
       prevG = g;
       const rowClass = `g-${g.toLowerCase()} alt-${runParity ? 'b' : 'a'}`;
 
-      // Disable based on REAL order (not display order)
-      const realIdx = items.findIndex(x => String(x.card_id) === String(it.card_id));
-      const topDisabled = (realIdx <= 0) || !user;
+      const realIdx = idxMap.get(String(it.card_id));
+      const topDisabled = (realIdx === undefined) || (realIdx <= 0) || !user;
 
       const imgHtml = img
         ? `<img class="card-img" src="${escapeHtml(img)}" alt="${escapeHtml(name)}" loading="lazy" decoding="async">`
         : `<span class="muted">—</span>`;
 
-      const opsHtml = locked
-        ? `<button class="opbtn" data-act="top" title="先頭へ" ${topDisabled?'disabled':''}>T</button>`
-        : `
-            <button class="opbtn" data-act="up" title="上へ" ${(realIdx<=0||!user)?'disabled':''}>▲</button>
-            <button class="opbtn" data-act="down" title="下へ" ${(realIdx<0||realIdx>=items.length-1||!user)?'disabled':''}>▼</button>
-            <button class="opbtn" data-act="top" title="先頭へ" ${topDisabled?'disabled':''}>T</button>
-          `;
+      let opsHtml = '';
+      if (locked) {
+        opsHtml = `<button class="opbtn" data-act="top" title="先頭へ" ${topDisabled ? 'disabled' : ''}>T</button>`;
+      } else {
+        const upDisabled = (realIdx === undefined) || (realIdx <= 0) || !user;
+        const downDisabled = (realIdx === undefined) || (realIdx >= all.length - 1) || !user;
+        opsHtml = `
+          <button class="opbtn" data-act="up" title="上へ" ${upDisabled ? 'disabled' : ''}>▲</button>
+          <button class="opbtn" data-act="down" title="下へ" ${downDisabled ? 'disabled' : ''}>▼</button>
+          <button class="opbtn" data-act="top" title="先頭へ" ${topDisabled ? 'disabled' : ''}>T</button>
+        `;
+      }
 
       return `
         <tr data-card-id="${it.card_id}" class="${rowClass}">
-          <td class="col-op">
-            <div class="ops">${opsHtml}</div>
-          </td>
-          <td class="col-img">${imgHtml}</td>
-          <td class="col-name"><div class="name">${escapeHtml(name)}</div></td>
-          <td class="col-note"><div class="note">${noteToHtml(note)}</div></td>
-        </tr>
-      `;
-    }).join('');
-  }
-    if (!baseItems.length) {
-      tbody.innerHTML = `<tr><td class="empty" colspan="4">該当する行がありません</td></tr>`;
-      return;
-    }
-
-    const displayItems = gradeSortWanted
-      ? baseItems.slice().sort((a,b) => (gradeRank(a.master?.GradeType) - gradeRank(b.master?.GradeType)) || (a.sort_order - b.sort_order))
-      : baseItems;
-
-    let prevG = null;
-    let runParity = 0; // 0=A, 1=B (within same GradeType run)
-
-    const qActive = !!q;
-    const locked = qActive || gradeSortWanted;
-
-    tbody.innerHTML = displayItems.map((it, idx) => {
-      const m = it.master || {};
-      const img = (m.Imageurl ?? '').trim();
-      const name = (m.Name ?? '').trim();
-      const note = (m.Note ?? '').trim();
-
-      const gRaw = String(m.GradeType ?? 'N').trim().toUpperCase();
-      const g = (gRaw === 'L' || gRaw === 'E' || gRaw === 'R' || gRaw === 'N') ? gRaw : 'N';
-      if (g === prevG) runParity = runParity ^ 1;
-      else runParity = 0;
-      prevG = g;
-      const rowClass = `g-${g.toLowerCase()} alt-${runParity ? 'b' : 'a'}`;
-
-      const upDisabled = idx === 0 || !user || locked;
-      const downDisabled = idx === displayItems.length - 1 || !user || locked;
-      const topDisabled = idx === 0 || !user || locked;
-
-      const imgHtml = img
-        ? `<img class="card-img" src="${escapeHtml(img)}" alt="${escapeHtml(name)}" loading="lazy" decoding="async">`
-        : `<span class="muted">—</span>`;
-
-      return `
-        <tr data-card-id="${it.card_id}" class="${rowClass}">
-          <td class="col-op">
-            <div class="ops">
-              <button class="opbtn" data-act="up" title="上へ" ${upDisabled?'disabled':''}>▲</button>
-              <button class="opbtn" data-act="down" title="下へ" ${downDisabled?'disabled':''}>▼</button>
-              <button class="opbtn" data-act="top" title="先頭へ" ${topDisabled?'disabled':''}>T</button>
-            </div>
-          </td>
+          <td class="col-op"><div class="ops">${opsHtml}</div></td>
           <td class="col-img">${imgHtml}</td>
           <td class="col-name"><div class="name">${escapeHtml(name)}</div></td>
           <td class="col-note"><div class="note">${noteToHtml(note)}</div></td>
@@ -282,12 +233,8 @@
     });
 
     try {
-      if (!supa) {
-        supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      }
-      if (!user) {
-        user = await ensureAuth();
-      }
+      if (!supa) supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      if (!user) user = await ensureAuth();
 
       if (!user) {
         // Read-only fallback
@@ -295,7 +242,7 @@
         state.items = master.map((m, i) => ({ card_id: m.Id, sort_order: i + 1, is_enabled: true, master: m }));
         render();
         syncOpVisibility();
-        updateStatusNormal();
+        updateStatus();
         return;
       }
 
@@ -328,7 +275,7 @@
 
       render();
       syncOpVisibility();
-      updateStatusNormal();
+      updateStatus();
     } catch (e) {
       console.error(e);
       state.items = [];
@@ -339,7 +286,7 @@
     }
   }
 
-  function findIndexByCardId(cardId) {
+  function findRealIndex(cardId) {
     return state.items.findIndex(it => String(it.card_id) === String(cardId));
   }
 
@@ -357,12 +304,12 @@
     if (error) throw error;
   }
 
-  async function moveUp(idx) {
-    if (idx <= 0) return;
-    const a = state.items[idx - 1];
-    const b = state.items[idx];
-    state.items[idx - 1] = b;
-    state.items[idx] = a;
+  async function moveUp(realIdx) {
+    if (realIdx <= 0) return;
+    const a = state.items[realIdx - 1];
+    const b = state.items[realIdx];
+    state.items[realIdx - 1] = b;
+    state.items[realIdx] = a;
     const tmp = b.sort_order;
     b.sort_order = a.sort_order;
     a.sort_order = tmp;
@@ -370,12 +317,12 @@
     await persist([a, b]);
   }
 
-  async function moveDown(idx) {
-    if (idx < 0 || idx >= state.items.length - 1) return;
-    const a = state.items[idx];
-    const b = state.items[idx + 1];
-    state.items[idx] = b;
-    state.items[idx + 1] = a;
+  async function moveDown(realIdx) {
+    if (realIdx < 0 || realIdx >= state.items.length - 1) return;
+    const a = state.items[realIdx];
+    const b = state.items[realIdx + 1];
+    state.items[realIdx] = b;
+    state.items[realIdx + 1] = a;
     const tmp = a.sort_order;
     a.sort_order = b.sort_order;
     b.sort_order = tmp;
@@ -383,16 +330,16 @@
     await persist([a, b]);
   }
 
-  async function moveTop(idx) {
-    if (idx <= 0) return;
-    const moved = state.items.splice(idx, 1)[0];
+  async function moveTop(realIdx) {
+    if (realIdx <= 0) return;
+    const moved = state.items.splice(realIdx, 1)[0];
     state.items.unshift(moved);
-    state.items.forEach((it, i) => it.sort_order = i + 1);
+    state.items.forEach((it, i) => (it.sort_order = i + 1));
     render();
     await persist(state.items);
   }
 
-  // toggle: operation column
+  // Toggle: operation column
   if (opToggle) {
     opToggle.checked = false;
     opToggle.addEventListener('change', () => {
@@ -401,23 +348,21 @@
     });
   }
 
-  // toggle: GradeType priority (display only)
+  // Toggle: rarity sort (display only; doesn't change DB order)
   if (gradeSortToggle) {
     gradeSortToggle.checked = false;
     gradeSortToggle.addEventListener('change', () => {
       gradeSortWanted = !!gradeSortToggle.checked;
       render();
-      syncOpVisibility();
-      updateStatusNormal();
+      updateStatus();
     });
   }
 
-  // search
+  // Search
   function applyFilterFromInput() {
     filterQuery = (noteSearch?.value || '').trim();
     render();
-    syncOpVisibility(); // search中は操作列を強制非表示
-    updateStatusNormal();
+    updateStatus();
   }
 
   if (noteSearch) {
@@ -433,14 +378,15 @@
     });
   }
 
-  // op buttons (works on underlying sort_order order)
+  // Operation buttons
   tbody.addEventListener('click', async (ev) => {
     const btn = ev.target.closest('button.opbtn');
     if (!btn) return;
 
-    const actPeek = btn.dataset.act;
-    const locked = !!(filterQuery && filterQuery.trim()) || gradeSortWanted;
-    if (locked && actPeek !== 'top') {
+    const act = btn.dataset.act;
+    const locked = isLockedMode();
+
+    if (locked && act !== 'top') {
       toast('検索/レアリティ順ではTのみ使用できます');
       return;
     }
@@ -451,19 +397,18 @@
 
     const tr = btn.closest('tr');
     const cardId = tr?.dataset?.cardId;
-    const idx = findIndexByCardId(cardId);
-    if (idx < 0) return;
+    const realIdx = findRealIndex(cardId);
+    if (realIdx < 0) return;
 
     btn.disabled = true;
     setStatus('更新中…');
 
     try {
-      const act = btn.dataset.act;
-      if (act === 'up') await moveUp(idx);
-      else if (act === 'down') await moveDown(idx);
-      else if (act === 'top') await moveTop(idx);
+      if (act === 'up') await moveUp(realIdx);
+      else if (act === 'down') await moveDown(realIdx);
+      else if (act === 'top') await moveTop(realIdx);
 
-      updateStatusNormal();
+      updateStatus();
       toast('更新しました');
     } catch (e) {
       console.error(e);
@@ -473,12 +418,12 @@
     }
   });
 
-  // mode switching
+  // Mode switching
   modeButtons.forEach(btn => {
     btn.addEventListener('click', () => loadMode(btn.dataset.mode));
   });
 
-  // boot
+  // Boot
   syncOpVisibility();
   loadMode(currentMode);
 })();
