@@ -10,6 +10,14 @@
   const tbody = document.getElementById('buffTbody');
   const toastEl = document.getElementById('toast');
 
+  const opToggle = document.getElementById('opToggle');
+  const noteSearch = document.getElementById('noteSearch');
+  const clearSearch = document.getElementById('clearSearch');
+
+  // default: 操作列は非表示
+  document.body.classList.add('hide-op');
+  if (opToggle) opToggle.checked = false;
+
   const modeButtons = Array.from(document.querySelectorAll('.mode-btn'));
   let currentMode = '太初';
 
@@ -23,6 +31,7 @@
    *  master: any
    * }> } */
   let state = { items: [] };
+  let filterQuery = '';
 
   function toast(msg) {
     toastEl.textContent = msg;
@@ -59,15 +68,25 @@
       return;
     }
 
-    const rowsHtml = items.map((it, idx) => {
+    const q = (filterQuery || '').trim().toLowerCase();
+    const visibleItems = q
+      ? items.filter(it => String(it.master?.Note ?? '').toLowerCase().includes(q))
+      : items;
+
+    if (!visibleItems.length) {
+      tbody.innerHTML = `<tr><td class="empty" colspan="4">該当する行がありません</td></tr>`;
+      return;
+    }
+
+    const rowsHtml = visibleItems.map((it, idx) => {
       const m = it.master || {};
       const img = (m.Imageurl ?? '').trim();
       const name = (m.Name ?? '').trim();
       const note = (m.Note ?? '').trim();
 
-      const upDisabled = idx === 0 || !user;
-      const downDisabled = idx === items.length - 1 || !user;
-      const topDisabled = idx === 0 || !user;
+      const upDisabled = idx === 0 || !user || q;
+      const downDisabled = idx === visibleItems.length - 1 || !user || q;
+      const topDisabled = idx === 0 || !user || q;
 
       const imgHtml = img
         ? `<img class="card-img" src="${escapeHtml(img)}" alt="${escapeHtml(name)}" loading="lazy" decoding="async">`
@@ -168,12 +187,22 @@
       if (!supa) {
         supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       }
-      if (!user) {
+      if (filterQuery) {
+      toast('検索中は並び替えできません');
+      return;
+    }
+
+    if (!user) {
         user = await ensureAuth();
       }
 
       // If no user, show master list only (read-only)
-      if (!user) {
+      if (filterQuery) {
+      toast('検索中は並び替えできません');
+      return;
+    }
+
+    if (!user) {
         const master = await fetchMaster(mode);
         state.items = master.map((m, i) => ({
           card_id: m.Id,
@@ -182,7 +211,7 @@
           master: m,
         }));
         render();
-        setStatus('閲覧のみ（並び替えはログインが必要）');
+        setStatus(filterQuery ? '検索中（操作は無効）' : '閲覧のみ（並び替えはログインが必要）');
         return;
       }
 
@@ -216,7 +245,7 @@
         }));
 
       render();
-      setStatus('OK');
+      setStatus(filterQuery ? '検索中（操作は無効）' : 'OK');
     } catch (e) {
       console.error(e);
       state.items = [];
@@ -298,6 +327,11 @@
     const btn = ev.target.closest('button.opbtn');
     if (!btn) return;
 
+    if (filterQuery) {
+      toast('検索中は並び替えできません');
+      return;
+    }
+
     if (!user) {
       toast('並び替えはログインが必要です');
       return;
@@ -327,6 +361,32 @@
       await loadMode(currentMode);
     }
   });
+
+
+  // toggle: show/hide operation column (default hidden)
+  if (opToggle) {
+    opToggle.addEventListener('change', () => {
+      document.body.classList.toggle('hide-op', !opToggle.checked);
+    });
+  }
+
+  // search: filter by Note (効果) substring (case-insensitive)
+  function applyFilterFromInput() {
+    filterQuery = (noteSearch?.value || '').trim();
+    render();
+    setStatus(filterQuery ? '検索中（操作は無効）' : 'OK');
+  }
+  if (noteSearch) {
+    noteSearch.addEventListener('input', applyFilterFromInput);
+    noteSearch.addEventListener('search', applyFilterFromInput);
+  }
+  if (clearSearch) {
+    clearSearch.addEventListener('click', () => {
+      if (noteSearch) noteSearch.value = '';
+      applyFilterFromInput();
+      noteSearch?.focus();
+    });
+  }
 
   // mode switching
   modeButtons.forEach(btn => {

@@ -24,6 +24,20 @@
         <div class="hint">操作：<span class="kbd">▲</span> 上と入替 / <span class="kbd">▼</span> 下と入替 / <span class="kbd">T</span> 先頭へ</div>
         <div class="status" id="statusText">準備中…</div>
       </div>
+
+      <div class="controls">
+        <label class="toggle">
+          <input type="checkbox" id="opToggle" />
+          <span class="toggle-ui" aria-hidden="true"></span>
+          <span class="toggle-text">操作列を表示</span>
+        </label>
+
+        <div class="search">
+          <input id="noteSearch" type="search" inputmode="search" autocomplete="off" placeholder="効果で検索（部分一致）" />
+          <button class="clear" id="clearSearch" type="button" title="クリア">×</button>
+        </div>
+      </div>
+
     </div>
   </header>
 
