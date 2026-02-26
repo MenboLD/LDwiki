@@ -9,7 +9,10 @@
   const tbody = document.getElementById('buffTbody');
   const toastEl = document.getElementById('toast');
 
+  const resetSortBtn = document.getElementById('resetSortBtn');
+
   const opToggle = document.getElementById('opToggle');
+  const visToggle = document.getElementById('visToggle');
   const gradeSortToggle = document.getElementById('gradeSortToggle');
 
   const noteSearch = document.getElementById('noteSearch');
@@ -24,11 +27,13 @@
   const state = { items: [] };
   let filterQuery = '';
   let opVisibleWanted = false;   // default: hidden
+  let visVisibleWanted = false;  // default: hidden
   let gradeSortWanted = false;   // default: off
 
   // Default UI states
-  document.body.classList.add('hide-op');
+  document.body.classList.add('hide-op', 'hide-vis');
   if (opToggle) opToggle.checked = false;
+  if (visToggle) visToggle.checked = false;
   if (gradeSortToggle) gradeSortToggle.checked = false;
 
   function toast(msg) {
@@ -66,20 +71,40 @@
     return !!(filterQuery && filterQuery.trim()) || gradeSortWanted;
   }
 
-  function syncOpVisibility() {
-    if (opToggle) {
-      opToggle.disabled = false;
-      opToggle.checked = opVisibleWanted;
+  function setOpVisible(v) {
+    const want = !!v;
+    if (want && visVisibleWanted) {
+      visVisibleWanted = false;
+      if (visToggle) visToggle.checked = false;
+      toast('「表示列」と「操作列」は同時に表示できません');
     }
+    opVisibleWanted = want;
+    if (opToggle) opToggle.checked = opVisibleWanted;
+  }
+
+  function setVisVisible(v) {
+    const want = !!v;
+    if (want && opVisibleWanted) {
+      opVisibleWanted = false;
+      if (opToggle) opToggle.checked = false;
+      toast('「表示列」と「操作列」は同時に表示できません');
+    }
+    visVisibleWanted = want;
+    if (visToggle) visToggle.checked = visVisibleWanted;
+  }
+
+  function syncColumnVisibility() {
     document.body.classList.toggle('hide-op', !opVisibleWanted);
+    document.body.classList.toggle('hide-vis', !visVisibleWanted);
   }
 
   function updateStatus() {
     const searching = !!(filterQuery && filterQuery.trim());
+    const locked = isLockedMode();
     if (searching && gradeSortWanted) {
       setStatus('検索 + レアリティ順（操作はTのみ）');
     } else if (searching) {
-      setStatus('検索中（操作はTのみ）');
+      setStatus(locked ? '検索中（操作はTのみ）' : '検索中');
     } else if (gradeSortWanted) {
       setStatus('レアリティ順（操作はTのみ）');
     } else {
@@ -87,29 +112,40 @@
     }
   }
 
-  function buildIndexMap(items) {
+  function sortedItems() {
+    return state.items.slice().sort((a,b) => a.sort_order - b.sort_order);
+  }
+
+  function buildIndexMapSorted(itemsSorted) {
     const map = new Map();
-    for (let i = 0; i < items.length; i++) {
-      map.set(String(items[i].card_id), i);
+    for (let i = 0; i < itemsSorted.length; i++) {
+      map.set(String(itemsSorted[i].card_id), i);
     }
     return map;
   }
 
+  function currentVisibleBase(sorted) {
+    if (visVisibleWanted) return sorted;               // show all (including disabled)
+    return sorted.filter(it => it.is_enabled);         // hide unchecked rows
+  }
+
   function render() {
-    const all = state.items;
     const q = (filterQuery || '').trim().toLowerCase();
 
-    if (!all.length) {
-      tbody.innerHTML = `<tr><td class="empty" colspan="4">データがありません</td></tr>`;
+    if (!state.items.length) {
+      tbody.innerHTML = `<tr><td class="empty" colspan="5">データがありません</td></tr>`;
       return;
     }
 
+    const sorted = sortedItems();
+    const base = currentVisibleBase(sorted);
+
     const filtered = q
-      ? all.filter(it => String(it.master?.Note ?? '').toLowerCase().includes(q))
-      : all;
+      ? base.filter(it => String(it.master?.Note ?? '').toLowerCase().includes(q))
+      : base;
 
     if (!filtered.length) {
-      tbody.innerHTML = `<tr><td class="empty" colspan="4">該当する行がありません</td></tr>`;
+      tbody.innerHTML = `<tr><td class="empty" colspan="5">該当する行がありません</td></tr>`;
       return;
     }
 
@@ -118,10 +154,10 @@
       : filtered;
 
     const locked = isLockedMode();
-    const idxMap = buildIndexMap(all);
+    const idxMap = buildIndexMapSorted(sorted);
 
     let prevG = null;
-    let runParity = 0; // toggles only within consecutive same GradeType in display order
+    let runParity = 0;
 
     tbody.innerHTML = display.map((it) => {
       const m = it.master || {};
@@ -131,24 +167,28 @@
 
       const gRaw = String(m.GradeType ?? 'N').trim().toUpperCase();
       const g = (gRaw === 'L' || gRaw === 'E' || gRaw === 'R' || gRaw === 'N') ? gRaw : 'N';
-      if (g === prevG) runParity = runParity ^ 1;
+      if (g === prevG) runParity ^= 1;
       else runParity = 0;
       prevG = g;
       const rowClass = `g-${g.toLowerCase()} alt-${runParity ? 'b' : 'a'}`;
 
       const realIdx = idxMap.get(String(it.card_id));
-      const topDisabled = (realIdx === undefined) || (realIdx <= 0) || !user;
+      const canUser = !!user;
+      const topDisabled = (realIdx === undefined) || (realIdx <= 0) || !canUser;
 
       const imgHtml = img
         ? `<img class="card-img" src="${escapeHtml(img)}" alt="${escapeHtml(name)}" loading="lazy" decoding="async">`
         : `<span class="muted">—</span>`;
 
+      const visDisabled = !canUser;
+      const visHtml = `<input class="vischk" type="checkbox" data-act="vis" ${it.is_enabled ? 'checked' : ''} ${visDisabled ? 'disabled' : ''} />`;
+
       let opsHtml = '';
       if (locked) {
         opsHtml = `<button class="opbtn" data-act="top" title="先頭へ" ${topDisabled ? 'disabled' : ''}>T</button>`;
       } else {
-        const upDisabled = (realIdx === undefined) || (realIdx <= 0) || !user;
-        const downDisabled = (realIdx === undefined) || (realIdx >= all.length - 1) || !user;
+        const upDisabled = (realIdx === undefined) || (realIdx <= 0) || !canUser;
+        const downDisabled = (realIdx === undefined) || (realIdx >= sorted.length - 1) || !canUser;
         opsHtml = `
           <button class="opbtn" data-act="up" title="上へ" ${upDisabled ? 'disabled' : ''}>▲</button>
           <button class="opbtn" data-act="down" title="下へ" ${downDisabled ? 'disabled' : ''}>▼</button>
@@ -158,6 +198,7 @@
 
       return `
         <tr data-card-id="${it.card_id}" class="${rowClass}">
+          <td class="col-vis">${visHtml}</td>
           <td class="col-op"><div class="ops">${opsHtml}</div></td>
           <td class="col-img">${imgHtml}</td>
           <td class="col-name"><div class="name">${escapeHtml(name)}</div></td>
@@ -237,11 +278,10 @@
       if (!user) user = await ensureAuth();
 
       if (!user) {
-        // Read-only fallback
         const master = await fetchMaster(mode);
         state.items = master.map((m, i) => ({ card_id: m.Id, sort_order: i + 1, is_enabled: true, master: m }));
         render();
-        syncOpVisibility();
+        syncColumnVisibility();
         updateStatus();
         return;
       }
@@ -250,7 +290,7 @@
       if (!userList.length) {
         state.items = [];
         render();
-        syncOpVisibility();
+        syncColumnVisibility();
         setStatus('データがありません');
         return;
       }
@@ -269,25 +309,21 @@
         .map(r => ({
           card_id: r.card_id,
           sort_order: r.sort_order,
-          is_enabled: r.is_enabled,
+          is_enabled: (r.is_enabled !== false),
           master: byId.get(r.card_id) || { Id: r.card_id, Imageurl: '', Name: '', Note: '', GradeType: 'N' },
         }));
 
       render();
-      syncOpVisibility();
+      syncColumnVisibility();
       updateStatus();
     } catch (e) {
       console.error(e);
       state.items = [];
       render();
-      syncOpVisibility();
+      syncColumnVisibility();
       setStatus('読込失敗');
       toast('読み込みに失敗しました');
     }
-  }
-
-  function findRealIndex(cardId) {
-    return state.items.findIndex(it => String(it.card_id) === String(cardId));
   }
 
   async function persist(itemsToSave) {
@@ -304,58 +340,101 @@
     if (error) throw error;
   }
 
+  function findRealIndex(cardId) {
+    const sorted = sortedItems();
+    return sorted.findIndex(it => String(it.card_id) === String(cardId));
+  }
+
   async function moveUp(realIdx) {
+    const arr = sortedItems();
     if (realIdx <= 0) return;
-    const a = state.items[realIdx - 1];
-    const b = state.items[realIdx];
-    state.items[realIdx - 1] = b;
-    state.items[realIdx] = a;
-    const tmp = b.sort_order;
-    b.sort_order = a.sort_order;
-    a.sort_order = tmp;
+    const a = arr[realIdx - 1];
+    const b = arr[realIdx];
+    arr[realIdx - 1] = b;
+    arr[realIdx] = a;
+    arr.forEach((it, i) => (it.sort_order = i + 1));
+    state.items = arr;
     render();
     await persist([a, b]);
   }
 
   async function moveDown(realIdx) {
-    if (realIdx < 0 || realIdx >= state.items.length - 1) return;
-    const a = state.items[realIdx];
-    const b = state.items[realIdx + 1];
-    state.items[realIdx] = b;
-    state.items[realIdx + 1] = a;
-    const tmp = a.sort_order;
-    a.sort_order = b.sort_order;
-    b.sort_order = tmp;
+    const arr = sortedItems();
+    if (realIdx < 0 || realIdx >= arr.length - 1) return;
+    const a = arr[realIdx];
+    const b = arr[realIdx + 1];
+    arr[realIdx] = b;
+    arr[realIdx + 1] = a;
+    arr.forEach((it, i) => (it.sort_order = i + 1));
+    state.items = arr;
     render();
     await persist([a, b]);
   }
 
   async function moveTop(realIdx) {
+    const arr = sortedItems();
     if (realIdx <= 0) return;
-    const moved = state.items.splice(realIdx, 1)[0];
-    state.items.unshift(moved);
-    state.items.forEach((it, i) => (it.sort_order = i + 1));
+    const moved = arr.splice(realIdx, 1)[0];
+    arr.unshift(moved);
+    arr.forEach((it, i) => (it.sort_order = i + 1));
+    state.items = arr;
     render();
-    await persist(state.items);
+    await persist(arr);
   }
 
-  // Toggle: operation column
+  async function resetSortOrder() {
+    if (!user) {
+      toast('操作はログインが必要です');
+      return;
+    }
+    setStatus('リセット中…');
+    try {
+      const master = await fetchMaster(currentMode);
+      const keep = new Map(state.items.map(it => [String(it.card_id), it.is_enabled !== false]));
+      state.items = master.map((m, i) => ({
+        card_id: m.Id,
+        sort_order: i + 1,
+        is_enabled: keep.has(String(m.Id)) ? keep.get(String(m.Id)) : true,
+        master: m,
+      }));
+      await persist(state.items);
+      render();
+      updateStatus();
+      toast('リセットしました');
+    } catch (e) {
+      console.error(e);
+      updateStatus();
+      toast('リセットに失敗しました');
+    }
+  }
+
+  // Toggles (mutually exclusive)
   if (opToggle) {
-    opToggle.checked = false;
     opToggle.addEventListener('change', () => {
-      opVisibleWanted = !!opToggle.checked;
-      syncOpVisibility();
+      setOpVisible(opToggle.checked);
+      syncColumnVisibility();
     });
   }
 
-  // Toggle: rarity sort (display only; doesn't change DB order)
+  if (visToggle) {
+    visToggle.addEventListener('change', () => {
+      setVisVisible(visToggle.checked);
+      syncColumnVisibility();
+      render();
+      updateStatus();
+    });
+  }
+
   if (gradeSortToggle) {
-    gradeSortToggle.checked = false;
     gradeSortToggle.addEventListener('change', () => {
       gradeSortWanted = !!gradeSortToggle.checked;
       render();
       updateStatus();
     });
+  }
+
+  if (resetSortBtn) {
+    resetSortBtn.addEventListener('click', resetSortOrder);
   }
 
   // Search
@@ -378,14 +457,41 @@
     });
   }
 
-  // Operation buttons
+  // Row interactions
   tbody.addEventListener('click', async (ev) => {
+    const vis = ev.target.closest('input.vischk');
+    if (vis) {
+      if (!user) {
+        toast('操作はログインが必要です');
+        ev.preventDefault();
+        return;
+      }
+      const tr = vis.closest('tr');
+      const cardId = tr?.dataset?.cardId;
+      const it = state.items.find(x => String(x.card_id) === String(cardId));
+      if (!it) return;
+
+      it.is_enabled = !!vis.checked;
+
+      setStatus('更新中…');
+      try {
+        await persist([it]);
+        render();
+        updateStatus();
+        toast('更新しました');
+      } catch (e) {
+        console.error(e);
+        toast('更新に失敗しました');
+        await loadMode(currentMode);
+      }
+      return;
+    }
+
     const btn = ev.target.closest('button.opbtn');
     if (!btn) return;
 
     const act = btn.dataset.act;
     const locked = isLockedMode();
-
     if (locked && act !== 'top') {
       toast('検索/レアリティ順ではTのみ使用できます');
       return;
@@ -424,6 +530,6 @@
   });
 
   // Boot
-  syncOpVisibility();
+  syncColumnVisibility();
   loadMode(currentMode);
 })();

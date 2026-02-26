@@ -7,15 +7,19 @@
   <meta name="description" content="ラッキー傭兵団：バフカード一覧（効果検索・手動並び替え）" />
   <link rel="stylesheet" href="./ld_cards_buffs.css" />
 </head>
-<body class="hide-op">
+<body class="hide-vis hide-op">
   <header class="top">
     <div class="wrap">
       <div class="top-row">
         <h1>バフカード一覧</h1>
-        <div class="modes" role="tablist" aria-label="モード切替">
-          <button class="mode-btn is-active" data-mode="太初" role="tab" aria-selected="true">太初</button>
-          <button class="mode-btn" data-mode="対戦" role="tab" aria-selected="false">対戦</button>
-          <button class="mode-btn" data-mode="無限" role="tab" aria-selected="false">無限</button>
+
+        <div class="top-actions">
+          <button class="reset-btn" id="resetSortBtn" type="button" title="ソート順をリセット">リセット</button>
+          <div class="modes" role="tablist" aria-label="モード切替">
+            <button class="mode-btn is-active" data-mode="太初" role="tab" aria-selected="true">太初</button>
+            <button class="mode-btn" data-mode="対戦" role="tab" aria-selected="false">対戦</button>
+            <button class="mode-btn" data-mode="無限" role="tab" aria-selected="false">無限</button>
+          </div>
         </div>
       </div>
 
@@ -29,6 +33,12 @@
           <input type="checkbox" id="opToggle" />
           <span class="toggle-ui" aria-hidden="true"></span>
           <span class="toggle-text">操作列を表示</span>
+        </label>
+
+        <label class="toggle">
+          <input type="checkbox" id="visToggle" />
+          <span class="toggle-ui" aria-hidden="true"></span>
+          <span class="toggle-text">表示列を表示</span>
         </label>
 
         <label class="toggle">
@@ -50,6 +60,7 @@
       <div class="table-wrap" role="region" aria-label="バフカード一覧表">
         <table class="ld-table" id="buffTable">
           <colgroup>
+            <col class="w-vis">
             <col class="w-op">
             <col class="w-img">
             <col class="w-name">
@@ -57,6 +68,7 @@
           </colgroup>
           <thead>
             <tr>
+              <th scope="col" class="th-vis">表示</th>
               <th scope="col" class="th-op">操作</th>
               <th scope="col" class="th-img">画像</th>
               <th scope="col" class="th-name">名称</th>
@@ -64,7 +76,7 @@
             </tr>
           </thead>
           <tbody id="buffTbody">
-            <tr><td class="empty" colspan="4">読み込み中…</td></tr>
+            <tr><td class="empty" colspan="5">読み込み中…</td></tr>
           </tbody>
         </table>
       </div>
