@@ -40,8 +40,10 @@
     <div id="palette" class="palette" aria-label="ユニットパレット"></div>
 
     <!-- スクロール帯（パレット下：フル幅） -->
-    <div class="scrollPad scrollPad--bottom pressable" id="scrollPad" aria-label="パレットスクロール（ここを左右になぞる）"
-      title="ここを左右になぞると上のアイコンがスクロールします">ここで左右にスクロール</div>
+    <div class="scrollPad scrollPad--bottom" id="scrollPad" aria-label="パレットスクロール（ここを左右になぞる）"
+      title="ここを左右になぞると上のアイコンがスクロールします">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    </div>
   </section>
 
   <button class="bottomBar pressable" id="bottomBar" type="button" aria-label="設定を開閉">
@@ -50,10 +52,14 @@
 
   <section class="settingsPanel" id="settingsPanel" aria-label="設定">
     <div class="settingsInner">
-      <div class="segRow" aria-label="行数/盤面">
-        <button class="seg pressable" data-layout="3x6" type="button">3行</button>
-        <button class="seg pressable" data-layout="4x6" type="button">4行</button>
-        <button class="seg pressable" data-layout="6x7" type="button">6×7</button>
+      <div class="segRow" aria-label="盤面種類">
+        <button class="seg pressable" data-layout="nhpt_single" type="button">ノ/地/太(片)</button>
+        <button class="seg pressable" data-layout="hg_single" type="button">ハ/神(片)</button>
+        <button class="seg pressable" data-layout="nhpt_both" type="button">ノ/地/太(両)</button>
+        <button class="seg pressable" data-layout="hg_both" type="button">ハ/神(両)</button>
+        <button class="seg pressable" data-layout="raid" type="button">レイド</button>
+        <button class="seg pressable" data-layout="limit" type="button">限界</button>
+        <button class="seg pressable" data-layout="infinite" type="button">無限</button>
       </div>
 
       <div class="btnRow">

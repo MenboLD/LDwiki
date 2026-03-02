@@ -5,12 +5,12 @@
   --muted:#93a0c6;
 
   --topbar-h:60px;
-  --palette-h:178px;      /* スクロール帯ぶん上へ（全体を少し上に） */
-  --scrollpad-h:30px;     /* 細い帯 */
+  --palette-h:166px;      /* スクロール帯ぶん上へ（全体を少し上に） */
+  --scrollpad-h:18px;     /* 細い帯 */
   --bar-h:52px;
   --settings-h:28vh;
 
-  --cell-gap:5px;
+  --cell-gap:8px;
   --cell-radius:10px;
   --board-pad:6px;
 
@@ -131,6 +131,23 @@ body{
   color: rgba(147,160,198,.95);
 }
 
+
+/* board variants */
+.splitSeparator{
+  height: calc(var(--cell-gap) * 2);
+}
+.altar{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight: 1000;
+  letter-spacing: .08em;
+  color: rgba(231,236,255,.70);
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.10);
+  user-select:none;
+  -webkit-user-select:none;
+}
 /* main/board */
 .main{
   height: calc(100% - (var(--topbar-h) + var(--safe-t)) - (var(--palette-h) + var(--bar-h) + var(--safe-b)));
@@ -237,7 +254,7 @@ body.settings-open .main{
 .stack3 .p1{ left:-4%; top:-18%; }
 .stack3 .p2{ left:-4%; bottom:-18%; }
 /* 右中を下左へ3px（= rightを+3px、topを+3px） */
-.stack3 .p3{ right: calc(-6% - 4px); top: calc(44% + 3px); transform: translateY(-55%); }
+.stack3 .p3{ right: calc(-6% + 3px); top: calc(44% + 3px); transform: translateY(-55%); }
 
 /* palette */
 .paletteArea{
@@ -254,12 +271,8 @@ body.settings-open .main{
   display:flex;
   flex-direction: column;
   gap: 8px;
-
-  transition: transform .18s ease, opacity .18s ease;
-  transform: translateY(0);
-  opacity: 1;
 }
-body.settings-open .paletteArea{ opacity:0; transform: translateY(16px); pointer-events:none; }
+body.settings-open .paletteArea{ display:none; }
 
 .paletteTop{
   display:flex;
@@ -326,8 +339,8 @@ body.settings-open .paletteArea{ opacity:0; transform: translateY(16px); pointer
 }
 .pItem:active{ transform: translateY(1px) scale(.99); filter: brightness(1.15); }
 .pItem img{
-  width: 70px;
-  height: 70px;
+  width: 52px;
+  height: 52px;
   object-fit:contain;
   pointer-events:none;
   user-select:none;
@@ -344,14 +357,16 @@ body.settings-open .paletteArea{ opacity:0; transform: translateY(16px); pointer
   display:flex;
   align-items:center;
   justify-content:center;
+  gap:10px;
   touch-action: pan-x;
   -webkit-tap-highlight-color: rgba(106,167,255,.12);
   user-select:none;
   -webkit-user-select:none;
-  font-size: 12px;
-  font-weight: 900;
-  color: rgba(231,236,255,.70);
-  letter-spacing: .02em;
+}
+.scrollPad .dot{
+  width:6px; height:6px;
+  border-radius:999px;
+  background: rgba(231,236,255,.22);
 }
 
 /* bottom bar */
@@ -444,10 +459,10 @@ body.settings-open .settingsPanel{ transform: translateY(0%); }
 }
 
 @media (max-width: 390px){
-  :root{ --palette-h: 172px; --cell-gap:4px; --board-pad: 5px; }
+  :root{ --palette-h: 160px; --cell-gap: 7px; --board-pad: 5px; }
   .btn{ padding: 9px 10px; }
   .brand{ font-size: 15px; }
   .pItem{ width: 80px; height: 80px; }
-  .pItem img{ width: 66px; height: 66px; }
+  .pItem img{ width: 50px; height: 50px; }
   .grid3{ grid-template-columns: 1fr 1fr; }
 }
