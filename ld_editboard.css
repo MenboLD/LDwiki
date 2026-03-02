@@ -184,6 +184,11 @@ body.settings-open .main{
   overflow: visible;
 }
 
+/* stack host shift (2体/3体は上寄せ) */
+.stack2, .stack3{
+  transform: translateY(-6px);
+}
+
 /* single */
 .unitSingle{
   position:absolute;
@@ -217,16 +222,16 @@ body.settings-open .main{
   width: min(60px, 92%);
   height: min(60px, 92%);
 }
-.stack2 .p1{ left:-4%; top:-10%; }
-.stack2 .p2{ right:-4%; bottom:-10%; }
+.stack2 .p1{ left:-4%; top:-16%; }
+.stack2 .p2{ right:-4%; bottom:-16%; }
 
 .stack3 .stackImg{
   width: min(56px, 84%);
   height: min(56px, 84%);
 }
-.stack3 .p1{ left:-4%; top:-12%; }
-.stack3 .p2{ left:-4%; bottom:-12%; }
-.stack3 .p3{ right:-6%; top:50%; transform: translateY(-55%); }
+.stack3 .p1{ left:-4%; top:-18%; }
+.stack3 .p2{ left:-4%; bottom:-18%; }
+.stack3 .p3{ right:-6%; top:44%; transform: translateY(-55%); }
 
 /* palette */
 .paletteArea{
