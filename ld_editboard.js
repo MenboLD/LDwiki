@@ -192,22 +192,49 @@
   }
 
   function syncCellSize(){
-    // Fit board area (no vertical scroll). Use boardWrap height.
-    const L=LAYOUTS[state.layoutKey]||LAYOUTS.nhpt_single;
-    const rows=L.rows;
-    const styles=getComputedStyle(document.documentElement);
-    const gap=parseFloat(styles.getPropertyValue("--cell-gap"))||2;
-    const pad=parseFloat(styles.getPropertyValue("--board-pad"))||6;
-    const sepExtra = (L.split && rows===6) ? (gap*2) : 0;
+    // No vertical scroll: fit board into remaining height AND prevent tall cells (height > width)
+    const main = document.getElementById("main");
+    const board = els.board;
+    const paletteArea = els.paletteArea;
+    if(!main || !board || !paletteArea) return;
 
-    const wrapH = els.boardWrap ? els.boardWrap.getBoundingClientRect().height : 0;
-    const inner = Math.max(120, wrapH - pad*2 - sepExtra);
+    const L = LAYOUTS[state.layoutKey] || LAYOUTS.nhpt_single;
+    const rows = L.rows;
+    const cols = L.cols;
 
-    // gaps total
+    const rootStyles = getComputedStyle(document.documentElement);
+    const gap = parseFloat(rootStyles.getPropertyValue("--cell-gap")) || 2;
+    const pad = parseFloat(rootStyles.getPropertyValue("--board-pad")) || 6;
+
+    const mainStyles = getComputedStyle(main);
+    const mainGap = parseFloat(mainStyles.gap || mainStyles.rowGap) || 8;
+
+    const mainH = main.getBoundingClientRect().height;
+    const paletteH = paletteArea.getBoundingClientRect().height;
+
+    // boardWrap area height in main (board + palette, with one gap between)
+    const boardAreaH = Math.max(120, mainH - paletteH - mainGap);
+
+    const sepExtra = (L.split && rows === 6) ? (gap * 2) : 0;
+    const innerH = Math.max(80, boardAreaH - pad*2 - sepExtra);
+
     let gapTotal;
-    if(L.split && rows===6){
+    if(L.split && rows === 6){
       gapTotal = (3-1)*gap + (3-1)*gap;
     }else{
+      gapTotal = (rows-1)*gap;
+    }
+    const cellHFromHeight = Math.floor((innerH - gapTotal) / rows);
+
+    // width based: do not allow height > width (縦長禁止)
+    const boardW = board.getBoundingClientRect().width;
+    const innerW = Math.max(120, boardW - pad*2);
+    const cellW = Math.floor((innerW - gap*(cols-1)) / cols);
+
+    const cellH = Math.min(cellHFromHeight, cellW); // cap by width
+    const finalH = Math.max(34, Math.min(86, cellH));
+    document.documentElement.style.setProperty("--cell-h", finalH + "px");
+  }else{
       gapTotal = (rows-1)*gap;
     }
     const cellH = Math.floor((inner - gapTotal) / rows);

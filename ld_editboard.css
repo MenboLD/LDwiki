@@ -8,7 +8,7 @@
   --bar-h:52px;
   --settings-h:28vh;
 
-  --palette-h:152px;    /* パレットを盤面直下に固定表示（縦スクロール無し） */
+  --palette-h:176px;    /* パレットを盤面直下に固定表示（縦スクロール無し） */
   --scrollpad-h:30px;
 
   --cell-gap:2px;
@@ -42,7 +42,7 @@ body{
   display:flex;
   align-items:flex-end;
   justify-content:space-between;
-  gap:10px;
+  gap: 8px;
   background: linear-gradient(to bottom, rgba(11,15,23,.92), rgba(11,15,23,.55));
   backdrop-filter: blur(12px);
   border-bottom:1px solid rgba(255,255,255,.08);
@@ -126,15 +126,12 @@ body.settings-open .main{ pointer-events:none; }
 
 /* board */
 .boardWrap{
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: 0 0 auto;
   max-width: 980px;
   width: 100%;
   margin: 0 auto;
-  display:flex;
 }
 .board{
-  flex: 1 1 auto;
   width:100%;
   background: rgba(255,255,255,.02);
   border:1px solid rgba(255,255,255,.06);
@@ -426,7 +423,7 @@ body.settings-open .settingsPanel{ transform: translateY(0%); }
 }
 
 @media (max-width: 390px){
-  :root{ --palette-h: 148px; --cell-gap:2px; --board-pad:5px; }
+  :root{ --palette-h:172px; --cell-gap:2px; --board-pad:5px; }
   .btn{ padding: 9px 10px; }
   .brand{ font-size: 15px; }
   .pItem{ width: 60px; height: 60px; }
