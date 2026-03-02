@@ -92,22 +92,13 @@
     return !!u && (u.rank === "N" || u.rank === "R" || u.rank === "E" || u.rank === "L");
   }
 
-  const LAYOUTS = {
-    nhpt_single: { label: "ノ/地/太(片)", rows:3, cols:6, split:false, altar:false },
-    hg_single:   { label: "ハ/神(片)",     rows:3, cols:7, split:false, altar:false },
-    nhpt_both:   { label: "ノ/地/太(両)", rows:6, cols:6, split:true,  altar:false },
-    hg_both:     { label: "ハ/神(両)",     rows:6, cols:7, split:true,  altar:false },
-    raid:        { label: "レイド",       rows:4, cols:7, split:false, altar:false },
-    limit:       { label: "限界",         rows:5, cols:6, split:false, altar:false },
-    infinite:    { label: "無限",         rows:6, cols:6, split:false, altar:true  },
-  };
+  // state
+  const STORAGE_BASE = "ld_editboard_slot_v1_";
+  const UI_RANK_KEY = "ld_editboard_filter_rank_v2";
+  const UI_EDIT_KEY = "ld_editboard_edit_toggle_v2";
+  const UI_SETTINGS_KEY = "ld_editboard_settings_open_v2";
 
-  const STORAGE_BASE = "ld_editboard_slot_v2_";
-  const UI_RANK_KEY = "ld_editboard_filter_rank_v3";
-  const UI_EDIT_KEY = "ld_editboard_edit_toggle_v3";
-  const UI_SETTINGS_KEY = "ld_editboard_settings_open_v3";
-
-  const state = { layoutKey: "nhpt_single", rows: 3, cols: 6, cells: [] };
+  const state = { rows: 3, cols: 6, cells: [] }; // cell: null | string | string[]
   const ui = { activeRank: "N", editMode: false, settingsOpen: false };
 
   const history = {
@@ -159,27 +150,9 @@
     return arr.every(v => v === x);
   }
 
-  function applyLayoutKey(k) {
-    const L = LAYOUTS[k] || LAYOUTS.nhpt_single;
-    state.layoutKey = (k in LAYOUTS) ? k : "nhpt_single";
-    state.rows = L.rows;
-    state.cols = L.cols;
-  }
-
   function normalizeState() {
-    if (!state.layoutKey || !(state.layoutKey in LAYOUTS)) {
-      const key =
-        (state.rows===3 && state.cols===6) ? "nhpt_single" :
-        (state.rows===3 && state.cols===7) ? "hg_single" :
-        (state.rows===6 && state.cols===6) ? "nhpt_both" :
-        (state.rows===6 && state.cols===7) ? "hg_both" :
-        (state.rows===4 && state.cols===7) ? "raid" :
-        (state.rows===5 && state.cols===6) ? "limit" :
-        "nhpt_single";
-      applyLayoutKey(key);
-    } else {
-      applyLayoutKey(state.layoutKey);
-    }
+    state.rows = clamp(parseInt(state.rows, 10) || 3, 1, 10);
+    state.cols = clamp(parseInt(state.cols, 10) || 6, 1, 12);
 
     if (!Array.isArray(state.cells)) state.cells = [];
     if (state.cells.length !== state.rows || (state.cells[0] && state.cells[0].length !== state.cols)) {
@@ -204,14 +177,13 @@
   }
 
   function serializeState() {
-    return deepClone({ layoutKey: state.layoutKey, rows: state.rows, cols: state.cols, cells: state.cells });
+    return deepClone({ rows: state.rows, cols: state.cols, cells: state.cells });
   }
   function applyState(s) {
     if (!s || typeof s !== "object") return;
-    state.layoutKey = s.layoutKey || state.layoutKey;
-    state.rows = (s.rows ?? state.rows);
-    state.cols = (s.cols ?? state.cols);
-    state.cells = (s.cells ?? state.cells);
+    state.rows = s.rows;
+    state.cols = (s.cols == null ? 6 : s.cols);
+    state.cells = s.cells;
     normalizeState();
     renderAll();
   }
@@ -231,7 +203,9 @@
     scrollPad: $("#scrollPad"),
   };
 
-  function iconUrl(code) { return ICON_BASE + String(code) + ".png"; }
+  function iconUrl(code) {
+    return ICON_BASE + String(code) + ".png";
+  }
 
   function renderTabs() {
     els.rankTabs.innerHTML = "";
@@ -270,35 +244,26 @@
     }
   }
 
-  function isBlockedCell(r, c) {
-    const L = LAYOUTS[state.layoutKey] || LAYOUTS.nhpt_single;
-    if (!L.altar) return false;
-    return (r >= 0 && r <= 2 && c >= 2 && c <= 3);
-  }
-
-  function renderGrid(rows, cols, rOffset = 0) {
+  function renderBoard() {
     const grid = document.createElement("div");
     grid.className = "grid";
-    grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    grid.style.gridTemplateColumns = `repeat(${state.cols}, 1fr)`;
 
-    for (let r = 0; r < rows; r++) {
-      const rr = rOffset + r;
-      for (let c = 0; c < cols; c++) {
-        if (isBlockedCell(rr, c)) continue;
-
+    for (let r = 0; r < state.rows; r++) {
+      for (let c = 0; c < state.cols; c++) {
         const cell = document.createElement("div");
         cell.className = "cell";
-        cell.dataset.r = String(rr);
+        cell.dataset.r = String(r);
         cell.dataset.c = String(c);
 
         const wrap = document.createElement("div");
         wrap.className = "cell__content";
 
-        const codes = toArr(state.cells[rr][c]);
+        const codes = toArr(state.cells[r][c]);
         if (codes.length) {
           const host = document.createElement("div");
           host.className = "unitHost";
-          host.dataset.r = String(rr);
+          host.dataset.r = String(r);
           host.dataset.c = String(c);
 
           if (codes.length === 1) {
@@ -339,47 +304,24 @@
       }
     }
 
-    return grid;
-  }
-
-  function renderBoard() {
-    const L = LAYOUTS[state.layoutKey] || LAYOUTS.nhpt_single;
     els.board.innerHTML = "";
-
-    if (L.split && L.rows === 6) {
-      const topGrid = renderGrid(3, L.cols, 0);
-      const sep = document.createElement("div");
-      sep.className = "splitSeparator";
-      const bottomGrid = renderGrid(3, L.cols, 3);
-      els.board.appendChild(topGrid);
-      els.board.appendChild(sep);
-      els.board.appendChild(bottomGrid);
-    } else {
-      const grid = renderGrid(L.rows, L.cols, 0);
-      els.board.appendChild(grid);
-
-      if (L.altar) {
-        grid.style.position = "relative";
-        const altar = document.createElement("div");
-        altar.className = "altar";
-        altar.textContent = "祭壇";
-        altar.style.gridColumn = "3 / 5";
-        altar.style.gridRow = "1 / 4";
-        altar.style.borderRadius = "12px";
-        altar.style.pointerEvents = "auto";
-        grid.insertBefore(altar, grid.firstChild);
-      }
-    }
-
+    els.board.appendChild(grid);
     bindBoardInteractions();
   }
 
   function renderSettingsUI() {
     document.body.classList.toggle("settings-open", ui.settingsOpen);
     els.barIcon.textContent = ui.settingsOpen ? "▼" : "▲";
+
     $$(".seg", els.settingsPanel).forEach(b => {
-      const k = (b.dataset.layout || "").trim();
-      b.classList.toggle("is-active", k === state.layoutKey);
+      const layout = (b.dataset.layout || "").trim();
+      if (layout === "6x7") {
+        b.classList.toggle("is-active", state.rows === 6 && state.cols === 7);
+      } else if (layout === "4x6") {
+        b.classList.toggle("is-active", state.rows === 4 && state.cols === 6);
+      } else {
+        b.classList.toggle("is-active", state.rows === 3 && state.cols === 6);
+      }
     });
   }
 
@@ -390,8 +332,8 @@
     renderSettingsUI();
   }
 
-  // drag/drop
-  let drag = null;
+  // drag/drop (move whole cell content)
+  let drag = null; // { payloadCodes: string[], from, pointerId, ghostEl }
   let currentTarget = null;
 
   function clearTarget() {
@@ -430,19 +372,10 @@
     g.style.left = `${x}px`;
     g.style.top = `${y}px`;
   }
-
   function pickCellFromPoint(x,y) {
     const el = document.elementFromPoint(x,y);
-    if (!el) return null;
-    if (el.closest && el.closest(".altar")) return null;
-    const cell = el.closest && el.closest(".cell");
-    if (!cell) return null;
-    const r = parseInt(cell.dataset.r, 10);
-    const c = parseInt(cell.dataset.c, 10);
-    if (isBlockedCell(r,c)) return null;
-    return cell;
+    return el?.closest?.(".cell") || null;
   }
-
   function beginDrag({ payloadCodes, from, pointerId, x, y }) {
     drag = {
       payloadCodes: payloadCodes.map(String),
@@ -466,9 +399,9 @@
     if (isStackable(code)) {
       if (cur.length === 0) return setCell(r,c,[code]);
       if (cellAllSame(cur) && cur[0] === code && cur.length < 3) return setCell(r,c, cur.concat([code]));
-      return setCell(r,c,[code]);
+      return setCell(r,c,[code]); // overwrite
     }
-    return setCell(r,c,[code]);
+    return setCell(r,c,[code]); // overwrite
   }
 
   function endDrag(x,y) {
@@ -489,12 +422,7 @@
         const srcR = from.r, srcC = from.c;
         if (srcR !== r || srcC !== c) {
           const srcArr = toArr(state.cells[srcR][srcC]);
-          const canMerge =
-            cellAllSame(dstArr) && cellAllSame(srcArr) &&
-            dstArr[0] === srcArr[0] &&
-            isStackable(dstArr[0]) &&
-            (dstArr.length + srcArr.length <= 3);
-
+          const canMerge = cellAllSame(dstArr) && cellAllSame(srcArr) && dstArr[0] === srcArr[0] && isStackable(dstArr[0]) && (dstArr.length + srcArr.length <= 3);
           if (canMerge) {
             setCell(r,c, dstArr.concat(srcArr));
             setCell(srcR,srcC, []);
@@ -562,6 +490,7 @@
     let active = false;
     let lastX = 0;
     let pid = null;
+
     const stop = () => { active = false; pid = null; };
 
     els.scrollPad.addEventListener("pointerdown", (e) => {
@@ -588,6 +517,7 @@
   }
 
   function bindBoardInteractions() {
+    // edit mode: transform any entry that has mode=true
     $$(".cell", els.board).forEach(cell => {
       cell.addEventListener("click", () => {
         if (ui.settingsOpen) return;
@@ -595,8 +525,6 @@
 
         const r = parseInt(cell.dataset.r, 10);
         const c = parseInt(cell.dataset.c, 10);
-        if (isBlockedCell(r,c)) return;
-
         const curArr = toArr(state.cells[r][c]);
         if (!curArr.length) return;
 
@@ -619,6 +547,7 @@
       });
     });
 
+    // drag from board (only edit OFF)
     $$(".unitHost", els.board).forEach(host => {
       host.addEventListener("pointerdown", (e) => {
         if (ui.settingsOpen) return;
@@ -629,8 +558,6 @@
         if (!cell) return;
         const r = parseInt(cell.dataset.r, 10);
         const c = parseInt(cell.dataset.c, 10);
-        if (isBlockedCell(r,c)) return;
-
         const arr = toArr(state.cells[r][c]);
         if (!arr.length) return;
 
@@ -646,6 +573,7 @@
     });
   }
 
+  // save/load slots
   function slotKey(i) { return STORAGE_BASE + String(i); }
   function saveSlot(i) {
     localStorage.setItem(slotKey(i), JSON.stringify(serializeState()));
@@ -665,6 +593,7 @@
     }
   }
 
+  // share url
   function makeShareHash() {
     const payload = JSON.stringify(serializeState());
     const b64 = base64UrlEncode(payload);
@@ -746,14 +675,35 @@
 
     $$(".seg", els.settingsPanel).forEach(b => {
       b.addEventListener("click", () => {
-        const k = (b.dataset.layout || "").trim();
-        if (!k || !(k in LAYOUTS)) return;
-        if (k === state.layoutKey) return;
+        const layout = (b.dataset.layout || "").trim();
+        if (layout === "6x7") {
+          if (state.rows === 6 && state.cols === 7) return;
+          history.push(serializeState());
+          state.rows = 6;
+          state.cols = 7;
+          normalizeState();
+          renderAll();
+          toast("6×7");
+          return;
+        }
+        if (layout === "4x6") {
+          if (state.rows === 4 && state.cols === 6) return;
+          history.push(serializeState());
+          state.rows = 4;
+          state.cols = 6;
+          normalizeState();
+          renderAll();
+          toast("4行");
+          return;
+        }
+        // default 3x6
+        if (state.rows === 3 && state.cols === 6) return;
         history.push(serializeState());
-        applyLayoutKey(k);
+        state.rows = 3;
+        state.cols = 6;
         normalizeState();
         renderAll();
-        toast(LAYOUTS[k].label);
+        toast("3行");
       });
     });
 
@@ -785,7 +735,9 @@
 
   function boot() {
     loadUIPrefs();
-    applyLayoutKey(state.layoutKey);
+
+    state.rows = 3;
+    state.cols = 6;
     state.cells = makeEmptyCells(state.rows, state.cols);
     normalizeState();
 
