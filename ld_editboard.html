@@ -12,9 +12,9 @@
     <div class="brand">盤面エディタ</div>
 
     <div class="topbar__right">
-      <div class="toggle pressable">
+      <div class="toggle">
         <input id="editToggle" type="checkbox" />
-        <label for="editToggle" class="toggle__ui" aria-label="編集モード">
+        <label for="editToggle" class="toggle__ui pressable" aria-label="編集モード">
           <span class="toggle__knob"></span>
         </label>
         <span class="toggle__label">編集</span>
@@ -33,11 +33,13 @@
   </main>
 
   <section class="paletteArea" id="paletteArea" aria-label="パレット">
-    <div class="tabs" id="rankTabs" aria-label="ランクタブ"></div>
-    <div class="paletteScroll" id="paletteScroll" aria-label="パレットスクロール">
-      <div class="scrollStrip" aria-hidden="true"></div>
-      <div id="palette" class="palette" aria-label="ユニットパレット"></div>
+    <div class="paletteTop">
+      <div class="tabs" id="rankTabs" aria-label="ランクタブ"></div>
+      <div class="scrollPad" id="scrollPad" aria-label="パレットスクロール（ここを左右になぞる）" title="ここを左右になぞると下のアイコンがスクロールします">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
     </div>
+    <div id="palette" class="palette" aria-label="ユニットパレット"></div>
   </section>
 
   <button class="bottomBar pressable" id="bottomBar" type="button" aria-label="設定を開閉">
