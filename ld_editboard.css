@@ -241,10 +241,40 @@ body.settings-open .paletteArea{ display:none; }
   box-shadow: 0 0 0 3px rgba(106,167,255,.16);
 }
 
+
+.paletteScroll{
+  height: calc(100% - 40px); /* tabs + padding のだいたい */
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+  border-radius: 16px;
+  padding: 6px 0 0;
+}
+.paletteScroll::-webkit-scrollbar{ height:10px; }
+.paletteScroll::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,.14);
+  border-radius: 10px;
+}
+
+.scrollStrip{
+  height: 18px;
+  margin: 0 0 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.10);
+  background:
+    radial-gradient(circle at 20% 50%, rgba(255,255,255,.12) 0 2px, transparent 3px),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.12) 0 2px, transparent 3px),
+    radial-gradient(circle at 80% 50%, rgba(255,255,255,.12) 0 2px, transparent 3px),
+    rgba(255,255,255,.04);
+}
 .palette{
+  min-width: max-content;
+
   display:flex;
   gap:10px;
-  overflow:auto;
+  overflow:visible;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 4px;
 }
