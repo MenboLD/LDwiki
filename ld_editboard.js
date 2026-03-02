@@ -42,7 +42,7 @@
     if (p) flash(p);
   }, true);
 
-  // double-tap zoom suppression (iOS Safari)
+  // double-tap zoom suppression (iOS)
   document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
   let lastTouchEnd = 0;
   document.addEventListener("touchend", (e) => {
@@ -93,12 +93,13 @@
   }
 
   // state
+  const DEFAULT_COLS = 6;
   const STORAGE_BASE = "ld_editboard_slot_v1_";
   const UI_RANK_KEY = "ld_editboard_filter_rank_v2";
   const UI_EDIT_KEY = "ld_editboard_edit_toggle_v2";
   const UI_SETTINGS_KEY = "ld_editboard_settings_open_v2";
 
-  const state = { rows: 3, cols: 6, cells: [] }; // cell: null | string | string[]
+  const state = { rows: 3, cols: DEFAULT_COLS, cells: [] }; // cell: null | string | string[]
   const ui = { activeRank: "N", editMode: false, settingsOpen: false };
 
   const history = {
@@ -152,10 +153,10 @@
 
   function normalizeState() {
     state.rows = clamp(parseInt(state.rows, 10) || 3, 1, 10);
-    state.cols = clamp(parseInt(state.cols, 10) || 6, 1, 12);
+    state.cols = DEFAULT_COLS;
 
     if (!Array.isArray(state.cells)) state.cells = [];
-    if (state.cells.length !== state.rows || (state.cells[0] && state.cells[0].length !== state.cols)) {
+    if (state.cells.length !== state.rows) {
       const next = makeEmptyCells(state.rows, state.cols);
       for (let r = 0; r < Math.min(state.rows, state.cells.length); r++) {
         for (let c = 0; c < Math.min(state.cols, (state.cells[r] || []).length); c++) {
@@ -164,7 +165,6 @@
       }
       state.cells = next;
     }
-
     for (let r = 0; r < state.rows; r++) {
       if (!Array.isArray(state.cells[r])) state.cells[r] = [];
       for (let c = 0; c < state.cols; c++) {
@@ -182,10 +182,11 @@
   function applyState(s) {
     if (!s || typeof s !== "object") return;
     state.rows = s.rows;
-    state.cols = (s.cols == null ? 6 : s.cols);
+    state.cols = DEFAULT_COLS;
     state.cells = s.cells;
     normalizeState();
     renderAll();
+  syncCellSize();
   }
 
   const els = {
@@ -314,17 +315,10 @@
     els.barIcon.textContent = ui.settingsOpen ? "▼" : "▲";
 
     $$(".seg", els.settingsPanel).forEach(b => {
-      const layout = (b.dataset.layout || "").trim();
-      if (layout === "6x7") {
-        b.classList.toggle("is-active", state.rows === 6 && state.cols === 7);
-      } else if (layout === "4x6") {
-        b.classList.toggle("is-active", state.rows === 4 && state.cols === 6);
-      } else {
-        b.classList.toggle("is-active", state.rows === 3 && state.cols === 6);
-      }
+      const rows = parseInt(b.dataset.rows, 10);
+      b.classList.toggle("is-active", rows === state.rows);
     });
   }
-
   function renderAll() {
     renderTabs();
     renderPalette();
@@ -401,7 +395,8 @@
       if (cellAllSame(cur) && cur[0] === code && cur.length < 3) return setCell(r,c, cur.concat([code]));
       return setCell(r,c,[code]); // overwrite
     }
-    return setCell(r,c,[code]); // overwrite
+    // non stackable: overwrite
+    return setCell(r,c,[code]);
   }
 
   function endDrag(x,y) {
@@ -507,7 +502,7 @@
       if (pid != null && e.pointerId !== pid) return;
       const dx = e.clientX - lastX;
       lastX = e.clientX;
-      els.palette.scrollLeft -= dx;
+      els.palette.scrollLeft -= dx; // finger right => previous
       e.preventDefault();
     }, { passive:false });
 
@@ -675,35 +670,14 @@
 
     $$(".seg", els.settingsPanel).forEach(b => {
       b.addEventListener("click", () => {
-        const layout = (b.dataset.layout || "").trim();
-        if (layout === "6x7") {
-          if (state.rows === 6 && state.cols === 7) return;
-          history.push(serializeState());
-          state.rows = 6;
-          state.cols = 7;
-          normalizeState();
-          renderAll();
-          toast("6×7");
-          return;
-        }
-        if (layout === "4x6") {
-          if (state.rows === 4 && state.cols === 6) return;
-          history.push(serializeState());
-          state.rows = 4;
-          state.cols = 6;
-          normalizeState();
-          renderAll();
-          toast("4行");
-          return;
-        }
-        // default 3x6
-        if (state.rows === 3 && state.cols === 6) return;
+        const rows = parseInt(b.dataset.rows, 10);
+        if (!Number.isFinite(rows)) return;
+        if (rows === state.rows) return;
         history.push(serializeState());
-        state.rows = 3;
-        state.cols = 6;
+        state.rows = rows;
         normalizeState();
         renderAll();
-        toast("3行");
+        toast(`${rows}行`);
       });
     });
 
@@ -737,13 +711,15 @@
     loadUIPrefs();
 
     state.rows = 3;
-    state.cols = 6;
+    state.cols = DEFAULT_COLS;
     state.cells = makeEmptyCells(state.rows, state.cols);
     normalizeState();
 
     bindControls();
     bindPaletteDrag();
     bindScrollPad();
+  window.addEventListener("resize", () => syncCellSize());
+  window.addEventListener("orientationchange", () => setTimeout(syncCellSize, 50));
 
     if (applyShareHashIfAny()) {
       history.clear();
