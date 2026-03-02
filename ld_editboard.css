@@ -3,10 +3,10 @@
   --bg:#0b0f17;
   --text:#e7ecff;
   --muted:#93a0c6;
-  --line:rgba(255,255,255,.10);
 
   --topbar-h:60px;
-  --palette-h:146px;
+  --palette-h:166px;      /* スクロール帯ぶん上へ（全体を少し上に） */
+  --scrollpad-h:18px;     /* 細い帯 */
   --bar-h:52px;
   --settings-h:28vh;
 
@@ -30,6 +30,7 @@ body{
   overflow:hidden;
 }
 
+/* topbar */
 .topbar{
   position:sticky;
   top:0;
@@ -56,6 +57,7 @@ body{
   flex-wrap:nowrap;
 }
 
+/* buttons + pressed feel */
 .btn{
   border:1px solid rgba(255,255,255,.10);
   background: rgba(255,255,255,.07);
@@ -141,7 +143,7 @@ body.settings-open .main{
   pointer-events:none;
 }
 
-.boardWrap{ max-width: 900px; margin: 0 auto; }
+.boardWrap{ max-width: 980px; margin: 0 auto; }
 .board{
   width:100%;
   background: rgba(255,255,255,.02);
@@ -160,7 +162,7 @@ body.settings-open .main{
   min-height: 56px;
   user-select:none;
   -webkit-user-select:none;
-  overflow: visible; /* 上はみ出し許容 */
+  overflow: visible;
 }
 .cell.is-target{
   border-style: solid;
@@ -218,20 +220,24 @@ body.settings-open .main{
   user-select:none;
   -webkit-user-select:none;
 }
+
+/* 2体：左上/右下、90% */
 .stack2 .stackImg{
   width: min(60px, 92%);
   height: min(60px, 92%);
 }
-.stack2 .p1{ left:-4%; top:-16%; }
-.stack2 .p2{ right:-4%; bottom:-16%; }
+.stack2 .p1{ left:-4%; top:-16%; transform: translateX(-2px); }   /* 左へ2px */
+.stack2 .p2{ right:-4%; bottom:-16%; transform: translateX(6px); } /* 右へ6px */
 
+/* 3体：左上/左下/右中、80% */
 .stack3 .stackImg{
   width: min(56px, 84%);
   height: min(56px, 84%);
 }
 .stack3 .p1{ left:-4%; top:-18%; }
 .stack3 .p2{ left:-4%; bottom:-18%; }
-.stack3 .p3{ right:-6%; top:44%; transform: translateY(-55%); }
+/* 右中を下左へ3px（= rightを+3px、topを+3px） */
+.stack3 .p3{ right: calc(-6% + 3px); top: calc(44% + 3px); transform: translateY(-55%); }
 
 /* palette */
 .paletteArea{
@@ -245,6 +251,9 @@ body.settings-open .main{
   backdrop-filter: blur(14px);
   border-top:1px solid rgba(255,255,255,.08);
   overflow:hidden;
+  display:flex;
+  flex-direction: column;
+  gap: 8px;
 }
 body.settings-open .paletteArea{ display:none; }
 
@@ -252,7 +261,6 @@ body.settings-open .paletteArea{ display:none; }
   display:flex;
   align-items:center;
   gap:10px;
-  margin-bottom: 8px;
 }
 
 .tabs{ display:flex; gap:8px; flex: 0 0 auto; }
@@ -282,32 +290,14 @@ body.settings-open .paletteArea{ display:none; }
   box-shadow: 0 0 0 3px rgba(106,167,255,.16);
 }
 
-/* scroll pad (右側の空間) */
-.scrollPad{
-  flex: 1 1 auto;
-  height: 34px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.04);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  touch-action: pan-x;
-  -webkit-tap-highlight-color: rgba(106,167,255,.15);
-}
-.scrollPad .dot{
-  width:6px; height:6px;
-  border-radius:999px;
-  background: rgba(231,236,255,.22);
-}
-
 .palette{
+  flex: 1 1 auto;
   display:flex;
   gap:10px;
-  overflow:auto;
+  overflow-x:auto;
+  overflow-y:hidden;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 4px;
+  padding-bottom: 2px;
   touch-action: pan-x;
 }
 .palette::-webkit-scrollbar{ height:10px; }
@@ -338,6 +328,28 @@ body.settings-open .paletteArea{ display:none; }
   pointer-events:none;
   user-select:none;
   -webkit-user-select:none;
+}
+
+/* scroll pad (パレット下：フル幅) */
+.scrollPad{
+  width: 100%;
+  height: var(--scrollpad-h);
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  touch-action: pan-x;
+  -webkit-tap-highlight-color: rgba(106,167,255,.12);
+  user-select:none;
+  -webkit-user-select:none;
+}
+.scrollPad .dot{
+  width:6px; height:6px;
+  border-radius:999px;
+  background: rgba(231,236,255,.22);
 }
 
 /* bottom bar */
@@ -430,7 +442,7 @@ body.settings-open .settingsPanel{ transform: translateY(0%); }
 }
 
 @media (max-width: 390px){
-  :root{ --palette-h: 140px; --cell-gap: 7px; --board-pad: 5px; }
+  :root{ --palette-h: 160px; --cell-gap: 7px; --board-pad: 5px; }
   .btn{ padding: 9px 10px; }
   .brand{ font-size: 15px; }
   .pItem{ width: 80px; height: 80px; }
