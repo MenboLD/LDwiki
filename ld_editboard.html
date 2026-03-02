@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b0f17" />
-  <title>盤面エディタ</title>
+  <title>ld_editboard</title>
   <link rel="stylesheet" href="ld_editboard.css" />
 </head>
 <body>
@@ -12,7 +12,7 @@
     <div class="topbar__left">
       <div class="brand">
         <div class="brand__title">盤面エディタ</div>
-        <div class="brand__sub">パレット → 盤面へドラッグで配置（編集ONでタップ変化）</div>
+        <div class="brand__sub">下のパレットからドラッグして配置（iPhone mini下限想定）</div>
       </div>
     </div>
 
@@ -30,11 +30,13 @@
         <span class="pill" id="colsLabel">6</span>
       </div>
 
-      <label class="switch" title="ON: 盤面上のユニットをタップで変化（mode=true のとき after に置換）">
+      <div class="toggle">
         <input id="editToggle" type="checkbox" />
-        <span class="switch__ui"></span>
-        <span class="switch__txt">編集</span>
-      </label>
+        <label for="editToggle" class="toggle__ui" aria-label="編集モード">
+          <span class="toggle__knob"></span>
+        </label>
+        <span class="toggle__label">編集</span>
+      </div>
 
       <button class="btn" id="undoBtn" type="button" title="戻す">↶</button>
       <button class="btn" id="redoBtn" type="button" title="やり直し">↷</button>
@@ -49,7 +51,11 @@
     <section class="boardWrap">
       <div class="boardHeader">
         <div class="boardHeader__left">
-          <div class="hint">配置済みもドラッグで移動OK（盤外に落とすと削除）</div>
+          <div class="hint">
+            編集ON：盤面ユニットをタップすると形態変化（mode=true のとき after に切替）
+            <span class="hint__dot">•</span>
+            編集OFF：盤面ユニットもドラッグで移動（盤外に落とすと削除）
+          </div>
         </div>
         <div class="boardHeader__right">
           <div class="trash" id="trash" aria-label="ゴミ箱" title="ここに落とすと削除">🗑</div>
@@ -61,18 +67,21 @@
   </main>
 
   <footer class="paletteBar" aria-label="パレット">
-    <div class="paletteTabs" id="rankTabs" aria-label="ランクタブ"></div>
-
     <div class="paletteBar__top">
-      <input id="searchInput" class="search" type="search" placeholder="検索（ID / 名前）" inputmode="search" />
-      <button class="btn btn--ghost" id="loadLocalBtn" type="button">端末読込</button>
-      <button class="btn btn--ghost" id="exportBtn" type="button">JSON</button>
-      <button class="btn btn--ghost" id="reloadUnitsBtn" type="button">更新</button>
+      <div class="tabs" id="rankTabs" aria-label="ランクタブ"></div>
+
+      <div class="paletteBar__row2">
+        <input id="searchInput" class="search" type="search" placeholder="検索（code / 名前）" inputmode="search" />
+        <button class="btn btn--ghost" id="loadLocalBtn" type="button">端末読込</button>
+        <button class="btn btn--ghost" id="exportBtn" type="button">JSON</button>
+        <button class="btn btn--ghost" id="onlineBtn" type="button">Supabase</button>
+      </div>
     </div>
 
     <div id="palette" class="palette" aria-label="ユニットパレット"></div>
   </footer>
 
+  <!-- Supabase (optional) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase_config.js"></script>
   <script src="ld_editboard.js"></script>
