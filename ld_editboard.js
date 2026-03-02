@@ -22,7 +22,7 @@
   }
   const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
 
-  function toast(msg, ms = 1200) {
+  function toast(msg, ms = 1100) {
     const el = document.createElement("div");
     el.className = "toast";
     el.textContent = msg;
@@ -42,7 +42,7 @@
     if (p) flash(p);
   }, true);
 
-  // double-tap zoom suppression
+  // double-tap zoom suppression (iOS)
   document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
   let lastTouchEnd = 0;
   document.addEventListener("touchend", (e) => {
@@ -87,6 +87,11 @@
   }
   rebuildUnitMap();
 
+  function isStackable(code) {
+    const u = UNIT_MAP.get(String(code));
+    return !!u && (u.rank === "N" || u.rank === "R" || u.rank === "E" || u.rank === "L");
+  }
+
   // state
   const DEFAULT_COLS = 6;
   const STORAGE_BASE = "ld_editboard_slot_v1_";
@@ -94,7 +99,7 @@
   const UI_EDIT_KEY = "ld_editboard_edit_toggle_v2";
   const UI_SETTINGS_KEY = "ld_editboard_settings_open_v2";
 
-  const state = { rows: 3, cols: DEFAULT_COLS, cells: [] };
+  const state = { rows: 3, cols: DEFAULT_COLS, cells: [] }; // cell: null | string | string[]
   const ui = { activeRank: "N", editMode: false, settingsOpen: false };
 
   const history = {
@@ -128,6 +133,24 @@
   function makeEmptyCells(rows, cols) {
     return Array.from({ length: rows }, () => Array.from({ length: cols }, () => null));
   }
+
+  function toArr(v) {
+    if (v == null) return [];
+    if (Array.isArray(v)) return v.map(String);
+    return [String(v)];
+  }
+  function setCell(r, c, arr) {
+    const a = (arr || []).map(String).filter(Boolean);
+    if (a.length === 0) state.cells[r][c] = null;
+    else if (a.length === 1) state.cells[r][c] = a[0];
+    else state.cells[r][c] = a;
+  }
+  function cellAllSame(arr) {
+    if (!arr.length) return false;
+    const x = arr[0];
+    return arr.every(v => v === x);
+  }
+
   function normalizeState() {
     state.rows = clamp(parseInt(state.rows, 10) || 3, 1, 10);
     state.cols = DEFAULT_COLS;
@@ -147,11 +170,12 @@
       for (let c = 0; c < state.cols; c++) {
         if (state.cells[r].length <= c) state.cells[r].push(null);
         const v = state.cells[r][c];
-        state.cells[r][c] = (v == null) ? null : String(v);
+        state.cells[r][c] = Array.isArray(v) ? v.map(String) : (v == null ? null : String(v));
       }
       state.cells[r] = state.cells[r].slice(0, state.cols);
     }
   }
+
   function serializeState() {
     return deepClone({ rows: state.rows, cols: state.cols, cells: state.cells });
   }
@@ -176,6 +200,7 @@
     barIcon: $("#barIcon"),
     settingsPanel: $("#settingsPanel"),
     shareBtn: $("#shareBtn"),
+    scrollPad: $("#scrollPad"),
   };
 
   function iconUrl(code) {
@@ -218,6 +243,7 @@
       els.palette.appendChild(item);
     }
   }
+
   function renderBoard() {
     const grid = document.createElement("div");
     grid.className = "grid";
@@ -233,19 +259,44 @@
         const wrap = document.createElement("div");
         wrap.className = "cell__content";
 
-        const code = state.cells[r][c];
-        if (code) {
-          const uEl = document.createElement("div");
-          uEl.className = "unit";
-          uEl.dataset.code = code;
+        const codes = toArr(state.cells[r][c]);
+        if (codes.length) {
+          const host = document.createElement("div");
+          host.className = "unitHost";
+          host.dataset.r = String(r);
+          host.dataset.c = String(c);
 
-          const img = document.createElement("img");
-          img.alt = code;
-          img.src = iconUrl(code);
-          img.onerror = () => { img.onerror = null; img.src = PLACEHOLDER; };
-          uEl.appendChild(img);
-
-          wrap.appendChild(uEl);
+          if (codes.length === 1) {
+            const u = document.createElement("div");
+            u.className = "unitSingle";
+            const img = document.createElement("img");
+            img.alt = codes[0];
+            img.src = iconUrl(codes[0]);
+            img.onerror = () => { img.onerror = null; img.src = PLACEHOLDER; };
+            u.appendChild(img);
+            host.appendChild(u);
+          } else if (codes.length === 2) {
+            host.classList.add("stack2");
+            for (let i = 0; i < 2; i++) {
+              const img = document.createElement("img");
+              img.className = "stackImg " + (i === 0 ? "p1" : "p2");
+              img.alt = codes[i];
+              img.src = iconUrl(codes[i]);
+              img.onerror = () => { img.onerror = null; img.src = PLACEHOLDER; };
+              host.appendChild(img);
+            }
+          } else {
+            host.classList.add("stack3");
+            for (let i = 0; i < 3; i++) {
+              const img = document.createElement("img");
+              img.className = "stackImg " + (i === 0 ? "p1" : (i === 1 ? "p2" : "p3"));
+              img.alt = codes[i];
+              img.src = iconUrl(codes[i]);
+              img.onerror = () => { img.onerror = null; img.src = PLACEHOLDER; };
+              host.appendChild(img);
+            }
+          }
+          wrap.appendChild(host);
         }
 
         cell.appendChild(wrap);
@@ -257,6 +308,7 @@
     els.board.appendChild(grid);
     bindBoardInteractions();
   }
+
   function renderSettingsUI() {
     document.body.classList.toggle("settings-open", ui.settingsOpen);
     els.barIcon.textContent = ui.settingsOpen ? "▼" : "▲";
@@ -273,8 +325,8 @@
     renderSettingsUI();
   }
 
-  // drag/drop
-  let drag = null;
+  // drag/drop (move whole cell content)
+  let drag = null; // { payloadCodes: string[], from, pointerId, ghostEl }
   let currentTarget = null;
 
   function clearTarget() {
@@ -317,8 +369,13 @@
     const el = document.elementFromPoint(x,y);
     return el?.closest?.(".cell") || null;
   }
-  function beginDrag({ code, from, pointerId, x, y }) {
-    drag = { code, from, pointerId, ghostEl: createGhost(code) };
+  function beginDrag({ payloadCodes, from, pointerId, x, y }) {
+    drag = {
+      payloadCodes: payloadCodes.map(String),
+      from,
+      pointerId,
+      ghostEl: createGhost(payloadCodes[0]),
+    };
     moveGhost(drag.ghostEl, x, y);
     document.body.style.cursor = "grabbing";
   }
@@ -329,9 +386,21 @@
     clearTarget();
     document.body.style.cursor = "";
   }
+
+  function placeFromPalette(r, c, code) {
+    const cur = toArr(state.cells[r][c]);
+    if (isStackable(code)) {
+      if (cur.length === 0) return setCell(r,c,[code]);
+      if (cellAllSame(cur) && cur[0] === code && cur.length < 3) return setCell(r,c, cur.concat([code]));
+      return setCell(r,c,[code]); // overwrite
+    }
+    // non stackable: overwrite
+    return setCell(r,c,[code]);
+  }
+
   function endDrag(x,y) {
     if (!drag) return;
-    const { code, from } = drag;
+    const { payloadCodes, from } = drag;
     const cell = pickCellFromPoint(x,y);
 
     if (cell) {
@@ -339,16 +408,25 @@
       const c = parseInt(cell.dataset.c, 10);
 
       history.push(serializeState());
+      const dstArr = toArr(state.cells[r][c]);
+
       if (from.type === "palette") {
-        state.cells[r][c] = code;
+        placeFromPalette(r,c, payloadCodes[0]);
       } else {
         const srcR = from.r, srcC = from.c;
         if (srcR !== r || srcC !== c) {
-          const dst = state.cells[r][c];
-          state.cells[r][c] = code;
-          state.cells[srcR][srcC] = dst ?? null;
+          const srcArr = toArr(state.cells[srcR][srcC]);
+          const canMerge = cellAllSame(dstArr) && cellAllSame(srcArr) && dstArr[0] === srcArr[0] && isStackable(dstArr[0]) && (dstArr.length + srcArr.length <= 3);
+          if (canMerge) {
+            setCell(r,c, dstArr.concat(srcArr));
+            setCell(srcR,srcC, []);
+          } else {
+            setCell(r,c, srcArr);
+            setCell(srcR,srcC, dstArr);
+          }
         }
       }
+
       normalizeState();
       renderBoard();
       cleanupDrag();
@@ -357,13 +435,14 @@
 
     if (from.type === "cell") {
       history.push(serializeState());
-      state.cells[from.r][from.c] = null;
+      setCell(from.r, from.c, []);
       normalizeState();
       renderBoard();
       toast("削除");
     }
     cleanupDrag();
   }
+
   function onPointerMove(e) {
     if (!drag) return;
     if (e.pointerId !== drag.pointerId) return;
@@ -395,11 +474,44 @@
       e.preventDefault();
       const code = item.dataset.code;
       if (!code) return;
-      beginDrag({ code, from: { type:"palette" }, pointerId: e.pointerId, x: e.clientX, y: e.clientY });
+      beginDrag({ payloadCodes: [String(code)], from: { type:"palette" }, pointerId: e.pointerId, x: e.clientX, y: e.clientY });
       item.setPointerCapture?.(e.pointerId);
     }, { passive:false });
   }
+
+  function bindScrollPad() {
+    if (!els.scrollPad) return;
+    let active = false;
+    let lastX = 0;
+    let pid = null;
+
+    const stop = () => { active = false; pid = null; };
+
+    els.scrollPad.addEventListener("pointerdown", (e) => {
+      if (ui.settingsOpen) return;
+      active = true;
+      pid = e.pointerId;
+      lastX = e.clientX;
+      els.scrollPad.setPointerCapture?.(e.pointerId);
+      e.preventDefault();
+    }, { passive:false });
+
+    els.scrollPad.addEventListener("pointermove", (e) => {
+      if (!active) return;
+      if (pid != null && e.pointerId !== pid) return;
+      const dx = e.clientX - lastX;
+      lastX = e.clientX;
+      els.palette.scrollLeft -= dx; // finger right => previous
+      e.preventDefault();
+    }, { passive:false });
+
+    els.scrollPad.addEventListener("pointerup", stop);
+    els.scrollPad.addEventListener("pointercancel", stop);
+    els.scrollPad.addEventListener("lostpointercapture", stop);
+  }
+
   function bindBoardInteractions() {
+    // edit mode: transform any entry that has mode=true
     $$(".cell", els.board).forEach(cell => {
       cell.addEventListener("click", () => {
         if (ui.settingsOpen) return;
@@ -407,25 +519,31 @@
 
         const r = parseInt(cell.dataset.r, 10);
         const c = parseInt(cell.dataset.c, 10);
-        const code = state.cells[r][c];
-        if (!code) return;
+        const curArr = toArr(state.cells[r][c]);
+        if (!curArr.length) return;
 
-        const u = UNIT_MAP.get(code);
-        if (!u || !u.mode || !u.after) {
-          toast("変化なし");
-          return;
-        }
+        let changed = false;
+        const nextArr = curArr.map(code => {
+          const u = UNIT_MAP.get(code);
+          if (u && u.mode && u.after && u.after !== code) {
+            changed = true;
+            return String(u.after);
+          }
+          return code;
+        });
 
+        if (!changed) return toast("変化なし");
         history.push(serializeState());
-        state.cells[r][c] = String(u.after);
+        setCell(r,c,nextArr);
         normalizeState();
         renderBoard();
         toast("変化");
       });
     });
 
-    $$(".unit", els.board).forEach(uEl => {
-      uEl.addEventListener("pointerdown", (e) => {
+    // drag from board (only edit OFF)
+    $$(".unitHost", els.board).forEach(host => {
+      host.addEventListener("pointerdown", (e) => {
         if (ui.settingsOpen) return;
         if (ui.editMode) return;
         e.preventDefault();
@@ -434,11 +552,17 @@
         if (!cell) return;
         const r = parseInt(cell.dataset.r, 10);
         const c = parseInt(cell.dataset.c, 10);
-        const code = state.cells[r][c];
-        if (!code) return;
+        const arr = toArr(state.cells[r][c]);
+        if (!arr.length) return;
 
-        beginDrag({ code, from: { type:"cell", r, c }, pointerId: e.pointerId, x: e.clientX, y: e.clientY });
-        uEl.setPointerCapture?.(e.pointerId);
+        beginDrag({
+          payloadCodes: arr,
+          from: { type:"cell", r, c },
+          pointerId: e.pointerId,
+          x: e.clientX,
+          y: e.clientY
+        });
+        host.setPointerCapture?.(e.pointerId);
       }, { passive:false });
     });
   }
@@ -451,7 +575,7 @@
   }
   function loadSlot(i) {
     const raw = localStorage.getItem(slotKey(i));
-    if (!raw) { toast(`ロード${i}：空`); return; }
+    if (!raw) return toast(`ロード${i}：空`);
     try {
       const s = JSON.parse(raw);
       history.push(serializeState());
@@ -585,7 +709,6 @@
   function boot() {
     loadUIPrefs();
 
-    // default board
     state.rows = 3;
     state.cols = DEFAULT_COLS;
     state.cells = makeEmptyCells(state.rows, state.cols);
@@ -593,6 +716,7 @@
 
     bindControls();
     bindPaletteDrag();
+    bindScrollPad();
 
     if (applyShareHashIfAny()) {
       history.clear();
