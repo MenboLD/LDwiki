@@ -30,19 +30,17 @@
     <section class="boardWrap">
       <div id="board" class="board" aria-label="盤面"></div>
     </section>
-
-    <section class="paletteArea" id="paletteArea" aria-label="パレット">
-      <div class="paletteTop">
-        <div class="tabs" id="rankTabs" aria-label="ランクタブ"></div>
-      </div>
-
-      <div id="palette" class="palette" aria-label="ユニットパレット"></div>
-
-      <div class="scrollPad scrollPad--bottom pressable" id="scrollPad"
-        aria-label="パレットスクロール（ここを左右になぞる）"
-        title="ここを左右になぞると上のアイコンがスクロールします">ここで左右にスクロール</div>
-    </section>
   </main>
+
+  <section class="paletteArea" id="paletteArea" aria-label="パレット">
+    <div class="paletteTop">
+      <div class="tabs" id="rankTabs" aria-label="ランクタブ"></div>
+      <div class="scrollPad" id="scrollPad" aria-label="パレットスクロール（ここを左右になぞる）" title="ここを左右になぞると下のアイコンがスクロールします">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
+    </div>
+    <div id="palette" class="palette" aria-label="ユニットパレット"></div>
+  </section>
 
   <button class="bottomBar pressable" id="bottomBar" type="button" aria-label="設定を開閉">
     <span id="barIcon">▲</span>
@@ -50,14 +48,9 @@
 
   <section class="settingsPanel" id="settingsPanel" aria-label="設定">
     <div class="settingsInner">
-      <div class="segRow" aria-label="盤面種類">
-        <button class="seg pressable" data-layout="nhpt_single" type="button">ノ/地/太(片)</button>
-        <button class="seg pressable" data-layout="hg_single" type="button">ハ/神(片)</button>
-        <button class="seg pressable" data-layout="nhpt_both" type="button">ノ/地/太(両)</button>
-        <button class="seg pressable" data-layout="hg_both" type="button">ハ/神(両)</button>
-        <button class="seg pressable" data-layout="raid" type="button">レイド</button>
-        <button class="seg pressable" data-layout="limit" type="button">限界</button>
-        <button class="seg pressable" data-layout="infinite" type="button">無限</button>
+      <div class="segRow" aria-label="行数">
+        <button class="seg pressable" data-rows="3" type="button">3行</button>
+        <button class="seg pressable" data-rows="4" type="button">4行</button>
       </div>
 
       <div class="btnRow">
