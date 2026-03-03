@@ -5,19 +5,14 @@
   --muted:#93a0c6;
 
   --topbar-h:60px;
+  --palette-h:178px;      /* スクロール帯ぶん上へ（全体を少し上に） */
+  --scrollpad-h:30px;     /* 細い帯 */
   --bar-h:52px;
-  --settings-h:32vh;
+  --settings-h:28vh;
 
-  --palette-h:182px;    /* パレット見切れ防止 */
-  --scrollpad-h:30px;
-
-  --cell-gap:2px;
-  --split-gap-mult:3;   /* 3-4行間ギャップ倍率（3倍程度） */
+  --cell-gap:5px;
   --cell-radius:10px;
   --board-pad:6px;
-
-  /* JSが調整（縦長禁止：h <= w） */
-  --cell-h:56px;
 
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
@@ -50,8 +45,17 @@ body{
   backdrop-filter: blur(12px);
   border-bottom:1px solid rgba(255,255,255,.08);
 }
-.brand{ font-size:16px; font-weight:900; letter-spacing:.02em; }
-.topbar__right{ display:flex; align-items:center; gap:8px; flex-wrap:nowrap; }
+.brand{
+  font-size:16px;
+  font-weight:900;
+  letter-spacing:.02em;
+}
+.topbar__right{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:nowrap;
+}
 
 /* buttons + pressed feel */
 .btn{
@@ -83,31 +87,70 @@ body{
   100%{ filter: brightness(1.0); }
 }
 
-/* main (NO vertical scroll) */
-.main{
-  height: calc(100% - (var(--topbar-h) + var(--safe-t)) - (var(--bar-h) + var(--safe-b)));
-  padding: 10px;
-  overflow:hidden;                 /* 盤面/パレットの縦スクロール禁止 */
+/* toggle: 枠なし */
+.toggle{
   display:flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items:center;
+  gap:8px;
+  padding: 0;
+  border:none;
+  background: transparent;
 }
-body.settings-open .main{ pointer-events:none; }
+.toggle input{ display:none; }
+.toggle__ui{
+  width:46px; height:28px;
+  border-radius: 999px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  position:relative;
+  cursor:pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(106,167,255,.20);
+}
+.toggle__knob{
+  position:absolute;
+  top:50%; left:4px;
+  width:22px; height:22px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: rgba(231,236,255,.92);
+  box-shadow: 0 8px 16px rgba(0,0,0,.25);
+  transition: left .15s ease, background .15s ease;
+}
+.toggle input:checked + .toggle__ui{
+  background: rgba(106,167,255,.22);
+  border-color: rgba(106,167,255,.55);
+}
+.toggle input:checked + .toggle__ui .toggle__knob{
+  left: 20px;
+  background: rgba(106,167,255,.95);
+}
+.toggle__label{
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(147,160,198,.95);
+}
 
-/* board */
-.boardWrap{
-  flex: 0 0 auto;   /* 盤面の高さに合わせる（無駄余白を作らない） */
-  max-width: 980px;
-  width: 100%;
-  margin: 0 auto;
+/* main/board */
+.main{
+  height: calc(100% - (var(--topbar-h) + var(--safe-t)) - (var(--palette-h) + var(--bar-h) + var(--safe-b)));
+  overflow:auto;
+  padding: 10px 10px 12px;
+  -webkit-overflow-scrolling: touch;
 }
+body.settings-open .main{
+  overflow:hidden;
+  pointer-events:none;
+}
+
+.boardWrap{ max-width: 980px; margin: 0 auto; }
 .board{
   width:100%;
   background: rgba(255,255,255,.02);
   border:1px solid rgba(255,255,255,.06);
   border-radius: 0;
   padding: var(--board-pad);
-  box-shadow:none;
+  box-shadow: none;
 }
 
 .grid{ display:grid; gap: var(--cell-gap); }
@@ -116,7 +159,7 @@ body.settings-open .main{ pointer-events:none; }
   border-radius: var(--cell-radius);
   border:1px dashed rgba(255,255,255,.14);
   background: rgba(255,255,255,.02);
-  height: var(--cell-h);
+  min-height: 56px;
   user-select:none;
   -webkit-user-select:none;
   overflow: visible;
@@ -136,23 +179,19 @@ body.settings-open .main{ pointer-events:none; }
   overflow: visible;
 }
 
-/* blocked cells (under altar) */
-.cell.cell--blocked{
-  border: none;
-  background: transparent;
-  pointer-events: none;
+.unitHost{
+  position:relative;
+  width:100%;
+  height:100%;
+  overflow: visible;
 }
 
-/* zone colors (board backgrounds by layout) */
-.cell.zone-red{ background: rgba(255, 77, 109, .10); }
-.cell.zone-blue{ background: rgba(64, 120, 255, .10); }
-.cell.zone-yellow{ background: rgba(255, 215, 64, .10); }
-.cell.zone-green{ background: rgba(46, 229, 157, .10); }
-.cell.zone-grey{ background: rgba(200, 205, 220, .08); }
+/* stack host shift (2体/3体は上寄せ) */
+.stack2, .stack3{
+  transform: translateY(-6px);
+}
 
-.unitHost{ position:relative; width:100%; height:100%; overflow: visible; }
-.stack2, .stack3{ transform: translateY(-6px); }
-
+/* single */
 .unitSingle{
   position:absolute;
   inset:0;
@@ -172,6 +211,7 @@ body.settings-open .main{ pointer-events:none; }
   -webkit-user-select:none;
 }
 
+/* multi */
 .stackImg{
   position:absolute;
   object-fit:contain;
@@ -180,54 +220,54 @@ body.settings-open .main{ pointer-events:none; }
   user-select:none;
   -webkit-user-select:none;
 }
-.stack2 .stackImg{ width: min(60px, 92%); height: min(60px, 92%); }
-.stack2 .p1{ left:-4%; top:-16%; transform: translateX(-2px); }
-.stack2 .p2{ right:-4%; bottom:-16%; transform: translateX(6px); }
 
-.stack3 .stackImg{ width: min(56px, 84%); height: min(56px, 84%); }
+/* 2体：左上/右下、90% */
+.stack2 .stackImg{
+  width: min(60px, 92%);
+  height: min(60px, 92%);
+}
+.stack2 .p1{ left:-4%; top:-16%; transform: translateX(-2px); }   /* 左へ2px */
+.stack2 .p2{ right:-4%; bottom:-16%; transform: translateX(6px); } /* 右へ6px */
+
+/* 3体：左上/左下/右中、80% */
+.stack3 .stackImg{
+  width: min(56px, 84%);
+  height: min(56px, 84%);
+}
 .stack3 .p1{ left:-4%; top:-18%; }
 .stack3 .p2{ left:-4%; bottom:-18%; }
+/* 右中を下左へ3px（= rightを+3px、topを+3px） */
 .stack3 .p3{ right: calc(-6% - 4px); top: calc(44% + 3px); transform: translateY(-55%); }
 
-/* split gap (3rd-4th row) */
-.splitSeparator{ height: calc(var(--cell-gap) * var(--split-gap-mult)); }
-
-/* altar */
-.altar{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight: 1000;
-  letter-spacing: .08em;
-  color: rgba(231,236,255,.75);
-  background: rgba(200, 205, 220, .10);
-  border: 1px solid rgba(200,205,220,.18);
-  user-select:none;
-  -webkit-user-select:none;
-}
-
-/* palette (NO vertical scroll) */
+/* palette */
 .paletteArea{
-  flex: 0 0 var(--palette-h);
+  position:fixed;
+  left:0; right:0;
+  bottom: calc(var(--bar-h) + var(--safe-b));
+  z-index:55;
   height: var(--palette-h);
-  max-width: 980px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 10px;
-  background: linear-gradient(to bottom, rgba(11,15,23,.40), rgba(11,15,23,.20));
-  border: 1px solid rgba(255,255,255,.06);
+  padding: 8px 10px 8px;
+  background: linear-gradient(to top, rgba(11,15,23,.92), rgba(11,15,23,.62));
+  backdrop-filter: blur(14px);
+  border-top:1px solid rgba(255,255,255,.08);
   overflow:hidden;
   display:flex;
   flex-direction: column;
   gap: 8px;
+
   transition: transform .18s ease, opacity .18s ease;
   transform: translateY(0);
   opacity: 1;
 }
-body.settings-open .paletteArea{ opacity:0; transform: translateY(12px); pointer-events:none; }
+body.settings-open .paletteArea{ opacity:0; transform: translateY(16px); pointer-events:none; }
 
-.paletteTop{ display:flex; align-items:center; gap:10px; }
-.tabs{ display:flex; gap:8px; flex: 0 0 auto; overflow:hidden; }
+.paletteTop{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.tabs{ display:flex; gap:8px; flex: 0 0 auto; }
 .tab{
   flex:0 0 auto;
   height: 34px;
@@ -257,7 +297,7 @@ body.settings-open .paletteArea{ opacity:0; transform: translateY(12px); pointer
 .palette{
   flex: 1 1 auto;
   display:flex;
-  gap:8px;
+  gap:10px;
   overflow-x:auto;
   overflow-y:hidden;
   -webkit-overflow-scrolling: touch;
@@ -267,12 +307,11 @@ body.settings-open .paletteArea{ opacity:0; transform: translateY(12px); pointer
 .palette::-webkit-scrollbar{ height:10px; }
 .palette::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.14); border-radius: 10px; }
 
-/* 75%（コンテナも画像も） */
 .pItem{
   flex:0 0 auto;
-  width: 63px;
-  height: 63px;
-  border-radius: 14px;
+  width: 84px;
+  height: 84px;
+  border-radius: 18px;
   border: 1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.06);
   display:flex;
@@ -287,14 +326,15 @@ body.settings-open .paletteArea{ opacity:0; transform: translateY(12px); pointer
 }
 .pItem:active{ transform: translateY(1px) scale(.99); filter: brightness(1.15); }
 .pItem img{
-  width: 52px;
-  height: 52px;
+  width: 70px;
+  height: 70px;
   object-fit:contain;
   pointer-events:none;
   user-select:none;
   -webkit-user-select:none;
 }
 
+/* scroll pad (パレット下：フル幅) */
 .scrollPad{
   width: 100%;
   height: var(--scrollpad-h);
@@ -335,7 +375,7 @@ body.settings-open .paletteArea{ opacity:0; transform: translateY(12px); pointer
 }
 .bottomBar:active{ filter: brightness(1.15); }
 
-/* settings panel (内部スクロールOK) */
+/* settings panel */
 .settingsPanel{
   position:fixed;
   left:0; right:0;
@@ -348,25 +388,20 @@ body.settings-open .paletteArea{ opacity:0; transform: translateY(12px); pointer
   border-top:1px solid rgba(255,255,255,.10);
   transform: translateY(110%);
   transition: transform .18s ease;
-  overflow:auto;
-  -webkit-overflow-scrolling: touch;
+  overflow:hidden;
 }
 body.settings-open .settingsPanel{ transform: translateY(0%); }
-.settingsInner{ min-height:100%; display:flex; flex-direction: column; gap: 10px; padding-bottom: 8px; }
+.settingsInner{ height: 100%; display:flex; flex-direction: column; gap: 10px; }
 
-.segRow{
-  display:grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap:8px;
-}
+.segRow{ display:flex; gap:10px; }
 .seg{
-  height: 34px;
+  flex:1;
+  height: 42px;
   border-radius: 14px;
   border:1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.06);
   color: rgba(231,236,255,.95);
   font-weight: 1000;
-  font-size: 11px;
   cursor:pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: rgba(106,167,255,.20);
@@ -380,7 +415,7 @@ body.settings-open .settingsPanel{ transform: translateY(0%); }
 }
 
 .btnRow{ display:flex; gap:10px; }
-.btnRow .btn{ width:100%; }
+.btnRow .btn{ width: 100%; }
 
 .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
 .miniTitle{ font-size: 12px; font-weight: 1000; color: rgba(147,160,198,.95); margin-bottom: 6px; }
@@ -409,10 +444,10 @@ body.settings-open .settingsPanel{ transform: translateY(0%); }
 }
 
 @media (max-width: 390px){
-  :root{ --palette-h: 176px; }
+  :root{ --palette-h: 172px; --cell-gap:4px; --board-pad: 5px; }
   .btn{ padding: 9px 10px; }
   .brand{ font-size: 15px; }
-  .pItem{ width: 60px; height: 60px; }
-  .pItem img{ width: 50px; height: 50px; }
+  .pItem{ width: 80px; height: 80px; }
+  .pItem img{ width: 66px; height: 66px; }
   .grid3{ grid-template-columns: 1fr 1fr; }
 }

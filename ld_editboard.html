@@ -12,48 +12,48 @@
     <div class="brand">盤面エディタ</div>
 
     <div class="topbar__right">
+      <div class="toggle">
+        <input id="editToggle" type="checkbox" />
+        <label for="editToggle" class="toggle__ui pressable" aria-label="編集モード">
+          <span class="toggle__knob"></span>
+        </label>
+        <span class="toggle__label">編集</span>
+      </div>
+
       <button class="btn pressable" id="undoBtn" type="button" title="戻す">↶</button>
       <button class="btn pressable" id="redoBtn" type="button" title="やり直し">↷</button>
       <button class="btn btn--danger pressable" id="clearBtn" type="button">全消し</button>
     </div>
   </header>
 
-  <!-- 盤面 + パレットは縦スクロール無し（ドラッグ衝突回避） -->
   <main class="main" id="main">
     <section class="boardWrap">
       <div id="board" class="board" aria-label="盤面"></div>
     </section>
-
-    <!-- 盤面直下パレット -->
-    <section class="paletteArea" id="paletteArea" aria-label="パレット">
-      <div class="paletteTop">
-        <div class="tabs" id="rankTabs" aria-label="ランクタブ"></div>
-      </div>
-
-      <div id="palette" class="palette" aria-label="ユニットパレット"></div>
-
-      <div class="scrollPad pressable" id="scrollPad"
-        aria-label="パレットスクロール"
-        title="ここを左右になぞると上のアイコンがスクロールします">ここで左右にスクロール</div>
-    </section>
   </main>
 
-  <!-- 設定トグル（下固定） -->
+  <section class="paletteArea" id="paletteArea" aria-label="パレット">
+    <div class="paletteTop">
+      <div class="tabs" id="rankTabs" aria-label="ランクタブ"></div>
+    </div>
+
+    <div id="palette" class="palette" aria-label="ユニットパレット"></div>
+
+    <!-- スクロール帯（パレット下：フル幅） -->
+    <div class="scrollPad scrollPad--bottom pressable" id="scrollPad" aria-label="パレットスクロール（ここを左右になぞる）"
+      title="ここを左右になぞると上のアイコンがスクロールします">ここで左右にスクロール</div>
+  </section>
+
   <button class="bottomBar pressable" id="bottomBar" type="button" aria-label="設定を開閉">
     <span id="barIcon">▲</span>
   </button>
 
-  <!-- 設定（内部スクロールは許可。盤面/パレットは縦スクロール無し） -->
   <section class="settingsPanel" id="settingsPanel" aria-label="設定">
     <div class="settingsInner">
-      <div class="segRow" aria-label="盤面種類">
-        <button class="seg pressable" data-layout="nhpt_single" type="button">3x6 1P</button>
-        <button class="seg pressable" data-layout="hg_single" type="button">3x6+3 1P</button>
-        <button class="seg pressable" data-layout="nhpt_both" type="button">3x6 1&2P</button>
-        <button class="seg pressable" data-layout="hg_both" type="button">3x6+3 1&2P</button>
-        <button class="seg pressable" data-layout="raid" type="button">4x6 Raid</button>
-        <button class="seg pressable" data-layout="limit" type="button">5x6 Extra</button>
-        <button class="seg pressable" data-layout="infinite" type="button">3x6+12 ∞</button>
+      <div class="segRow" aria-label="行数/盤面">
+        <button class="seg pressable" data-layout="3x6" type="button">3行</button>
+        <button class="seg pressable" data-layout="4x6" type="button">4行</button>
+        <button class="seg pressable" data-layout="6x7" type="button">6×7</button>
       </div>
 
       <div class="btnRow">
