@@ -1,13 +1,10 @@
-window.addEventListener('error', (e)=>{console.error('[ld_rune_list] window error', e.error||e.message); warnStatus(String(e.error||e.message||e));});
-window.addEventListener('unhandledrejection', (e)=>{console.error('[ld_rune_list] unhandledrejection', e.reason); warnStatus(String(e.reason||e));});
-
 /* LDwiki Rune List JS
-   BUILD: 20260207k
+   BUILD: 20260207lk
 */
 (function(){
   'use strict';
 
-  const BUILD = "20260207k";
+  const BUILD = "20260207l";
   const RARITY_ORDER = ["ノマ","レア","エピ","レジェ","神話","不滅","超越"];
 
   function rarityRank(g){
@@ -280,8 +277,6 @@ function applyColumnVisibility(){
       state.sortDir = "asc";
     }
     render();
-  try{ okStatus('データ読込完了'); }catch(_e){}
-
   }
 
   function resetSort(){
@@ -572,6 +567,17 @@ function applyColumnVisibility(){
 
     const client = window.supabase.createClient(url, key);
 
+    // Ensure we can read even if RLS is authenticated-only:
+    // Try to establish an anonymous auth session (best-effort). If policies already allow anon, this is harmless.
+    try{
+      const { data: sessData } = await client.auth.getSession();
+      if (!sessData?.session){
+        await client.auth.signInAnonymously();
+      }
+    }catch(_e){
+      // ignore
+    }
+
     // Load runes
     {
       const { data, error } = await client
@@ -601,11 +607,14 @@ function applyColumnVisibility(){
       wordList = (data || []).map(x=>x.WordTxt).filter(Boolean);
       wordTotal = wordList.length;
     }
+    // If nothing is returned without an error, it's often an RLS policy returning 0 rows.
+    if ((allRunes?.length||0) === 0 && (wordList?.length||0) === 0){
+      try{ setStatus("表示 0/全0（データが返っていません。RLSでanonが見えない可能性）"); }catch(_e){}
+    }
+
   }
 
   async function init(){
-  setStatus('<b>読込中…</b> <span class="muted">設定とテーブルを確認しています</span>');
-
     try{
       setStatus("Loading...");
       buildColUI();
@@ -630,7 +639,7 @@ requestAnimationFrame(()=>{
 setPanelOpen(false);
     } catch (err) {
       console.error("[ld_rune_list] init failed", err);
-      setStatus("読み込みに失敗しました。SupabaseのRLS/テーブル名/設定を確認してください。");
+      setStatus("読み込みに失敗しました: " + (err?.message || String(err)));
     }
   }
 
