@@ -279,6 +279,10 @@
     for(let r=0;r<rows;r++) {
       const rr=rOffset+r;
       for(let c=0;c<cols;c++) {
+                // ∞(infinite): skip original altar-region cells (top 3 rows, cols 3-4)
+        if(state.layoutKey==="infinite" && rr<=2 && c>=2 && c<=3){
+          continue;
+        }
         const cell=document.createElement("div");
         cell.className="cell";
         cell.dataset.r=String(rr);
