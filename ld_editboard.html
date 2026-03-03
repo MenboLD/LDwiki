@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b0f17" />
   <title>ld_editboard</title>
-  <link rel="stylesheet" href="ld_editboard.css?v=20260303015119" />
+  <link rel="stylesheet" href="ld_editboard.css" />
 </head>
 <body>
   <header class="topbar">
@@ -26,35 +26,42 @@
     </div>
   </header>
 
+  <!-- 盤面 + パレットは縦スクロール無し（ドラッグ衝突回避） -->
   <main class="main" id="main">
     <section class="boardWrap">
       <div id="board" class="board" aria-label="盤面"></div>
     </section>
 
+    <!-- 盤面直下パレット -->
     <section class="paletteArea" id="paletteArea" aria-label="パレット">
-    <div class="paletteTop">
-      <div class="tabs" id="rankTabs" aria-label="ランクタブ"></div>
-    </div>
+      <div class="paletteTop">
+        <div class="tabs" id="rankTabs" aria-label="ランクタブ"></div>
+      </div>
 
-    <div id="palette" class="palette" aria-label="ユニットパレット"></div>
+      <div id="palette" class="palette" aria-label="ユニットパレット"></div>
 
-    <!-- スクロール帯（パレット下：フル幅） -->
-    <div class="scrollPad scrollPad--bottom pressable" id="scrollPad" aria-label="パレットスクロール（ここを左右になぞる）"
-      title="ここを左右になぞると上のアイコンがスクロールします">ここで左右にスクロール</div>
-  </section>
-
+      <div class="scrollPad pressable" id="scrollPad"
+        aria-label="パレットスクロール"
+        title="ここを左右になぞると上のアイコンがスクロールします">ここで左右にスクロール</div>
+    </section>
   </main>
 
+  <!-- 設定トグル（下固定） -->
   <button class="bottomBar pressable" id="bottomBar" type="button" aria-label="設定を開閉">
     <span id="barIcon">▲</span>
   </button>
 
+  <!-- 設定（内部スクロールは許可。盤面/パレットは縦スクロール無し） -->
   <section class="settingsPanel" id="settingsPanel" aria-label="設定">
     <div class="settingsInner">
-      <div class="segRow" aria-label="行数/盤面">
-        <button class="seg pressable" data-layout="3x6" type="button">3行</button>
-        <button class="seg pressable" data-layout="4x6" type="button">4行</button>
-        <button class="seg pressable" data-layout="6x7" type="button">6×7</button>
+      <div class="segRow" aria-label="盤面種類">
+        <button class="seg pressable" data-layout="nhpt_single" type="button">ノ/地/太(片)</button>
+        <button class="seg pressable" data-layout="hg_single" type="button">ハ/神(片)</button>
+        <button class="seg pressable" data-layout="nhpt_both" type="button">ノ/地/太(両)</button>
+        <button class="seg pressable" data-layout="hg_both" type="button">ハ/神(両)</button>
+        <button class="seg pressable" data-layout="raid" type="button">レイド</button>
+        <button class="seg pressable" data-layout="limit" type="button">限界</button>
+        <button class="seg pressable" data-layout="infinite" type="button">無限</button>
       </div>
 
       <div class="btnRow">
@@ -84,7 +91,7 @@
   </section>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase_config.js?v=20260303015119"></script>
-  <script src="ld_editboard.js?v=20260303015119"></script>
+  <script src="supabase_config.js"></script>
+  <script src="ld_editboard.js"></script>
 </body>
 </html>

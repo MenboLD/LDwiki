@@ -5,14 +5,19 @@
   --muted:#93a0c6;
 
   --topbar-h:60px;
-  --palette-h:178px;      /* スクロール帯ぶん上へ（全体を少し上に） */
-  --scrollpad-h:30px;     /* 細い帯 */
   --bar-h:52px;
-  --settings-h:28vh;
+  --settings-h:32vh;
 
-  --cell-gap:5px;
+  /* パレット（盤面直下・縦スクロール無し） */
+  --palette-h:182px;
+  --scrollpad-h:30px;
+
+  --cell-gap:2px;
   --cell-radius:10px;
   --board-pad:6px;
+
+  /* JSが調整（縦長禁止：h <= w） */
+  --cell-h:56px;
 
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
@@ -45,17 +50,8 @@ body{
   backdrop-filter: blur(12px);
   border-bottom:1px solid rgba(255,255,255,.08);
 }
-.brand{
-  font-size:16px;
-  font-weight:900;
-  letter-spacing:.02em;
-}
-.topbar__right{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  flex-wrap:nowrap;
-}
+.brand{ font-size:16px; font-weight:900; letter-spacing:.02em; }
+.topbar__right{ display:flex; align-items:center; gap:8px; flex-wrap:nowrap; }
 
 /* buttons + pressed feel */
 .btn{
@@ -88,14 +84,7 @@ body{
 }
 
 /* toggle: 枠なし */
-.toggle{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding: 0;
-  border:none;
-  background: transparent;
-}
+.toggle{ display:flex; align-items:center; gap:8px; padding:0; border:none; background:transparent; }
 .toggle input{ display:none; }
 .toggle__ui{
   width:46px; height:28px;
@@ -125,32 +114,33 @@ body{
   left: 20px;
   background: rgba(106,167,255,.95);
 }
-.toggle__label{
-  font-size: 12px;
-  font-weight: 900;
-  color: rgba(147,160,198,.95);
-}
+.toggle__label{ font-size:12px; font-weight:900; color: rgba(147,160,198,.95); }
 
-/* main/board */
+/* main (NO vertical scroll) */
 .main{
-  height: calc(100% - (var(--topbar-h) + var(--safe-t)) - (var(--palette-h) + var(--bar-h) + var(--safe-b)));
-  overflow:auto;
-  padding: 10px 10px 12px;
-  -webkit-overflow-scrolling: touch;
+  height: calc(100% - (var(--topbar-h) + var(--safe-t)) - (var(--bar-h) + var(--safe-b)));
+  padding: 10px;
+  overflow:hidden;                 /* 盤面/パレットの縦スクロール禁止 */
+  display:flex;
+  flex-direction: column;
+  gap: 8px;
 }
-body.settings-open .main{
-  overflow:hidden;
-  pointer-events:none;
-}
+body.settings-open .main{ pointer-events:none; }
 
-.boardWrap{ max-width: 980px; margin: 0 auto; }
+/* board */
+.boardWrap{
+  flex: 0 0 auto;   /* コンテンツ高さに合わせる（下に無駄余白を作らない） */
+  max-width: 980px;
+  width: 100%;
+  margin: 0 auto;
+}
 .board{
   width:100%;
   background: rgba(255,255,255,.02);
   border:1px solid rgba(255,255,255,.06);
   border-radius: 0;
   padding: var(--board-pad);
-  box-shadow: none;
+  box-shadow:none;
 }
 
 .grid{ display:grid; gap: var(--cell-gap); }
@@ -159,7 +149,7 @@ body.settings-open .main{
   border-radius: var(--cell-radius);
   border:1px dashed rgba(255,255,255,.14);
   background: rgba(255,255,255,.02);
-  min-height: 56px;
+  height: var(--cell-h);
   user-select:none;
   -webkit-user-select:none;
   overflow: visible;
@@ -179,19 +169,9 @@ body.settings-open .main{
   overflow: visible;
 }
 
-.unitHost{
-  position:relative;
-  width:100%;
-  height:100%;
-  overflow: visible;
-}
+.unitHost{ position:relative; width:100%; height:100%; overflow: visible; }
+.stack2, .stack3{ transform: translateY(-6px); }
 
-/* stack host shift (2体/3体は上寄せ) */
-.stack2, .stack3{
-  transform: translateY(-6px);
-}
-
-/* single */
 .unitSingle{
   position:absolute;
   inset:0;
@@ -211,7 +191,6 @@ body.settings-open .main{
   -webkit-user-select:none;
 }
 
-/* multi */
 .stackImg{
   position:absolute;
   object-fit:contain;
@@ -220,29 +199,41 @@ body.settings-open .main{
   user-select:none;
   -webkit-user-select:none;
 }
+.stack2 .stackImg{ width: min(60px, 92%); height: min(60px, 92%); }
+.stack2 .p1{ left:-4%; top:-16%; transform: translateX(-2px); }
+.stack2 .p2{ right:-4%; bottom:-16%; transform: translateX(6px); }
 
-/* 2体：左上/右下、90% */
-.stack2 .stackImg{
-  width: min(60px, 92%);
-  height: min(60px, 92%);
-}
-.stack2 .p1{ left:-4%; top:-16%; transform: translateX(-2px); }   /* 左へ2px */
-.stack2 .p2{ right:-4%; bottom:-16%; transform: translateX(6px); } /* 右へ6px */
-
-/* 3体：左上/左下/右中、80% */
-.stack3 .stackImg{
-  width: min(56px, 84%);
-  height: min(56px, 84%);
-}
+.stack3 .stackImg{ width: min(56px, 84%); height: min(56px, 84%); }
 .stack3 .p1{ left:-4%; top:-18%; }
 .stack3 .p2{ left:-4%; bottom:-18%; }
-/* 右中を下左へ3px（= rightを+3px、topを+3px） */
+/* 右中：下方向+3px、右へ+7px（= rightを7px分さらに負方向へ） */
 .stack3 .p3{ right: calc(-6% - 4px); top: calc(44% + 3px); transform: translateY(-55%); }
 
-/* palette */
+/* split (3行目-4行目の隙間を2倍程度) */
+.splitSeparator{ height: calc(var(--cell-gap) * 2); }
+
+/* altar */
+.altar{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight: 1000;
+  letter-spacing: .08em;
+  color: rgba(231,236,255,.70);
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.10);
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+/* palette (NO vertical scroll) */
 .paletteArea{
-  margin-top: 10px;
-  padding: 10px 10px 10px;
+  flex: 0 0 var(--palette-h);
+  height: var(--palette-h);
+  max-width: 980px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 10px;
   background: linear-gradient(to bottom, rgba(11,15,23,.40), rgba(11,15,23,.20));
   border: 1px solid rgba(255,255,255,.06);
   overflow:hidden;
@@ -255,14 +246,8 @@ body.settings-open .main{
 }
 body.settings-open .paletteArea{ opacity:0; transform: translateY(12px); pointer-events:none; }
 
-
-.paletteTop{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-
-.tabs{ display:flex; gap:8px; flex: 0 0 auto; }
+.paletteTop{ display:flex; align-items:center; gap:10px; }
+.tabs{ display:flex; gap:8px; flex: 0 0 auto; overflow:hidden; }
 .tab{
   flex:0 0 auto;
   height: 34px;
@@ -292,7 +277,7 @@ body.settings-open .paletteArea{ opacity:0; transform: translateY(12px); pointer
 .palette{
   flex: 1 1 auto;
   display:flex;
-  gap: 8px;
+  gap:8px;
   overflow-x:auto;
   overflow-y:hidden;
   -webkit-overflow-scrolling: touch;
@@ -302,6 +287,7 @@ body.settings-open .paletteArea{ opacity:0; transform: translateY(12px); pointer
 .palette::-webkit-scrollbar{ height:10px; }
 .palette::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.14); border-radius: 10px; }
 
+/* 75%（コンテナも画像も） */
 .pItem{
   flex:0 0 auto;
   width: 63px;
@@ -321,15 +307,14 @@ body.settings-open .paletteArea{ opacity:0; transform: translateY(12px); pointer
 }
 .pItem:active{ transform: translateY(1px) scale(.99); filter: brightness(1.15); }
 .pItem img{
-  width: 70px;
-  height: 70px;
+  width: 52px;
+  height: 52px;
   object-fit:contain;
   pointer-events:none;
   user-select:none;
   -webkit-user-select:none;
 }
 
-/* scroll pad (パレット下：フル幅) */
 .scrollPad{
   width: 100%;
   height: var(--scrollpad-h);
@@ -370,7 +355,7 @@ body.settings-open .paletteArea{ opacity:0; transform: translateY(12px); pointer
 }
 .bottomBar:active{ filter: brightness(1.15); }
 
-/* settings panel */
+/* settings panel (内部スクロールOK) */
 .settingsPanel{
   position:fixed;
   left:0; right:0;
@@ -387,12 +372,15 @@ body.settings-open .paletteArea{ opacity:0; transform: translateY(12px); pointer
   -webkit-overflow-scrolling: touch;
 }
 body.settings-open .settingsPanel{ transform: translateY(0%); }
-.settingsInner{ height: 100%; display:flex; flex-direction: column; gap: 10px; }
+.settingsInner{ min-height:100%; display:flex; flex-direction: column; gap: 10px; padding-bottom: 8px; }
 
-.segRow{ display:flex; gap:10px; }
+.segRow{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:8px;
+}
 .seg{
-  flex:1;
-  height: 42px;
+  height: 34px;
   border-radius: 14px;
   border:1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.06);
@@ -411,7 +399,7 @@ body.settings-open .settingsPanel{ transform: translateY(0%); }
 }
 
 .btnRow{ display:flex; gap:10px; }
-.btnRow .btn{ width: 100%; }
+.btnRow .btn{ width:100%; }
 
 .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
 .miniTitle{ font-size: 12px; font-weight: 1000; color: rgba(147,160,198,.95); margin-bottom: 6px; }
@@ -440,10 +428,10 @@ body.settings-open .settingsPanel{ transform: translateY(0%); }
 }
 
 @media (max-width: 390px){
-  :root{ --palette-h: 172px; --cell-gap:4px; --board-pad: 5px; }
+  :root{ --palette-h: 176px; }
   .btn{ padding: 9px 10px; }
   .brand{ font-size: 15px; }
   .pItem{ width: 60px; height: 60px; }
-  .pItem img{ width: 66px; height: 66px; }
+  .pItem img{ width: 50px; height: 50px; }
   .grid3{ grid-template-columns: 1fr 1fr; }
 }
