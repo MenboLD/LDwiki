@@ -12,14 +12,6 @@
     <div class="brand">盤面エディタ</div>
 
     <div class="topbar__right">
-      <div class="toggle">
-        <input id="editToggle" type="checkbox" />
-        <label for="editToggle" class="toggle__ui pressable" aria-label="編集モード">
-          <span class="toggle__knob"></span>
-        </label>
-        <span class="toggle__label">編集</span>
-      </div>
-
       <button class="btn pressable" id="undoBtn" type="button" title="戻す">↶</button>
       <button class="btn pressable" id="redoBtn" type="button" title="やり直し">↷</button>
       <button class="btn btn--danger pressable" id="clearBtn" type="button">全消し</button>
@@ -55,13 +47,13 @@
   <section class="settingsPanel" id="settingsPanel" aria-label="設定">
     <div class="settingsInner">
       <div class="segRow" aria-label="盤面種類">
-        <button class="seg pressable" data-layout="nhpt_single" type="button">ノ/地/太(片)</button>
-        <button class="seg pressable" data-layout="hg_single" type="button">ハ/神(片)</button>
-        <button class="seg pressable" data-layout="nhpt_both" type="button">ノ/地/太(両)</button>
-        <button class="seg pressable" data-layout="hg_both" type="button">ハ/神(両)</button>
-        <button class="seg pressable" data-layout="raid" type="button">レイド</button>
-        <button class="seg pressable" data-layout="limit" type="button">限界</button>
-        <button class="seg pressable" data-layout="infinite" type="button">無限</button>
+        <button class="seg pressable" data-layout="nhpt_single" type="button">3x6 1P</button>
+        <button class="seg pressable" data-layout="hg_single" type="button">3x6+3 1P</button>
+        <button class="seg pressable" data-layout="nhpt_both" type="button">3x6 1&2P</button>
+        <button class="seg pressable" data-layout="hg_both" type="button">3x6+3 1&2P</button>
+        <button class="seg pressable" data-layout="raid" type="button">4x6 Raid</button>
+        <button class="seg pressable" data-layout="limit" type="button">5x6 Extra</button>
+        <button class="seg pressable" data-layout="infinite" type="button">3x6+12 ∞</button>
       </div>
 
       <div class="btnRow">

@@ -8,11 +8,11 @@
   --bar-h:52px;
   --settings-h:32vh;
 
-  /* パレット（盤面直下・縦スクロール無し） */
-  --palette-h:182px;
+  --palette-h:182px;    /* パレット見切れ防止 */
   --scrollpad-h:30px;
 
   --cell-gap:2px;
+  --split-gap-mult:3;   /* 3-4行間ギャップ倍率（3倍程度） */
   --cell-radius:10px;
   --board-pad:6px;
 
@@ -83,39 +83,6 @@ body{
   100%{ filter: brightness(1.0); }
 }
 
-/* toggle: 枠なし */
-.toggle{ display:flex; align-items:center; gap:8px; padding:0; border:none; background:transparent; }
-.toggle input{ display:none; }
-.toggle__ui{
-  width:46px; height:28px;
-  border-radius: 999px;
-  border:1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.06);
-  position:relative;
-  cursor:pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: rgba(106,167,255,.20);
-}
-.toggle__knob{
-  position:absolute;
-  top:50%; left:4px;
-  width:22px; height:22px;
-  transform: translateY(-50%);
-  border-radius: 999px;
-  background: rgba(231,236,255,.92);
-  box-shadow: 0 8px 16px rgba(0,0,0,.25);
-  transition: left .15s ease, background .15s ease;
-}
-.toggle input:checked + .toggle__ui{
-  background: rgba(106,167,255,.22);
-  border-color: rgba(106,167,255,.55);
-}
-.toggle input:checked + .toggle__ui .toggle__knob{
-  left: 20px;
-  background: rgba(106,167,255,.95);
-}
-.toggle__label{ font-size:12px; font-weight:900; color: rgba(147,160,198,.95); }
-
 /* main (NO vertical scroll) */
 .main{
   height: calc(100% - (var(--topbar-h) + var(--safe-t)) - (var(--bar-h) + var(--safe-b)));
@@ -129,7 +96,7 @@ body.settings-open .main{ pointer-events:none; }
 
 /* board */
 .boardWrap{
-  flex: 0 0 auto;   /* コンテンツ高さに合わせる（下に無駄余白を作らない） */
+  flex: 0 0 auto;   /* 盤面の高さに合わせる（無駄余白を作らない） */
   max-width: 980px;
   width: 100%;
   margin: 0 auto;
@@ -169,6 +136,20 @@ body.settings-open .main{ pointer-events:none; }
   overflow: visible;
 }
 
+/* blocked cells (under altar) */
+.cell.cell--blocked{
+  border: none;
+  background: transparent;
+  pointer-events: none;
+}
+
+/* zone colors (board backgrounds by layout) */
+.cell.zone-red{ background: rgba(255, 77, 109, .10); }
+.cell.zone-blue{ background: rgba(64, 120, 255, .10); }
+.cell.zone-yellow{ background: rgba(255, 215, 64, .10); }
+.cell.zone-green{ background: rgba(46, 229, 157, .10); }
+.cell.zone-grey{ background: rgba(200, 205, 220, .08); }
+
 .unitHost{ position:relative; width:100%; height:100%; overflow: visible; }
 .stack2, .stack3{ transform: translateY(-6px); }
 
@@ -206,11 +187,10 @@ body.settings-open .main{ pointer-events:none; }
 .stack3 .stackImg{ width: min(56px, 84%); height: min(56px, 84%); }
 .stack3 .p1{ left:-4%; top:-18%; }
 .stack3 .p2{ left:-4%; bottom:-18%; }
-/* 右中：下方向+3px、右へ+7px（= rightを7px分さらに負方向へ） */
 .stack3 .p3{ right: calc(-6% - 4px); top: calc(44% + 3px); transform: translateY(-55%); }
 
-/* split (3行目-4行目の隙間を2倍程度) */
-.splitSeparator{ height: calc(var(--cell-gap) * 2); }
+/* split gap (3rd-4th row) */
+.splitSeparator{ height: calc(var(--cell-gap) * var(--split-gap-mult)); }
 
 /* altar */
 .altar{
@@ -219,9 +199,9 @@ body.settings-open .main{ pointer-events:none; }
   justify-content:center;
   font-weight: 1000;
   letter-spacing: .08em;
-  color: rgba(231,236,255,.70);
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.10);
+  color: rgba(231,236,255,.75);
+  background: rgba(200, 205, 220, .10);
+  border: 1px solid rgba(200,205,220,.18);
   user-select:none;
   -webkit-user-select:none;
 }
@@ -386,6 +366,7 @@ body.settings-open .settingsPanel{ transform: translateY(0%); }
   background: rgba(255,255,255,.06);
   color: rgba(231,236,255,.95);
   font-weight: 1000;
+  font-size: 11px;
   cursor:pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: rgba(106,167,255,.20);

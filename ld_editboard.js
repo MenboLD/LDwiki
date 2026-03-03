@@ -4,6 +4,7 @@
 
   const $ = (sel, root=document) => root.querySelector(sel);
   const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+  const clamp = (v,a,b) => Math.max(a, Math.min(b,v));
 
   function base64UrlEncode(str){
     const bytes=new TextEncoder().encode(str);
@@ -36,14 +37,17 @@
   let lastTouchEnd=0;
   document.addEventListener("touchend",(e)=>{ const now=Date.now(); if(now-lastTouchEnd<=300) e.preventDefault(); lastTouchEnd=now; },{passive:false});
 
+  // data
   const ICON_BASE="./icon/";
   const PLACEHOLDER=ICON_BASE+"_placeholder.png";
   const RANKS=["N","R","E","L","神話","不滅"];
   const RANK_LABEL={N:"N",R:"R",E:"E",L:"L","神話":"神","不滅":"不"};
   const RANK_ORDER={N:1,R:2,E:3,L:4,"神話":5,"不滅":6};
 
+  const UNIT_TABLE = "ld_editboard_units";
+
   const DEFAULT_UNITS = [{"code": "1001", "name": "弓兵", "rank": "N", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "1002", "name": "擲弾兵", "rank": "N", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "1003", "name": "野蛮人", "rank": "N", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "1004", "name": "水の精霊", "rank": "N", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "1005", "name": "山賊", "rank": "N", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "2001", "name": "レンジャー", "rank": "R", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "2002", "name": "ショックロボット", "rank": "R", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "2003", "name": "聖騎士", "rank": "R", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "2004", "name": "サンドマン", "rank": "R", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "2005", "name": "悪魔の兵士", "rank": "R", "mode": false, "after": null, "dff": 7.5, "speed": 0.0}, {"code": "3001", "name": "電気ロボット", "rank": "E", "mode": false, "after": null, "dff": 5.0, "speed": 0.0}, {"code": "3002", "name": "木", "rank": "E", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "3003", "name": "ハンター", "rank": "E", "mode": false, "after": null, "dff": 15.0, "speed": 0.0}, {"code": "3005", "name": "イーグル将軍", "rank": "E", "mode": false, "after": null, "dff": 0.0, "speed": 5.0}, {"code": "3006", "name": "ウルフ戦士", "rank": "E", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "4003", "name": "ウォーマシン", "rank": "L", "mode": false, "after": null, "dff": 10.0, "speed": 0.0}, {"code": "4004", "name": "虎の師父", "rank": "L", "mode": false, "after": null, "dff": 0.0, "speed": 5.0}, {"code": "4005", "name": "嵐の巨人", "rank": "L", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "4007", "name": "保安官", "rank": "L", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "3004", "name": "重力弾", "rank": "神話", "mode": true, "after": "13004", "dff": 0.0, "speed": 0.0}, {"code": "3007", "name": "忍者", "rank": "神話", "mode": true, "after": "13007", "dff": 0.0, "speed": 0.0}, {"code": "4001", "name": "オークシャーマン", "rank": "神話", "mode": false, "after": null, "dff": 20.0, "speed": 0.0}, {"code": "4002", "name": "パルス発生器", "rank": "神話", "mode": true, "after": "14002", "dff": 0.0, "speed": 0.0}, {"code": "4006", "name": "猫の魔法使い", "rank": "神話", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "5001", "name": "バンバ", "rank": "神話", "mode": true, "after": "15001", "dff": 0.0, "speed": 0.0}, {"code": "5002", "name": "コルディ", "rank": "神話", "mode": true, "after": "15002", "dff": 0.0, "speed": 0.0}, {"code": "5003", "name": "ランスロット", "rank": "神話", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "5004", "name": "アイアンニャン", "rank": "神話", "mode": true, "after": "5104", "dff": 0.0, "speed": 0.0}, {"code": "5104", "name": "アイアンニャン", "rank": "神話", "mode": true, "after": "5204", "dff": 0.0, "speed": 0.0}, {"code": "5204", "name": "アイアンニャンv2", "rank": "神話", "mode": true, "after": "15004", "dff": 0.0, "speed": 0.0}, {"code": "5005", "name": "ブロッブ", "rank": "神話", "mode": true, "after": "15005", "dff": 20.0, "speed": 0.0}, {"code": "5006", "name": "ドラゴン", "rank": "神話", "mode": true, "after": "5106", "dff": 0.0, "speed": 0.0}, {"code": "5106", "name": "ドラゴン", "rank": "神話", "mode": true, "after": "5206", "dff": 0.0, "speed": 0.0}, {"code": "5206", "name": "偉大な卵", "rank": "神話", "mode": true, "after": "5306", "dff": 0.0, "speed": 0.0}, {"code": "5306", "name": "ドレイン", "rank": "神話", "mode": true, "after": "15006", "dff": 0.0, "speed": 0.0}, {"code": "5007", "name": "モノポリーマン", "rank": "神話", "mode": false, "after": null, "dff": 20.0, "speed": 0.0}, {"code": "5008", "name": "ママ", "rank": "神話", "mode": true, "after": "15008", "dff": 20.0, "speed": 0.0}, {"code": "5108", "name": "インプ", "rank": "N", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "5009", "name": "カエルの王様", "rank": "神話", "mode": true, "after": "5109", "dff": 0.0, "speed": 10.0}, {"code": "5109", "name": "キングダイアン", "rank": "神話", "mode": true, "after": "15009", "dff": 0.0, "speed": 10.0}, {"code": "5010", "name": "バットマン", "rank": "神話", "mode": true, "after": "15010", "dff": 0.0, "speed": 0.0}, {"code": "5011", "name": "ヴェイン", "rank": "神話", "mode": true, "after": "15011", "dff": 0.0, "speed": 0.0}, {"code": "5012", "name": "インディ", "rank": "神話", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "5013", "name": "ワット", "rank": "神話", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "5014", "name": "タール", "rank": "神話", "mode": true, "after": "5114", "dff": 0.0, "speed": 0.0}, {"code": "5114", "name": "タール", "rank": "神話", "mode": true, "after": "5214", "dff": 0.0, "speed": 0.0}, {"code": "5214", "name": "タール", "rank": "神話", "mode": true, "after": "5014", "dff": 0.0, "speed": 0.0}, {"code": "5015", "name": "ロケッチュー", "rank": "神話", "mode": true, "after": "5115", "dff": 0.0, "speed": 0.0}, {"code": "5115", "name": "オーバークロック・ロケッチュー", "rank": "神話", "mode": true, "after": "5015", "dff": 0.0, "speed": 0.0}, {"code": "5016", "name": "ウチ", "rank": "神話", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "5017", "name": "ビリ", "rank": "神話", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "5018", "name": "マスタークン", "rank": "神話", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "5019", "name": "チョナ", "rank": "神話", "mode": false, "after": null, "dff": 0.0, "speed": 0.0}, {"code": "5020", "name": "ペンギン楽師", "rank": "神話", "mode": true, "after": "15020", "dff": 0.0, "speed": 0.0}, {"code": "5021", "name": "ヘイリー", "rank": "神話", "mode": true, "after": "15021", "dff": 0.0, "speed": 0.0}, {"code": "5022", "name": "アト", "rank": "神話", "mode": true, "after": "15022", "dff": 20.0, "speed": 0.0}, {"code": "5023", "name": "ロカ", "rank": "神話", "mode": true, "after": "15023", "dff": 0.0, "speed": 0.0}, {"code": "5024", "name": "選鳥師", "rank": "神話", "mode": true, "after": "15024", "dff": 0.0, "speed": 0.0}, {"code": "5025", "name": "チャド", "rank": "神話", "mode": true, "after": "15025", "dff": 0.0, "speed": 0.0}, {"code": "15008", "name": "グランドママ", "rank": "不滅", "mode": true, "after": "5008", "dff": 0.0, "speed": 0.0}, {"code": "15009", "name": "カエルの死神", "rank": "不滅", "mode": true, "after": "15109", "dff": 0.0, "speed": 0.0}, {"code": "15109", "name": "死神ダイアン", "rank": "不滅", "mode": true, "after": "5009", "dff": 0.0, "speed": 0.0}, {"code": "15021", "name": "覚醒ヘイリー", "rank": "不滅", "mode": true, "after": "5021", "dff": 0.0, "speed": 0.0}, {"code": "15001", "name": "原始バンバ", "rank": "不滅", "mode": true, "after": "5001", "dff": 0.0, "speed": 0.0}, {"code": "13007", "name": "鬼神忍者", "rank": "不滅", "mode": true, "after": "3007", "dff": 0.0, "speed": 0.0}, {"code": "15022", "name": "時空アト", "rank": "不滅", "mode": true, "after": "5022", "dff": 0.0, "speed": 0.0}, {"code": "14002", "name": "ドクターパルス", "rank": "不滅", "mode": true, "after": "4002", "dff": 0.0, "speed": 0.0}, {"code": "15011", "name": "トップヴェイン", "rank": "不滅", "mode": true, "after": "5011", "dff": 0.0, "speed": 0.0}, {"code": "15006", "name": "魔王ドラゴン", "rank": "不滅", "mode": true, "after": "5006", "dff": 0.0, "speed": 0.0}, {"code": "13004", "name": "スーパー重力弾", "rank": "不滅", "mode": true, "after": "3004", "dff": 0.0, "speed": 0.0}, {"code": "15023", "name": "キャプテンロカ", "rank": "不滅", "mode": true, "after": "5023", "dff": 0.0, "speed": 0.0}, {"code": "15004", "name": "アイアムニャン", "rank": "不滅", "mode": true, "after": "5004", "dff": 0.0, "speed": 0.0}, {"code": "15010", "name": "エースバットマン", "rank": "不滅", "mode": true, "after": "15110", "dff": 0.0, "speed": 0.0}, {"code": "15110", "name": "エースバットマン", "rank": "不滅", "mode": true, "after": "15210", "dff": 0.0, "speed": 0.0}, {"code": "15210", "name": "エースバットマン", "rank": "不滅", "mode": true, "after": "5010", "dff": 0.0, "speed": 0.0}, {"code": "15020", "name": "ノイズキングペンギン楽師", "rank": "不滅", "mode": true, "after": "5020", "dff": 0.0, "speed": 0.0}, {"code": "15024", "name": "ボス選鳥師", "rank": "不滅", "mode": true, "after": "5024", "dff": 0.0, "speed": 0.0}, {"code": "15005", "name": "ブロッブ団", "rank": "不滅", "mode": true, "after": "5005", "dff": 0.0, "speed": 0.0}, {"code": "15002", "name": "女王コルディ", "rank": "不滅", "mode": true, "after": "5002", "dff": 0.0, "speed": 0.0}, {"code": "15025", "name": "ギガチャド", "rank": "不滅", "mode": true, "after": "5025", "dff": 0.0, "speed": 0.0}];
-  let UNITS = DEFAULT_UNITS.slice();
+  let UNITS = Array.isArray(DEFAULT_UNITS) ? DEFAULT_UNITS.slice() : [];
   let UNIT_MAP = new Map();
 
   function normalizeRank(v){
@@ -54,11 +58,11 @@
     return String(v);
   }
   function rebuildUnitMap(){
-    UNITS = UNITS.map(u=>({
-      code:String(u.code),
-      rank:normalizeRank(u.rank),
-      mode:!!u.mode,
-      after:(u.after==null||u.after==="")?null:String(u.after),
+    UNITS = (UNITS||[]).map(u=>({
+      code: String(u.code),
+      rank: normalizeRank(u.rank),
+      mode: !!u.mode,
+      after: (u.after==null||u.after==="") ? null : String(u.after),
     })).filter(u=>!!u.code);
 
     UNITS.sort((a,b)=>{
@@ -77,18 +81,37 @@
 
   // 7 board types
   const LAYOUTS = {
-    nhpt_single:{ label:"ノ/地/太(片)", rows:3, cols:6, split:false, altar:false },
-    hg_single:{   label:"ハ/神(片)",     rows:3, cols:7, split:false, altar:false },
-    nhpt_both:{   label:"ノ/地/太(両)", rows:6, cols:6, split:true,  altar:false },  // split gap between 3rd & 4th row
-    hg_both:{     label:"ハ/神(両)",     rows:6, cols:7, split:true,  altar:false },
-    raid:{        label:"レイド",       rows:4, cols:7, split:false, altar:false },
-    limit:{       label:"限界",         rows:5, cols:6, split:false, altar:false },
-    infinite:{    label:"無限",         rows:6, cols:6, split:false, altar:true  },  // altar block
+    nhpt_single:{ label:"3x6 1P",          rows:3, cols:6, split:false, altar:false },
+    hg_single:  { label:"3x6+3 1P",        rows:3, cols:7, split:false, altar:false },
+    nhpt_both:  { label:"3x6 1&2P",        rows:6, cols:6, split:true,  altar:false },
+    hg_both:    { label:"3x6+3 1&2P",      rows:6, cols:7, split:true,  altar:false },
+    raid:       { label:"4x6 Raid",        rows:4, cols:7, split:false, altar:false },
+    limit:      { label:"5x6 Extra",       rows:5, cols:6, split:false, altar:false },
+    infinite:   { label:"3x6+12 ∞",        rows:6, cols:6, split:true,  altar:true  },
   };
 
+  function zoneForCell(layoutKey, r, c){
+    // return: "red" | "blue" | "yellow" | "green" | "grey" | null
+    if(layoutKey === "nhpt_both") {
+      return (r <= 2) ? "red" : "blue";
+    }
+    if(layoutKey === "hg_both") {
+      if(r <= 2) return (c <= 5) ? "red" : "yellow";
+      return (c <= 5) ? "blue" : "green";
+    }
+    if(layoutKey === "infinite") {
+      if(r <= 2) {
+        if(c <= 1) return "yellow";
+        if(c <= 3) return "grey";   // altar area
+        if(c <= 5) return "yellow";
+      }
+    }
+    return null;
+  }
+
+  // state
   const STORAGE_BASE="ld_editboard_slot_v3_";
   const UI_RANK_KEY="ld_editboard_filter_rank_v4";
-  const UI_EDIT_KEY="ld_editboard_edit_toggle_v4";
   const UI_SETTINGS_KEY="ld_editboard_settings_open_v4";
   const UI_LAYOUT_KEY="ld_editboard_layout_v3";
 
@@ -100,7 +123,6 @@
   };
   const ui = {
     activeRank: localStorage.getItem(UI_RANK_KEY) || "N",
-    editMode: (localStorage.getItem(UI_EDIT_KEY) === "1"),
     settingsOpen: (localStorage.getItem(UI_SETTINGS_KEY) === "1"),
   };
 
@@ -116,11 +138,9 @@
 
   const els = {
     board: $("#board"),
-    boardWrap: document.querySelector(".boardWrap"),
     paletteArea: $("#paletteArea"),
     palette: $("#palette"),
     rankTabs: $("#rankTabs"),
-    editToggle: $("#editToggle"),
     undoBtn: $("#undoBtn"),
     redoBtn: $("#redoBtn"),
     clearBtn: $("#clearBtn"),
@@ -162,16 +182,15 @@
     else applyLayoutKey(state.layoutKey);
 
     const next = makeEmptyCells(state.rows, state.cols);
-    for(let r=0;r<Math.min(state.rows,state.cells.length);r++){
-      for(let c=0;c<Math.min(state.cols,(state.cells[r]||[]).length);c++){
+    for(let r=0;r<Math.min(state.rows,state.cells.length);r++){ 
+      for(let c=0;c<Math.min(state.cols,(state.cells[r]||[]).length);c++){ 
         next[r][c]=state.cells[r][c] ?? null;
       }
     }
     state.cells = next;
 
-    // normalize types + clear blocked cells
-    for(let r=0;r<state.rows;r++){
-      for(let c=0;c<state.cols;c++){
+    for(let r=0;r<state.rows;r++){ 
+      for(let c=0;c<state.cols;c++){ 
         const v=state.cells[r][c];
         state.cells[r][c] = Array.isArray(v)?v.map(String):(v==null?null:String(v));
         if(isBlockedCell(r,c)) state.cells[r][c]=null;
@@ -208,28 +227,26 @@
     const styles=getComputedStyle(document.documentElement);
     const gap=parseFloat(styles.getPropertyValue("--cell-gap"))||2;
     const pad=parseFloat(styles.getPropertyValue("--board-pad"))||6;
+    const splitMult=parseFloat(styles.getPropertyValue("--split-gap-mult"))||3;
 
     const topbarH = document.querySelector(".topbar")?.getBoundingClientRect().height || 0;
     const bottomH = document.querySelector(".bottomBar")?.getBoundingClientRect().height || 0;
     const paletteH = els.paletteArea?.getBoundingClientRect().height || 0;
-    const mainPad = 20; // 10px top + 10px bottom
-    const available = window.innerHeight - topbarH - bottomH - paletteH - mainPad - 8; // gap
+    const mainPad = 20; // main padding top+bottom
+    const mainGap = 8;  // main gap
+    const available = window.innerHeight - topbarH - bottomH - paletteH - mainPad - mainGap;
 
     const cellW = calcCellWidth();
 
-    // vertical space based cap
-    const sepH = (L.split && L.rows===6) ? (gap*2) : 0;
+    const sepH = (L.split && L.rows===6) ? (gap*splitMult) : 0;
     const innerH = Math.max(120, available - pad*2 - sepH);
 
     let gapTotal;
-    if(L.split && L.rows===6){
-      gapTotal = (3-1)*gap + (3-1)*gap; // within halves
-    }else{
-      gapTotal = (L.rows-1)*gap;
-    }
-    const capByH = Math.floor((innerH - gapTotal) / L.rows);
+    if(L.split && L.rows===6) gapTotal = (3-1)*gap + (3-1)*gap;
+    else gapTotal = (L.rows-1)*gap;
 
-    const finalH = Math.max(30, Math.min(cellW, capByH)); // <= cellW forbids vertical-long
+    const capByH = Math.floor((innerH - gapTotal) / L.rows);
+    const finalH = Math.max(30, Math.min(cellW, capByH)); // <= cellW
     document.documentElement.style.setProperty("--cell-h", finalH + "px");
   }
 
@@ -270,52 +287,58 @@
     grid.className="grid";
     grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
-    for(let r=0;r<rows;r++){
+    for(let r=0;r<rows;r++){ 
       const rr=rOffset+r;
-      for(let c=0;c<cols;c++){
-        if(isBlockedCell(rr,c)) continue;
-
+      for(let c=0;c<cols;c++){ 
         const cell=document.createElement("div");
         cell.className="cell";
         cell.dataset.r=String(rr);
         cell.dataset.c=String(c);
 
+        const z = zoneForCell(state.layoutKey, rr, c);
+        if (z) cell.classList.add("zone-"+z);
+
+        const blocked = isBlockedCell(rr,c);
+        if(blocked) cell.classList.add("cell--blocked");
+
         const wrap=document.createElement("div");
         wrap.className="cell__content";
 
-        const codes=toArr(state.cells[rr][c]);
-        if(codes.length){
-          const host=document.createElement("div");
-          host.className="unitHost";
-          host.dataset.r=String(rr);
-          host.dataset.c=String(c);
+        if(!blocked){
+          const codes=toArr(state.cells[rr][c]);
+          if(codes.length){
+            const host=document.createElement("div");
+            host.className="unitHost";
+            host.dataset.r=String(rr);
+            host.dataset.c=String(c);
 
-          if(codes.length===1){
-            const u=document.createElement("div"); u.className="unitSingle";
-            const img=document.createElement("img");
-            img.alt=codes[0]; img.src=iconUrl(codes[0]);
-            img.onerror=()=>{ img.onerror=null; img.src=PLACEHOLDER; };
-            u.appendChild(img); host.appendChild(u);
-          }else if(codes.length===2){
-            host.classList.add("stack2");
-            for(let i=0;i<2;i++){
+            if(codes.length===1){
+              const u=document.createElement("div"); u.className="unitSingle";
               const img=document.createElement("img");
-              img.className="stackImg "+(i===0?"p1":"p2");
-              img.alt=codes[i]; img.src=iconUrl(codes[i]);
+              img.alt=codes[0]; img.src=iconUrl(codes[0]);
               img.onerror=()=>{ img.onerror=null; img.src=PLACEHOLDER; };
-              host.appendChild(img);
+              u.appendChild(img); host.appendChild(u);
+            } else if(codes.length===2) {
+              host.classList.add("stack2");
+              for(let i=0;i<2;i++){ 
+                const img=document.createElement("img");
+                img.className="stackImg "+(i===0?"p1":"p2");
+                img.alt=codes[i]; img.src=iconUrl(codes[i]);
+                img.onerror=()=>{ img.onerror=null; img.src=PLACEHOLDER; };
+                host.appendChild(img);
+              }
+            } else {
+              host.classList.add("stack3");
+              for(let i=0;i<3;i++){ 
+                const img=document.createElement("img");
+                img.className="stackImg "+(i===0?"p1":(i===1?"p2":"p3"));
+                img.alt=codes[i]; img.src=iconUrl(codes[i]);
+                img.onerror=()=>{ img.onerror=null; img.src=PLACEHOLDER; };
+                host.appendChild(img);
+              }
             }
-          }else{
-            host.classList.add("stack3");
-            for(let i=0;i<3;i++){
-              const img=document.createElement("img");
-              img.className="stackImg "+(i===0?"p1":(i===1?"p2":"p3"));
-              img.alt=codes[i]; img.src=iconUrl(codes[i]);
-              img.onerror=()=>{ img.onerror=null; img.src=PLACEHOLDER; };
-              host.appendChild(img);
-            }
+            wrap.appendChild(host);
           }
-          wrap.appendChild(host);
         }
 
         cell.appendChild(wrap);
@@ -331,15 +354,6 @@
 
     if(L.split && L.rows===6){
       const top=renderGrid(3,L.cols,0);
-      const sep=document.createElement("div"); sep.className="splitSeparator";
-      const bottom=renderGrid(3,L.cols,3);
-      els.board.appendChild(top);
-      els.board.appendChild(sep);
-      els.board.appendChild(bottom);
-    }else{
-      const grid=renderGrid(L.rows,L.cols,0);
-      els.board.appendChild(grid);
-
       if(L.altar){
         const altar=document.createElement("div");
         altar.className="altar";
@@ -347,8 +361,16 @@
         altar.style.gridColumn="3 / 5";
         altar.style.gridRow="1 / 4";
         altar.style.borderRadius="12px";
-        grid.insertBefore(altar, grid.firstChild);
+        top.insertBefore(altar, top.firstChild);
       }
+      const sep=document.createElement("div"); sep.className="splitSeparator";
+      const bottom=renderGrid(3,L.cols,3);
+      els.board.appendChild(top);
+      els.board.appendChild(sep);
+      els.board.appendChild(bottom);
+    } else {
+      const grid=renderGrid(L.rows,L.cols,0);
+      els.board.appendChild(grid);
     }
 
     bindBoardInteractions();
@@ -369,7 +391,6 @@
     renderPalette();
     renderBoard();
     renderSettingsUI();
-    // after DOM updated, compute cell size
     requestAnimationFrame(syncCellSize);
   }
 
@@ -406,8 +427,7 @@
     if(el.closest && el.closest(".altar")) return null;
     const cell=el.closest && el.closest(".cell");
     if(!cell) return null;
-    const r=parseInt(cell.dataset.r,10), c=parseInt(cell.dataset.c,10);
-    if(isBlockedCell(r,c)) return null;
+    if(cell.classList.contains("cell--blocked")) return null;
     return cell;
   }
 
@@ -445,7 +465,7 @@
 
       if(from.type==="palette"){
         placeFromPalette(r,c,payloadCodes[0]);
-      }else{
+      } else {
         const srcR=from.r, srcC=from.c;
         if(srcR!==r || srcC!==c){
           const srcArr=toArr(state.cells[srcR][srcC]);
@@ -453,7 +473,7 @@
           if(canMerge){
             setCell(r,c, dstArr.concat(srcArr));
             setCell(srcR,srcC, []);
-          }else{
+          } else {
             setCell(r,c, srcArr);
             setCell(srcR,srcC, dstArr);
           }
@@ -527,53 +547,77 @@
   }
 
   function bindBoardInteractions(){
-    // edit mode: transform on tap
-    $$(".cell", els.board).forEach(cell=>{
-      cell.addEventListener("click",()=>{
-        if(ui.settingsOpen) return;
-        if(!ui.editMode) return;
-
-        const r=parseInt(cell.dataset.r,10), c=parseInt(cell.dataset.c,10);
-        if(isBlockedCell(r,c)) return;
-
-        const curArr=toArr(state.cells[r][c]);
-        if(!curArr.length) return;
-
-        let changed=false;
-        const nextArr=curArr.map(code=>{
-          const u=UNIT_MAP.get(code);
-          if(u && u.mode && u.after && u.after!==code){
-            changed=true; return String(u.after);
-          }
-          return code;
-        });
-
-        if(!changed) return toast("変化なし");
-        history.push(serializeState());
-        setCell(r,c,nextArr);
-        normalizeState();
-        renderAll();
-        toast("変化");
-      });
-    });
-
-    // drag from board (only edit OFF)
+    // Tap-to-transform + Drag-to-move (threshold based; no long-press)
     $$(".unitHost", els.board).forEach(host=>{
       host.addEventListener("pointerdown",(e)=>{
         if(ui.settingsOpen) return;
-        if(ui.editMode) return;
         e.preventDefault();
 
         const cell=e.target.closest(".cell");
-        if(!cell) return;
+        if(!cell || cell.classList.contains("cell--blocked")) return;
         const r=parseInt(cell.dataset.r,10), c=parseInt(cell.dataset.c,10);
-        if(isBlockedCell(r,c)) return;
-
         const arr=toArr(state.cells[r][c]);
         if(!arr.length) return;
 
-        beginDrag({payloadCodes:arr, from:{type:"cell", r, c}, pointerId:e.pointerId, x:e.clientX, y:e.clientY});
-        host.setPointerCapture?.(e.pointerId);
+        const startX=e.clientX, startY=e.clientY;
+        const pointerId=e.pointerId;
+        const startT=performance.now();
+        const moveThresh=6; // px
+        let startedDrag=false;
+
+        const onMove=(ev)=>{
+          if(ev.pointerId!==pointerId) return;
+          const dx=ev.clientX-startX, dy=ev.clientY-startY;
+          if(!startedDrag && (dx*dx+dy*dy) >= moveThresh*moveThresh){
+            startedDrag=true;
+            beginDrag({payloadCodes:arr, from:{type:"cell", r, c}, pointerId, x:startX, y:startY});
+            moveGhost(drag.ghostEl, ev.clientX, ev.clientY);
+          }
+          if(startedDrag) onPointerMove(ev);
+        };
+
+        const onUp=(ev)=>{
+          if(ev.pointerId!==pointerId) return;
+          window.removeEventListener("pointermove", onMove, {passive:false});
+          window.removeEventListener("pointerup", onUp, {passive:false});
+          window.removeEventListener("pointercancel", onCancel, {passive:false});
+
+          if(startedDrag) return onPointerUp(ev);
+
+          // short tap => transform (mode=true only)
+          const dur=performance.now()-startT;
+          if(dur>350) return;
+
+          let changed=false;
+          const nextArr=arr.map(code=>{
+            const u=UNIT_MAP.get(code);
+            if(u && u.mode && u.after && u.after!==code){
+              changed=true;
+              return String(u.after);
+            }
+            return code;
+          });
+          if(!changed) return;
+
+          history.push(serializeState());
+          setCell(r,c,nextArr);
+          normalizeState();
+          renderAll();
+          toast("変化");
+        };
+
+        const onCancel=(ev)=>{
+          if(ev.pointerId!==pointerId) return;
+          window.removeEventListener("pointermove", onMove, {passive:false});
+          window.removeEventListener("pointerup", onUp, {passive:false});
+          window.removeEventListener("pointercancel", onCancel, {passive:false});
+          if(startedDrag) onPointerCancel(ev);
+        };
+
+        host.setPointerCapture?.(pointerId);
+        window.addEventListener("pointermove", onMove, {passive:false});
+        window.addEventListener("pointerup", onUp, {passive:false});
+        window.addEventListener("pointercancel", onCancel, {passive:false});
       },{passive:false});
     });
   }
@@ -620,15 +664,8 @@
   }
 
   function bindControls(){
-    els.editToggle.checked = ui.editMode;
     renderSettingsUI();
-
-    els.editToggle.addEventListener("change",()=>{
-      ui.editMode=!!els.editToggle.checked;
-      localStorage.setItem(UI_EDIT_KEY, ui.editMode?"1":"0");
-      toast(ui.editMode?"編集ON":"編集OFF");
-      renderAll();
-    });
+    refreshUndoRedoButtons();
 
     els.undoBtn.addEventListener("click",()=>{
       const prev=history.undoOnce(); if(!prev) return;
@@ -698,16 +735,40 @@
     }
   }
 
+  async function tryLoadUnitsFromSupabase(){
+    try{
+      const url = window.LD_SUPABASE_URL;
+      const key = window.LD_SUPABASE_ANON_KEY;
+      if(!url || !key || !window.supabase) return;
+
+      const client = window.supabase.createClient(url, key);
+      const { data, error } = await client.from(UNIT_TABLE).select("code, rank, mode, after");
+      if(error) {
+        console.warn("Supabase load error:", error);
+        return;
+      }
+      if(Array.isArray(data) && data.length) {
+        UNITS = data;
+        rebuildUnitMap();
+        renderTabs();
+        renderPalette();
+      }
+    }catch(e){ console.warn(e); }
+  }
+
   // boot
   if(!RANKS.includes(ui.activeRank)) ui.activeRank="N";
   normalizeState();
   renderAll();
-  refreshUndoRedoButtons();
   bindControls();
   bindPaletteDrag();
   bindScrollPad();
 
-  if(applyShareHashIfAny()){
+  // restore share
+  if(applyShareHashIfAny()) {
     history.clear();
   }
+
+  // async load units
+  tryLoadUnitsFromSupabase();
 })();
