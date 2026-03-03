@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Horizontal Drum Icon Picker Mock (sampletick)</title>
+  <link rel="stylesheet" href="./sampletick.css" />
+</head>
+<body>
+  <main class="wrap">
+    <section class="picker" aria-label="アイコン ドラムピッカー">
+      <div class="iconViewport" id="iconViewport">
+        <div class="centerMarker" aria-hidden="true"></div>
+        <div class="iconTrack" id="iconTrack" aria-live="polite"></div>
+      </div>
+
+      <div class="labelRow">
+        <div class="label" id="label">選択: -</div>
+      </div>
+
+      <div class="drumWrap">
+        <div class="drumTitle">DRUM</div>
+        <div class="drum" id="drum"
+             role="slider"
+             aria-label="ドラムロール"
+             aria-valuemin="0"
+             aria-valuemax="14"
+             aria-valuenow="0"
+             tabindex="0">
+          <div class="drumGrooves" aria-hidden="true"></div>
+          <div class="drumThumb" aria-hidden="true"></div>
+          <div class="drumHint" aria-hidden="true">← ここを左右にドラッグ →</div>
+        </div>
+      </div>
+
+      <div class="tips">
+        <div>・境界を跨ぐたびに「ティック」</div>
+        <div>・Android等は振動（対応端末のみ）／ iPhoneは音で代替</div>
+        <div>・アイコン列はループ（無限スクロール）</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="./sampletick.js"></script>
+</body>
+</html>
