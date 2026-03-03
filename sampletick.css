@@ -56,8 +56,9 @@ body{
   gap: var(--gap);
   will-change: transform;
   transform: translate3d(0,0,0);
-  /* 端末幅が狭くても中央センタリングしやすいよう余白を多めに */
-  padding: 0 40%;
+
+  /* 端まで行けない（見えない）よう、必要十分な余白だけにする */
+  padding: 0 max(12px, calc(50% - (var(--item) / 2)));
 }
 
 .icon{
