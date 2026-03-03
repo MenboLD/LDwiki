@@ -1,3 +1,6 @@
+window.addEventListener('error', (e)=>{console.error('[ld_rune_list] window error', e.error||e.message); warnStatus(String(e.error||e.message||e));});
+window.addEventListener('unhandledrejection', (e)=>{console.error('[ld_rune_list] unhandledrejection', e.reason); warnStatus(String(e.reason||e));});
+
 /* LDwiki Rune List JS
    BUILD: 20260207k
 */
@@ -277,6 +280,8 @@ function applyColumnVisibility(){
       state.sortDir = "asc";
     }
     render();
+  try{ okStatus('データ読込完了'); }catch(_e){}
+
   }
 
   function resetSort(){
@@ -599,6 +604,8 @@ function applyColumnVisibility(){
   }
 
   async function init(){
+  setStatus('<b>読込中…</b> <span class="muted">設定とテーブルを確認しています</span>');
+
     try{
       setStatus("Loading...");
       buildColUI();
