@@ -4,7 +4,7 @@
 (function(){
   'use strict';
 
-  const BUILD = "20260207l";
+  const BUILD = "20260207m";
   const RARITY_ORDER = ["ノマ","レア","エピ","レジェ","神話","不滅","超越"];
 
   function rarityRank(g){
@@ -554,12 +554,48 @@ function applyColumnVisibility(){
     }, { passive:false });
   }
 
-  async function loadSupabase(){
+  function _loadScriptOnce(src){
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.async = true;
+    s.onload = () => resolve(true);
+    s.onerror = () => reject(new Error("script load failed: " + src));
+    document.head.appendChild(s);
+  });
+}
+
+async function ensureSupabaseConfigLoaded(){
+  if (window.LD_SUPABASE_URL && window.LD_SUPABASE_ANON_KEY) return true;
+
+  // Try common locations (GitHub Pages folder / root / parent folders)
+  const base = Date.now();
+  const candidates = [
+    "./supabase_config.js",
+    "/supabase_config.js",
+    "../supabase_config.js",
+    "../../supabase_config.js",
+    "../../../supabase_config.js"
+  ];
+
+  for (const p of candidates){
+    try{
+      await _loadScriptOnce(p + "?v=" + BUILD + "&t=" + base);
+      if (window.LD_SUPABASE_URL && window.LD_SUPABASE_ANON_KEY) return true;
+    }catch(e){
+      // continue
+    }
+  }
+  return false;
+}
+
+async function loadSupabase(){
+    await ensureSupabaseConfigLoaded();
     const url = window.LD_SUPABASE_URL;
     const key = window.LD_SUPABASE_ANON_KEY;
 
     if (!url || !key){
-      throw new Error("supabase_config.js の URL / ANON_KEY が読み込めませんでした。");
+      throw new Error("supabase_config.js の URL / ANON_KEY が読み込めませんでした。\n対策: ページと同階層に置くか、サイト直下(/supabase_config.js)に配置してください。");
     }
     if (!window.supabase) {
       throw new Error("@supabase/supabase-js の読み込みに失敗しました。");
