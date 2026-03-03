@@ -89,13 +89,13 @@
 
   function zoneForCell(layoutKey, r, c){
     if(layoutKey==="nhpt_both") return (r<=2) ? "red" : "blue";
-    if(layoutKey==="hg_both") {
+    if(layoutKey==="hg_both"){
       if(r<=2) return (c<=5) ? "red" : "yellow";
       return (c<=5) ? "blue" : "green";
     }
     if(layoutKey==="hg_single") return (c<=5) ? "blue" : "green";
-    if(layoutKey==="infinite") {
-      if(r<=2) {
+    if(layoutKey==="infinite"){
+      if(r<=2){
         if(c<=1) return "yellow";
         if(c>=4) return "yellow";
       }
@@ -107,6 +107,8 @@
   const UI_RANK_KEY="ld_editboard_filter_rank_v4";
   const UI_SETTINGS_KEY="ld_editboard_settings_open_v4";
   const UI_LAYOUT_KEY="ld_editboard_layout_v3";
+  const UI_PANE_KEY="ld_editboard_settings_pane_v1";
+  const UI_INFO_KEY="ld_editboard_palette_mode_v1";
 
   const state={
     layoutKey: localStorage.getItem(UI_LAYOUT_KEY) || "nhpt_single",
@@ -116,7 +118,14 @@
   const ui={
     activeRank: localStorage.getItem(UI_RANK_KEY) || "N",
     settingsOpen: (localStorage.getItem(UI_SETTINGS_KEY)==="1"),
+    settingsPane: "layout",
+    infoMode: false,
   };
+  try{
+    const pane = localStorage.getItem(UI_PANE_KEY);
+    if(pane==="layout"||pane==="save") ui.settingsPane = pane;
+    ui.infoMode = (localStorage.getItem(UI_INFO_KEY) === "info");
+  }catch(_){}
 
   const history={
     undo:[], redo:[],
@@ -136,11 +145,15 @@
     undoBtn: $("#undoBtn"),
     redoBtn: $("#redoBtn"),
     clearBtn: $("#clearBtn"),
-    bottomBar: $("#bottomBar"),
-    barIcon: $("#barIcon"),
     settingsPanel: $("#settingsPanel"),
     shareBtn: $("#shareBtn"),
     scrollPad: $("#scrollPad"),
+    tabLayout: $("#tabLayout"),
+    tabSave: $("#tabSave"),
+    infoToggle: $("#infoToggle"),
+    infoPanel: $("#infoPanel"),
+    modePlaceLbl: $("#modePlaceLbl"),
+    modeInfoLbl: $("#modeInfoLbl"),
   };
 
   function iconUrl(code){ return ICON_BASE+String(code)+".png"; }
@@ -173,15 +186,15 @@
     else applyLayoutKey(state.layoutKey);
 
     const next = makeEmptyCells(state.rows, state.cols);
-    for(let r=0;r<Math.min(state.rows,state.cells.length);r++) {
-      for(let c=0;c<Math.min(state.cols,(state.cells[r]||[]).length);c++) {
+    for(let r=0;r<Math.min(state.rows,state.cells.length);r++){
+      for(let c=0;c<Math.min(state.cols,(state.cells[r]||[]).length);c++){
         next[r][c]=state.cells[r][c] ?? null;
       }
     }
     state.cells = next;
 
-    for(let r=0;r<state.rows;r++) {
-      for(let c=0;c<state.cols;c++) {
+    for(let r=0;r<state.rows;r++){
+      for(let c=0;c<state.cols;c++){
         const v=state.cells[r][c];
         state.cells[r][c] = Array.isArray(v)?v.map(String):(v==null?null:String(v));
         if(isBlockedCell(r,c)) state.cells[r][c]=null;
@@ -205,7 +218,6 @@
     const styles=getComputedStyle(document.documentElement);
     const gap=parseFloat(styles.getPropertyValue("--cell-gap"))||2;
     const pad=parseFloat(styles.getPropertyValue("--board-pad"))||6;
-
     const boardRect = els.board.getBoundingClientRect();
     const innerW = Math.max(120, boardRect.width - pad*2);
     const w = Math.floor((innerW - (L.cols-1)*gap) / L.cols);
@@ -220,7 +232,10 @@
     const splitMult=parseFloat(styles.getPropertyValue("--split-gap-mult"))||3;
 
     const topbarH = document.querySelector(".topbar")?.getBoundingClientRect().height || 0;
-    const bottomH = document.querySelector(".bottomBar")?.getBoundingClientRect().height || 0;
+    const barH = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--bar-h"))||52);
+    const safeB = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--safe-b"))||0);
+    const bottomH = barH + safeB;
+
     const paletteH = els.paletteArea?.getBoundingClientRect().height || 0;
     const mainPad = 20;
     const mainGap = 8;
@@ -251,6 +266,7 @@
         ui.activeRank=r;
         localStorage.setItem(UI_RANK_KEY,r);
         renderTabs(); renderPalette();
+        updateInfoPanel();
       });
       els.rankTabs.appendChild(btn);
     }
@@ -276,13 +292,11 @@
     grid.className="grid";
     grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
-    for(let r=0;r<rows;r++) {
+    for(let r=0;r<rows;r++){
       const rr=rOffset+r;
-      for(let c=0;c<cols;c++) {
-                // ∞(infinite): skip original altar-region cells (top 3 rows, cols 3-4)
-        if(state.layoutKey==="infinite" && rr<=2 && c>=2 && c<=3){
-          continue;
-        }
+      for(let c=0;c<cols;c++){
+        if(state.layoutKey==="infinite" && rr<=2 && c>=2 && c<=3) continue;
+
         const cell=document.createElement("div");
         cell.className="cell";
         cell.dataset.r=String(rr);
@@ -297,23 +311,23 @@
         const wrap=document.createElement("div");
         wrap.className="cell__content";
 
-        if(!blocked) {
+        if(!blocked){
           const codes=toArr(state.cells[rr][c]);
-          if(codes.length) {
+          if(codes.length){
             const host=document.createElement("div");
             host.className="unitHost";
             host.dataset.r=String(rr);
             host.dataset.c=String(c);
 
-            if(codes.length===1) {
+            if(codes.length===1){
               const u=document.createElement("div"); u.className="unitSingle";
               const img=document.createElement("img");
               img.alt=codes[0]; img.src=iconUrl(codes[0]);
               img.onerror=()=>{ img.onerror=null; img.src=PLACEHOLDER; };
               u.appendChild(img); host.appendChild(u);
-            } else if(codes.length===2) {
+            } else if(codes.length===2){
               host.classList.add("stack2");
-              for(let i=0;i<2;i++) {
+              for(let i=0;i<2;i++){
                 const img=document.createElement("img");
                 img.className="stackImg "+(i===0?"p1":"p2");
                 img.alt=codes[i]; img.src=iconUrl(codes[i]);
@@ -322,7 +336,7 @@
               }
             } else {
               host.classList.add("stack3");
-              for(let i=0;i<3;i++) {
+              for(let i=0;i<3;i++){
                 const img=document.createElement("img");
                 img.className="stackImg "+(i===0?"p1":(i===1?"p2":"p3"));
                 img.alt=codes[i]; img.src=iconUrl(codes[i]);
@@ -345,9 +359,9 @@
     const L=LAYOUTS[state.layoutKey] || LAYOUTS.nhpt_single;
     els.board.innerHTML="";
 
-    if(L.split && L.rows===6) {
+    if(L.split && L.rows===6){
       const top=renderGrid(3,L.cols,0);
-      if(L.altar) {
+      if(L.altar){
         const altar=document.createElement("div");
         altar.className="altar";
         altar.textContent="祭壇";
@@ -371,12 +385,60 @@
 
   function renderSettingsUI(){
     document.body.classList.toggle("settings-open", ui.settingsOpen);
-    els.barIcon.textContent = ui.settingsOpen ? "▼" : "▲";
     localStorage.setItem(UI_SETTINGS_KEY, ui.settingsOpen ? "1":"0");
+
+    els.tabLayout.classList.toggle("is-active", ui.settingsOpen && ui.settingsPane==="layout");
+    els.tabSave.classList.toggle("is-active", ui.settingsOpen && ui.settingsPane==="save");
+    els.tabLayout.setAttribute("aria-selected", (ui.settingsOpen && ui.settingsPane==="layout") ? "true":"false");
+    els.tabSave.setAttribute("aria-selected", (ui.settingsOpen && ui.settingsPane==="save") ? "true":"false");
+
+    const paneLayout = document.getElementById("paneLayout");
+    const paneSave = document.getElementById("paneSave");
+    if(paneLayout) paneLayout.classList.toggle("is-active", ui.settingsPane==="layout");
+    if(paneSave) paneSave.classList.toggle("is-active", ui.settingsPane==="save");
+
     $$(".seg", els.settingsPanel).forEach(b=>{
       const k=(b.dataset.layout||"").trim();
       b.classList.toggle("is-active", k===state.layoutKey);
     });
+  }
+
+  function updateInfoPanel(){
+    if(!els.infoPanel) return;
+    const counts = {N:0,R:0,E:0,L:0,"神話":0,"不滅":0,total:0};
+    for(let r=0;r<state.rows;r++){
+      for(let c=0;c<state.cols;c++){
+        if(isBlockedCell(r,c)) continue;
+        const arr=toArr(state.cells[r][c]);
+        for(const code of arr){
+          counts.total += 1;
+          const u=UNIT_MAP.get(String(code));
+          const rank = u?.rank;
+          if(rank && (rank in counts)) counts[rank] += 1;
+        }
+      }
+    }
+    const rows = [
+      ["総ユニット数", String(counts.total)],
+      ["N", String(counts.N)],
+      ["R", String(counts.R)],
+      ["E", String(counts.E)],
+      ["L", String(counts.L)],
+      ["神話", String(counts["神話"])],
+      ["不滅", String(counts["不滅"])],
+    ];
+    els.infoPanel.innerHTML = rows.map(([k,v])=>(
+      `<div class="infoRow"><span class="infoKey">${k}</span><span class="infoVal">${v}</span></div>`
+    )).join("");
+  }
+
+  function applyInfoMode(){
+    document.body.classList.toggle("info-mode", ui.infoMode);
+    if(els.infoToggle) els.infoToggle.checked = ui.infoMode;
+    if(els.modePlaceLbl) els.modePlaceLbl.classList.toggle("is-active", !ui.infoMode);
+    if(els.modeInfoLbl) els.modeInfoLbl.classList.toggle("is-active", ui.infoMode);
+    try{ localStorage.setItem(UI_INFO_KEY, ui.infoMode ? "info" : "place"); }catch(_){}
+    updateInfoPanel();
   }
 
   function renderAll(){
@@ -384,6 +446,7 @@
     renderPalette();
     renderBoard();
     renderSettingsUI();
+    applyInfoMode();
     requestAnimationFrame(syncCellSize);
   }
 
@@ -438,7 +501,7 @@
 
   function placeFromPalette(r,c,code){
     const cur=toArr(state.cells[r][c]);
-    if(isStackable(code)) {
+    if(isStackable(code)){
       if(cur.length===0) return setCell(r,c,[code]);
       if(cellAllSame(cur) && cur[0]===code && cur.length<3) return setCell(r,c, cur.concat([code]));
       return setCell(r,c,[code]);
@@ -451,19 +514,19 @@
     const {payloadCodes, from} = drag;
     const cell=pickCellFromPoint(x,y);
 
-    if(cell) {
+    if(cell){
       const r=parseInt(cell.dataset.r,10), c=parseInt(cell.dataset.c,10);
       history.push(serializeState());
       const dstArr=toArr(state.cells[r][c]);
 
-      if(from.type==="palette") {
+      if(from.type==="palette"){
         placeFromPalette(r,c,payloadCodes[0]);
       } else {
         const srcR=from.r, srcC=from.c;
-        if(srcR!==r || srcC!==c) {
+        if(srcR!==r || srcC!==c){
           const srcArr=toArr(state.cells[srcR][srcC]);
           const canMerge = cellAllSame(dstArr) && cellAllSame(srcArr) && dstArr[0]===srcArr[0] && isStackable(dstArr[0]) && (dstArr.length+srcArr.length<=3);
-          if(canMerge) {
+          if(canMerge){
             setCell(r,c, dstArr.concat(srcArr));
             setCell(srcR,srcC, []);
           } else {
@@ -479,7 +542,7 @@
       return;
     }
 
-    if(from.type==="cell") {
+    if(from.type==="cell"){
       history.push(serializeState());
       setCell(from.r, from.c, []);
       normalizeState();
@@ -495,7 +558,7 @@
     moveGhost(drag.ghostEl, e.clientX, e.clientY);
 
     const cell=pickCellFromPoint(e.clientX, e.clientY);
-    if(cell!==currentTarget) {
+    if(cell!==currentTarget){
       if(currentTarget) currentTarget.classList.remove("is-target");
       currentTarget=cell;
       if(currentTarget) currentTarget.classList.add("is-target");
@@ -506,7 +569,7 @@
 
   function bindPaletteDrag(){
     els.palette.addEventListener("pointerdown",(e)=>{
-      if(ui.settingsOpen) return;
+      if(ui.settingsOpen || ui.infoMode) return;
       const item=e.target.closest(".pItem");
       if(!item) return;
       e.preventDefault();
@@ -522,7 +585,7 @@
     let active=false, lastX=0, pid=null;
     const stop=()=>{ active=false; pid=null; };
     els.scrollPad.addEventListener("pointerdown",(e)=>{
-      if(ui.settingsOpen) return;
+      if(ui.settingsOpen || ui.infoMode) return;
       active=true; pid=e.pointerId; lastX=e.clientX;
       els.scrollPad.setPointerCapture?.(e.pointerId);
       e.preventDefault();
@@ -539,6 +602,7 @@
     els.scrollPad.addEventListener("lostpointercapture",stop);
   }
 
+  // board interactions: includes stack cycle + mode->after transform (as in v1_08)
   function bindBoardInteractions(){
     $$(".unitHost", els.board).forEach(host=>{
       host.addEventListener("pointerdown",(e)=>{
@@ -560,7 +624,7 @@
         const onMove=(ev)=>{
           if(ev.pointerId!==pointerId) return;
           const dx=ev.clientX-startX, dy=ev.clientY-startY;
-          if(!startedDrag && (dx*dx+dy*dy) >= moveThresh*moveThresh) {
+          if(!startedDrag && (dx*dx+dy*dy) >= moveThresh*moveThresh){
             startedDrag=true;
             beginDrag(arr, {type:"cell", r, c}, pointerId, startX, startY);
             moveGhost(drag.ghostEl, ev.clientX, ev.clientY);
@@ -581,7 +645,7 @@
 
           const baseCode = arr[0];
           const stackable = isStackable(baseCode) && arr.every(x => x === baseCode);
-          if(stackable) {
+          if(stackable){
             let nextArr;
             if(arr.length === 1) nextArr = [baseCode, baseCode];
             else if(arr.length === 2) nextArr = [baseCode, baseCode, baseCode];
@@ -597,7 +661,7 @@
           let changed=false;
           const nextArr=arr.map(code=>{
             const u=UNIT_MAP.get(code);
-            if(u && u.mode && u.after && u.after!==code) {
+            if(u && u.mode && u.after && u.after!==code){
               changed=true;
               return String(u.after);
             }
@@ -641,13 +705,13 @@
     const h=location.hash||"";
     const m=h.match(/#b=([A-Za-z0-9\-_]+)/);
     if(!m) return false;
-    try {
+    try{
       const json=base64UrlDecode(m[1]);
       const s=JSON.parse(json);
       applyState(s);
       toast("復元");
       return true;
-    } catch(e) {
+    }catch(e){
       console.warn(e); toast("復元失敗"); return false;
     }
   }
@@ -662,7 +726,11 @@
     }
   }
 
-  function setSettingsOpen(open){
+  function setSettingsOpen(open, pane){
+    if(pane==="layout"||pane==="save"){
+      ui.settingsPane = pane;
+      try{ localStorage.setItem(UI_PANE_KEY, pane); }catch(_){}
+    }
     ui.settingsOpen=!!open;
     renderSettingsUI();
     if(ui.settingsOpen) cleanupDrag();
@@ -688,7 +756,14 @@
       toast("全消し");
     });
 
-    els.bottomBar.addEventListener("click",()=>setSettingsOpen(!ui.settingsOpen));
+    els.tabLayout.addEventListener("click",()=>{
+      const willOpen = !(ui.settingsOpen && ui.settingsPane==="layout");
+      setSettingsOpen(willOpen, "layout");
+    });
+    els.tabSave.addEventListener("click",()=>{
+      const willOpen = !(ui.settingsOpen && ui.settingsPane==="save");
+      setSettingsOpen(willOpen, "save");
+    });
 
     $$(".seg", els.settingsPanel).forEach(b=>{
       b.addEventListener("click",()=>{
@@ -713,8 +788,25 @@
     els.shareBtn.addEventListener("click", async ()=>{
       const url = `${location.origin}${location.pathname}${makeShareHash()}`;
       const ok=await copyToClipboard(url);
-      toast(ok?"共有URLコピー":"コピー失敗");
+      toast(ok?"コピーされました":"コピー失敗");
     });
+
+    if(els.infoToggle){
+      els.infoToggle.addEventListener("change", ()=>{
+        ui.infoMode = !!els.infoToggle.checked;
+        applyInfoMode();
+      });
+    }
+    if(els.modePlaceLbl){
+      els.modePlaceLbl.addEventListener("click", ()=>{
+        ui.infoMode = false; applyInfoMode();
+      });
+    }
+    if(els.modeInfoLbl){
+      els.modeInfoLbl.addEventListener("click", ()=>{
+        ui.infoMode = true; applyInfoMode();
+      });
+    }
 
     window.addEventListener("pointermove", onPointerMove, {passive:false});
     window.addEventListener("pointerup", onPointerUp, {passive:false});
@@ -730,35 +822,37 @@
   function loadSlot(i){
     const raw=localStorage.getItem(STORAGE_BASE+String(i));
     if(!raw) return toast(`ロード${i}：空`);
-    try {
+    try{
       const s=JSON.parse(raw);
       history.push(serializeState());
       applyState(s);
       toast(`ロード${i}`);
-    } catch(e) {
+    }catch(e){
       console.warn(e); toast("ロード失敗");
     }
   }
 
   async function tryLoadUnitsFromSupabase(){
-    try {
+    try{
       const url = window.LD_SUPABASE_URL;
       const key = window.LD_SUPABASE_ANON_KEY;
       if(!url || !key || !window.supabase) return;
       const client = window.supabase.createClient(url, key);
       const {data, error} = await client.from(UNIT_TABLE).select("code, rank, mode, after");
       if(error) return console.warn("Supabase load error:", error);
-      if(Array.isArray(data) && data.length) {
+      if(Array.isArray(data) && data.length){
         UNITS = data;
         rebuildUnitMap();
         renderTabs();
         renderPalette();
+        updateInfoPanel();
       }
-    } catch(e) {
+    }catch(e){
       console.warn(e);
     }
   }
 
+  // boot
   if(!RANKS.includes(ui.activeRank)) ui.activeRank="N";
   normalizeState();
   renderAll();

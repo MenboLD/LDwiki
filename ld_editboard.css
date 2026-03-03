@@ -438,3 +438,173 @@ body.settings-open .settingsPanel{ transform: translateY(0%); }
 .cell.zone-yellow{ background: rgba(255, 215, 64, .10); }
 .cell.zone-green{ background: rgba(46, 229, 157, .10); }
 .cell.zone-grey{ background: rgba(200, 205, 220, .08); }
+
+
+/* bottom segmented tabs */
+.bottomTabs{
+  position:fixed;
+  left:0; right:0;
+  bottom:0;
+  z-index:70;
+  height: calc(var(--bar-h) + var(--safe-b));
+  padding: 6px 10px calc(6px + var(--safe-b));
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+  background: rgba(11,15,23,.92);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid rgba(255,255,255,.10);
+}
+.bottomTab{
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  border-radius: 14px;
+  color: rgba(231,236,255,.92);
+  font-weight: 1000;
+  font-size: 14px;
+  cursor:pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(106,167,255,.20);
+  transition: transform .06s ease, filter .12s ease, background .12s ease, border-color .12s ease;
+}
+.bottomTab:active{ transform: translateY(1px) scale(.99); filter: brightness(1.15); }
+.bottomTab.is-active{
+  border-color: rgba(106,167,255,.65);
+  background: rgba(106,167,255,.18);
+  box-shadow: 0 0 0 3px rgba(106,167,255,.16);
+}
+
+/* palette mode switch (right aligned) */
+.modeSwitch{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.modeLabel{
+  font-size: 12px;
+  font-weight: 1000;
+  color: rgba(231,236,255,.80);
+  user-select:none;
+  -webkit-user-select:none;
+}
+.modeLabel.is-active{ color: rgba(231,236,255,.98); }
+
+.miniToggle{ display:inline-flex; align-items:center; user-select:none; -webkit-user-select:none; }
+.miniToggle input{ display:none; }
+.miniToggle__ui{
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  position:relative;
+  cursor:pointer;
+}
+.miniToggle__knob{
+  position:absolute;
+  top:50%;
+  left:4px;
+  width: 18px;
+  height: 18px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: rgba(231,236,255,.92);
+  box-shadow: 0 8px 16px rgba(0,0,0,.25);
+  transition: left .15s ease, background .15s ease;
+}
+.miniToggle input:checked + .miniToggle__ui{
+  background: rgba(106,167,255,.22);
+  border-color: rgba(106,167,255,.55);
+}
+.miniToggle input:checked + .miniToggle__ui .miniToggle__knob{
+  left: 22px;
+  background: rgba(106,167,255,.95);
+}
+
+/* info panel */
+.infoPanel{
+  display:none;
+  flex: 1 1 auto;
+  overflow:auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(255,255,255,.06);
+  background: rgba(255,255,255,.03);
+  border-radius: 12px;
+  padding: 10px;
+  color: rgba(231,236,255,.92);
+}
+.infoRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding: 8px 6px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  font-weight: 900;
+  font-size: 12px;
+}
+.infoRow:last-child{ border-bottom:none; }
+.infoKey{ color: rgba(147,160,198,.95); }
+.infoVal{ color: rgba(231,236,255,.95); font-variant-numeric: tabular-nums; }
+
+body.info-mode #palette{ display:none; }
+body.info-mode #scrollPad{ display:none; }
+body.info-mode #infoPanel{ display:block; }
+
+/* settings panes */
+.settingsPane{ display:none; }
+.settingsPane.is-active{ display:block; }
+
+
+/* v1_11: settings button sizing + centered grids */
+.settingsPanel .seg{
+  height: 32px;
+  border-radius: 12px;
+  font-size: 12px;
+  padding: 0 10px;
+}
+@media (max-width: 390px){
+  .settingsPanel .seg{
+    height: 30px;
+    font-size: 11px;
+    padding: 0 8px;
+  }
+}
+
+.layoutGrid, .saveGrid{
+  display:flex;
+  flex-direction: column;
+  gap:10px;
+  align-items: center;
+}
+.layoutRow, .saveRow{
+  display:flex;
+  gap:10px;
+  justify-content: center;
+  width: 100%;
+}
+.layoutRow .seg, .saveRow .seg{
+  min-width: 118px;
+}
+.layoutRow--three .seg, .saveRow--three .seg{
+  min-width: 92px;
+}
+
+.saveRow--one .seg{
+  width: min(420px, 100%);
+}
+
+@media (max-width: 390px){
+  .layoutRow .seg, .saveRow .seg{ min-width: 104px; }
+  .layoutRow--three .seg, .saveRow--three .seg{ min-width: 82px; }
+}
+
+/* pressed feel: make flash also tint via brightness */
+.pressable.flash{
+  animation: flash .14s ease-out;
+}
+@keyframes flash{
+  0%{ filter: brightness(1.0); }
+  50%{ filter: brightness(1.22); }
+  100%{ filter: brightness(1.0); }
+}

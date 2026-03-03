@@ -24,11 +24,24 @@
     </section>
 
     <section class="paletteArea" id="paletteArea" aria-label="パレット">
+      
       <div class="paletteTop">
         <div class="tabs" id="rankTabs" aria-label="ランクタブ"></div>
+
+        <div class="modeSwitch" id="modeSwitch" aria-label="配置/情報切替">
+          <span class="modeLabel pressable" id="modePlaceLbl">配置</span>
+          <label class="miniToggle pressable" aria-label="配置/情報">
+            <input id="infoToggle" type="checkbox" />
+            <span class="miniToggle__ui"><span class="miniToggle__knob"></span></span>
+          </label>
+          <span class="modeLabel pressable" id="modeInfoLbl">情報</span>
+        </div>
       </div>
 
+
       <div id="palette" class="palette" aria-label="ユニットパレット"></div>
+
+      <div id="infoPanel" class="infoPanel" aria-label="情報パネル"></div>
 
       <div class="scrollPad scrollPad--bottom pressable" id="scrollPad"
         aria-label="パレットスクロール（ここを左右になぞる）"
@@ -36,45 +49,53 @@
     </section>
   </main>
 
-  <button class="bottomBar pressable" id="bottomBar" type="button" aria-label="設定を開閉">
-    <span id="barIcon">▲</span>
-  </button>
+  <!-- Bottom segmented tabs -->
+  <div class="bottomTabs" id="bottomTabs" role="tablist" aria-label="設定タブ">
+    <button class="bottomTab pressable" id="tabLayout" type="button" role="tab" aria-selected="false">盤面種類</button>
+    <button class="bottomTab pressable" id="tabSave" type="button" role="tab" aria-selected="false">保存読込</button>
+  </div>
 
-  <section class="settingsPanel" id="settingsPanel" aria-label="設定">
+<section class="settingsPanel" id="settingsPanel" aria-label="設定">
+    
     <div class="settingsInner">
-      <div class="segRow" aria-label="盤面種類">
-        <button class="seg pressable" data-layout="nhpt_single" type="button">3x6 1P</button>
-        <button class="seg pressable" data-layout="hg_single" type="button">3x6+3 1P</button>
-        <button class="seg pressable" data-layout="nhpt_both" type="button">3x6 1&2P</button>
-        <button class="seg pressable" data-layout="hg_both" type="button">3x6+3 1&2P</button>
-        <button class="seg pressable" data-layout="raid" type="button">4x6 Raid</button>
-        <button class="seg pressable" data-layout="limit" type="button">5x6 Extra</button>
-        <button class="seg pressable" data-layout="infinite" type="button">3x6+12 ∞</button>
-      </div>
 
-      <div class="btnRow">
-        <button class="btn btn--ghost pressable" id="shareBtn" type="button">共有URL</button>
-      </div>
-
-      <div class="grid2">
-        <div class="grid2__col">
-          <div class="miniTitle">セーブ</div>
-          <div class="grid3">
-            <button class="btn btn--ghost pressable" data-save="1" type="button">セーブ1</button>
-            <button class="btn btn--ghost pressable" data-save="2" type="button">セーブ2</button>
-            <button class="btn btn--ghost pressable" data-save="3" type="button">セーブ3</button>
+      <div class="settingsPane" id="paneLayout" data-pane="layout">
+        <div class="layoutGrid" aria-label="盤面種類">
+          <div class="layoutRow">
+            <button class="seg pressable" data-layout="nhpt_single" type="button">通常</button>
+            <button class="seg pressable" data-layout="nhpt_both" type="button">通常 (両面)</button>
           </div>
-        </div>
-
-        <div class="grid2__col">
-          <div class="miniTitle">ロード</div>
-          <div class="grid3">
-            <button class="btn btn--ghost pressable" data-load="1" type="button">ロード1</button>
-            <button class="btn btn--ghost pressable" data-load="2" type="button">ロード2</button>
-            <button class="btn btn--ghost pressable" data-load="3" type="button">ロード3</button>
+          <div class="layoutRow">
+            <button class="seg pressable" data-layout="hg_single" type="button">ハード or 神</button>
+            <button class="seg pressable" data-layout="hg_both" type="button">ハード or 神 (両面)</button>
+          </div>
+          <div class="layoutRow layoutRow--three">
+            <button class="seg pressable" data-layout="raid" type="button">レイド</button>
+            <button class="seg pressable" data-layout="limit" type="button">限界</button>
+            <button class="seg pressable" data-layout="infinite" type="button">無限</button>
           </div>
         </div>
       </div>
+
+
+      <div class="settingsPane" id="paneSave" data-pane="save">
+        <div class="saveGrid" aria-label="保存読込">
+          <div class="saveRow saveRow--three">
+            <button class="seg pressable" data-save="1" type="button">セーブ1</button>
+            <button class="seg pressable" data-save="2" type="button">セーブ2</button>
+            <button class="seg pressable" data-save="3" type="button">セーブ3</button>
+          </div>
+          <div class="saveRow saveRow--three">
+            <button class="seg pressable" data-load="1" type="button">ロード1</button>
+            <button class="seg pressable" data-load="2" type="button">ロード2</button>
+            <button class="seg pressable" data-load="3" type="button">ロード3</button>
+          </div>
+          <div class="saveRow saveRow--one">
+            <button class="seg pressable" id="shareBtn" type="button">共有URLをコピーする</button>
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 
