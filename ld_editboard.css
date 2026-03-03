@@ -430,3 +430,10 @@ body.settings-open .settingsPanel{ transform: translateY(0%); }
   .pItem img{ width: 50px; height: 50px; }
   .grid3{ grid-template-columns: 1fr 1fr; }
 }
+
+/* zone colors (added v1_06 guard) */
+.cell.zone-red{ background: rgba(255, 77, 109, .10); }
+.cell.zone-blue{ background: rgba(64, 120, 255, .10); }
+.cell.zone-yellow{ background: rgba(255, 215, 64, .10); }
+.cell.zone-green{ background: rgba(46, 229, 157, .10); }
+.cell.zone-grey{ background: rgba(200, 205, 220, .08); }

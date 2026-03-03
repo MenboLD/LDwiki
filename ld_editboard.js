@@ -28,11 +28,9 @@
     setTimeout(()=>el.remove(), ms);
   }
 
-  // press feedback
   function flash(el){ if(!el) return; el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
   document.addEventListener("click",(e)=>{ const p=e.target.closest(".pressable"); if(p) flash(p); }, true);
 
-  // double-tap zoom suppression (iOS Safari)
   document.addEventListener("gesturestart",(e)=>e.preventDefault(),{passive:false});
   let lastTouchEnd=0;
   document.addEventListener("touchend",(e)=>{ const now=Date.now(); if(now-lastTouchEnd<=300) e.preventDefault(); lastTouchEnd=now; },{passive:false});
@@ -95,9 +93,7 @@
       if(r<=2) return (c<=5) ? "red" : "yellow";
       return (c<=5) ? "blue" : "green";
     }
-    if(layoutKey==="hg_single") {
-      return (c<=5) ? "blue" : "green"; // 3x6+3 1P
-    }
+    if(layoutKey==="hg_single") return (c<=5) ? "blue" : "green";
     if(layoutKey==="infinite") {
       if(r<=2) {
         if(c<=1) return "yellow";
@@ -540,7 +536,6 @@
   }
 
   function bindBoardInteractions(){
-    // Tap-to-transform + Drag-to-move (threshold based; no long-press)
     $$(".unitHost", els.board).forEach(host=>{
       host.addEventListener("pointerdown",(e)=>{
         if(ui.settingsOpen) return;
@@ -580,7 +575,21 @@
           const dur=performance.now()-startT;
           if(dur>350) return;
 
-          // short tap => transform
+          const baseCode = arr[0];
+          const stackable = isStackable(baseCode) && arr.every(x => x === baseCode);
+          if(stackable) {
+            let nextArr;
+            if(arr.length === 1) nextArr = [baseCode, baseCode];
+            else if(arr.length === 2) nextArr = [baseCode, baseCode, baseCode];
+            else nextArr = [baseCode];
+            history.push(serializeState());
+            setCell(r,c,nextArr);
+            normalizeState();
+            renderAll();
+            toast("体数変更");
+            return;
+          }
+
           let changed=false;
           const nextArr=arr.map(code=>{
             const u=UNIT_MAP.get(code);
@@ -669,7 +678,7 @@
     });
     els.clearBtn.addEventListener("click",()=>{
       history.push(serializeState());
-      state.cells=makeEmptyCells(state.rows,state.cols);
+      state.cells=makeEmptyCells(state.rows, state.cols);
       normalizeState();
       renderAll();
       toast("全消し");
@@ -746,7 +755,6 @@
     }
   }
 
-  // boot
   if(!RANKS.includes(ui.activeRank)) ui.activeRank="N";
   normalizeState();
   renderAll();
