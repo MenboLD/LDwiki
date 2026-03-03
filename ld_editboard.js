@@ -96,7 +96,7 @@
       return (c<=5) ? "blue" : "green";
     }
     if(layoutKey==="hg_single") {
-      return (c<=5) ? "blue" : "green";
+      return (c<=5) ? "blue" : "green"; // 3x6+3 1P
     }
     if(layoutKey==="infinite") {
       if(r<=2) {
