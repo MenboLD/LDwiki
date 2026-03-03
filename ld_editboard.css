@@ -12,7 +12,8 @@
   --scrollpad-h:30px;
 
   --cell-gap:2px;
-  --cell-radius:10px;
+    --split-gap-mult:3;   /* 3–4行間ギャップ倍率（約3倍） */
+--cell-radius:10px;
   --board-pad:6px;
 
   --cell-h:56px;        /* JSで自動調整 */
