@@ -383,7 +383,8 @@ body.settings-open .paletteArea{ opacity:0; transform: translateY(12px); pointer
   border-top:1px solid rgba(255,255,255,.10);
   transform: translateY(110%);
   transition: transform .18s ease;
-  overflow:hidden;
+  overflow:auto;
+  -webkit-overflow-scrolling: touch;
 }
 body.settings-open .settingsPanel{ transform: translateY(0%); }
 .settingsInner{ height: 100%; display:flex; flex-direction: column; gap: 10px; }
