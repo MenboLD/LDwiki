@@ -608,3 +608,41 @@ body.info-mode #infoPanel{ display:block; }
   50%{ filter: brightness(1.22); }
   100%{ filter: brightness(1.0); }
 }
+
+
+/* v1_12: bottom tab active orange text */
+.bottomTab.is-active{
+  color: rgba(255, 173, 60, .98);
+}
+
+/* v1_12: info row layout for unit counts */
+.infoRow.infoRow--unit{
+  display:grid;
+  grid-template-columns: 84px 1fr 1fr 1fr;
+  gap: 8px;
+  align-items:center;
+}
+@media (max-width: 390px){
+  .infoRow.infoRow--unit{
+    grid-template-columns: 78px 1fr 1fr 1fr;
+  }
+}
+.infoBadge{
+  justify-self:end;
+  font-weight: 1000;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.05);
+  color: rgba(231,236,255,.95);
+  white-space: nowrap;
+}
+.infoBadge--muted{
+  color: rgba(120,132,170,.75);
+  background: rgba(255,255,255,.03);
+  border-color: rgba(255,255,255,.06);
+}
+.infoBadge--strike{
+  text-decoration: line-through;
+}

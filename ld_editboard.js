@@ -383,14 +383,22 @@
     bindBoardInteractions();
   }
 
+  
   function renderSettingsUI(){
     document.body.classList.toggle("settings-open", ui.settingsOpen);
     localStorage.setItem(UI_SETTINGS_KEY, ui.settingsOpen ? "1":"0");
 
-    els.tabLayout.classList.toggle("is-active", ui.settingsOpen && ui.settingsPane==="layout");
-    els.tabSave.classList.toggle("is-active", ui.settingsOpen && ui.settingsPane==="save");
-    els.tabLayout.setAttribute("aria-selected", (ui.settingsOpen && ui.settingsPane==="layout") ? "true":"false");
-    els.tabSave.setAttribute("aria-selected", (ui.settingsOpen && ui.settingsPane==="save") ? "true":"false");
+    const isLayout = ui.settingsOpen && ui.settingsPane==="layout";
+    const isSave = ui.settingsOpen && ui.settingsPane==="save";
+
+    // labels + active state
+    els.tabLayout.textContent = (isLayout ? "▼" : "▲") + "盤面種類";
+    els.tabSave.textContent   = (isSave   ? "▼" : "▲") + "保存読込";
+
+    els.tabLayout.classList.toggle("is-active", isLayout);
+    els.tabSave.classList.toggle("is-active", isSave);
+    els.tabLayout.setAttribute("aria-selected", isLayout ? "true":"false");
+    els.tabSave.setAttribute("aria-selected", isSave ? "true":"false");
 
     const paneLayout = document.getElementById("paneLayout");
     const paneSave = document.getElementById("paneSave");
@@ -405,32 +413,36 @@
 
   function updateInfoPanel(){
     if(!els.infoPanel) return;
-    const counts = {N:0,R:0,E:0,L:0,"神話":0,"不滅":0,total:0};
+
+    const isBoth = (state.layoutKey === "nhpt_both" || state.layoutKey === "hg_both");
+    let selfCount = 0;
+    let oppCount = 0;
+
     for(let r=0;r<state.rows;r++){
       for(let c=0;c<state.cols;c++){
         if(isBlockedCell(r,c)) continue;
-        const arr=toArr(state.cells[r][c]);
-        for(const code of arr){
-          counts.total += 1;
-          const u=UNIT_MAP.get(String(code));
-          const rank = u?.rank;
-          if(rank && (rank in counts)) counts[rank] += 1;
+        const arr = toArr(state.cells[r][c]);
+        if(!arr.length) continue;
+        if(isBoth){
+          if(r <= 2) oppCount += arr.length;
+          else selfCount += arr.length;
+        }else{
+          selfCount += arr.length;
         }
       }
     }
-    const rows = [
-      ["総ユニット数", String(counts.total)],
-      ["N", String(counts.N)],
-      ["R", String(counts.R)],
-      ["E", String(counts.E)],
-      ["L", String(counts.L)],
-      ["神話", String(counts["神話"])],
-      ["不滅", String(counts["不滅"])],
-    ];
-    els.infoPanel.innerHTML = rows.map(([k,v])=>(
-      `<div class="infoRow"><span class="infoKey">${k}</span><span class="infoVal">${v}</span></div>`
-    )).join("");
+    const total = selfCount + oppCount;
+    const oppCls = isBoth ? "infoBadge" : "infoBadge infoBadge--muted infoBadge--strike";
+
+    els.infoPanel.innerHTML =
+      `<div class="infoRow infoRow--unit">` +
+        `<span class="infoKey">ユニット数</span>` +
+        `<span class="infoBadge">自：${selfCount}体</span>` +
+        `<span class="${oppCls}">相：${oppCount}体</span>` +
+        `<span class="infoBadge">計：${total}体</span>` +
+      `</div>`;
   }
+
 
   function applyInfoMode(){
     document.body.classList.toggle("info-mode", ui.infoMode);
