@@ -593,12 +593,14 @@
   }
 
   
+  
   function bindScrollPad(){
     if(!els.scrollPad) return;
 
-    const mult = 1.35; // 「ここで左右にスクロール」：体感スクロール量を少し増やす
-    const friction = 0.92; // 慣性減衰（1フレームあたり）
-    const minVel = 0.02;   // 停止閾値（px/ms）
+    const mult = 1.45;     // スクロール量を少し増やす（体感アップ）
+    const friction = 0.965; // 慣性減衰（1に近いほど長く滑る）
+    const minVel = 0.008;   // 停止閾値（px/ms）
+    const maxVel = 2.2;     // 速度上限（暴走防止）
 
     let active=false, lastX=0, lastT=0, pid=null;
     let vel=0;             // px/ms（スクロール量反映後）
@@ -611,13 +613,12 @@
       return max;
     };
 
-    const stopInertia = ()=>{
+    const cancelInertia = ()=>{
       if(raf){ cancelAnimationFrame(raf); raf=0; }
-      vel = 0;
     };
 
     const startInertia = ()=>{
-      stopInertia();
+      cancelInertia();
       if(Math.abs(vel) < minVel) return;
 
       let prev = performance.now();
@@ -625,20 +626,22 @@
         const dt = Math.max(1, t - prev);
         prev = t;
 
+        // dt を 16ms 基準に正規化して減衰
         const f = Math.pow(friction, dt/16);
         vel *= f;
 
         if(Math.abs(vel) < minVel){
-          stopInertia();
+          cancelInertia();
           return;
         }
 
         els.palette.scrollLeft -= vel * dt;
         const max = clampScroll();
         if(els.palette.scrollLeft <= 0 || els.palette.scrollLeft >= max){
-          stopInertia();
+          cancelInertia();
           return;
         }
+
         raf = requestAnimationFrame(step);
       };
       raf = requestAnimationFrame(step);
@@ -651,7 +654,7 @@
 
     els.scrollPad.addEventListener("pointerdown",(e)=>{
       if(ui.settingsOpen || ui.infoMode) return;
-      stopInertia();
+      cancelInertia();
       active=true; pid=e.pointerId;
       lastX=e.clientX;
       lastT=performance.now();
@@ -675,9 +678,11 @@
       els.palette.scrollLeft -= delta;
       clampScroll();
 
-      // 速度（px/ms）をスムージング
+      // 速度（px/ms）をスムージング（指を離した後の慣性に使う）
       const inst = (delta / dt);
-      vel = vel*0.75 + inst*0.25;
+      vel = vel*0.65 + inst*0.35;
+      if(vel > maxVel) vel = maxVel;
+      if(vel < -maxVel) vel = -maxVel;
 
       e.preventDefault();
     },{passive:false});
