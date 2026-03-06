@@ -592,30 +592,102 @@
     },{passive:false});
   }
 
+  
   function bindScrollPad(){
     if(!els.scrollPad) return;
-    let active=false, lastX=0, pid=null;
-    const stop=()=>{ active=false; pid=null; };
+
+    const mult = 1.35; // 「ここで左右にスクロール」：体感スクロール量を少し増やす
+    const friction = 0.92; // 慣性減衰（1フレームあたり）
+    const minVel = 0.02;   // 停止閾値（px/ms）
+
+    let active=false, lastX=0, lastT=0, pid=null;
+    let vel=0;             // px/ms（スクロール量反映後）
+    let raf=0;
+
+    const clampScroll = ()=>{
+      const max = Math.max(0, els.palette.scrollWidth - els.palette.clientWidth);
+      if(els.palette.scrollLeft < 0) els.palette.scrollLeft = 0;
+      if(els.palette.scrollLeft > max) els.palette.scrollLeft = max;
+      return max;
+    };
+
+    const stopInertia = ()=>{
+      if(raf){ cancelAnimationFrame(raf); raf=0; }
+      vel = 0;
+    };
+
+    const startInertia = ()=>{
+      stopInertia();
+      if(Math.abs(vel) < minVel) return;
+
+      let prev = performance.now();
+      const step = (t)=>{
+        const dt = Math.max(1, t - prev);
+        prev = t;
+
+        const f = Math.pow(friction, dt/16);
+        vel *= f;
+
+        if(Math.abs(vel) < minVel){
+          stopInertia();
+          return;
+        }
+
+        els.palette.scrollLeft -= vel * dt;
+        const max = clampScroll();
+        if(els.palette.scrollLeft <= 0 || els.palette.scrollLeft >= max){
+          stopInertia();
+          return;
+        }
+        raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    };
+
+    const stopDrag = ()=>{
+      active=false; pid=null;
+      startInertia();
+    };
+
     els.scrollPad.addEventListener("pointerdown",(e)=>{
       if(ui.settingsOpen || ui.infoMode) return;
-      active=true; pid=e.pointerId; lastX=e.clientX;
+      stopInertia();
+      active=true; pid=e.pointerId;
+      lastX=e.clientX;
+      lastT=performance.now();
+      vel=0;
       els.scrollPad.setPointerCapture?.(e.pointerId);
       e.preventDefault();
     },{passive:false});
+
     els.scrollPad.addEventListener("pointermove",(e)=>{
       if(!active) return;
-      if(pid!=null && e.pointerId!==pid) return;
-      const dx=e.clientX-lastX; lastX=e.clientX;
-      els.palette.scrollLeft -= dx;
+      if(pid!=null && e.pointerId!=pid) return;
+
+      const now = performance.now();
+      const dt = Math.max(1, now - lastT);
+      const dx = (e.clientX - lastX);
+
+      lastX = e.clientX;
+      lastT = now;
+
+      const delta = dx * mult;
+      els.palette.scrollLeft -= delta;
+      clampScroll();
+
+      // 速度（px/ms）をスムージング
+      const inst = (delta / dt);
+      vel = vel*0.75 + inst*0.25;
+
       e.preventDefault();
     },{passive:false});
-    els.scrollPad.addEventListener("pointerup",stop);
-    els.scrollPad.addEventListener("pointercancel",stop);
-    els.scrollPad.addEventListener("lostpointercapture",stop);
+
+    els.scrollPad.addEventListener("pointerup", stopDrag);
+    els.scrollPad.addEventListener("pointercancel", stopDrag);
+    els.scrollPad.addEventListener("lostpointercapture", stopDrag);
   }
 
-  // board interactions: includes stack cycle + mode->after transform (as in v1_08)
-  function bindBoardInteractions(){
+function bindBoardInteractions(){
     $$(".unitHost", els.board).forEach(host=>{
       host.addEventListener("pointerdown",(e)=>{
         if(ui.settingsOpen) return;
