@@ -1116,6 +1116,66 @@ function setBar(fillId, valId, pct) {
     return highlightFormulaHtml(buildFormulaText(v, res, ex, tb, br), v);
   }
 
+
+  function buildDetailHtml(v, res, ex, tb, br) {
+    const d = res.detail;
+    const diffLabelMap = {
+      normal: "ノーマル",
+      hard: "ハード",
+      hell: "地獄",
+      god: "神",
+      prime: "太初",
+    };
+    const diffLabel = diffLabelMap[v.envDiff] || v.envDiff;
+    const baseDef = DIFF_DEF[v.envDiff] ?? 175;
+    const realDef = v.defReduce - baseDef;
+
+    let html = "";
+    html += lineHtml(`<span class="sectionHead">=== 行動レート（回/秒）※究極時間込み平均 ===</span>`);
+    html += lineHtml(`非究極時間比率（=非究極F/周期F）: ${hVal("valMix", r6(ex.nonUltFrac))}`);
+    html += lineHtml(`行動合計/秒（究極も1行動扱い）: ${hVal("valMix", r6(ex.actPerSec))}`);
+    html += lineHtml(`基本攻撃/秒: ${hVal("valSpd", r6(ex.basicPerSec))}`);
+    html += lineHtml(`スキルA/秒: ${hVal("valA", r6(ex.aPerSec))}`);
+    html += lineHtml(`スキルB/秒: ${hVal("valB", r6(ex.bPerSec))}`);
+    html += lineHtml(`究極/秒: ${hVal("valUlt", r6(ex.ultPerSec))}`);
+
+    html += lineHtml("");
+    html += lineHtml(`<span class="sectionHead">=== 環境（物理補正） ===</span>`);
+    html += lineHtml(`難易度: ${hVal("valEnv", diffLabel)}（80w防御力は難易度に応じて内部適用）`);
+    html += lineHtml(`防御力減少値: ${hVal("valEnv", v.defReduce)} / 実防御力=${hVal("valEnv", realDef)}`);
+    html += lineHtml(`物理補正倍率（小数第2位まで）: ${hVal("valMixEnvPhys", $("physMulOut").value)}`);
+
+    html += lineHtml("");
+    html += lineHtml(`<span class="sectionHead">=== ダメージ内訳（DPS成分）と割合（合計=100%） ===</span>`);
+    html += lineHtml(`基本DPS成分: ${hVal(v.basicAttr === "phys" ? "valMixEnvPhys" : "valSpd", r6(ex.basicDPS))} / 基本割合(%): ${hVal("valSpd", r6(ex.basicPct))}`);
+    html += lineHtml(`スキルA DPS成分: ${hVal(v.aAttr === "phys" ? "valMixEnvPhys" : "valA", r6(ex.aDPS))} / スキルA割合(%): ${hVal("valA", r6(ex.aPct))}`);
+    html += lineHtml(`スキルB DPS成分: ${hVal(v.bAttr === "phys" ? "valMixEnvPhys" : "valB", r6(ex.bDPS))} / スキルB割合(%): ${hVal("valB", r6(ex.bPct))}`);
+    html += lineHtml(`究極DPS成分: ${hVal(v.uAttr === "phys" ? "valMixEnvPhys" : "valUlt", r6(ex.ultDPS))} / 究極割合(%): ${hVal("valUlt", r6(ex.ultPct))}`);
+
+    html += lineHtml("");
+    html += lineHtml(`<span class="sectionHead">=== 属性内訳（物理/魔法） ===</span>`);
+    html += lineHtml(`物理DPS: ${hVal("valMixEnvPhys", r6(tb.phys))} / 物理割合(%): ${hVal("valEnv", r6(tb.physPct))}`);
+    html += lineHtml(`魔法DPS: ${hVal("valMixAB", r6(tb.magic))} / 魔法割合(%): ${hVal("valMixAB", r6(tb.magicPct))}`);
+
+    html += lineHtml("");
+    html += lineHtml(`<span class="sectionHead">=== 特性内訳（単体/複数） ===</span>`);
+    html += lineHtml(`単体DPS: ${hVal("valMix", r6(tb.single))} / 単体割合(%): ${hVal("valMix", r6(tb.singlePct))}`);
+    html += lineHtml(`複数DPS: ${hVal("valMix", r6(tb.multi))} / 複数割合(%): ${hVal("valMix", r6(tb.multiPct))}`);
+
+    if (br) {
+      html += lineHtml("");
+      html += lineHtml(`<span class="sectionHead">=== 境界(40F)による厳密レンジ（開始位相で±1tickの差） ===</span>`);
+      html += lineHtml(`究極中のtick数: ${hVal("valUlt", br.minTick)}〜${hVal("valUlt", br.maxTick)} （1tickあたり+${hVal("valGauge", br.perTick)} ${v.ultType === "mana" ? "マナ" : "秒"}）`);
+      html += lineHtml(`DPSレンジ: ${hVal("valMix", r6(br.lo))} 〜 ${hVal("valMix", r6(br.hi))}`);
+    }
+
+    html += lineHtml("");
+    html += lineHtml(`<span class="sectionHead">--- 検算（丸めで微差が出る場合あり） ---</span>`);
+    html += lineHtml(`内訳合計DPS（基本+スキルA+スキルB+究極）: ${hVal("valMix", r6(ex.checkTotalDPS))}`);
+    html += lineHtml(`表示DPS（周期合成）: ${hVal("valMix", r6(ex.checkTotalDPS))}`);
+    return html;
+  }
+
 function render() {
     syncUltType();
     syncSkillBMode();
