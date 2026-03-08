@@ -1,5 +1,6 @@
 (() => {
   const F = 40;
+  const STORAGE_KEY = "LD_DPS_TOOL_V8_7_1";
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
   const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
@@ -975,6 +976,16 @@ function calcBoundaryRange(v, res) {
     lines.push("複数割合(%) = 複数DPS / 内訳合計DPS × 100");
     lines.push(`  = ${r6(tb.multi)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(tb.multiPct)}`);
     lines.push("");
+    lines.push("■ 補正経路内訳");
+    lines.push("物理補正×物理クリ 経路DPS = 物理属性に属する最終DPS成分の合計");
+    lines.push(`  = ${r6(tb.phys)}`);
+    lines.push("物理補正×物理クリ 経路割合(%) = 物理補正×物理クリ 経路DPS / 内訳合計DPS × 100");
+    lines.push(`  = ${r6(tb.phys)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(tb.physPct)}`);
+    lines.push("魔法クリ 経路DPS = 魔法属性に属する最終DPS成分の合計");
+    lines.push(`  = ${r6(tb.magic)}`);
+    lines.push("魔法クリ 経路割合(%) = 魔法クリ 経路DPS / 内訳合計DPS × 100");
+    lines.push(`  = ${r6(tb.magic)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(tb.magicPct)}`);
+    lines.push("");
 
     lines.push("■ 検算");
     lines.push("内訳合計DPS = 基本DPS成分 + スキルA DPS成分 + スキルB DPS成分 + 究極DPS成分");
@@ -1220,6 +1231,11 @@ function buildDetailHtml(v, res, ex, tb, br) {
     html += lineHtml(`単体DPS: ${hVal("valMix", r6(tb.single))} / 単体割合(%): ${hVal("valMix", r6(tb.singlePct))}`);
     html += lineHtml(`複数DPS: ${hVal("valMix", r6(tb.multi))} / 複数割合(%): ${hVal("valMix", r6(tb.multiPct))}`);
 
+    html += lineHtml("");
+    html += lineHtml(`<span class="sectionHead">=== 補正経路内訳 ===</span>`);
+    html += lineHtml(`物理補正×物理クリ 経路DPS: ${hVal("valMixEnvPhys", r6(tb.phys))} / 割合(%): ${hVal("valEnv", r6(tb.physPct))}`);
+    html += lineHtml(`魔法クリ 経路DPS: ${hVal("valCrit", r6(tb.magic))} / 割合(%): ${hVal("valCrit", r6(tb.magicPct))}`);
+
     if (br) {
       html += lineHtml("");
       html += lineHtml(`<span class="sectionHead">=== 境界(40F)による厳密レンジ（開始位相で±1tickの差） ===</span>`);
@@ -1267,6 +1283,9 @@ function render() {
       setBar("barMagic","valMagic",0);
       setBar("barSingle","valSingle",0);
       setBar("barMulti","valMulti",0);
+      setBar("barCorrPhys","valCorrPhys",0);
+      setBar("barCritMagic","valCritMagic",0);
+      save(true);
       return;
     }
 
@@ -1319,6 +1338,8 @@ function render() {
     setBar("barMagic","valMagic", tb.magicPct);
     setBar("barSingle","valSingle", tb.singlePct);
     setBar("barMulti","valMulti", tb.multiPct);
+    setBar("barCorrPhys","valCorrPhys", tb.physPct);
+    setBar("barCritMagic","valCritMagic", tb.magicPct);
     lines.push("\n=== 属性内訳（物理/魔法） ===");
     lines.push(`物理DPS: ${r6(tb.phys)} / 物理割合(%): ${r6(tb.physPct)}`);
     lines.push(`魔法DPS: ${r6(tb.magic)} / 魔法割合(%): ${r6(tb.magicPct)}`);
@@ -1362,43 +1383,73 @@ function render() {
       setBar("barMagic","valMagic",0);
       setBar("barSingle","valSingle",0);
       setBar("barMulti","valMulti",0);
+      setBar("barCorrPhys","valCorrPhys",0);
+      setBar("barCritMagic","valCritMagic",0);
+      save(true);
       return;
     }
     render();
+    save(true);
   }
 
-  function save() {
+  function collectFormState() {
     const v = {};
     document.querySelectorAll("input,select").forEach(el => {
       if (!el.id) return;
       if (el.type === "checkbox") v[el.id] = el.checked;
       else v[el.id] = el.value;
     });
-    localStorage.setItem("LD_DPS_TOOL_V5_ZIP", JSON.stringify(v));
-    alert("保存しました");
+    return v;
   }
 
-  function load() {
-    const raw = localStorage.getItem("LD_DPS_TOOL_V5_ZIP");
-    if (!raw) return alert("保存データがありません");
-    const v = JSON.parse(raw);
-    for (const [k,val] of Object.entries(v)) {
-      const el = $(k);
-      if (!el) continue;
-      if (el.type === "checkbox") el.checked = !!val;
-      else el.value = val;
+  function save(silent = false) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(collectFormState()));
+      if (!silent) alert("保存しました");
+      return true;
+    } catch (_) {
+      if (!silent) alert("保存に失敗しました");
+      return false;
     }
+  }
+
+  function load(silent = false) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        if (!silent) alert("保存データがありません");
+        return false;
+      }
+      const v = JSON.parse(raw);
+      for (const [k,val] of Object.entries(v)) {
+        const el = $(k);
+        if (!el) continue;
+        if (el.type === "checkbox") el.checked = !!val;
+        else el.value = val;
+      }
+      normalizeAll();
+      syncUltType();
+      syncSkillBMode();
+      syncSegmentsFromHidden();
+      syncEnvDerivedUI();
+      validateAndRender();
+      if (!silent) alert("読み込みました");
+      return true;
+    } catch (_) {
+      if (!silent) alert("読み込みに失敗しました");
+      return false;
+    }
+  }
+
+  function resetAll() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+    seedDefaults();
     normalizeAll();
     syncUltType();
     syncSkillBMode();
     syncSegmentsFromHidden();
+    syncEnvDerivedUI();
     validateAndRender();
-    alert("読み込みました");
-  }
-
-  function resetAll() {
-    localStorage.removeItem("LD_DPS_TOOL_V5_ZIP");
-    location.reload();
   }
 
   function seedDefaults() {
@@ -1436,6 +1487,8 @@ function render() {
   initBindings();
   setupSegments();
   setupAccordions();
-  validateAndRender();
+  if (!load(true)) {
+    validateAndRender();
+  }
   pvCountOnce();
 })();
