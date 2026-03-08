@@ -24,7 +24,7 @@
       </div>
       <div class="cardBody" id="accBody_env">
         <div class="tworow cols4" id="envGrid">
-          <div class="lbl" id="regenLbl" style="grid-column:1;">Regeマナ/1s</div>
+          <div class="lbl" id="regenLbl" style="grid-column:1;">Regeマナ毎秒</div>
           <div class="lbl" style="grid-column:2;">難易度/80w防御力</div>
           <div class="lbl" style="grid-column:3;">防御力減少値</div>
           <div class="lbl" style="grid-column:4;">物理補正倍率</div>
@@ -54,7 +54,7 @@
         </div>
 
         <div class="hint">
-          ・Regeマナ/1s：最大4桁%（小数1桁まで可）。「100%」= 時間マナ1.0/秒。マナタイプ以外は未使用表示。<br>
+          ・Regeマナ毎秒：最大4桁%（小数1桁まで可）。「100%」= 時間マナ1.0/秒。マナタイプ以外は未使用表示。<br>
           ・難易度/80w防御力：ノーマル148 / ハード158 / 地獄158 / 神175 / 太初175（表示はしないが内部で使用）<br>
           ・実防御力 = 防御力減少値 − 80w防御力<br>
           ・物理補正倍率 = 1*(1+(SIGN(実防御力)*(1-50/(3*ABS(実防御力)+50)))) を小数第3位四捨五入（=小数第2位まで）
@@ -142,7 +142,7 @@
           </select>
         </div>
         <div class="inp" style="grid-column:3;">
-          <input id="ultMulPct" type="text" inputmode="numeric" autocomplete="off" placeholder="1500%">
+          <input id="ultMulPct" type="text" inputmode="decimal" autocomplete="off" placeholder="1500%">
         </div>
         <div class="inp" style="grid-column:4;">
           <input id="ultF" type="text" inputmode="numeric" autocomplete="off" placeholder="44">
@@ -181,7 +181,7 @@
         <div class="lbl" style="grid-column:3;">Ｆ数</div>
 
         <div class="inp" style="grid-column:1;">
-          <input id="aMulPct" type="text" inputmode="numeric" autocomplete="off" placeholder="600%">
+          <input id="aMulPct" type="text" inputmode="decimal" autocomplete="off" placeholder="600%">
         </div>
         <div class="inp" style="grid-column:2;">
           <input id="aPPct" type="text" inputmode="decimal" autocomplete="off" placeholder="10.0%">
@@ -232,7 +232,7 @@
           </select>
         </div>
         <div class="inp" style="grid-column:2;">
-          <input id="bMulPct" type="text" inputmode="numeric" autocomplete="off" placeholder="1500%">
+          <input id="bMulPct" type="text" inputmode="decimal" autocomplete="off" placeholder="1500%">
         </div>
         <div class="inp" style="grid-column:3;">
           <input id="bThird" type="text" inputmode="decimal" autocomplete="off" placeholder="12.0%">

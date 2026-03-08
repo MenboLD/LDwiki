@@ -98,6 +98,7 @@
     // If no '.', commas are treated as decimal separators (locale) and converted to '.'
     let s = String(raw ?? "").replace(/%/g, "");
     s = s.replace(/[^0-9.,]/g, "");
+    if (!s) return "";
     if (s.includes(".")) {
       s = s.replace(/,/g, "");
     } else {
@@ -453,7 +454,7 @@
 
     if (ultType === "mana") {
       const regen = readNumber($("manaRegenPct").value);
-      if (regen < 0) { setErr($("manaRegenPct"), true); setLblErr($("regenLbl"), true); errors.push("Regeマナ/1sは0%以上"); }
+      if (regen < 0) { setErr($("manaRegenPct"), true); setLblErr($("regenLbl"), true); errors.push("Regeマナ毎秒は0%以上"); }
     }
 
     return errors;
@@ -779,11 +780,11 @@ function calcBoundaryRange(v, res) {
 
     lines.push("■ 究極");
     if (v.ultType === "mana") {
-      lines.push("時間マナ/フレーム(非究極中) = (Regeマナ/1s / 100) / 40");
-      lines.push("基本攻撃マナ/フレーム(非究極中) = （基本攻撃回数/フレーム）×1");
-      lines.push("マナ増加/フレーム(非究極中) = 時間マナ/フレーム + 基本攻撃マナ/フレーム");
+      lines.push("時間マナ(毎フレーム)(非究極中) = (Regeマナ毎秒 / 100) / 40");
+      lines.push("基本攻撃マナ(毎フレーム)(非究極中) = （基本攻撃回数/フレーム）×1");
+      lines.push("マナ増加(毎フレーム)(非究極中) = 時間マナ(毎フレーム) + 基本攻撃マナ(毎フレーム)");
       if (v.ultReset === "end") {
-        lines.push("究極到達までの非究極F = Maxマナ / マナ増加/フレーム(非究極中)");
+        lines.push("究極到達までの非究極F = Maxマナ / マナ増加(毎フレーム)(非究極中)");
         lines.push("周期F = 究極到達F + 究極F数");
         lines.push("周期ダメージ = 非究極DPS×(究極到達F/40) + 攻撃力×究極倍率");
         lines.push("DPS = 周期ダメージ / (周期F/40)");
@@ -792,11 +793,11 @@ function calcBoundaryRange(v, res) {
         if (v.ultStopsGauge) {
           lines.push("究極中はマナ加算停止 → 究極中マナ増加=0");
         } else {
-          lines.push("究極中マナ増加（平均近似） = (Regeマナ/1s / 100) × (究極F数/40)");
+          lines.push("究極中マナ増加（平均近似） = (Regeマナ毎秒 / 100) × (究極F数/40)");
           lines.push("※グローバル40F境界の厳密では、究極中tick数が floor(究極F/40) または ceil(究極F/40) になり得る（±1tick）");
         }
         lines.push("残マナ = max(0, Maxマナ − 究極中マナ増加)");
-        lines.push("残マナ到達F(非究極) = 残マナ / マナ増加/フレーム(非究極中)");
+        lines.push("残マナ到達F(非究極) = 残マナ / マナ増加(毎フレーム)(非究極中)");
         lines.push("周期F = 究極F数 + 残マナ到達F");
         lines.push("周期ダメージ = 攻撃力×究極倍率 + 非究極DPS×(残マナ到達F/40)");
         lines.push("DPS = 周期ダメージ / (周期F/40)");
