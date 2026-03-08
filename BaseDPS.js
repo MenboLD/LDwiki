@@ -1063,19 +1063,6 @@ function calcBoundaryRange(v, res) {
     return lines.join("\n");
   }
 
-
-  function escHtml(s) {
-    return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-  }
-  function hVal(cls, val) {
-    return `<span class="hlVal ${cls}">${escHtml(val)}</span>`;
-  }
-  function lineHtml(s) {
-    return `${s}<br>`;
-  }
 function setBar(fillId, valId, pct) {
     const p = Math.max(0, Math.min(100, pct));
     $(fillId).style.width = `${p}%`;
@@ -1083,63 +1070,50 @@ function setBar(fillId, valId, pct) {
   }
 
   
-  function buildDetailHtml(v, res, ex, tb, br) {
-    const d = res.detail;
-    const diffLabelMap = {
-      normal: "ノーマル",
-      hard: "ハード",
-      hell: "地獄",
-      god: "神",
-      prime: "太初",
+  function highlightFormulaHtml(text, v) {
+    let s = escHtml(text);
+
+    const buckets = {
+      atk: { cls: "valAtk", vals: [] },
+      spd: { cls: "valSpd", vals: [] },
+      gauge: { cls: "valGauge", vals: [] },
+      a: { cls: "valA", vals: [] },
+      b: { cls: "valB", vals: [] },
+      ult: { cls: "valUlt", vals: [] },
+      env: { cls: "valEnv", vals: [] },
     };
-    const diffLabel = diffLabelMap[v.envDiff] || v.envDiff;
-    const baseDef = DIFF_DEF[v.envDiff] ?? 175;
-    const realDef = v.defReduce - baseDef;
 
-    let html = "";
-    html += lineHtml(`<span class="sectionHead">=== 行動レート（回/秒）※究極時間込み平均 ===</span>`);
-    html += lineHtml(`非究極時間比率（=非究極F/周期F）: ${hVal("valMix", r6(ex.nonUltFrac))}`);
-    html += lineHtml(`行動合計/秒（究極も1行動扱い）: ${hVal("valMix", r6(ex.actPerSec))}`);
-    html += lineHtml(`基本攻撃/秒: ${hVal("valSpd", r6(ex.basicPerSec))}`);
-    html += lineHtml(`スキルA/秒: ${hVal("valA", r6(ex.aPerSec))}`);
-    html += lineHtml(`スキルB/秒: ${hVal("valB", r6(ex.bPerSec))}`);
-    html += lineHtml(`究極/秒: ${hVal("valUlt", r6(ex.ultPerSec))}`);
-
-    html += lineHtml("");
-    html += lineHtml(`<span class="sectionHead">=== 環境（物理補正） ===</span>`);
-    html += lineHtml(`難易度: ${hVal("valEnv", diffLabel)}（80w防御力は難易度に応じて内部適用）`);
-    html += lineHtml(`防御力減少値: ${hVal("valEnv", v.defReduce)} / 実防御力=${hVal("valEnv", realDef)}`);
-    html += lineHtml(`物理補正倍率（小数第2位まで）: ${hVal("valMixEnvPhys", $("physMulOut").value)}`);
-
-    html += lineHtml("");
-    html += lineHtml(`<span class="sectionHead">=== ダメージ内訳（DPS成分）と割合（合計=100%） ===</span>`);
-    html += lineHtml(`基本DPS成分: ${hVal(v.basicAttr === "phys" ? "valMixEnvPhys" : "valSpd", r6(ex.basicDPS))} / 基本割合(%): ${hVal("valSpd", r6(ex.basicPct))}`);
-    html += lineHtml(`スキルA DPS成分: ${hVal(v.aAttr === "phys" ? "valMixEnvPhys" : "valA", r6(ex.aDPS))} / スキルA割合(%): ${hVal("valA", r6(ex.aPct))}`);
-    html += lineHtml(`スキルB DPS成分: ${hVal(v.bAttr === "phys" ? "valMixEnvPhys" : "valB", r6(ex.bDPS))} / スキルB割合(%): ${hVal("valB", r6(ex.bPct))}`);
-    html += lineHtml(`究極DPS成分: ${hVal(v.uAttr === "phys" ? "valMixEnvPhys" : "valUlt", r6(ex.ultDPS))} / 究極割合(%): ${hVal("valUlt", r6(ex.ultPct))}`);
-
-    html += lineHtml("");
-    html += lineHtml(`<span class="sectionHead">=== 属性内訳（物理/魔法） ===</span>`);
-    html += lineHtml(`物理DPS: ${hVal("valMixEnvPhys", r6(tb.phys))} / 物理割合(%): ${hVal("valEnv", r6(tb.physPct))}`);
-    html += lineHtml(`魔法DPS: ${hVal("valMixAB", r6(tb.magic))} / 魔法割合(%): ${hVal("valMixAB", r6(tb.magicPct))}`);
-
-    html += lineHtml("");
-    html += lineHtml(`<span class="sectionHead">=== 特性内訳（単体/複数） ===</span>`);
-    html += lineHtml(`単体DPS: ${hVal("valMix", r6(tb.single))} / 単体割合(%): ${hVal("valMix", r6(tb.singlePct))}`);
-    html += lineHtml(`複数DPS: ${hVal("valMix", r6(tb.multi))} / 複数割合(%): ${hVal("valMix", r6(tb.multiPct))}`);
-
-    if (br) {
-      html += lineHtml("");
-      html += lineHtml(`<span class="sectionHead">=== 境界(40F)による厳密レンジ（開始位相で±1tickの差） ===</span>`);
-      html += lineHtml(`究極中のtick数: ${hVal("valUlt", br.minTick)}〜${hVal("valUlt", br.maxTick)} （1tickあたり+${hVal("valGauge", br.perTick)} ${v.ultType === "mana" ? "マナ" : "秒"}）`);
-      html += lineHtml(`DPSレンジ: ${hVal("valMix", r6(br.lo))} 〜 ${hVal("valMix", r6(br.hi))}`);
+    function addVals(bucket, arr) {
+      for (const x of arr) {
+        if (x === undefined || x === null || x === "" || x === "NaN") continue;
+        bucket.vals.push(String(x));
+      }
     }
 
-    html += lineHtml("");
-    html += lineHtml(`<span class="sectionHead">--- 検算（丸めで微差が出る場合あり） ---</span>`);
-    html += lineHtml(`内訳合計DPS（基本+スキルA+スキルB+究極）: ${hVal("valMix", r6(ex.checkTotalDPS))}`);
-    html += lineHtml(`表示DPS（周期合成）: ${hVal("valMix", r6(ex.checkTotalDPS))}`);
-    return html;
+    addVals(buckets.atk, [v.atk, r6(v.atk)]);
+    addVals(buckets.spd, [v.aspd, r6(v.aspd), Number(v.aspd).toFixed ? Number(v.aspd).toFixed(2) : ""]);
+    addVals(buckets.gauge, [v.gaugeMax, r6(v.gaugeMax), v.manaPerSec, r6(v.manaPerSec), $("manaRegenPct") ? readNumber($("manaRegenPct").value) : ""]);
+    addVals(buckets.a, [v.aP, r6(v.aP), v.aP * 100, r6(v.aP * 100), v.aF, v.aMul, r6(v.aMul)]);
+    addVals(buckets.b, [v.bP, r6(v.bP), v.bP * 100, r6(v.bP * 100), v.bN, v.bF, v.bMul, r6(v.bMul)]);
+    addVals(buckets.ult, [v.ultMul, r6(v.ultMul), v.ultF, r6(v.ultF)]);
+    addVals(buckets.env, [v.defReduce, v.physMul, r6(v.physMul), $("physMulOut") ? $("physMulOut").value : "", DIFF_DEF[v.envDiff] ?? ""]);
+
+    const items = Object.values(buckets).flatMap(o => {
+      const uniq = [...new Set(o.vals.filter(x => x !== "undefined"))];
+      uniq.sort((a,b) => b.length - a.length);
+      return uniq.map(val => ({cls:o.cls, val}));
+    });
+
+    for (const it of items) {
+      const esc = it.val.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      s = s.replace(new RegExp(`(^|[^\\d.])(${esc})(?![\\d.])`, "g"), `$1<span class="hlVal ${it.cls}">$2</span>`);
+    }
+
+    return s.replace(/\n/g, "<br>");
+  }
+
+  function buildFormulaHtml(v, res, ex, tb, br) {
+    return highlightFormulaHtml(buildFormulaText(v, res, ex, tb, br), v);
   }
 
 function render() {
@@ -1169,7 +1143,6 @@ function render() {
       setBar("barA","valA",0);
       setBar("barB","valB",0);
       $("boundaryOut").textContent = "究極中tick数: - / DPSレンジ: -";
-      $("formulaOut").textContent = "-";
       setBar("barU","valU",0);
 
       setBar("barPhys","valPhys",0);
@@ -1191,7 +1164,6 @@ function render() {
       $("boundaryOut").textContent = `究極中tick数: ${minTick}〜${maxTick} / DPSレンジ: ${lo}〜${hi}`;
     } else {
       $("boundaryOut").textContent = "究極中tick数: - / DPSレンジ: -";
-      $("formulaOut").textContent = "-";
     }
 
 
@@ -1249,7 +1221,7 @@ function render() {
     lines.push(`表示DPS（周期合成）: ${r6(res.dps)}`);
 
     $("detailOut").innerHTML = buildDetailHtml(v, res, ex, tb, br);
-    $("formulaOut").textContent = buildFormulaText(v, res, ex, tb, br);
+    $("formulaOut").innerHTML = buildFormulaHtml(v, res, ex, tb, br);
   }
 
   function validateAndRender() {
@@ -1266,7 +1238,7 @@ function render() {
       setBar("barA","valA",0);
       setBar("barB","valB",0);
       $("boundaryOut").textContent = "究極中tick数: - / DPSレンジ: -";
-      $("formulaOut").textContent = "-";
+      $("formulaOut").innerHTML = "-";
       setBar("barU","valU",0);
       setBar("barPhys","valPhys",0);
       setBar("barMagic","valMagic",0);
