@@ -93,21 +93,31 @@
   function setLblDim(el, on) { if (el) el.classList.toggle("dimLbl", !!on); }
 
   function sanitizeNumDot(raw) {
-    // Allow digits + decimal separators.
-    // If '.' exists, commas are treated as thousands separators and removed.
-    // If no '.', commas are treated as decimal separators (locale) and converted to '.'
+    // Allow digits + decimal separators ('.' or ',').
+    // Keep what the user typed while editing.
+    // - If both '.' and ',' exist, treat '.' as decimal and commas as thousands separators.
+    // - Otherwise allow at most one separator (either '.' or ',').
     let s = String(raw ?? "").replace(/%/g, "");
     s = s.replace(/[^0-9.,]/g, "");
     if (!s) return "";
-    if (s.includes(".")) {
+
+    const hasDot = s.includes(".");
+    const hasComma = s.includes(",");
+
+    if (hasDot) {
       s = s.replace(/,/g, "");
-    } else {
-      s = s.replace(/,/g, ".");
+      const parts = s.split(".");
+      if (parts.length <= 1) return s;
+      return parts[0] + "." + parts.slice(1).join("");
     }
-    // keep only the first '.'
-    const parts = s.split(".");
-    if (parts.length <= 1) return s;
-    return parts[0] + "." + parts.slice(1).join("");
+
+    if (hasComma) {
+      const parts = s.split(",");
+      if (parts.length <= 1) return s;
+      return parts[0] + "," + parts.slice(1).join("");
+    }
+
+    return s;
   }
 
   function trimDecimals(raw, maxDec) {
@@ -117,6 +127,50 @@
     const [a, b = ""] = s.split(".");
     if (!b) return (a || "");
     return `${a || ""}.${b.slice(0, maxDec)}`;
+  }
+
+  function trimDecimalsLive(raw, maxDec) {
+    // Like trimDecimals, but keeps a trailing decimal separator while typing (e.g. "1." or "1,")
+    const s = sanitizeNumDot(raw);
+    if (!s) return "";
+
+    const endsWithDot = String(raw ?? "").endsWith(".");
+    const endsWithComma = String(raw ?? "").endsWith(",");
+
+    if (s.includes(".")) {
+      const parts = s.split(".");
+      const a = parts[0] || "";
+      const b = parts.slice(1).join("");
+      if ((endsWithDot || s.endsWith(".")) && b === "") return a + ".";
+      return b ? `${a}.${b.slice(0, maxDec)}` : a;
+    }
+    if (s.includes(",")) {
+      const parts = s.split(",");
+      const a = parts[0] || "";
+      const b = parts.slice(1).join("");
+      if ((endsWithComma || s.endsWith(",")) && b === "") return a + ",";
+      return b ? `${a},${b.slice(0, maxDec)}` : a;
+    }
+    return s; // integer-like
+  }
+
+
+
+  function sanitizeIntKeepComma(raw, maxDigits) {
+    // Allow digits and commas while typing. Digits are limited to maxDigits (commas ignored for counting).
+    let s = String(raw ?? "").replace(/%/g, "");
+    s = s.replace(/[^0-9,]/g, "");
+    if (!s) return "";
+
+    let out = "";
+    let used = 0;
+    for (const ch of s) {
+      if (ch === ",") { out += ch; continue; }
+      if (used < maxDigits) { out += ch; used += 1; }
+    }
+    // avoid leading/trailing commas
+    out = out.replace(/^,|,$/g, "");
+    return out;
   }
 
   function trimIntDigits(raw, maxDigits) {
@@ -170,7 +224,19 @@
   }
 
   function readNumber(raw) {
-    const t = String(raw ?? "").replace(/,/g, "").replace(/%/g, "");
+    let t = String(raw ?? "").replace(/%/g, "");
+    t = t.replace(/\s/g, "");
+    if (!t) return 0;
+
+    if (t.includes(".")) {
+      t = t.replace(/,/g, "");
+    } else if (t.includes(",")) {
+      const parts = t.split(",");
+      t = parts[0] + "." + parts.slice(1).join("");
+    } else {
+      t = t.replace(/,/g, "");
+    }
+
     const x = parseFloat(t);
     return isFinite(x) ? x : 0;
   }
@@ -231,26 +297,26 @@
   }
 
   function initBindings() {
-    bindField($("atk"), (v)=>trimIntDigits(v,6), (v)=>toAtkDisplay(v));
-    bindField($("aspd"), (v)=>trimDecimals(v,2), (v)=>toAspdDisplay(v));
-    bindField($("gaugeMax"), (v)=>trimIntDigits(v,3), (v)=>toIntDisplay(v,3));
+    bindField($("atk"), (v)=>sanitizeIntKeepComma(v,6), (v)=>toAtkDisplay(v));
+    bindField($("aspd"), (v)=>trimDecimalsLive(v,2), (v)=>toAspdDisplay(v));
+    bindField($("gaugeMax"), (v)=>sanitizeIntKeepComma(v,3), (v)=>toIntDisplay(v,3));
 
-    bindField($("manaRegenPct"), (v)=>trimDecimals(v,1), (v)=>toPctDisplay(v,1,4));
+    bindField($("manaRegenPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,4));
 
-    bindField($("ultMulPct"), (v)=>trimDecimals(v,1), (v)=>toPctDisplay(v,1,6));
-    bindField($("ultF"), (v)=>trimIntDigits(v,4), (v)=>toIntDisplay(v,4));
+    bindField($("ultMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
+    bindField($("ultF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
 
-    bindField($("aMulPct"), (v)=>trimDecimals(v,1), (v)=>toPctDisplay(v,1,6));
-    bindField($("aPPct"), (v)=>trimDecimals(v,1), (v)=>toProbPctDisplay(v));
-    bindField($("aF"), (v)=>trimIntDigits(v,4), (v)=>toIntDisplay(v,4));
+    bindField($("aMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
+    bindField($("aPPct"), (v)=>trimDecimalsLive(v,1), (v)=>toProbPctDisplay(v));
+    bindField($("aF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
 
-    bindField($("bMulPct"), (v)=>trimDecimals(v,1), (v)=>toPctDisplay(v,1,6));
-    bindField($("bF"), (v)=>trimIntDigits(v,4), (v)=>toIntDisplay(v,4));
+    bindField($("bMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
+    bindField($("bF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
 
     $("bThird").addEventListener("input", () => {
       const bType = $("bType").value;
-      if (bType === "prob") $("bThird").value = trimDecimals($("bThird").value, 1);
-      else if (bType === "count") $("bThird").value = trimIntDigits($("bThird").value, 2);
+      if (bType === "prob") $("bThird").value = trimDecimalsLive($("bThird").value, 1);
+      else if (bType === "count") $("bThird").value = sanitizeIntKeepComma($("bThird").value, 2);
       else $("bThird").value = "0.0%";
     });
     const commitBThird = () => {
