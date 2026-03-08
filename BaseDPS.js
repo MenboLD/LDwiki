@@ -1117,7 +1117,25 @@ function setBar(fillId, valId, pct) {
   }
 
 
-  function buildDetailHtml(v, res, ex, tb, br) {
+  
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+
+  function hVal(cls, val) {
+    return `<span class="hlVal ${cls}">${escHtml(val)}</span>`;
+  }
+
+
+  function lineHtml(s) {
+    return `${s}<br>`;
+  }
+
+function buildDetailHtml(v, res, ex, tb, br) {
     const d = res.detail;
     const diffLabelMap = {
       normal: "ノーマル",
