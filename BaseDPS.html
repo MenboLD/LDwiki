@@ -53,11 +53,30 @@
           </div>
         </div>
 
+
+        <div class="tworow cols3" id="critGrid" style="margin-top:10px;">
+          <div class="lbl" style="grid-column:1;">クリ率</div>
+          <div class="lbl" style="grid-column:2;">物理クリ補正</div>
+          <div class="lbl" style="grid-column:3;">魔法クリ補正</div>
+
+          <div class="inp" style="grid-column:1;">
+            <input id="critChancePct" type="text" inputmode="decimal" autocomplete="off" placeholder="0%" value="0%">
+          </div>
+          <div class="inp" style="grid-column:2;">
+            <input id="critPhysBonusPct" type="text" inputmode="decimal" autocomplete="off" placeholder="150%" value="150%">
+          </div>
+          <div class="inp" style="grid-column:3;">
+            <input id="critMagicBonusPct" type="text" inputmode="decimal" autocomplete="off" placeholder="170%" value="170%">
+          </div>
+        </div>
+
         <div class="hint">
           ・Regeマナ毎秒：最大4桁%（小数1桁まで可）。「100%」= 時間マナ1.0/秒。マナタイプ以外は未使用表示。<br>
           ・難易度/80w防御力：ノーマル148 / ハード158 / 地獄158 / 神175 / 太初175（表示はしないが内部で使用）<br>
           ・実防御力 = 防御力減少値 − 80w防御力<br>
-          ・物理補正倍率 = 1*(1+(SIGN(実防御力)*(1-50/(3*ABS(実防御力)+50)))) を小数第3位四捨五入（=小数第2位まで）
+          ・物理補正倍率 = 1*(1+(SIGN(実防御力)*(1-50/(3*ABS(実防御力)+50)))) を小数第3位四捨五入（=小数第2位まで）<br>
+          ・クリ率：クリティカル発生確率（%）<br>
+          ・物理クリ補正 / 魔法クリ補正：通常1.0倍に対する加算分（例：+150%ならクリティカル時2.5倍）
         </div>
       </div>
     </div>
@@ -320,7 +339,7 @@
     </div>
 
     <div class="hr"></div>
-    <div class="mono" id="detailOut"></div>
+    <div class="mono monoHtml" id="detailOut"></div>
     <div class="hr"></div>
     <div class="formulaTitle">算出式</div>
     <div class="mono monoHtml" id="formulaOut">-</div>

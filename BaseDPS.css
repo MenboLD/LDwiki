@@ -245,3 +245,5 @@ button:hover{ filter:brightness(1.07); }
 .valMixAB{ color:#f6fff6; background:rgba(190,229,170,.22); border:1px solid rgba(190,229,170,.44); }
 .valMixEnvPhys{ color:#fff7ea; background:rgba(255,190,120,.28); border:1px solid rgba(255,190,120,.50); }
 .sectionHead{ font-weight:700; color:#e5f0ff; }
+
+.valCrit{ color:#fef9c3; background:rgba(250, 204, 21, .22); border:1px solid rgba(250, 204, 21, .42); }
