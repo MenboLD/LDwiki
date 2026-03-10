@@ -57,7 +57,7 @@
         <div class="tworow cols3" id="critGrid" style="margin-top:10px;">
           <div class="lbl" style="grid-column:1;">クリ率</div>
           <div class="lbl" style="grid-column:2;">物理クリ補正</div>
-          <div class="lbl" style="grid-column:3;">魔法クリ補正</div>
+          <div class="lbl" style="grid-column:3;">魔法クリ寄与補正</div>
 
           <div class="inp" style="grid-column:1;">
             <input id="critChancePct" type="text" inputmode="decimal" autocomplete="off" placeholder="0%" value="0%">
@@ -76,7 +76,7 @@
           ・実防御力 = 防御力減少値 − 80w防御力<br>
           ・物理補正倍率 = 1*(1+(SIGN(実防御力)*(1-50/(3*ABS(実防御力)+50)))) を小数第3位四捨五入（=小数第2位まで）<br>
           ・クリ率：クリティカル発生確率（%）<br>
-          ・物理クリ補正 / 魔法クリ補正：通常1.0倍に対する加算分（例：+150%ならクリティカル時2.5倍）
+          ・物理クリ補正 / 魔法クリ寄与補正：通常1.0倍に対する加算分（例：+150%ならクリティカル時2.5倍）
         </div>
       </div>
     </div>
@@ -331,14 +331,14 @@
       </div>
 
       <div class="barDivider"></div>
-      <div class="barGroupTitle">補正経路</div>
+      <div class="barGroupTitle">クリティカル寄与</div>
       <div class="barRow">
-        <div class="barLabel">物理補正×物理クリ</div>
+        <div class="barLabel">物理クリ寄与</div>
         <div class="barTrack"><div class="barFill" id="barCorrPhys"></div></div>
         <div class="barValue" id="valCorrPhys">-</div>
       </div>
       <div class="barRow">
-        <div class="barLabel">魔法クリ</div>
+        <div class="barLabel">魔法クリ寄与</div>
         <div class="barTrack"><div class="barFill" id="barCritMagic"></div></div>
         <div class="barValue" id="valCritMagic">-</div>
       </div>
@@ -353,11 +353,71 @@
 
     <div class="hr"></div>
     <div class="mono monoHtml" id="detailOut"></div>
+    <div class="legendBox" id="detailLegend"></div>
     <div class="hr"></div>
     <div class="formulaTitle">算出式</div>
     <div class="mono monoHtml" id="formulaOut">-</div>
+    <div class="legendBox" id="formulaLegend"></div>
 
   </div>
 </div>
 </body>
 </html>
+
+  <section class="card" id="calcOrderGuide">
+    <h2>計算順序の説明</h2>
+    <div class="guideBox">
+      <div class="guideStep">
+        <div class="guideNum">1</div>
+        <div class="guideText">
+          <div class="guideTitle">入力値を整える</div>
+          <div class="guideBody">攻撃力・攻撃速度・各スキル倍率/確率/F数・究極情報・環境値を読み取り、攻撃速度から基本攻撃モーションFを求める。</div>
+        </div>
+      </div>
+      <div class="guideStep">
+        <div class="guideNum">2</div>
+        <div class="guideText">
+          <div class="guideTitle">非究極時の行動ペースを求める</div>
+          <div class="guideBody">基本攻撃/スキルA/スキルB の抽選条件から平均行動Fを出し、そこから「非究極時の行動回数/秒」「基本攻撃/秒」「スキルA/秒」「スキルB/秒」を求める。</div>
+        </div>
+      </div>
+      <div class="guideStep">
+        <div class="guideNum">3</div>
+        <div class="guideText">
+          <div class="guideTitle">究極の回転を求める</div>
+          <div class="guideBody">マナまたはCTの増加速度から、究極が再使用可能になるまでの非究極Fを計算する。究極Fと合算して1周期の長さを決める。</div>
+        </div>
+      </div>
+      <div class="guideStep">
+        <div class="guideNum">4</div>
+        <div class="guideText">
+          <div class="guideTitle">周期全体に平均化する</div>
+          <div class="guideBody">非究極時間比率を使って、通常行動の「毎秒」を周期平均へ落とし込む。同時に究極/秒も求め、最終的な行動レート欄へ反映する。</div>
+        </div>
+      </div>
+      <div class="guideStep">
+        <div class="guideNum">5</div>
+        <div class="guideText">
+          <div class="guideTitle">各ダメージ成分を作る</div>
+          <div class="guideBody">基本攻撃・スキルA・スキルB・究極それぞれについて、<b>回数/秒 × 攻撃力 × 倍率</b> を基礎値とし、属性に応じて物理補正・クリティカル期待倍率を乗算する。</div>
+        </div>
+      </div>
+      <div class="guideStep">
+        <div class="guideNum">6</div>
+        <div class="guideText">
+          <div class="guideTitle">合計DPSと割合を出す</div>
+          <div class="guideBody">各成分DPSを合計して最終DPSを出し、その内訳を「基本/スキルA/スキルB/究極」「物理/魔法」「単体/複数」「クリティカル寄与」の各観点で割合表示する。</div>
+        </div>
+      </div>
+      <div class="guideStep">
+        <div class="guideNum">7</div>
+        <div class="guideText">
+          <div class="guideTitle">40F境界のズレを確認する</div>
+          <div class="guideBody">究極開始時リセットかつ究極中もゲージが進む場合は、40F境界の踏み方で tick 数が前後し得るため、min/max のDPSレンジも併記する。</div>
+        </div>
+      </div>
+      <div class="guideNote">
+        このページでは、上の「詳細」欄が結果の要約、下の「算出式」欄が式の展開と実値代入、最下部のこの欄が計算の流れの説明に対応している。
+      </div>
+    </div>
+  </section>

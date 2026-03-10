@@ -704,15 +704,39 @@
     const physCritMul = (isFinite(v.critPhysMul) ? v.critPhysMul : 1);
     const magicCritMul = (isFinite(v.critMagicMul) ? v.critMagicMul : 1);
 
-    const basicAttrMul = (v.basicAttr === "phys") ? (pm * physCritMul) : magicCritMul;
-    const aAttrMul = (v.aAttr === "phys") ? (pm * physCritMul) : magicCritMul;
-    const bAttrMul = (v.bAttr === "phys") ? (pm * physCritMul) : magicCritMul;
-    const uAttrMul = (v.uAttr === "phys") ? (pm * physCritMul) : magicCritMul;
+    const basicBaseMul = (v.basicAttr === "phys") ? pm : 1;
+    const aBaseMul = (v.aAttr === "phys") ? pm : 1;
+    const bBaseMul = (v.bAttr === "phys") ? pm : 1;
+    const uBaseMul = (v.uAttr === "phys") ? pm : 1;
 
-    const basicDPS = basicDPS0 * basicAttrMul;
-    const aDPS = aDPS0 * aAttrMul;
-    const bDPS = bDPS0 * bAttrMul;
-    const ultDPS = ultDPS0 * uAttrMul;
+    const basicCritMul = (v.basicAttr === "phys") ? physCritMul : magicCritMul;
+    const aCritMul = (v.aAttr === "phys") ? physCritMul : magicCritMul;
+    const bCritMul = (v.bAttr === "phys") ? physCritMul : magicCritMul;
+    const uCritMul = (v.uAttr === "phys") ? physCritMul : magicCritMul;
+
+    const basicNoCritDPS = basicDPS0 * basicBaseMul;
+    const aNoCritDPS = aDPS0 * aBaseMul;
+    const bNoCritDPS = bDPS0 * bBaseMul;
+    const ultNoCritDPS = ultDPS0 * uBaseMul;
+
+    const basicDPS = basicNoCritDPS * basicCritMul;
+    const aDPS = aNoCritDPS * aCritMul;
+    const bDPS = bNoCritDPS * bCritMul;
+    const ultDPS = ultNoCritDPS * uCritMul;
+
+    const physCritGainDPS =
+      (v.basicAttr === "phys" ? basicNoCritDPS * (physCritMul - 1) : 0) +
+      (v.aAttr === "phys" ? aNoCritDPS * (physCritMul - 1) : 0) +
+      (v.bAttr === "phys" ? bNoCritDPS * (physCritMul - 1) : 0) +
+      (v.uAttr === "phys" ? ultNoCritDPS * (physCritMul - 1) : 0);
+
+    const magicCritGainDPS =
+      (v.basicAttr === "magic" ? basicNoCritDPS * (magicCritMul - 1) : 0) +
+      (v.aAttr === "magic" ? aNoCritDPS * (magicCritMul - 1) : 0) +
+      (v.bAttr === "magic" ? bNoCritDPS * (magicCritMul - 1) : 0) +
+      (v.uAttr === "magic" ? ultNoCritDPS * (magicCritMul - 1) : 0);
+
+    const totalCritGainDPS = physCritGainDPS + magicCritGainDPS;
 
     const sum = basicDPS + aDPS + bDPS + ultDPS;
     const pct = (x) => (sum > 0 ? (100 * x / sum) : 0);
@@ -721,8 +745,14 @@
       nonUltFrac,
       actPerSec, basicPerSec, aPerSec, bPerSec, ultPerSec,
       basicDPS0, aDPS0, bDPS0, ultDPS0,
+      basicNoCritDPS, aNoCritDPS, bNoCritDPS, ultNoCritDPS,
       basicDPS, aDPS, bDPS, ultDPS,
-      basicAttrMul, aAttrMul, bAttrMul, uAttrMul,
+      basicBaseMul, aBaseMul, bBaseMul, uBaseMul,
+      basicCritMul, aCritMul, bCritMul, uCritMul,
+      physCritGainDPS, magicCritGainDPS, totalCritGainDPS,
+      physCritGainPct: pct(physCritGainDPS),
+      magicCritGainPct: pct(magicCritGainDPS),
+      totalCritGainPct: pct(totalCritGainDPS),
       basicPct: pct(basicDPS), aPct: pct(aDPS), bPct: pct(bDPS), ultPct: pct(ultDPS),
       checkTotalDPS: sum,
     };
@@ -976,15 +1006,19 @@ function calcBoundaryRange(v, res) {
     lines.push("複数割合(%) = 複数DPS / 内訳合計DPS × 100");
     lines.push(`  = ${r6(tb.multi)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(tb.multiPct)}`);
     lines.push("");
-    lines.push("■ 補正経路内訳");
-    lines.push("物理補正×物理クリ 経路DPS = 物理属性に属する最終DPS成分の合計");
-    lines.push(`  = ${r6(tb.phys)}`);
-    lines.push("物理補正×物理クリ 経路割合(%) = 物理補正×物理クリ 経路DPS / 内訳合計DPS × 100");
-    lines.push(`  = ${r6(tb.phys)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(tb.physPct)}`);
-    lines.push("魔法クリ 経路DPS = 魔法属性に属する最終DPS成分の合計");
-    lines.push(`  = ${r6(tb.magic)}`);
-    lines.push("魔法クリ 経路割合(%) = 魔法クリ 経路DPS / 内訳合計DPS × 100");
-    lines.push(`  = ${r6(tb.magic)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(tb.magicPct)}`);
+    lines.push("■ クリティカル寄与内訳");
+    lines.push("物理クリ寄与DPS = 物理属性の『クリなしDPS』×(期待クリ倍率(物理)−1) の合計");
+    lines.push(`  = ${r6(ex.physCritGainDPS)}`);
+    lines.push("物理クリ寄与割合(%) = 物理クリ寄与DPS / 内訳合計DPS × 100");
+    lines.push(`  = ${r6(ex.physCritGainDPS)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(ex.physCritGainPct)}`);
+    lines.push("魔法クリ寄与DPS = 魔法属性の『クリなしDPS』×(期待クリ倍率(魔法)−1) の合計");
+    lines.push(`  = ${r6(ex.magicCritGainDPS)}`);
+    lines.push("魔法クリ寄与割合(%) = 魔法クリ寄与DPS / 内訳合計DPS × 100");
+    lines.push(`  = ${r6(ex.magicCritGainDPS)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(ex.magicCritGainPct)}`);
+    lines.push("合計クリ寄与DPS = 物理クリ寄与DPS + 魔法クリ寄与DPS");
+    lines.push(`  = ${r6(ex.physCritGainDPS)} + ${r6(ex.magicCritGainDPS)} = ${r6(ex.totalCritGainDPS)}`);
+    lines.push("合計クリ寄与割合(%) = 合計クリ寄与DPS / 内訳合計DPS × 100");
+    lines.push(`  = ${r6(ex.totalCritGainDPS)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(ex.totalCritGainPct)}`);
     lines.push("");
 
     lines.push("■ 検算");
@@ -1117,7 +1151,7 @@ function setBar(fillId, valId, pct) {
   }
 
   
-  function highlightFormulaHtml(text, v) {
+  function highlightFormulaHtml(text, v, ex) {
     let s = escHtml(text);
 
     const buckets = {
@@ -1145,7 +1179,7 @@ function setBar(fillId, valId, pct) {
     addVals(buckets.b, [v.bP, r6(v.bP), v.bP * 100, r6(v.bP * 100), v.bN, v.bF, v.bMul, r6(v.bMul)]);
     addVals(buckets.ult, [v.ultMul, r6(v.ultMul), v.ultF, r6(v.ultF)]);
     addVals(buckets.env, [v.defReduce, v.physMul, r6(v.physMul), $("physMulOut") ? $("physMulOut").value : "", DIFF_DEF[v.envDiff] ?? ""]);
-    addVals(buckets.crit, [v.critChancePct, v.critPhysBonusPct, v.critMagicBonusPct, v.critChance, r6(v.critChance), v.critPhysBonus, r6(v.critPhysBonus), v.critMagicBonus, r6(v.critMagicBonus), v.critPhysMul, r6(v.critPhysMul), v.critMagicMul, r6(v.critMagicMul)]);
+    addVals(buckets.crit, [v.critChancePct, v.critPhysBonusPct, v.critMagicBonusPct, v.critChance, r6(v.critChance), v.critPhysBonus, r6(v.critPhysBonus), v.critMagicBonus, r6(v.critMagicBonus), v.critPhysMul, r6(v.critPhysMul), v.critMagicMul, r6(v.critMagicMul), ex.physCritGainDPS, r6(ex.physCritGainDPS), ex.magicCritGainDPS, r6(ex.magicCritGainDPS), ex.totalCritGainDPS, r6(ex.totalCritGainDPS)]);
 
     const items = Object.values(buckets).flatMap(o => {
       const uniq = [...new Set(o.vals.filter(x => x !== "undefined"))];
@@ -1162,7 +1196,7 @@ function setBar(fillId, valId, pct) {
   }
 
   function buildFormulaHtml(v, res, ex, tb, br) {
-    return highlightFormulaHtml(buildFormulaText(v, res, ex, tb, br), v);
+    return highlightFormulaHtml(buildFormulaText(v, res, ex, tb, br), v, ex);
   }
 
 
@@ -1232,9 +1266,10 @@ function buildDetailHtml(v, res, ex, tb, br) {
     html += lineHtml(`複数DPS: ${hVal("valMix", r6(tb.multi))} / 複数割合(%): ${hVal("valMix", r6(tb.multiPct))}`);
 
     html += lineHtml("");
-    html += lineHtml(`<span class="sectionHead">=== 補正経路内訳 ===</span>`);
-    html += lineHtml(`物理補正×物理クリ 経路DPS: ${hVal("valMixEnvPhys", r6(tb.phys))} / 割合(%): ${hVal("valEnv", r6(tb.physPct))}`);
-    html += lineHtml(`魔法クリ 経路DPS: ${hVal("valCrit", r6(tb.magic))} / 割合(%): ${hVal("valCrit", r6(tb.magicPct))}`);
+    html += lineHtml(`<span class="sectionHead">=== クリティカル寄与内訳 ===</span>`);
+    html += lineHtml(`物理クリ寄与DPS: ${hVal("valCrit", r6(ex.physCritGainDPS))} / 割合(%): ${hVal("valCrit", r6(ex.physCritGainPct))}`);
+    html += lineHtml(`魔法クリ寄与DPS: ${hVal("valCrit", r6(ex.magicCritGainDPS))} / 割合(%): ${hVal("valCrit", r6(ex.magicCritGainPct))}`);
+    html += lineHtml(`合計クリ寄与DPS: ${hVal("valCrit", r6(ex.totalCritGainDPS))} / 割合(%): ${hVal("valCrit", r6(ex.totalCritGainPct))}`);
 
     if (br) {
       html += lineHtml("");
@@ -1247,6 +1282,29 @@ function buildDetailHtml(v, res, ex, tb, br) {
     html += lineHtml(`<span class="sectionHead">--- 検算（丸めで微差が出る場合あり） ---</span>`);
     html += lineHtml(`内訳合計DPS（基本+スキルA+スキルB+究極）: ${hVal("valMix", r6(ex.checkTotalDPS))}`);
     html += lineHtml(`表示DPS（周期合成）: ${hVal("valMix", r6(ex.checkTotalDPS))}`);
+    return html;
+  }
+
+
+  function buildLegendHtml() {
+    const items = [
+      ["valAtk", "攻撃力"],
+      ["valSpd", "攻撃速度 / 基本攻撃系"],
+      ["valGauge", "マナ・CT・ゲージ系"],
+      ["valA", "スキルA系"],
+      ["valB", "スキルB系"],
+      ["valUlt", "究極系"],
+      ["valEnv", "環境・防御系"],
+      ["valCrit", "クリティカル系"],
+      ["valMix", "複合・最終結果"],
+      ["valMixAB", "魔法寄り複合"],
+      ["valMixEnvPhys", "物理補正込み複合"],
+    ];
+    let html = '<div class="legendTitle">色凡例</div><div class="legendItems">';
+    for (const [cls, label] of items) {
+      html += `<span class="legendItem"><span class="hlVal legendSwatch ${cls}">${label}</span></span>`;
+    }
+    html += '</div>';
     return html;
   }
 
@@ -1263,6 +1321,8 @@ function render() {
       $("dpsOut").textContent = "計算エラー";
       $("dpsSub").textContent = res.err;
       $("detailOut").innerHTML = "";
+      if ($("detailLegend")) $("detailLegend").innerHTML = "";
+      if ($("formulaLegend")) $("formulaLegend").innerHTML = "";
 
       if (String(res.err).includes("究極に到達しません")) {
         if ($("ultType").value === "mana") {
@@ -1338,8 +1398,8 @@ function render() {
     setBar("barMagic","valMagic", tb.magicPct);
     setBar("barSingle","valSingle", tb.singlePct);
     setBar("barMulti","valMulti", tb.multiPct);
-    setBar("barCorrPhys","valCorrPhys", tb.physPct);
-    setBar("barCritMagic","valCritMagic", tb.magicPct);
+    setBar("barCorrPhys","valCorrPhys", ex.physCritGainPct);
+    setBar("barCritMagic","valCritMagic", ex.magicCritGainPct);
     lines.push("\n=== 属性内訳（物理/魔法） ===");
     lines.push(`物理DPS: ${r6(tb.phys)} / 物理割合(%): ${r6(tb.physPct)}`);
     lines.push(`魔法DPS: ${r6(tb.magic)} / 魔法割合(%): ${r6(tb.magicPct)}`);
@@ -1360,7 +1420,9 @@ function render() {
     lines.push(`表示DPS（周期合成）: ${r6(res.dps)}`);
 
     $("detailOut").innerHTML = buildDetailHtml(v, res, ex, tb, br);
+    $("detailLegend").innerHTML = buildLegendHtml();
     $("formulaOut").innerHTML = buildFormulaHtml(v, res, ex, tb, br);
+    $("formulaLegend").innerHTML = buildLegendHtml();
   }
 
   function validateAndRender() {
@@ -1373,11 +1435,14 @@ function render() {
       $("dpsOut").textContent = "入力エラー";
       $("dpsSub").textContent = errs.join(" / ");
       $("detailOut").innerHTML = "";
+      if ($("detailLegend")) $("detailLegend").innerHTML = "";
+      if ($("formulaLegend")) $("formulaLegend").innerHTML = "";
       setBar("barBasic","valBasic",0);
       setBar("barA","valA",0);
       setBar("barB","valB",0);
       $("boundaryOut").textContent = "究極中tick数: - / DPSレンジ: -";
       $("formulaOut").innerHTML = "-";
+      if ($("formulaLegend")) $("formulaLegend").innerHTML = "";
       setBar("barU","valU",0);
       setBar("barPhys","valPhys",0);
       setBar("barMagic","valMagic",0);
