@@ -10,9 +10,15 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>DPS計算ツール（ラッキー傭兵団）</h1>
-  <div class="note">
-    ・1秒=40フレーム。マナ/CTは <b>40Fのグローバル境界</b>で加算。<br>
+  <div class="topBar">
+    <h1>DPS計算ツール（ラッキー傭兵団）</h1>
+    <label class="notesToggle">
+      <input id="showNotes" type="checkbox">
+      <span>注釈を表示</span>
+    </label>
+  </div>
+  <div class="note annotation">
+    ・1秒=40フレーム。マナ/クールタイムは <b>40Fのグローバル境界</b>で加算。<br>
     ・出力の小数は <b>小数第6位まで</b>（=第7位四捨五入）。内部計算の丸め規則は変更していません。
   </div>
 
@@ -70,7 +76,7 @@
           </div>
         </div>
 
-        <div class="hint">
+        <div class="hint annotation">
           ・Regeマナ毎秒：最大4桁%（小数1桁まで可）。「100%」= 時間マナ1.0/秒。マナタイプ以外は未使用表示。<br>
           ・難易度/80w防御力：ノーマル148 / ハード158 / 地獄158 / 神175 / 太初175（表示はしないが内部で使用）<br>
           ・実防御力 = 防御力減少値 − 80w防御力<br>
@@ -103,7 +109,7 @@
       <div class="tworow cols3" id="basicGrid">
         <div class="lbl" style="grid-column:1;">攻撃力</div>
         <div class="lbl" style="grid-column:2;">攻撃速度</div>
-        <div class="lbl" style="grid-column:3;">Maxマナ(CT)</div>
+        <div class="lbl" style="grid-column:3;" id="gaugeMaxLbl">Maxマナ</div>
 <div class="inp" style="grid-column:1;">
           <input id="atk" type="text" inputmode="numeric" autocomplete="off" placeholder="1500">
         </div>
@@ -114,10 +120,10 @@
           <input id="gaugeMax" type="text" inputmode="numeric" autocomplete="off" placeholder="100">
         </div>
       </div>
-<div class="hint">
+<div class="hint annotation">
         ・攻撃力：整数（最大6桁）、4桁以上はカンマ表示。<br>
         ・攻撃速度：小数第2位まで表示、0より大きく最大 8.00。<br>
-        ・Maxマナ(CT)：整数（最大3桁）。<br>
+        <span id="gaugeMaxHint">・Maxマナ：整数（最大3桁）。</span><br>
               </div>      </div>
 
     </div>
@@ -151,7 +157,7 @@
           <select id="ultType">
             <option value="none">無し</option>
             <option value="mana" selected>マナ</option>
-            <option value="cool">クール</option>
+            <option value="cool">クールタイム</option>
           </select>
         </div>
         <div class="inp" style="grid-column:2;">
@@ -170,7 +176,7 @@
 
       <div class="chk">
         <input id="ultStopsGauge" type="checkbox" checked>
-        <span>究極モーション中はマナ/CTの加算が停止する</span>
+        <span>究極モーション中はマナ/クールタイムの加算が停止する</span>
       </div>      </div>
 
     </div>
@@ -210,7 +216,7 @@
         </div>
       </div>
 
-      <div class="hint">
+      <div class="hint annotation">
         ・倍率：最大6桁%（小数1桁まで可）。<br>
         ・確率：最大90.0%（小数第1位まで）。<br>
         ・Ｆ数：最大4桁整数。
@@ -247,7 +253,7 @@
           <select id="bType">
             <option value="none" selected>無し</option>
             <option value="prob">確率</option>
-            <option value="count">規定回数</option>
+            <option value="count">基本攻撃規定回数</option>
           </select>
         </div>
         <div class="inp" style="grid-column:2;">
@@ -261,11 +267,11 @@
         </div>
       </div>
 
-      <div class="hint">
-        ・タイプ：無し / 確率 / 規定回数。<br>
+      <div class="hint annotation">
+        ・タイプ：無し / 確率 / 基本攻撃規定回数。<br>
         ・倍率：最大6桁%（小数1桁まで可）。<br>
         ・確率（タイプ=確率）：最大90.0%（小数第1位まで）。<br>
-        ・規定回数（タイプ=規定回数）：2桁整数（1〜99）。<br>
+        ・規定回数（タイプ=基本攻撃規定回数）：2桁整数（1〜99）。<br>
         ・Ｆ数：最大4桁整数。
       </div>
     </div>
@@ -278,7 +284,7 @@
     <div class="rangeBox" id="boundaryBox">
       <div class="rangeTitle">40F境界ズレ（上限）</div>
       <div class="rangeText" id="boundaryOut">-</div>
-      <div class="rangeHint" id="boundaryHint">究極：リセット=開始時 かつ「究極中にゲージが進む」場合に、究極中tick数が floor(Ｆ数/40) または ceil(Ｆ数/40) になり得ます（±1tick）。</div>
+      <div class="rangeHint annotation" id="boundaryHint">究極：リセット=開始時 かつ「究極中にゲージが進む」場合に、究極中tick数が floor(Ｆ数/40) または ceil(Ｆ数/40) になり得ます（±1tick）。クールタイムでは 1tick = +1秒分のクールタイムです。</div>
     </div>
 
 
@@ -385,7 +391,7 @@
         <div class="guideNum">3</div>
         <div class="guideText">
           <div class="guideTitle">究極の回転を求める</div>
-          <div class="guideBody">マナまたはCTの増加速度から、究極が再使用可能になるまでの非究極Fを計算する。究極Fと合算して1周期の長さを決める。</div>
+          <div class="guideBody">マナまたはクールタイムの増加速度から、究極が再使用可能になるまでの非究極Fを計算する。究極Fと合算して1周期の長さを決める。</div>
         </div>
       </div>
       <div class="guideStep">
@@ -413,7 +419,7 @@
         <div class="guideNum">7</div>
         <div class="guideText">
           <div class="guideTitle">40F境界のズレを確認する</div>
-          <div class="guideBody">究極開始時リセットかつ究極中もゲージが進む場合は、40F境界の踏み方で tick 数が前後し得るため、min/max のDPSレンジも併記する。</div>
+          <div class="guideBody">究極開始時リセットかつ究極中もマナ/クールタイムが進む場合は、40F境界の踏み方で tick 数が前後し得るため、min/max のDPSレンジも併記する。</div>
         </div>
       </div>
       <div class="guideNote">
