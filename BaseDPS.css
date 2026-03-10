@@ -208,8 +208,8 @@ button:hover{ filter:brightness(1.07); }
   padding:7px 8px;
   border-radius:10px;
   border:1px solid var(--line);
-  background:var(--panel2);
-  color:var(--text);
+  background:#0e141c;
+  color:var(--txt);
   width:112px; /* iPhone SEでも1行に収まりやすい */
 }
 #physMulOut{
