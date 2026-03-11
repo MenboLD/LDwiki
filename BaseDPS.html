@@ -19,7 +19,8 @@
   </div>
   <div class="note annotation">
     ・1秒=40フレーム。マナ/クールタイムは <b>40Fのグローバル境界</b>で加算。<br>
-    ・出力の小数は <b>小数第6位まで</b>（=第7位四捨五入）。内部計算の丸め規則は変更していません。
+    ・出力の小数は <b>小数第6位まで</b>（=第7位四捨五入）。内部計算の丸め規則は変更していません。<br>
+    ・影響時間は <b>ダメージとは別</b> に集計します。発動回数/秒 × 影響F から、平均の影響F/秒 と参考影響率を表示します。
   </div>
 
   <div class="grid">
@@ -147,11 +148,12 @@
 
       <div class="cardBody" id="accBody_ult">
 
-      <div class="tworow cols4">
+      <div class="tworow cols5">
         <div class="lbl" style="grid-column:1;">タイプ</div>
         <div class="lbl" style="grid-column:2;">リセット</div>
         <div class="lbl" style="grid-column:3;">倍率</div>
         <div class="lbl" style="grid-column:4;">Ｆ数</div>
+        <div class="lbl" style="grid-column:5;">影響F</div>
 
         <div class="inp" style="grid-column:1;">
           <select id="ultType">
@@ -172,11 +174,18 @@
         <div class="inp" style="grid-column:4;">
           <input id="ultF" type="text" inputmode="numeric" autocomplete="off" placeholder="44">
         </div>
+        <div class="inp" style="grid-column:5;">
+          <input id="ultImpactF" type="text" inputmode="numeric" autocomplete="off" placeholder="0">
+        </div>
       </div>
 
       <div class="chk">
         <input id="ultStopsGauge" type="checkbox" checked>
         <span>究極モーション中はマナ/クールタイムの加算が停止する</span>
+      </div>
+
+      <div class="hint annotation">
+        ・影響F：究極発動後、周囲への効果などが持続するフレーム数。0で未使用。
       </div>      </div>
 
     </div>
@@ -200,10 +209,11 @@
 
       <div class="cardBody" id="accBody_a">
 
-      <div class="tworow cols3">
+      <div class="tworow cols4">
         <div class="lbl" style="grid-column:1;">倍率</div>
         <div class="lbl" style="grid-column:2;">確率</div>
         <div class="lbl" style="grid-column:3;">Ｆ数</div>
+        <div class="lbl" style="grid-column:4;">影響F</div>
 
         <div class="inp" style="grid-column:1;">
           <input id="aMulPct" type="text" inputmode="decimal" autocomplete="off" placeholder="600%">
@@ -214,12 +224,17 @@
         <div class="inp" style="grid-column:3;">
           <input id="aF" type="text" inputmode="numeric" autocomplete="off" placeholder="32">
         </div>
+        <div class="inp" style="grid-column:4;">
+          <input id="aImpactF" type="text" inputmode="numeric" autocomplete="off" placeholder="0">
+        </div>
       </div>
 
       <div class="hint annotation">
         ・倍率：最大6桁%（小数1桁まで可）。<br>
         ・確率：最大90.0%（小数第1位まで）。<br>
-        ・Ｆ数：最大4桁整数。
+        ・Ｆ数：最大4桁整数。<br>
+        ・影響F：発動後、周囲への効果などが持続するフレーム数。0で未使用。<br>
+        ・影響F：発動後、周囲への効果などが持続するフレーム数。0で未使用。
       </div>      </div>
 
     </div>
@@ -243,11 +258,12 @@
 
       <div class="cardBody" id="accBody_b">
 
-      <div class="tworow cols4" id="skillBGrid">
+      <div class="tworow cols5" id="skillBGrid">
         <div class="lbl" style="grid-column:1;">タイプ</div>
         <div class="lbl" style="grid-column:2;">倍率</div>
         <div class="lbl" style="grid-column:3;" id="bThirdLbl">確率</div>
         <div class="lbl" style="grid-column:4;">Ｆ数</div>
+        <div class="lbl" style="grid-column:5;">影響F</div>
 
         <div class="inp" style="grid-column:1;">
           <select id="bType">
@@ -264,6 +280,9 @@
         </div>
         <div class="inp" style="grid-column:4;">
           <input id="bF" type="text" inputmode="numeric" autocomplete="off" placeholder="40">
+        </div>
+        <div class="inp" style="grid-column:5;">
+          <input id="bImpactF" type="text" inputmode="numeric" autocomplete="off" placeholder="0">
         </div>
       </div>
 
@@ -287,6 +306,26 @@
       <div class="rangeHint annotation" id="boundaryHint">究極：リセット=開始時 かつ「究極中にゲージが進む」場合に、究極中tick数が floor(Ｆ数/40) または ceil(Ｆ数/40) になり得ます（±1tick）。クールタイムでは 1tick = +1秒分のクールタイムです。</div>
     </div>
 
+    <div class="effectBox" id="effectBox">
+      <div class="rangeTitle">影響時間（平均・ダメージとは別集計）</div>
+      <div class="effectRow">
+        <div class="effectLabel">スキルA</div>
+        <div class="effectValue" id="effectA">-</div>
+      </div>
+      <div class="effectRow">
+        <div class="effectLabel">スキルB</div>
+        <div class="effectValue" id="effectB">-</div>
+      </div>
+      <div class="effectRow">
+        <div class="effectLabel">究極</div>
+        <div class="effectValue" id="effectU">-</div>
+      </div>
+      <div class="effectRow total">
+        <div class="effectLabel">参考合計</div>
+        <div class="effectValue" id="effectTotal">-</div>
+      </div>
+      <div class="rangeHint annotation">影響F/秒 = 発動回数/秒 × 影響F。参考影響率は min(100%, 影響F/秒 ÷ 40 × 100) として表示します。重複や上書きがある効果の実戦挙動は個別仕様に従います。</div>
+    </div>
 
     <div class="bars" id="barsBox">
       <div class="barRow">
@@ -369,61 +408,3 @@
 </div>
 </body>
 </html>
-
-  <section class="card" id="calcOrderGuide">
-    <h2>計算順序の説明</h2>
-    <div class="guideBox">
-      <div class="guideStep">
-        <div class="guideNum">1</div>
-        <div class="guideText">
-          <div class="guideTitle">入力値を整える</div>
-          <div class="guideBody">攻撃力・攻撃速度・各スキル倍率/確率/F数・究極情報・環境値を読み取り、攻撃速度から基本攻撃モーションFを求める。</div>
-        </div>
-      </div>
-      <div class="guideStep">
-        <div class="guideNum">2</div>
-        <div class="guideText">
-          <div class="guideTitle">非究極時の行動ペースを求める</div>
-          <div class="guideBody">基本攻撃/スキルA/スキルB の抽選条件から平均行動Fを出し、そこから「非究極時の行動回数/秒」「基本攻撃/秒」「スキルA/秒」「スキルB/秒」を求める。</div>
-        </div>
-      </div>
-      <div class="guideStep">
-        <div class="guideNum">3</div>
-        <div class="guideText">
-          <div class="guideTitle">究極の回転を求める</div>
-          <div class="guideBody">マナまたはクールタイムの増加速度から、究極が再使用可能になるまでの非究極Fを計算する。究極Fと合算して1周期の長さを決める。</div>
-        </div>
-      </div>
-      <div class="guideStep">
-        <div class="guideNum">4</div>
-        <div class="guideText">
-          <div class="guideTitle">周期全体に平均化する</div>
-          <div class="guideBody">非究極時間比率を使って、通常行動の「毎秒」を周期平均へ落とし込む。同時に究極/秒も求め、最終的な行動レート欄へ反映する。</div>
-        </div>
-      </div>
-      <div class="guideStep">
-        <div class="guideNum">5</div>
-        <div class="guideText">
-          <div class="guideTitle">各ダメージ成分を作る</div>
-          <div class="guideBody">基本攻撃・スキルA・スキルB・究極それぞれについて、<b>回数/秒 × 攻撃力 × 倍率</b> を基礎値とし、属性に応じて物理補正・クリティカル期待倍率を乗算する。</div>
-        </div>
-      </div>
-      <div class="guideStep">
-        <div class="guideNum">6</div>
-        <div class="guideText">
-          <div class="guideTitle">合計DPSと割合を出す</div>
-          <div class="guideBody">各成分DPSを合計して最終DPSを出し、その内訳を「基本/スキルA/スキルB/究極」「物理/魔法」「単体/複数」「クリティカル寄与」の各観点で割合表示する。</div>
-        </div>
-      </div>
-      <div class="guideStep">
-        <div class="guideNum">7</div>
-        <div class="guideText">
-          <div class="guideTitle">40F境界のズレを確認する</div>
-          <div class="guideBody">究極開始時リセットかつ究極中もマナ/クールタイムが進む場合は、40F境界の踏み方で tick 数が前後し得るため、min/max のDPSレンジも併記する。</div>
-        </div>
-      </div>
-      <div class="guideNote">
-        このページでは、上の「詳細」欄が結果の要約、下の「算出式」欄が式の展開と実値代入、最下部のこの欄が計算の流れの説明に対応している。
-      </div>
-    </div>
-  </section>

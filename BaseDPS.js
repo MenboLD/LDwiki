@@ -1,6 +1,6 @@
 (() => {
   const F = 40;
-  const STORAGE_KEY = "LD_DPS_TOOL_V8_7_7";
+  const STORAGE_KEY = "LD_DPS_TOOL_V8_8_0";
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
   const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
@@ -334,13 +334,16 @@
 
     bindField($("ultMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
     bindField($("ultF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
+    bindField($("ultImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
 
     bindField($("aMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
     bindField($("aPPct"), (v)=>trimDecimalsLive(v,1), (v)=>toProbPctDisplay(v));
     bindField($("aF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
+    bindField($("aImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
 
     bindField($("bMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
     bindField($("bF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
+    bindField($("bImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
 
     $("bThird").addEventListener("input", () => {
       const bType = $("bType").value;
@@ -441,13 +444,16 @@
 
     $("ultMulPct").value = toPctDisplay($("ultMulPct").value, 1, 6);
     $("ultF").value = toIntDisplay($("ultF").value, 4);
+    $("ultImpactF").value = toIntDisplay($("ultImpactF").value, 4);
 
     $("aMulPct").value = toPctDisplay($("aMulPct").value, 1, 6);
     $("aPPct").value = toProbPctDisplay($("aPPct").value);
     $("aF").value = toIntDisplay($("aF").value, 4);
+    $("aImpactF").value = toIntDisplay($("aImpactF").value, 4);
 
     $("bMulPct").value = toPctDisplay($("bMulPct").value, 1, 6);
     $("bF").value = toIntDisplay($("bF").value, 4);
+    $("bImpactF").value = toIntDisplay($("bImpactF").value, 4);
 
     syncSkillBMode();
     syncSegmentsFromHidden();
@@ -483,15 +489,18 @@
     const ultReset = $("ultReset").value;
     const ultMul = readNumber($("ultMulPct").value) / 100;
     const ultF = readInt($("ultF").value);
+    const ultImpactF = readInt($("ultImpactF").value);
     const ultStopsGauge = $("ultStopsGauge").checked;
 
     const aMul = readNumber($("aMulPct").value) / 100;
     const aP = readNumber($("aPPct").value) / 100;
     const aF = readInt($("aF").value);
+    const aImpactF = readInt($("aImpactF").value);
 
     const bType = $("bType").value;
     const bMul = readNumber($("bMulPct").value) / 100;
     const bF = readInt($("bF").value);
+    const bImpactF = readInt($("bImpactF").value);
 
     let bP = 0, bN = 0;
     if (bType === "prob") bP = readNumber($("bThird").value) / 100;
@@ -508,12 +517,12 @@
 
     return { atk, aspd, gaugeMax, manaPerSec, envDiff, baseDef, defReduce, realDef, physMul,
       critChancePct, critPhysBonusPct, critMagicBonusPct, critChance, critPhysBonus, critMagicBonus, critPhysMul, critMagicMul,
-      ultType, ultReset, ultMul, ultF, ultStopsGauge, aMul, aP, aF, bType, bMul, bF, bP, bN,
+      ultType, ultReset, ultMul, ultF, ultImpactF, ultStopsGauge, aMul, aP, aF, aImpactF, bType, bMul, bF, bImpactF, bP, bN,
       basicAttr, basicTarget, aAttr, aTarget, bAttr, bTarget, uAttr, uTarget };
   }
 
   function clearErrAll() {
-    const ids = ["atk","aspd","gaugeMax","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","aMulPct","aPPct","aF","bMulPct","bThird","bF"];
+    const ids = ["atk","aspd","gaugeMax","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","ultImpactF","aMulPct","aPPct","aF","aImpactF","bMulPct","bThird","bF","bImpactF"];
     ids.forEach(id => setErr($(id), false));
     setLblErr($("regenLbl"), false);
   }
@@ -529,7 +538,7 @@
     if (!(aspd > 0 && aspd <= 8)) { setErr($("aspd"), true); errors.push("攻撃速度は0より大きく8.00以下"); }
 
     const gaugeMax = readInt($("gaugeMax").value);
-    if (gaugeMax <= 0) { setErr($("gaugeMax"), true); errors.push($("ultType").value === "cool" ? "クールタイム秒数は1以上" : "Maxマナは1以上"); }
+    if ($("ultType").value !== "none" && gaugeMax <= 0) { setErr($("gaugeMax"), true); errors.push($("ultType").value === "cool" ? "クールタイム秒数は1以上" : "Maxマナは1以上"); }
 
     const defReduce = readInt($("defReduce").value);
     if (defReduce < 0 || defReduce > 999) { setErr($("defReduce"), true); errors.push("防御力減少値は0〜999"); }
@@ -546,13 +555,19 @@
     const ultType = $("ultType").value;
     if (ultType !== "none") {
       const ultF = readInt($("ultF").value);
+      const ultImpactF = readInt($("ultImpactF").value);
       if (ultF <= 0) { setErr($("ultF"), true); errors.push("究極のＦ数は1以上"); }
+      if (ultImpactF < 0 || ultImpactF > 9999) { setErr($("ultImpactF"), true); errors.push("究極の影響Fは0〜9999"); }
     }
 
     const aPpct = readNumber($("aPPct").value);
     if (aPpct < 0 || aPpct > 90) { setErr($("aPPct"), true); errors.push("スキルA確率は0〜90.0%"); }
+    const aImpactF = readInt($("aImpactF").value);
+    if (aImpactF < 0 || aImpactF > 9999) { setErr($("aImpactF"), true); errors.push("スキルA影響Fは0〜9999"); }
 
     const bType = $("bType").value;
+    const bImpactF = readInt($("bImpactF").value);
+    if (bImpactF < 0 || bImpactF > 9999) { setErr($("bImpactF"), true); errors.push("スキルB影響Fは0〜9999"); }
     if (bType === "prob") {
       const bPpct = readNumber($("bThird").value);
       if (bPpct < 0 || bPpct > 90) { setErr($("bThird"), true); errors.push("スキルB確率は0〜90.0%"); }
@@ -861,6 +876,28 @@ function calcBoundaryRange(v, res) {
   }
 
   
+
+  function calcEffectTimes(v, ex) {
+    const build = (label, ratePerSec, impactF) => {
+      const rawFPerSec = Math.max(0, ratePerSec || 0) * Math.max(0, impactF || 0);
+      const rawSecPerSec = rawFPerSec / F;
+      const refSecPerSec = Math.min(1, rawSecPerSec);
+      const refPct = refSecPerSec * 100;
+      return { label, ratePerSec, impactF, rawFPerSec, rawSecPerSec, refSecPerSec, refPct };
+    };
+
+    const a = build("スキルA", ex.aPerSec, v.aImpactF);
+    const bRate = (v.bType === "none") ? 0 : ex.bPerSec;
+    const b = build("スキルB", bRate, v.bImpactF);
+    const uRate = (v.ultType === "none") ? 0 : ex.ultPerSec;
+    const u = build("究極", uRate, v.ultImpactF);
+    const totalRawFPerSec = a.rawFPerSec + b.rawFPerSec + u.rawFPerSec;
+    const totalRawSecPerSec = totalRawFPerSec / F;
+    const totalRefSecPerSec = Math.min(1, totalRawSecPerSec);
+    const totalRefPct = totalRefSecPerSec * 100;
+    return { a, b, u, totalRawFPerSec, totalRawSecPerSec, totalRefSecPerSec, totalRefPct };
+  }
+
   function calcTypeBreakdown(v, ex) {
     const sum = ex.checkTotalDPS;
     const pct = (x) => (sum > 0 ? (100 * x / sum) : 0);
@@ -970,6 +1007,26 @@ function calcBoundaryRange(v, res) {
     } else {
       lines.push(`表示DPS（周期合成） = ${r6(res.dps)}`);
     }
+
+    const eff = calcEffectTimes(v, ex);
+    lines.push("");
+    lines.push("■ 影響時間（平均・ダメージとは別計算）");
+    lines.push("スキルA影響F/秒 = スキルA/秒 × スキルA影響F");
+    lines.push(`  = ${r6(ex.aPerSec)} × ${r6(v.aImpactF)} = ${r6(eff.a.rawFPerSec)}`);
+    lines.push("スキルA参考影響率 = min(100%, スキルA影響F/秒 / 40 × 100)");
+    lines.push(`  = min(100%, ${r6(eff.a.rawFPerSec)} / 40 × 100) = ${r6(eff.a.refPct)}%`);
+    lines.push("スキルB影響F/秒 = スキルB/秒 × スキルB影響F");
+    lines.push(`  = ${r6(ex.bPerSec)} × ${r6(v.bImpactF)} = ${r6(eff.b.rawFPerSec)}`);
+    lines.push("スキルB参考影響率 = min(100%, スキルB影響F/秒 / 40 × 100)");
+    lines.push(`  = min(100%, ${r6(eff.b.rawFPerSec)} / 40 × 100) = ${r6(eff.b.refPct)}%`);
+    lines.push("究極影響F/秒 = 究極/秒 × 究極影響F");
+    lines.push(`  = ${r6(ex.ultPerSec)} × ${r6(v.ultImpactF)} = ${r6(eff.u.rawFPerSec)}`);
+    lines.push("究極参考影響率 = min(100%, 究極影響F/秒 / 40 × 100)");
+    lines.push(`  = min(100%, ${r6(eff.u.rawFPerSec)} / 40 × 100) = ${r6(eff.u.refPct)}%`);
+    lines.push("参考合計影響F/秒 = A + B + 究極");
+    lines.push(`  = ${r6(eff.a.rawFPerSec)} + ${r6(eff.b.rawFPerSec)} + ${r6(eff.u.rawFPerSec)} = ${r6(eff.totalRawFPerSec)}`);
+    lines.push("参考合計影響率 = min(100%, 参考合計影響F/秒 / 40 × 100)");
+    lines.push(`  = min(100%, ${r6(eff.totalRawFPerSec)} / 40 × 100) = ${r6(eff.totalRefPct)}%`);
 
     lines.push("");
     lines.push("■ 環境（物理補正・クリティカル）");
@@ -1110,6 +1167,14 @@ function buildDetailHtml(v, res, ex, tb, br) {
     html += lineHtml(`スキルB/秒: ${hVal("valB", r6(ex.bPerSec))}`);
     html += lineHtml(`究極/秒: ${hVal("valUlt", r6(ex.ultPerSec))}`);
 
+    const eff = calcEffectTimes(v, ex);
+    html += lineHtml("");
+    html += lineHtml(`<span class="sectionHead">=== 影響時間（平均・ダメージとは別計算） ===</span>`);
+    html += lineHtml(`スキルA: 影響F/秒=${hVal("valA", r6(eff.a.rawFPerSec))} / 秒換算=${hVal("valA", r6(eff.a.rawSecPerSec))} / 参考影響率=${hVal("valA", r6(eff.a.refPct))}%`);
+    html += lineHtml(`スキルB: 影響F/秒=${hVal("valB", r6(eff.b.rawFPerSec))} / 秒換算=${hVal("valB", r6(eff.b.rawSecPerSec))} / 参考影響率=${hVal("valB", r6(eff.b.refPct))}%`);
+    html += lineHtml(`究極: 影響F/秒=${hVal("valUlt", r6(eff.u.rawFPerSec))} / 秒換算=${hVal("valUlt", r6(eff.u.rawSecPerSec))} / 参考影響率=${hVal("valUlt", r6(eff.u.refPct))}%`);
+    html += lineHtml(`参考合計: 影響F/秒=${hVal("valMix", r6(eff.totalRawFPerSec))} / 秒換算=${hVal("valMix", r6(eff.totalRawSecPerSec))} / 参考影響率=${hVal("valMix", r6(eff.totalRefPct))}%`);
+
     html += lineHtml("");
     html += lineHtml(`<span class="sectionHead">=== 環境（物理補正） ===</span>`);
     html += lineHtml(`難易度: ${hVal("valEnv", diffLabel)}（80w防御力は難易度に応じて内部適用）`);
@@ -1215,6 +1280,10 @@ function render() {
       setBar("barMulti","valMulti",0);
       setBar("barCorrPhys","valCorrPhys",0);
       setBar("barCritMagic","valCritMagic",0);
+      if ($("effectA")) $("effectA").textContent = "-";
+      if ($("effectB")) $("effectB").textContent = "-";
+      if ($("effectU")) $("effectU").textContent = "-";
+      if ($("effectTotal")) $("effectTotal").textContent = "-";
       save(true);
       return;
     }
@@ -1235,6 +1304,7 @@ function render() {
 
 
     const ex = calcRatesAndShares(v, res);
+    const eff = calcEffectTimes(v, ex);
     $("dpsOut").textContent = `${r6(res.dps)}`;
 
     setBar("barBasic","valBasic", ex.basicPct);
@@ -1270,6 +1340,10 @@ function render() {
     setBar("barMulti","valMulti", tb.multiPct);
     setBar("barCorrPhys","valCorrPhys", ex.physCritGainPct);
     setBar("barCritMagic","valCritMagic", ex.magicCritGainPct);
+    if ($("effectA")) $("effectA").textContent = `${r6(eff.a.ratePerSec)} 回/秒 × ${v.aImpactF}F = ${r6(eff.a.rawFPerSec)}F/秒（${r6(eff.a.rawSecPerSec)} 秒/秒, 参考 ${r6(eff.a.refPct)}%）`;
+    if ($("effectB")) $("effectB").textContent = `${r6(eff.b.ratePerSec)} 回/秒 × ${v.bImpactF}F = ${r6(eff.b.rawFPerSec)}F/秒（${r6(eff.b.rawSecPerSec)} 秒/秒, 参考 ${r6(eff.b.refPct)}%）`;
+    if ($("effectU")) $("effectU").textContent = `${r6(eff.u.ratePerSec)} 回/秒 × ${v.ultImpactF}F = ${r6(eff.u.rawFPerSec)}F/秒（${r6(eff.u.rawSecPerSec)} 秒/秒, 参考 ${r6(eff.u.refPct)}%）`;
+    if ($("effectTotal")) $("effectTotal").textContent = `${r6(eff.totalRawFPerSec)}F/秒（${r6(eff.totalRawSecPerSec)} 秒/秒, 参考 ${r6(eff.totalRefPct)}%）`;
     lines.push("\n=== 属性内訳（物理/魔法） ===");
     lines.push(`物理DPS: ${r6(tb.phys)} / 物理割合(%): ${r6(tb.physPct)}`);
     lines.push(`魔法DPS: ${r6(tb.magic)} / 魔法割合(%): ${r6(tb.magicPct)}`);
@@ -1320,6 +1394,10 @@ function render() {
       setBar("barMulti","valMulti",0);
       setBar("barCorrPhys","valCorrPhys",0);
       setBar("barCritMagic","valCritMagic",0);
+      if ($("effectA")) $("effectA").textContent = "-";
+      if ($("effectB")) $("effectB").textContent = "-";
+      if ($("effectU")) $("effectU").textContent = "-";
+      if ($("effectTotal")) $("effectTotal").textContent = "-";
       save(true);
       return;
     }
@@ -1405,16 +1483,19 @@ function render() {
     $("ultReset").value = "end";
     $("ultMulPct").value = "1500%";
     $("ultF").value = "44";
+    $("ultImpactF").value = "0";
     $("ultStopsGauge").checked = true;
 
     $("aMulPct").value = "600%";
     $("aPPct").value = "10.0%";
     $("aF").value = "32";
+    $("aImpactF").value = "0";
 
     $("bType").value = "none";
     $("bMulPct").value = "1500%";
     $("bThird").value = "0.0%";
     $("bF").value = "40";
+    $("bImpactF").value = "0";
     $("showNotes").checked = false;
   }
 
