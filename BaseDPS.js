@@ -1,6 +1,6 @@
 (() => {
   const F = 40;
-  const STORAGE_KEY = "LD_DPS_TOOL_V8_8_0";
+  const STORAGE_KEY = "LD_DPS_TOOL_V8_8_3";
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
   const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
@@ -82,7 +82,6 @@
     _rafPending = true;
     requestAnimationFrame(() => {
       _rafPending = false;
-      syncNoteVisibility();
       validateAndRender();
     });
   }
@@ -249,11 +248,61 @@
 
   function clamp01(x) { return Math.max(0, Math.min(1, x)); }
 
-  function syncNoteVisibility() {
-    const show = !!($("showNotes") && $("showNotes").checked);
-    document.querySelectorAll(".annotation").forEach(el => {
-      el.classList.toggle("annotationHidden", !show);
-    });
+  function isCoverageSupportType(type) {
+    return ["physPct","magicPct","basicPct","procMul","finalPct"].includes(type);
+  }
+  function supportTypeLabel(type) {
+    return { none:"無し", physPct:"物理ダメージ増加", magicPct:"魔法ダメージ増加", basicPct:"基本攻撃ダメージ増加", procMul:"発動率倍率", finalPct:"最終ダメージ増加", manaPct:"最大マナ割合獲得", coolRemainPct:"残りクールタイム割合減少" }[type] || type;
+  }
+  function getSupportRows() {
+    const rows = [];
+    for (let i = 1; i <= 6; i++) rows.push({ idx:i, enabled: $("ext"+i+"Enabled") ? $("ext"+i+"Enabled").checked : false, type: $("ext"+i+"Type") ? $("ext"+i+"Type").value : "none", amountRaw: $("ext"+i+"Amount") ? $("ext"+i+"Amount").value : "", baseRaw: $("ext"+i+"Base") ? $("ext"+i+"Base").value : "", countRaw: $("ext"+i+"Count") ? $("ext"+i+"Count").value : "1" });
+    return rows;
+  }
+  function calcExternalSupportAgg(vLike) {
+    const supports = vLike.supports || [];
+    const agg = { physPct:0, magicPct:0, basicPct:0, finalPct:0, procCoverage:0, procMult:1, addManaPerSec:0, addCoolPerSec:0, rows:[] };
+    for (const s of supports) {
+      if (!s.enabled || s.type === "none") continue;
+      const count = Math.max(1, Math.min(36, readInt(s.countRaw || 1)));
+      const amountNum = readNumber(s.amountRaw || 0);
+      const baseNum = readNumber(s.baseRaw || 0);
+      if (isCoverageSupportType(s.type)) {
+        const unitCov = clamp01(baseNum / 100);
+        const effective = clamp01(1 - Math.pow(1 - unitCov, count));
+        const effectValue = (s.type === "procMul") ? amountNum : (amountNum / 100);
+        agg.rows.push({ idx:s.idx, enabled:true, type:s.type, count, amountNum:effectValue, unitCov, effectiveCoverage:effective, mode:"coverage" });
+        if (s.type === "physPct") agg.physPct += effectValue * effective;
+        else if (s.type === "magicPct") agg.magicPct += effectValue * effective;
+        else if (s.type === "basicPct") agg.basicPct += effectValue * effective;
+        else if (s.type === "finalPct") agg.finalPct += effectValue * effective;
+        else if (s.type === "procMul") { agg.procCoverage = effective; agg.procMult = effectValue; }
+      } else {
+        const rate = Math.max(0, baseNum) * count;
+        const effectValue = amountNum / 100;
+        const addManaPerSec = (s.type === "manaPct") ? (rate * vLike.gaugeMax * effectValue) : 0;
+        const addCoolPerSec = (s.type === "coolRemainPct") ? (rate * vLike.gaugeMax * effectValue * 0.5) : 0;
+        agg.rows.push({ idx:s.idx, enabled:true, type:s.type, count, amountNum:effectValue, unitRate:Math.max(0, baseNum), totalRate:rate, addManaPerSec, addCoolPerSec, mode:"rate" });
+        agg.addManaPerSec += addManaPerSec;
+        agg.addCoolPerSec += addCoolPerSec;
+      }
+    }
+    agg.physMul = 1 + agg.physPct;
+    agg.magicMul = 1 + agg.magicPct;
+    agg.basicMul = 1 + agg.basicPct;
+    agg.finalMul = 1 + agg.finalPct;
+    return agg;
+  }
+  function getNonUltRates(v, d) {
+    if (d.mode === "prob") {
+      const actPerSec = F / d.avgFrames;
+      return { actPerSec, basicPerSec: actPerSec * d.p0, aPerSec: actPerSec * d.pA, bPerSec: actPerSec * d.pB };
+    }
+    const secPerUnit = d.expFrames / F;
+    const basicPerSec = v.bN / secPerUnit;
+    const aPerSec = d.EA / secPerUnit;
+    const bPerSec = 1 / secPerUnit;
+    return { actPerSec: basicPerSec + aPerSec + bPerSec, basicPerSec, aPerSec, bPerSec };
   }
 
   function setDisabledRegen(isDisabled) {
@@ -267,24 +316,7 @@
 
   function syncUltType() {
     const ultType = $("ultType").value;
-    const gaugeLbl = $("gaugeMaxLbl");
-    const gauge = $("gaugeMax");
-    const hint = $("gaugeMaxHint");
     setDisabledRegen(ultType !== "mana");
-
-    if (ultType === "cool") {
-      if (gaugeLbl) gaugeLbl.textContent = "クールタイム";
-      if (hint) hint.textContent = "・クールタイム：整数（最大3桁、秒）。内部では 秒×40F で扱います。初期値は40秒です。";
-      if (gauge) {
-        gauge.placeholder = "40";
-        const n = readInt(gauge.value);
-        if (!(n > 0) || n === 100) gauge.value = toIntDisplay("40", 3);
-      }
-    } else {
-      if (gaugeLbl) gaugeLbl.textContent = "Maxマナ";
-      if (hint) hint.textContent = "・Maxマナ：整数（最大3桁）。";
-      if (gauge) gauge.placeholder = "100";
-    }
   }
 
   function syncSkillBMode() {
@@ -306,7 +338,7 @@
       third.setAttribute("inputmode", "decimal");
       // 空入力はそのまま許可
     } else {
-      lbl.textContent = "基本攻撃規定回数";
+      lbl.textContent = "規定回数";
       third.disabled = false;
       thirdWrap.classList.remove("disabledGroup");
       third.setAttribute("inputmode", "numeric");
@@ -334,16 +366,25 @@
 
     bindField($("ultMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
     bindField($("ultF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
-    bindField($("ultImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
 
     bindField($("aMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
     bindField($("aPPct"), (v)=>trimDecimalsLive(v,1), (v)=>toProbPctDisplay(v));
     bindField($("aF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
-    bindField($("aImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
 
     bindField($("bMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
     bindField($("bF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
-    bindField($("bImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
+
+    for (let i = 1; i <= 6; i++) {
+      bindField($("ext" + i + "Amount"), (v)=>trimDecimalsLive(v,2), (v)=>toSupportAmountDisplay($("ext" + i + "Type").value, v));
+      bindField($("ext" + i + "Base"), (v)=>trimDecimalsLive(v,2), (v)=>toSupportBaseDisplay($("ext" + i + "Type").value, v));
+      bindField($("ext" + i + "Count"), (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2));
+      $("ext" + i + "Enabled").addEventListener("change", validateAndRender);
+      $("ext" + i + "Type").addEventListener("change", () => {
+        $("ext" + i + "Amount").value = toSupportAmountDisplay($("ext" + i + "Type").value, $("ext" + i + "Amount").value);
+        $("ext" + i + "Base").value = toSupportBaseDisplay($("ext" + i + "Type").value, $("ext" + i + "Base").value);
+        validateAndRender();
+      });
+    }
 
     $("bThird").addEventListener("input", () => {
       const bType = $("bType").value;
@@ -372,7 +413,6 @@
     $("saveBtn").addEventListener("click", save);
     $("loadBtn").addEventListener("click", load);
     $("resetBtn").addEventListener("click", resetAll);
-    $("showNotes").addEventListener("change", () => { syncNoteVisibility(); save(true); });
   }
 
   // ---------- 物理/魔法・単体/複数 トグル（seg） ----------
@@ -444,16 +484,13 @@
 
     $("ultMulPct").value = toPctDisplay($("ultMulPct").value, 1, 6);
     $("ultF").value = toIntDisplay($("ultF").value, 4);
-    $("ultImpactF").value = toIntDisplay($("ultImpactF").value, 4);
 
     $("aMulPct").value = toPctDisplay($("aMulPct").value, 1, 6);
     $("aPPct").value = toProbPctDisplay($("aPPct").value);
     $("aF").value = toIntDisplay($("aF").value, 4);
-    $("aImpactF").value = toIntDisplay($("aImpactF").value, 4);
 
     $("bMulPct").value = toPctDisplay($("bMulPct").value, 1, 6);
     $("bF").value = toIntDisplay($("bF").value, 4);
-    $("bImpactF").value = toIntDisplay($("bImpactF").value, 4);
 
     syncSkillBMode();
     syncSegmentsFromHidden();
@@ -489,18 +526,15 @@
     const ultReset = $("ultReset").value;
     const ultMul = readNumber($("ultMulPct").value) / 100;
     const ultF = readInt($("ultF").value);
-    const ultImpactF = readInt($("ultImpactF").value);
     const ultStopsGauge = $("ultStopsGauge").checked;
 
     const aMul = readNumber($("aMulPct").value) / 100;
     const aP = readNumber($("aPPct").value) / 100;
     const aF = readInt($("aF").value);
-    const aImpactF = readInt($("aImpactF").value);
 
     const bType = $("bType").value;
     const bMul = readNumber($("bMulPct").value) / 100;
     const bF = readInt($("bF").value);
-    const bImpactF = readInt($("bImpactF").value);
 
     let bP = 0, bN = 0;
     if (bType === "prob") bP = readNumber($("bThird").value) / 100;
@@ -514,15 +548,18 @@
     const bTarget = $("bTarget").value;
     const uAttr = $("ultAttr").value;
     const uTarget = $("ultTarget").value;
+    const supports = getSupportRows();
 
-    return { atk, aspd, gaugeMax, manaPerSec, envDiff, baseDef, defReduce, realDef, physMul,
+    const base = { atk, aspd, gaugeMax, manaPerSec, envDiff, baseDef, defReduce, realDef, physMul,
       critChancePct, critPhysBonusPct, critMagicBonusPct, critChance, critPhysBonus, critMagicBonus, critPhysMul, critMagicMul,
-      ultType, ultReset, ultMul, ultF, ultImpactF, ultStopsGauge, aMul, aP, aF, aImpactF, bType, bMul, bF, bImpactF, bP, bN,
-      basicAttr, basicTarget, aAttr, aTarget, bAttr, bTarget, uAttr, uTarget };
+      ultType, ultReset, ultMul, ultF, ultStopsGauge, aMul, aP, aF, bType, bMul, bF, bP, bN,
+      basicAttr, basicTarget, aAttr, aTarget, bAttr, bTarget, uAttr, uTarget, supports };
+    base.ext = calcExternalSupportAgg(base);
+    return base;
   }
 
   function clearErrAll() {
-    const ids = ["atk","aspd","gaugeMax","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","ultImpactF","aMulPct","aPPct","aF","aImpactF","bMulPct","bThird","bF","bImpactF"];
+    const ids = ["atk","aspd","gaugeMax","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","aMulPct","aPPct","aF","bMulPct","bThird","bF","ext1Amount","ext1Base","ext1Count","ext2Amount","ext2Base","ext2Count","ext3Amount","ext3Base","ext3Count","ext4Amount","ext4Base","ext4Count","ext5Amount","ext5Base","ext5Count","ext6Amount","ext6Base","ext6Count"];
     ids.forEach(id => setErr($(id), false));
     setLblErr($("regenLbl"), false);
   }
@@ -538,7 +575,7 @@
     if (!(aspd > 0 && aspd <= 8)) { setErr($("aspd"), true); errors.push("攻撃速度は0より大きく8.00以下"); }
 
     const gaugeMax = readInt($("gaugeMax").value);
-    if ($("ultType").value !== "none" && gaugeMax <= 0) { setErr($("gaugeMax"), true); errors.push($("ultType").value === "cool" ? "クールタイム秒数は1以上" : "Maxマナは1以上"); }
+    if ($("ultType").value !== "none" && gaugeMax <= 0) { setErr($("gaugeMax"), true); errors.push("Maxマナ(CT)は1以上"); }
 
     const defReduce = readInt($("defReduce").value);
     if (defReduce < 0 || defReduce > 999) { setErr($("defReduce"), true); errors.push("防御力減少値は0〜999"); }
@@ -555,19 +592,13 @@
     const ultType = $("ultType").value;
     if (ultType !== "none") {
       const ultF = readInt($("ultF").value);
-      const ultImpactF = readInt($("ultImpactF").value);
       if (ultF <= 0) { setErr($("ultF"), true); errors.push("究極のＦ数は1以上"); }
-      if (ultImpactF < 0 || ultImpactF > 9999) { setErr($("ultImpactF"), true); errors.push("究極の影響Fは0〜9999"); }
     }
 
     const aPpct = readNumber($("aPPct").value);
     if (aPpct < 0 || aPpct > 90) { setErr($("aPPct"), true); errors.push("スキルA確率は0〜90.0%"); }
-    const aImpactF = readInt($("aImpactF").value);
-    if (aImpactF < 0 || aImpactF > 9999) { setErr($("aImpactF"), true); errors.push("スキルA影響Fは0〜9999"); }
 
     const bType = $("bType").value;
-    const bImpactF = readInt($("bImpactF").value);
-    if (bImpactF < 0 || bImpactF > 9999) { setErr($("bImpactF"), true); errors.push("スキルB影響Fは0〜9999"); }
     if (bType === "prob") {
       const bPpct = readNumber($("bThird").value);
       if (bPpct < 0 || bPpct > 90) { setErr($("bThird"), true); errors.push("スキルB確率は0〜90.0%"); }
@@ -591,12 +622,37 @@
       if (regen < 0) { setErr($("manaRegenPct"), true); setLblErr($("regenLbl"), true); errors.push("Regeマナ毎秒は0%以上"); }
     }
 
+    for (let i = 1; i <= 6; i++) {
+      const enabled = $("ext" + i + "Enabled").checked;
+      const type = $("ext" + i + "Type").value;
+      if (!enabled || type === "none") continue;
+      const amount = readNumber($("ext" + i + "Amount").value);
+      const base = readNumber($("ext" + i + "Base").value);
+      const count = readInt($("ext" + i + "Count").value);
+      if (!(count >= 1 && count <= 36)) { setErr($("ext" + i + "Count"), true); errors.push("外部支援の体数は1〜36"); }
+      if (isCoverageSupportType(type)) {
+        if (type === "procMul") {
+          if (!(amount > 0)) { setErr($("ext" + i + "Amount"), true); errors.push("発動率倍率は0より大きくしてください"); }
+        } else if (amount < 0) { setErr($("ext" + i + "Amount"), true); errors.push("外部支援の効果量は0%以上"); }
+        if (base < 0 || base > 100) { setErr($("ext" + i + "Base"), true); errors.push("被覆率は0〜100%"); }
+      } else {
+        if (amount < 0) { setErr($("ext" + i + "Amount"), true); errors.push("発動レート型の効果量は0%以上"); }
+        if (base < 0) { setErr($("ext" + i + "Base"), true); errors.push("単体発動回数/秒は0以上"); }
+      }
+    }
+
     return errors;
   }
 
   function calcNonUlt(v) {
     const T0 = F / v.aspd;
-    const pA = clamp01(v.aP);
+    const ext = v.ext || calcExternalSupportAgg(v);
+    let pA = clamp01(v.aP);
+    let pBsrc = (v.bType === "prob") ? clamp01(v.bP) : 0;
+    if (ext.procCoverage > 0 && ext.procMult > 0) {
+      pA = (1 - ext.procCoverage) * pA + ext.procCoverage * Math.min(1, pA * ext.procMult);
+      pBsrc = (1 - ext.procCoverage) * pBsrc + ext.procCoverage * Math.min(1, pBsrc * ext.procMult);
+    }
     const mA = v.aMul;
     const fA = v.aF;
 
@@ -605,108 +661,108 @@
       const mB = v.bMul;
       const fB = v.bF;
 
-      if (!(N > 0)) return { err: "スキルB（基本攻撃規定回数）の規定回数が0以下です" };
-      if (pA >= 1) return { err: "スキルA確率が1以上です（基本攻撃規定回数型は未定義）" };
+      if (!(N > 0)) return { err: "スキルB（規定回数）の規定回数が0以下です" };
+      if (pA >= 1) return { err: "スキルA確率が1以上です（規定回数タイプは未定義）" };
 
       const EA = N * pA / (1 - pA);
-      const expBasicCount = N;
-      const expACount = EA;
-      const expBCount = 1;
-      const expFrames = T0 * expBasicCount + fA * expACount + fB * expBCount;
-      const expDamage = v.atk * (expBasicCount * 1 + mA * expACount + mB * expBCount);
-      const nonUltDPS = expDamage / (expFrames / F);
-      const basicPerFrame = expBasicCount / expFrames;
+      const expFrames = T0 * N + fA * EA + fB;
+      const expDamage = v.atk * (N * 1 + mA * EA + mB);
 
-      return {
-        mode: "countBasic",
-        T0, pA, EA,
-        expBasicCount, expACount, expBCount,
-        expFrames, expDamage, nonUltDPS, basicPerFrame,
-      };
+      const nonUltDPS = expDamage / (expFrames / F);
+      const basicPerFrame = N / expFrames;
+
+      return { mode:"countB", T0, pA, EA, expFrames, expDamage, nonUltDPS, basicPerFrame };
     }
 
-
-
-
-    const pB = (v.bType === "prob") ? clamp01(v.bP) : 0;
+    const pB = pBsrc;
     const mB = (v.bType === "prob") ? v.bMul : 0;
     const fB = (v.bType === "prob") ? v.bF : 0;
 
     const p0 = clamp01(1 - pA - pB);
+
     const avgFrames = T0 * p0 + fA * pA + fB * pB;
     const avgMul = 1 * p0 + mA * pA + mB * pB;
+
     const nonUltDPS = (v.atk * avgMul) / (avgFrames / F);
     const basicPerFrame = p0 / avgFrames;
 
-    return { mode: "prob", T0, pA, pB, p0, avgFrames, avgMul, nonUltDPS, basicPerFrame };
+    return { mode:"prob", T0, pA, pB, p0, avgFrames, avgMul, nonUltDPS, basicPerFrame };
   }
 
   function calcTotal(v) {
     const nu = calcNonUlt(v);
     if (nu.err) return { err: nu.err };
 
+    const ext = v.ext || calcExternalSupportAgg(v);
     const pm = (isFinite(v.physMul) ? v.physMul : 1);
     const physCritMul = (isFinite(v.critPhysMul) ? v.critPhysMul : 1);
     const magicCritMul = (isFinite(v.critMagicMul) ? v.critMagicMul : 1);
-    const split = calcNonUltDpsSplit(v, nu);
+    const nonUltRates = getNonUltRates(v, nu);
 
-    const nonUltDPS_adj0 = split.phys * pm * physCritMul + split.magic * magicCritMul;
-
-    if (v.ultType === "none") {
-      return { dps: nonUltDPS_adj0, detail: { ...nu, nonUltDPS_adj: nonUltDPS_adj0, cycleFrames: NaN, cycleDamage: NaN, framesNonUltToReady: NaN } };
+    function componentNonUltDps(kind, rate, attr, mul) {
+      if (!(rate > 0) || !(mul > 0)) return 0;
+      const attrSupport = attr === "phys" ? ext.physMul : ext.magicMul;
+      const envMul = attr === "phys" ? pm : 1;
+      const critMul = attr === "phys" ? physCritMul : magicCritMul;
+      const basicMul = (kind === "basic") ? ext.basicMul : 1;
+      return rate * v.atk * mul * basicMul * attrSupport * envMul * critMul * ext.finalMul;
     }
 
-    const ultDamage = v.atk * v.ultMul * ((v.uAttr === "phys") ? (pm * physCritMul) : magicCritMul);
-    const nonUltDPS_adj = nonUltDPS_adj0;
+    const basicNonUltDPS = componentNonUltDps("basic", nonUltRates.basicPerSec, v.basicAttr, 1);
+    const aNonUltDPS = componentNonUltDps("a", nonUltRates.aPerSec, v.aAttr, v.aMul);
+    const bNonUltDPS = componentNonUltDps("b", nonUltRates.bPerSec, v.bAttr, (v.bType === "none" ? 0 : v.bMul));
+    const nonUltDPS_adj = basicNonUltDPS + aNonUltDPS + bNonUltDPS;
+
+    if (v.ultType === "none") {
+      return { dps: nonUltDPS_adj, detail: { ...nu, nonUltDPS_adj, cycleFrames: NaN, cycleDamage: NaN, framesNonUltToReady: NaN, ext } };
+    }
+
+    const ultAttrSupport = v.uAttr === "phys" ? ext.physMul : ext.magicMul;
+    const ultEnvMul = v.uAttr === "phys" ? pm : 1;
+    const ultCritMul = v.uAttr === "phys" ? physCritMul : magicCritMul;
+    const ultDamage = v.atk * v.ultMul * ultAttrSupport * ultEnvMul * ultCritMul * ext.finalMul;
 
     if (v.ultType === "mana") {
       const timeManaPerFrame_nonUlt = v.manaPerSec / F;
       const basicManaPerFrame_nonUlt = nu.basicPerFrame * 1;
-      const manaPerFrame_nonUlt = timeManaPerFrame_nonUlt + basicManaPerFrame_nonUlt;
-
-      if (!(manaPerFrame_nonUlt > 0)) {
-        return { err: "マナが増加しないため、究極に到達しません（Regeと基本攻撃率を確認）" };
-      }
-
+      const extManaPerFrame = ext.addManaPerSec / F;
+      const manaPerFrame_nonUlt = timeManaPerFrame_nonUlt + basicManaPerFrame_nonUlt + extManaPerFrame;
+      if (!(manaPerFrame_nonUlt > 0)) return { err: "マナが増加しないため、究極に到達しません（Regeと基本攻撃率を確認）" };
       let framesNonUltToReady, cycleFrames, cycleDamage;
-
       if (v.ultReset === "end") {
         framesNonUltToReady = v.gaugeMax / manaPerFrame_nonUlt;
         cycleFrames = framesNonUltToReady + v.ultF;
         cycleDamage = nonUltDPS_adj * (framesNonUltToReady / F) + ultDamage;
       } else {
-        const timeManaPerFrame_ult = (v.ultStopsGauge ? 0 : (v.manaPerSec / F));
+        const timeManaPerFrame_ult = (v.ultStopsGauge ? 0 : (v.manaPerSec / F)) + extManaPerFrame;
         const manaGainDuringUlt = timeManaPerFrame_ult * v.ultF;
         const remain = Math.max(0, v.gaugeMax - manaGainDuringUlt);
         framesNonUltToReady = remain / manaPerFrame_nonUlt;
         cycleFrames = v.ultF + framesNonUltToReady;
         cycleDamage = ultDamage + nonUltDPS_adj * (framesNonUltToReady / F);
       }
-
       const dps = cycleDamage / (cycleFrames / F);
-      return { dps, detail: { ...nu, timeManaPerFrame_nonUlt, basicManaPerFrame_nonUlt, manaPerFrame_nonUlt, nonUltDPS_adj, framesNonUltToReady, cycleFrames, cycleDamage } };
+      return { dps, detail: { ...nu, timeManaPerFrame_nonUlt, basicManaPerFrame_nonUlt, extManaPerFrame, manaPerFrame_nonUlt, nonUltDPS_adj, framesNonUltToReady, cycleFrames, cycleDamage, ext } };
     }
 
     if (v.ultType === "cool") {
-      const coolPerFrame_nonUlt = 1 / F; // 秒/フレーム
-
+      const extCoolPerFrame = ext.addCoolPerSec / F;
+      const coolPerFrame_nonUlt = (1 / F) + extCoolPerFrame;
       let framesNonUltToReady, cycleFrames, cycleDamage;
-
       if (v.ultReset === "end") {
-        framesNonUltToReady = (v.gaugeMax * F);
+        framesNonUltToReady = v.gaugeMax / coolPerFrame_nonUlt;
         cycleFrames = framesNonUltToReady + v.ultF;
         cycleDamage = nonUltDPS_adj * (framesNonUltToReady / F) + ultDamage;
       } else {
-        const coolPerFrame_ult = (v.ultStopsGauge ? 0 : (1 / F));
+        const coolPerFrame_ult = (v.ultStopsGauge ? 0 : (1 / F)) + extCoolPerFrame;
         const coolGainDuringUlt = coolPerFrame_ult * v.ultF;
         const remain = Math.max(0, v.gaugeMax - coolGainDuringUlt);
-        framesNonUltToReady = remain * F;
+        framesNonUltToReady = remain / coolPerFrame_nonUlt;
         cycleFrames = v.ultF + framesNonUltToReady;
         cycleDamage = ultDamage + nonUltDPS_adj * (framesNonUltToReady / F);
       }
-
       const dps = cycleDamage / (cycleFrames / F);
-      return { dps, detail: { ...nu, coolPerFrame_nonUlt, nonUltDPS_adj, framesNonUltToReady, cycleFrames, cycleDamage } };
+      return { dps, detail: { ...nu, coolPerFrame_nonUlt, extCoolPerFrame, nonUltDPS_adj, framesNonUltToReady, cycleFrames, cycleDamage, ext } };
     }
 
     return { err: "未知の究極タイプです" };
@@ -728,10 +784,12 @@
       bPerSec_nonUlt = actPerSec * d.pB;
     } else {
       const secPerUnit = d.expFrames / F;
-      basicPerSec_nonUlt = d.expBasicCount / secPerUnit;
-      aPerSec_nonUlt = d.expACount / secPerUnit;
-      bPerSec_nonUlt = d.expBCount / secPerUnit;
-      actPerSec_nonUlt = (d.expBasicCount + d.expACount + d.expBCount) / secPerUnit;
+      const N = v.bN;
+      const EA = d.EA;
+      basicPerSec_nonUlt = N / secPerUnit;
+      aPerSec_nonUlt = EA / secPerUnit;
+      bPerSec_nonUlt = 1 / secPerUnit;
+      actPerSec_nonUlt = (N + EA + 1) / secPerUnit;
     }
 
     const basicPerSec = basicPerSec_nonUlt * nonUltFrac;
@@ -739,27 +797,31 @@
     const bPerSec = bPerSec_nonUlt * nonUltFrac;
     const actPerSec = actPerSec_nonUlt * nonUltFrac + ultPerSec;
 
-    const mA = v.aMul;
-    const mB = (v.bType === "none") ? 0 : v.bMul;
-
     const basicDPS0 = basicPerSec * v.atk * 1;
-    const aDPS0 = aPerSec * v.atk * mA;
+    const aDPS0 = aPerSec * v.atk * v.aMul;
+    const mB = (v.bType === "none") ? 0 : v.bMul;
     const bDPS0 = bPerSec * v.atk * mB;
     const ultDPS0 = ultPerSec * v.atk * (hasUlt ? v.ultMul : 0);
 
     const pm = (isFinite(v.physMul) ? v.physMul : 1);
     const physCritMul = (isFinite(v.critPhysMul) ? v.critPhysMul : 1);
     const magicCritMul = (isFinite(v.critMagicMul) ? v.critMagicMul : 1);
+    const ext = v.ext || calcExternalSupportAgg(v);
 
-    const basicBaseMul = (v.basicAttr === "phys") ? pm : 1;
-    const aBaseMul = (v.aAttr === "phys") ? pm : 1;
-    const bBaseMul = (v.bAttr === "phys") ? pm : 1;
-    const uBaseMul = (v.uAttr === "phys") ? pm : 1;
+    const basicAttrSupport = (v.basicAttr === "phys") ? ext.physMul : ext.magicMul;
+    const aAttrSupport = (v.aAttr === "phys") ? ext.physMul : ext.magicMul;
+    const bAttrSupport = (v.bAttr === "phys") ? ext.physMul : ext.magicMul;
+    const uAttrSupport = (v.uAttr === "phys") ? ext.physMul : ext.magicMul;
 
-    const basicCritMul = (v.basicAttr === "phys") ? physCritMul : magicCritMul;
-    const aCritMul = (v.aAttr === "phys") ? physCritMul : magicCritMul;
-    const bCritMul = (v.bAttr === "phys") ? physCritMul : magicCritMul;
-    const uCritMul = (v.uAttr === "phys") ? physCritMul : magicCritMul;
+    const basicBaseMul = ((v.basicAttr === "phys") ? pm : 1) * basicAttrSupport * ext.basicMul;
+    const aBaseMul = ((v.aAttr === "phys") ? pm : 1) * aAttrSupport;
+    const bBaseMul = ((v.bAttr === "phys") ? pm : 1) * bAttrSupport;
+    const uBaseMul = ((v.uAttr === "phys") ? pm : 1) * uAttrSupport;
+
+    const basicCritMul = ((v.basicAttr === "phys") ? physCritMul : magicCritMul) * ext.finalMul;
+    const aCritMul = ((v.aAttr === "phys") ? physCritMul : magicCritMul) * ext.finalMul;
+    const bCritMul = ((v.bAttr === "phys") ? physCritMul : magicCritMul) * ext.finalMul;
+    const uCritMul = ((v.uAttr === "phys") ? physCritMul : magicCritMul) * ext.finalMul;
 
     const basicNoCritDPS = basicDPS0 * basicBaseMul;
     const aNoCritDPS = aDPS0 * aBaseMul;
@@ -772,16 +834,16 @@
     const ultDPS = ultNoCritDPS * uCritMul;
 
     const physCritGainDPS =
-      (v.basicAttr === "phys" ? basicNoCritDPS * (physCritMul - 1) : 0) +
-      (v.aAttr === "phys" ? aNoCritDPS * (physCritMul - 1) : 0) +
-      (v.bAttr === "phys" ? bNoCritDPS * (physCritMul - 1) : 0) +
-      (v.uAttr === "phys" ? ultNoCritDPS * (physCritMul - 1) : 0);
+      (v.basicAttr === "phys" ? basicNoCritDPS * (physCritMul * ext.finalMul - 1) : 0) +
+      (v.aAttr === "phys" ? aNoCritDPS * (physCritMul * ext.finalMul - 1) : 0) +
+      (v.bAttr === "phys" ? bNoCritDPS * (physCritMul * ext.finalMul - 1) : 0) +
+      (v.uAttr === "phys" ? ultNoCritDPS * (physCritMul * ext.finalMul - 1) : 0);
 
     const magicCritGainDPS =
-      (v.basicAttr === "magic" ? basicNoCritDPS * (magicCritMul - 1) : 0) +
-      (v.aAttr === "magic" ? aNoCritDPS * (magicCritMul - 1) : 0) +
-      (v.bAttr === "magic" ? bNoCritDPS * (magicCritMul - 1) : 0) +
-      (v.uAttr === "magic" ? ultNoCritDPS * (magicCritMul - 1) : 0);
+      (v.basicAttr === "magic" ? basicNoCritDPS * (magicCritMul * ext.finalMul - 1) : 0) +
+      (v.aAttr === "magic" ? aNoCritDPS * (magicCritMul * ext.finalMul - 1) : 0) +
+      (v.bAttr === "magic" ? bNoCritDPS * (magicCritMul * ext.finalMul - 1) : 0) +
+      (v.uAttr === "magic" ? ultNoCritDPS * (magicCritMul * ext.finalMul - 1) : 0);
 
     const totalCritGainDPS = physCritGainDPS + magicCritGainDPS;
 
@@ -805,8 +867,9 @@
     };
   }
 
-
+  
   function calcNonUltDpsSplit(v, d) {
+    // Expected non-ultimate DPS split by attribute (physical / magic), based on current skill mode.
     const mA = v.aMul;
     const mB = (v.bType === "none") ? 0 : v.bMul;
 
@@ -818,19 +881,32 @@
       const magW  = (v.basicAttr === "magic" ? d.p0 * 1 : 0)
                   + (v.aAttr === "magic" ? d.pA * mA : 0)
                   + (v.bAttr === "magic" ? d.pB * mB : 0);
-      return { phys: v.atk * physW / denom, magic: v.atk * magW / denom };
+      return {
+        phys: v.atk * physW / denom,
+        magic: v.atk * magW / denom,
+      };
+    } else {
+      const N = v.bN;
+      const pA = v.aP;
+      const fA = v.aF;
+      const fB = v.bF;
+      const T0 = d.T0;
+      const EA = N * pA / (1 - pA);
+      const expFrames = T0 * N + fA * EA + fB;
+      const denom = expFrames / 40;
+
+      const physW = (v.basicAttr === "phys" ? N * 1 : 0)
+                  + (v.aAttr === "phys" ? EA * mA : 0)
+                  + (v.bAttr === "phys" ? 1 * mB : 0);
+      const magW  = (v.basicAttr === "magic" ? N * 1 : 0)
+                  + (v.aAttr === "magic" ? EA * mA : 0)
+                  + (v.bAttr === "magic" ? 1 * mB : 0);
+      return {
+        phys: v.atk * physW / denom,
+        magic: v.atk * magW / denom,
+      };
     }
-
-    const denom = d.expFrames / 40;
-    const physW = (v.basicAttr === "phys" ? d.expBasicCount * 1 : 0)
-                + (v.aAttr === "phys" ? d.expACount * mA : 0)
-                + (v.bAttr === "phys" ? d.expBCount * mB : 0);
-    const magW  = (v.basicAttr === "magic" ? d.expBasicCount * 1 : 0)
-                + (v.aAttr === "magic" ? d.expACount * mA : 0)
-                + (v.bAttr === "magic" ? d.expBCount * mB : 0);
-    return { phys: v.atk * physW / denom, magic: v.atk * magW / denom };
   }
-
 function calcBoundaryRange(v, res) {
     if (v.ultType === "none") return null;
     if (v.ultReset !== "start") return null;
@@ -860,7 +936,7 @@ function calcBoundaryRange(v, res) {
         framesNonUltToReady = remain / manaPerFrame_nonUlt;
       } else {
         const coolPerFrame_nonUlt = 1 / 40;
-        framesNonUltToReady = remain * 40;
+        framesNonUltToReady = remain / coolPerFrame_nonUlt;
       }
 
       const cycleFrames = v.ultF + framesNonUltToReady;
@@ -876,28 +952,6 @@ function calcBoundaryRange(v, res) {
   }
 
   
-
-  function calcEffectTimes(v, ex) {
-    const build = (label, ratePerSec, impactF) => {
-      const rawFPerSec = Math.max(0, ratePerSec || 0) * Math.max(0, impactF || 0);
-      const rawSecPerSec = rawFPerSec / F;
-      const refSecPerSec = Math.min(1, rawSecPerSec);
-      const refPct = refSecPerSec * 100;
-      return { label, ratePerSec, impactF, rawFPerSec, rawSecPerSec, refSecPerSec, refPct };
-    };
-
-    const a = build("スキルA", ex.aPerSec, v.aImpactF);
-    const bRate = (v.bType === "none") ? 0 : ex.bPerSec;
-    const b = build("スキルB", bRate, v.bImpactF);
-    const uRate = (v.ultType === "none") ? 0 : ex.ultPerSec;
-    const u = build("究極", uRate, v.ultImpactF);
-    const totalRawFPerSec = a.rawFPerSec + b.rawFPerSec + u.rawFPerSec;
-    const totalRawSecPerSec = totalRawFPerSec / F;
-    const totalRefSecPerSec = Math.min(1, totalRawSecPerSec);
-    const totalRefPct = totalRefSecPerSec * 100;
-    return { a, b, u, totalRawFPerSec, totalRawSecPerSec, totalRefSecPerSec, totalRefPct };
-  }
-
   function calcTypeBreakdown(v, ex) {
     const sum = ex.checkTotalDPS;
     const pct = (x) => (sum > 0 ? (100 * x / sum) : 0);
@@ -934,41 +988,192 @@ function calcBoundaryRange(v, res) {
     const baseDef = DIFF_DEF[v.envDiff] ?? 175;
     const realDef = v.defReduce - baseDef;
     const hasUlt = (v.ultType !== "none");
-    const gaugeLabel = (v.ultType === "mana") ? "マナ" : "クールタイム";
-    const lines = [];
 
+    const lines = [];
     lines.push("=== 行動レート～検算 の算出式 ===");
-    lines.push("基本攻撃モーションF = 40 / 攻撃速度");
-    lines.push(`  = 40 / ${r6(v.aspd)} = ${r6(d.T0)}`);
 
     if (d.mode === "prob") {
-      lines.push("■ 行動レート（確率型）");
+      const actPerSec_nonUlt = 40 / d.avgFrames;
+      const basicPerSec_nonUlt = actPerSec_nonUlt * d.p0;
+      const aPerSec_nonUlt = actPerSec_nonUlt * d.pA;
+      const bPerSec_nonUlt = actPerSec_nonUlt * d.pB;
+      const ultPerSec = hasUlt ? (40 / d.cycleFrames) : 0;
+
+      lines.push("■ 行動レート（通常抽選型）");
+      lines.push("基本攻撃モーションF = 40 / 攻撃速度");
+      lines.push(`  = 40 / ${r6(v.aspd)} = ${r6(d.T0)}`);
       lines.push("基本攻撃確率 = 1 − スキルA確率 − スキルB確率");
       lines.push(`  = 1 − ${r6(d.pA)} − ${r6(d.pB)} = ${r6(d.p0)}`);
-      lines.push("平均行動F = 基本攻撃確率×基本攻撃F + スキルA確率×スキルA_F + スキルB確率×スキルB_F");
+      lines.push("平均行動F = 基本攻撃確率×基本攻撃モーションF + スキルA確率×スキルA_F数 + スキルB確率×スキルB_F数");
       lines.push(`  = ${r6(d.p0)}×${r6(d.T0)} + ${r6(d.pA)}×${v.aF} + ${r6(d.pB)}×${v.bF} = ${r6(d.avgFrames)}`);
-      lines.push("平均倍率 = 基本攻撃確率×100% + スキルA確率×スキルA倍率 + スキルB確率×スキルB倍率");
-      lines.push(`  = ${r6(d.p0)}×1 + ${r6(d.pA)}×${r6(v.aMul)} + ${r6(d.pB)}×${r6(v.bMul)} = ${r6(d.avgMul)}`);
-      lines.push("非究極DPS = 攻撃力 × 平均倍率 / (平均行動F / 40)");
-      lines.push(`  = ${r6(v.atk)} × ${r6(d.avgMul)} / (${r6(d.avgFrames)} / 40) = ${r6(d.nonUltDPS)}`);
-    } else if (d.mode === "countBasic") {
+      lines.push("非究極時の行動合計毎秒 = 40 / 平均行動F");
+      lines.push(`  = 40 / ${r6(d.avgFrames)} = ${r6(actPerSec_nonUlt)}`);
+      lines.push("非究極時の基本攻撃毎秒 = 非究極時の行動合計毎秒 × 基本攻撃確率");
+      lines.push(`  = ${r6(actPerSec_nonUlt)} × ${r6(d.p0)} = ${r6(basicPerSec_nonUlt)}`);
+      lines.push("非究極時のスキルA毎秒 = 非究極時の行動合計毎秒 × スキルA確率");
+      lines.push(`  = ${r6(actPerSec_nonUlt)} × ${r6(d.pA)} = ${r6(aPerSec_nonUlt)}`);
+      lines.push("非究極時のスキルB毎秒 = 非究極時の行動合計毎秒 × スキルB確率");
+      lines.push(`  = ${r6(actPerSec_nonUlt)} × ${r6(d.pB)} = ${r6(bPerSec_nonUlt)}`);
+      lines.push("非究極時間比率 = 非究極F / 周期F");
+      lines.push(`  = ${r6(d.framesNonUltToReady)} / ${r6(d.cycleFrames)} = ${r6(ex.nonUltFrac)}`);
+      if (hasUlt) {
+        lines.push("究極毎秒 = 40 / 周期F");
+        lines.push(`  = 40 / ${r6(d.cycleFrames)} = ${r6(ultPerSec)}`);
+      } else {
+        lines.push("究極毎秒 = 0（究極なし）");
+      }
+      lines.push("基本攻撃毎秒（究極時間込み平均） = 非究極時の基本攻撃毎秒 × 非究極時間比率");
+      lines.push(`  = ${r6(basicPerSec_nonUlt)} × ${r6(ex.nonUltFrac)} = ${r6(ex.basicPerSec)}`);
+      lines.push("スキルA毎秒（究極時間込み平均） = 非究極時のスキルA毎秒 × 非究極時間比率");
+      lines.push(`  = ${r6(aPerSec_nonUlt)} × ${r6(ex.nonUltFrac)} = ${r6(ex.aPerSec)}`);
+      lines.push("スキルB毎秒（究極時間込み平均） = 非究極時のスキルB毎秒 × 非究極時間比率");
+      lines.push(`  = ${r6(bPerSec_nonUlt)} × ${r6(ex.nonUltFrac)} = ${r6(ex.bPerSec)}`);
+      lines.push("行動合計毎秒（究極時間込み平均） = 非究極時の行動合計毎秒 × 非究極時間比率 + 究極毎秒");
+      lines.push(`  = ${r6(actPerSec_nonUlt)} × ${r6(ex.nonUltFrac)} + ${r6(ultPerSec)} = ${r6(ex.actPerSec)}`);
+      lines.push("");
+    } else {
       const secPerUnit = d.expFrames / 40;
-      lines.push("■ 行動レート（スキルB=基本攻撃規定回数型）");
-      lines.push("期待スキルA回数 EA = 規定回数 × pA / (1 − pA)");
-      lines.push(`  = ${v.bN} × ${r6(d.pA)} / (1 − ${r6(d.pA)}) = ${r6(d.EA)}`);
-      lines.push("非究極周期F = 基本攻撃F×基本攻撃回数 + スキルA_F×期待スキルA回数 + スキルB_F");
-      lines.push(`  = ${r6(d.T0)}×${r6(d.expBasicCount)} + ${v.aF}×${r6(d.expACount)} + ${v.bF} = ${r6(d.expFrames)}`);
+      const actPerSec_nonUlt = (v.bN + d.EA + 1) / secPerUnit;
+      lines.push("■ 行動レート（スキルB=規定回数型）");
+      lines.push("基本攻撃モーションF = 40 / 攻撃速度");
+      lines.push(`  = 40 / ${r6(v.aspd)} = ${r6(d.T0)}`);
+      lines.push("EA = (規定回数 + 1) × p / (1 − p)");
+      lines.push(`  = (${v.bN} + 1) × ${r6(d.pA)} / (1 − ${r6(d.pA)}) = ${r6(d.EA)}`);
+      lines.push("非究極周期F = 基本攻撃モーションF×規定回数 + スキルA_F数×EA + スキルB_F数");
+      lines.push(`  = ${r6(d.T0)}×${v.bN} + ${v.aF}×${r6(d.EA)} + ${v.bF} = ${r6(d.expFrames)}`);
       lines.push("非究極周期秒 = 非究極周期F / 40");
       lines.push(`  = ${r6(d.expFrames)} / 40 = ${r6(secPerUnit)}`);
-      lines.push("非究極周期ダメージ = 攻撃力 × (基本攻撃回数×100% + 期待スキルA回数×スキルA倍率 + スキルB倍率)");
-      lines.push(`  = ${r6(v.atk)} × (${r6(d.expBasicCount)}×1 + ${r6(d.expACount)}×${r6(v.aMul)} + ${r6(v.bMul)}) = ${r6(d.expDamage)}`);
+      lines.push("非究極時の基本攻撃毎秒 = 規定回数 / 非究極周期秒");
+      lines.push(`  = ${v.bN} / ${r6(secPerUnit)} = ${r6(ex.basicPerSec / ex.nonUltFrac)}`);
+      lines.push("非究極時のスキルA毎秒 = EA / 非究極周期秒");
+      lines.push(`  = ${r6(d.EA)} / ${r6(secPerUnit)} = ${r6(ex.aPerSec / ex.nonUltFrac)}`);
+      lines.push("非究極時のスキルB毎秒 = 1 / 非究極周期秒");
+      lines.push(`  = 1 / ${r6(secPerUnit)} = ${r6(ex.bPerSec / ex.nonUltFrac)}`);
+      lines.push("行動合計毎秒（究極時間込み平均） = 非究極時の行動合計毎秒 × 非究極時間比率 + 究極毎秒");
+      lines.push(`  = ${r6(actPerSec_nonUlt)} × ${r6(ex.nonUltFrac)} + ${r6(ex.ultPerSec)} = ${r6(ex.actPerSec)}`);
+      lines.push("");
+    }
+
+    lines.push("■ 環境（物理補正）");
+    lines.push("80w防御力 = 難易度に対応する値");
+    lines.push(`  = ${v.envDiff} → ${baseDef}`);
+    lines.push("実防御力 = 防御力減少値 − 80w防御力");
+    lines.push(`  = ${v.defReduce} − ${baseDef} = ${realDef}`);
+    lines.push("物理補正倍率(raw) = 1 × (1 + (SIGN(実防御力) × (1 − 50 / (3×ABS(実防御力)+50))))");
+    lines.push(`  = 1 × (1 + (${Math.sign(realDef)} × (1 − 50 / (3×${Math.abs(realDef)}+50)))) = ${r6(1 * (1 + (Math.sign(realDef) * (1 - 50 / (3 * Math.abs(realDef) + 50)))))}`);
+    lines.push("物理補正倍率 = 上式を小数第3位四捨五入");
+    lines.push(`  = ${pm.toFixed(2)}`);
+    lines.push("");
+
+    const basicRaw = ex.basicPerSec * v.atk * 1;
+    const aRaw = ex.aPerSec * v.atk * v.aMul;
+    const bRaw = ex.bPerSec * v.atk * ((v.bType === "none") ? 0 : v.bMul);
+    const uRaw = ex.ultPerSec * v.atk * (hasUlt ? v.ultMul : 0);
+
+    const basicCoef = v.basicAttr === "phys" ? pm : 1;
+    const aCoef = v.aAttr === "phys" ? pm : 1;
+    const bCoef = v.bAttr === "phys" ? pm : 1;
+    const uCoef = v.uAttr === "phys" ? pm : 1;
+
+    lines.push("■ ダメージ内訳（DPS成分）");
+    lines.push("基本DPS成分 = 基本攻撃毎秒 × 攻撃力 × 1 × 属性補正係数");
+    lines.push(`  = ${r6(ex.basicPerSec)} × ${r6(v.atk)} × 1 × ${r6(basicCoef)} = ${r6(ex.basicDPS)}`);
+    lines.push("スキルA DPS成分 = スキルA毎秒 × 攻撃力 × スキルA倍率 × 属性補正係数");
+    lines.push(`  = ${r6(ex.aPerSec)} × ${r6(v.atk)} × ${r6(v.aMul)} × ${r6(aCoef)} = ${r6(ex.aDPS)}`);
+    lines.push("スキルB DPS成分 = スキルB毎秒 × 攻撃力 × スキルB倍率 × 属性補正係数");
+    lines.push(`  = ${r6(ex.bPerSec)} × ${r6(v.atk)} × ${r6((v.bType === "none") ? 0 : v.bMul)} × ${r6(bCoef)} = ${r6(ex.bDPS)}`);
+    lines.push("究極DPS成分 = 究極毎秒 × 攻撃力 × 究極倍率 × 属性補正係数");
+    lines.push(`  = ${r6(ex.ultPerSec)} × ${r6(v.atk)} × ${r6(hasUlt ? v.ultMul : 0)} × ${r6(uCoef)} = ${r6(ex.ultDPS)}`);
+    lines.push("基本割合(%) = 基本DPS成分 / 内訳合計DPS × 100");
+    lines.push(`  = ${r6(ex.basicDPS)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(ex.basicPct)}`);
+    lines.push("スキルA割合(%) = スキルA DPS成分 / 内訳合計DPS × 100");
+    lines.push(`  = ${r6(ex.aDPS)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(ex.aPct)}`);
+    lines.push("スキルB割合(%) = スキルB DPS成分 / 内訳合計DPS × 100");
+    lines.push(`  = ${r6(ex.bDPS)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(ex.bPct)}`);
+    lines.push("究極割合(%) = 究極DPS成分 / 内訳合計DPS × 100");
+    lines.push(`  = ${r6(ex.ultDPS)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(ex.ultPct)}`);
+    lines.push("");
+
+    lines.push("■ 属性内訳（物理/魔法）");
+    lines.push("物理DPS = 物理属性に属する各DPS成分の合計");
+    lines.push(`  = ${v.basicAttr === "phys" ? r6(ex.basicDPS) : 0} + ${v.aAttr === "phys" ? r6(ex.aDPS) : 0} + ${v.bAttr === "phys" ? r6(ex.bDPS) : 0} + ${v.uAttr === "phys" ? r6(ex.ultDPS) : 0} = ${r6(tb.phys)}`);
+    lines.push("魔法DPS = 魔法属性に属する各DPS成分の合計");
+    lines.push(`  = ${v.basicAttr === "magic" ? r6(ex.basicDPS) : 0} + ${v.aAttr === "magic" ? r6(ex.aDPS) : 0} + ${v.bAttr === "magic" ? r6(ex.bDPS) : 0} + ${v.uAttr === "magic" ? r6(ex.ultDPS) : 0} = ${r6(tb.magic)}`);
+    lines.push("物理割合(%) = 物理DPS / 内訳合計DPS × 100");
+    lines.push(`  = ${r6(tb.phys)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(tb.physPct)}`);
+    lines.push("魔法割合(%) = 魔法DPS / 内訳合計DPS × 100");
+    lines.push(`  = ${r6(tb.magic)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(tb.magicPct)}`);
+    lines.push("");
+
+    lines.push("■ 特性内訳（単体/複数）");
+    lines.push("単体DPS = 単体に属する各DPS成分の合計");
+    lines.push(`  = ${v.basicTarget === "single" ? r6(ex.basicDPS) : 0} + ${v.aTarget === "single" ? r6(ex.aDPS) : 0} + ${v.bTarget === "single" ? r6(ex.bDPS) : 0} + ${v.uTarget === "single" ? r6(ex.ultDPS) : 0} = ${r6(tb.single)}`);
+    lines.push("複数DPS = 複数に属する各DPS成分の合計");
+    lines.push(`  = ${v.basicTarget === "multi" ? r6(ex.basicDPS) : 0} + ${v.aTarget === "multi" ? r6(ex.aDPS) : 0} + ${v.bTarget === "multi" ? r6(ex.bDPS) : 0} + ${v.uTarget === "multi" ? r6(ex.ultDPS) : 0} = ${r6(tb.multi)}`);
+    lines.push("単体割合(%) = 単体DPS / 内訳合計DPS × 100");
+    lines.push(`  = ${r6(tb.single)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(tb.singlePct)}`);
+    lines.push("複数割合(%) = 複数DPS / 内訳合計DPS × 100");
+    lines.push(`  = ${r6(tb.multi)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(tb.multiPct)}`);
+    lines.push("");
+    lines.push("■ クリティカル寄与内訳");
+    lines.push("物理クリ寄与DPS = 物理属性の『クリなしDPS』×(期待クリ倍率(物理)−1) の合計");
+    lines.push(`  = ${r6(ex.physCritGainDPS)}`);
+    lines.push("物理クリ寄与割合(%) = 物理クリ寄与DPS / 内訳合計DPS × 100");
+    lines.push(`  = ${r6(ex.physCritGainDPS)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(ex.physCritGainPct)}`);
+    lines.push("魔法クリ寄与DPS = 魔法属性の『クリなしDPS』×(期待クリ倍率(魔法)−1) の合計");
+    lines.push(`  = ${r6(ex.magicCritGainDPS)}`);
+    lines.push("魔法クリ寄与割合(%) = 魔法クリ寄与DPS / 内訳合計DPS × 100");
+    lines.push(`  = ${r6(ex.magicCritGainDPS)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(ex.magicCritGainPct)}`);
+    lines.push("合計クリ寄与DPS = 物理クリ寄与DPS + 魔法クリ寄与DPS");
+    lines.push(`  = ${r6(ex.physCritGainDPS)} + ${r6(ex.magicCritGainDPS)} = ${r6(ex.totalCritGainDPS)}`);
+    lines.push("合計クリ寄与割合(%) = 合計クリ寄与DPS / 内訳合計DPS × 100");
+    lines.push(`  = ${r6(ex.totalCritGainDPS)} / ${r6(ex.checkTotalDPS)} × 100 = ${r6(ex.totalCritGainPct)}`);
+    lines.push("");
+
+    lines.push("■ 検算");
+    lines.push("内訳合計DPS = 基本DPS成分 + スキルA DPS成分 + スキルB DPS成分 + 究極DPS成分");
+    lines.push(`  = ${r6(ex.basicDPS)} + ${r6(ex.aDPS)} + ${r6(ex.bDPS)} + ${r6(ex.ultDPS)} = ${r6(ex.checkTotalDPS)}`);
+    lines.push("表示DPS（周期合成） = 周期ダメージ / (周期F / 40)");
+    lines.push(`  = ${r6(res.detail.cycleDamage)} / (${r6(res.detail.cycleFrames)} / 40) = ${r6(res.dps)}`);
+
+    lines.push("");
+    lines.push("=== 既存の算出式（一般形 + 代入値） ===");
+    lines.push("■ 基本攻撃");
+    lines.push("基本攻撃モーションF = 40 / 攻撃速度");
+    lines.push(`  = 40 / ${r6(v.aspd)} = ${r6(d.T0)}`);
+    lines.push("基本攻撃ダメージ = 攻撃力 × 100%");
+    lines.push(`  = ${r6(v.atk)} × 1 = ${r6(v.atk)}`);
+    lines.push("");
+
+    lines.push("■ スキル抽選（究極が未発動の行動1回ごと）");
+    if (d.mode === "prob") {
+      lines.push("スキルA確率 = スキルA確率(%) / 100");
+      lines.push(`  = ${r6(v.aP * 100)} / 100 = ${r6(v.aP)}`);
+      lines.push("スキルB確率 = スキルB確率(%) / 100");
+      lines.push(`  = ${r6(v.bP * 100)} / 100 = ${r6(v.bP)}`);
+      lines.push("基本攻撃確率 = 1 − スキルA確率 − スキルB確率");
+      lines.push(`  = 1 − ${r6(v.aP)} − ${r6(v.bP)} = ${r6(d.p0)}`);
+      lines.push("平均行動F = 基本攻撃確率×基本攻撃モーションF + スキルA確率×スキルA_F数 + スキルB確率×スキルB_F数");
+      lines.push(`  = ${r6(d.p0)}×${r6(d.T0)} + ${r6(v.aP)}×${v.aF} + ${r6(v.bP)}×${v.bF} = ${r6(d.avgFrames)}`);
+      lines.push("平均倍率 = 基本攻撃確率×100% + スキルA確率×スキルA倍率 + スキルB確率×スキルB倍率");
+      lines.push(`  = ${r6(d.p0)}×1 + ${r6(v.aP)}×${r6(v.aMul)} + ${r6(v.bP)}×${r6(v.bMul)} = ${r6(d.avgMul)}`);
+      lines.push("非究極DPS = 攻撃力 × 平均倍率 / (平均行動F / 40)");
+      lines.push(`  = ${r6(v.atk)} × ${r6(d.avgMul)} / (${r6(d.avgFrames)} / 40) = ${r6(d.nonUltDPS)}`);
+    } else {
+      lines.push("p = スキルA確率(%) / 100");
+      lines.push(`  = ${r6(v.aP * 100)} / 100 = ${r6(v.aP)}`);
+      lines.push("EA = (規定回数 + 1) × p / (1 − p)");
+      lines.push(`  = (${v.bN} + 1) × ${r6(v.aP)} / (1 − ${r6(v.aP)}) = ${r6(d.EA)}`);
+      lines.push("非究極周期F = 基本攻撃モーションF×規定回数 + スキルA_F数×EA + スキルB_F数");
+      lines.push(`  = ${r6(d.T0)}×${v.bN} + ${v.aF}×${r6(d.EA)} + ${v.bF} = ${r6(d.expFrames)}`);
+      lines.push("非究極周期ダメージ = 攻撃力 × (規定回数×100% + EA×スキルA倍率 + 1×スキルB倍率)");
+      lines.push(`  = ${r6(v.atk)} × (${v.bN}×1 + ${r6(d.EA)}×${r6(v.aMul)} + 1×${r6(v.bMul)}) = ${r6(d.expDamage)}`);
       lines.push("非究極DPS = 非究極周期ダメージ / (非究極周期F / 40)");
       lines.push(`  = ${r6(d.expDamage)} / (${r6(d.expFrames)} / 40) = ${r6(d.nonUltDPS)}`);
-      lines.push("※ 既存仕様どおり、期待回数ベースの平均周期近似です。");
     }
 
     lines.push("");
-    lines.push("■ 究極 / ゲージ");
+    lines.push("■ 究極");
     if (v.ultType === "none") {
       lines.push("究極：無し");
     } else if (v.ultType === "mana") {
@@ -976,98 +1181,90 @@ function calcBoundaryRange(v, res) {
       lines.push(`  = ${r6(readNumber($("manaRegenPct").value))} / 100 = ${r6(v.manaPerSec)}`);
       lines.push("時間マナ(毎フレーム)(非究極中) = 時間マナ(毎秒) / 40");
       lines.push(`  = ${r6(v.manaPerSec)} / 40 = ${r6(d.timeManaPerFrame_nonUlt)}`);
-      lines.push("基本攻撃マナ(毎フレーム)(非究極中) = 基本攻撃/フレーム × 1");
+      lines.push("基本攻撃マナ(毎フレーム)(非究極中) = 基本攻撃毎フレーム × 1");
       lines.push(`  = ${r6(d.basicPerFrame)} × 1 = ${r6(d.basicManaPerFrame_nonUlt)}`);
-      lines.push("マナ増加(毎フレーム)(非究極中) = 時間マナ + 基本攻撃マナ");
+      lines.push("マナ増加(毎フレーム)(非究極中) = 時間マナ(毎フレーム) + 基本攻撃マナ(毎フレーム)");
       lines.push(`  = ${r6(d.timeManaPerFrame_nonUlt)} + ${r6(d.basicManaPerFrame_nonUlt)} = ${r6(d.manaPerFrame_nonUlt)}`);
+      if (v.ultReset === "end") {
+        lines.push("究極到達までの非究極F = Maxマナ / マナ増加(毎フレーム)(非究極中)");
+        lines.push(`  = ${r6(v.gaugeMax)} / ${r6(d.manaPerFrame_nonUlt)} = ${r6(d.framesNonUltToReady)}`);
+        lines.push("周期F = 究極到達F + 究極F数");
+        lines.push(`  = ${r6(d.framesNonUltToReady)} + ${r6(v.ultF)} = ${r6(d.cycleFrames)}`);
+        lines.push("周期ダメージ = 非究極DPS×(究極到達F/40) + 攻撃力×究極倍率");
+        lines.push(`  = ${r6(d.nonUltDPS_adj ?? d.nonUltDPS)}×(${r6(d.framesNonUltToReady)}/40) + ${r6(v.atk)}×${r6(v.ultMul)} = ${r6(d.cycleDamage)}`);
+        lines.push("DPS = 周期ダメージ / (周期F/40)");
+        lines.push(`  = ${r6(d.cycleDamage)} / (${r6(d.cycleFrames)}/40) = ${r6(res.dps)}`);
+      } else {
+        const manaGainDuringUlt = v.ultStopsGauge ? 0 : ((v.manaPerSec / 40) * v.ultF);
+        const remain = Math.max(0, v.gaugeMax - manaGainDuringUlt);
+        lines.push("究極中マナ増加（平均近似） = (時間マナ(毎秒) / 40) × 究極F数");
+        lines.push(`  = (${r6(v.manaPerSec)} / 40) × ${r6(v.ultF)} = ${r6(manaGainDuringUlt)}`);
+        lines.push("残マナ = max(0, Maxマナ − 究極中マナ増加)");
+        lines.push(`  = max(0, ${r6(v.gaugeMax)} − ${r6(manaGainDuringUlt)}) = ${r6(remain)}`);
+        lines.push("残マナ到達F(非究極) = 残マナ / マナ増加(毎フレーム)(非究極中)");
+        lines.push(`  = ${r6(remain)} / ${r6(d.manaPerFrame_nonUlt)} = ${r6(d.framesNonUltToReady)}`);
+        lines.push("周期F = 究極F数 + 残マナ到達F");
+        lines.push(`  = ${r6(v.ultF)} + ${r6(d.framesNonUltToReady)} = ${r6(d.cycleFrames)}`);
+        lines.push("周期ダメージ = 攻撃力×究極倍率 + 非究極DPS×(残マナ到達F/40)");
+        lines.push(`  = ${r6(v.atk)}×${r6(v.ultMul)} + ${r6(d.nonUltDPS_adj ?? d.nonUltDPS)}×(${r6(d.framesNonUltToReady)}/40) = ${r6(d.cycleDamage)}`);
+        lines.push("DPS = 周期ダメージ / (周期F/40)");
+        lines.push(`  = ${r6(d.cycleDamage)} / (${r6(d.cycleFrames)}/40) = ${r6(res.dps)}`);
+      }
     } else {
-      lines.push("クールタイム進行(毎フレーム)(非究極中) = 1 / 40 秒");
-      lines.push(`  = 1 / 40 = ${r6(d.coolPerFrame_nonUlt)} 秒`);
+      lines.push("クール進行(毎フレーム)(非究極中) = 1 / 40");
+      lines.push(`  = 1 / 40 = ${r6(d.coolPerFrame_nonUlt)}`);
+      if (v.ultReset === "end") {
+        lines.push("究極到達までの非究極F = MaxCT / (1/40)");
+        lines.push(`  = ${r6(v.gaugeMax)} / ${r6(d.coolPerFrame_nonUlt)} = ${r6(d.framesNonUltToReady)}`);
+        lines.push("周期F = 究極到達F + 究極F数");
+        lines.push(`  = ${r6(d.framesNonUltToReady)} + ${r6(v.ultF)} = ${r6(d.cycleFrames)}`);
+        lines.push("周期ダメージ = 非究極DPS×(究極到達F/40) + 攻撃力×究極倍率");
+        lines.push(`  = ${r6(d.nonUltDPS_adj ?? d.nonUltDPS)}×(${r6(d.framesNonUltToReady)}/40) + ${r6(v.atk)}×${r6(v.ultMul)} = ${r6(d.cycleDamage)}`);
+        lines.push("DPS = 周期ダメージ / (周期F/40)");
+        lines.push(`  = ${r6(d.cycleDamage)} / (${r6(d.cycleFrames)}/40) = ${r6(res.dps)}`);
+      } else {
+        const coolGainDuringUlt = v.ultStopsGauge ? 0 : (v.ultF / 40);
+        const remain = Math.max(0, v.gaugeMax - coolGainDuringUlt);
+        lines.push("究極中CT増加（平均近似） = 究極F数 / 40");
+        lines.push(`  = ${r6(v.ultF)} / 40 = ${r6(coolGainDuringUlt)}`);
+        lines.push("残CT = max(0, MaxCT − 究極中CT増加)");
+        lines.push(`  = max(0, ${r6(v.gaugeMax)} − ${r6(coolGainDuringUlt)}) = ${r6(remain)}`);
+        lines.push("残CT到達F(非究極) = 残CT / (1/40)");
+        lines.push(`  = ${r6(remain)} / ${r6(d.coolPerFrame_nonUlt)} = ${r6(d.framesNonUltToReady)}`);
+        lines.push("周期F = 究極F数 + 残CT到達F");
+        lines.push(`  = ${r6(v.ultF)} + ${r6(d.framesNonUltToReady)} = ${r6(d.cycleFrames)}`);
+        lines.push("周期ダメージ = 攻撃力×究極倍率 + 非究極DPS×(残CT到達F/40)");
+        lines.push(`  = ${r6(v.atk)}×${r6(v.ultMul)} + ${r6(d.nonUltDPS_adj ?? d.nonUltDPS)}×(${r6(d.framesNonUltToReady)}/40) = ${r6(d.cycleDamage)}`);
+        lines.push("DPS = 周期ダメージ / (周期F/40)");
+        lines.push(`  = ${r6(d.cycleDamage)} / (${r6(d.cycleFrames)}/40) = ${r6(res.dps)}`);
+      }
     }
-    if (hasUlt) {
-      if (v.ultType === "cool") {
-        if (v.ultReset === "end") {
-          lines.push("究極到達までの非究極F = クールタイム秒数 × 40");
-          lines.push(`  = ${r6(v.gaugeMax)} × 40 = ${r6(d.framesNonUltToReady)}`);
+
+    if ((v.ext?.rows || []).length) {
+      lines.push("");
+      lines.push("■ 外部支援（平均反映）");
+      for (const row of v.ext.rows) {
+        if (row.mode === "coverage") {
+          if (row.type === "procMul") lines.push(`支援${row.idx}: 発動率倍率=${r6(row.amountNum)}倍 / 実効被覆率=${r6(row.effectiveCoverage)} → 支援あり時間帯のみ確率倍率を適用`);
+          else lines.push(`支援${row.idx}: ${supportTypeLabel(row.type)} / 平均増加量 = 効果量 × 実効被覆率 = ${r6(row.amountNum)} × ${r6(row.effectiveCoverage)} = ${r6(row.amountNum * row.effectiveCoverage)}`);
         } else {
-          const coolGainDuringUlt = v.ultStopsGauge ? 0 : (v.ultF / 40);
-          const remain = Math.max(0, v.gaugeMax - coolGainDuringUlt);
-          lines.push("究極中クールタイム進行 = 究極F / 40 秒");
-          lines.push(`  = ${r6(v.ultF)} / 40 = ${r6(coolGainDuringUlt)} 秒`);
-          lines.push("残クールタイム秒数 = max(0, クールタイム秒数 − 究極中クールタイム進行)");
-          lines.push(`  = max(0, ${r6(v.gaugeMax)} − ${r6(coolGainDuringUlt)}) = ${r6(remain)}`);
-          lines.push("残クールタイム到達F = 残クールタイム秒数 × 40");
-          lines.push(`  = ${r6(remain)} × 40 = ${r6(d.framesNonUltToReady)}`);
+          if (row.type === "manaPct") lines.push(`支援${row.idx}: 追加マナ/秒 = 単体発動回数/秒 × 体数 × Maxマナ × 効果量 = ${r6(row.unitRate)} × ${row.count} × ${r6(v.gaugeMax)} × ${r6(row.amountNum)} = ${r6(row.addManaPerSec)}`);
+          else lines.push(`支援${row.idx}: 追加CT短縮秒/秒 ≒ 単体発動回数/秒 × 体数 × MaxCT × 効果量 × 0.5 = ${r6(row.unitRate)} × ${row.count} × ${r6(v.gaugeMax)} × ${r6(row.amountNum)} × 0.5 = ${r6(row.addCoolPerSec)}`);
         }
       }
-      lines.push("非究極時間比率 = 非究極F / 周期F");
-      lines.push(`  = ${r6(d.framesNonUltToReady)} / ${r6(d.cycleFrames)} = ${r6(ex.nonUltFrac)}`);
-      lines.push("表示DPS（周期合成） = 周期ダメージ / (周期F / 40)");
-      lines.push(`  = ${r6(d.cycleDamage)} / (${r6(d.cycleFrames)} / 40) = ${r6(res.dps)}`);
-    } else {
-      lines.push(`表示DPS（周期合成） = ${r6(res.dps)}`);
+      lines.push(`平均物理増加=${r6(v.ext.physPct)} / 平均魔法増加=${r6(v.ext.magicPct)} / 平均基本攻撃増加=${r6(v.ext.basicPct)} / 平均最終ダメ増加=${r6(v.ext.finalPct)}`);
     }
-
-    const eff = calcEffectTimes(v, ex);
-    lines.push("");
-    lines.push("■ 影響時間（平均・ダメージとは別計算）");
-    lines.push("スキルA影響F/秒 = スキルA/秒 × スキルA影響F");
-    lines.push(`  = ${r6(ex.aPerSec)} × ${r6(v.aImpactF)} = ${r6(eff.a.rawFPerSec)}`);
-    lines.push("スキルA参考影響率 = min(100%, スキルA影響F/秒 / 40 × 100)");
-    lines.push(`  = min(100%, ${r6(eff.a.rawFPerSec)} / 40 × 100) = ${r6(eff.a.refPct)}%`);
-    lines.push("スキルB影響F/秒 = スキルB/秒 × スキルB影響F");
-    lines.push(`  = ${r6(ex.bPerSec)} × ${r6(v.bImpactF)} = ${r6(eff.b.rawFPerSec)}`);
-    lines.push("スキルB参考影響率 = min(100%, スキルB影響F/秒 / 40 × 100)");
-    lines.push(`  = min(100%, ${r6(eff.b.rawFPerSec)} / 40 × 100) = ${r6(eff.b.refPct)}%`);
-    lines.push("究極影響F/秒 = 究極/秒 × 究極影響F");
-    lines.push(`  = ${r6(ex.ultPerSec)} × ${r6(v.ultImpactF)} = ${r6(eff.u.rawFPerSec)}`);
-    lines.push("究極参考影響率 = min(100%, 究極影響F/秒 / 40 × 100)");
-    lines.push(`  = min(100%, ${r6(eff.u.rawFPerSec)} / 40 × 100) = ${r6(eff.u.refPct)}%`);
-    lines.push("参考合計影響F/秒 = A + B + 究極");
-    lines.push(`  = ${r6(eff.a.rawFPerSec)} + ${r6(eff.b.rawFPerSec)} + ${r6(eff.u.rawFPerSec)} = ${r6(eff.totalRawFPerSec)}`);
-    lines.push("参考合計影響率 = min(100%, 参考合計影響F/秒 / 40 × 100)");
-    lines.push(`  = min(100%, ${r6(eff.totalRawFPerSec)} / 40 × 100) = ${r6(eff.totalRefPct)}%`);
-
-    lines.push("");
-    lines.push("■ 環境（物理補正・クリティカル）");
-    lines.push("実防御力 = 防御力減少値 − 80w防御力");
-    lines.push(`  = ${v.defReduce} − ${baseDef} = ${realDef}`);
-    lines.push("物理補正倍率(raw) = 1 × (1 + (SIGN(実防御力) × (1 − 50 / (3×ABS(実防御力)+50))))");
-    lines.push(`  = 1 × (1 + (${Math.sign(realDef)} × (1 − 50 / (3×${Math.abs(realDef)}+50)))) = ${r6(1 * (1 + (Math.sign(realDef) * (1 - 50 / (3 * Math.abs(realDef) + 50)))))}`);
-    lines.push(`物理補正倍率 = ${pm.toFixed(2)}`);
-    lines.push(`期待クリ倍率(物理) = ${r6(v.critPhysMul)}`);
-    lines.push(`期待クリ倍率(魔法) = ${r6(v.critMagicMul)}`);
-
-    lines.push("");
-    lines.push("■ ダメージ内訳（DPS成分）");
-    lines.push(`基本DPS成分 = ${r6(ex.basicPerSec)} × ${r6(v.atk)} × 1 × ${r6(ex.basicBaseMul)} × ${r6(ex.basicCritMul)} = ${r6(ex.basicDPS)}`);
-    lines.push(`スキルA DPS成分 = ${r6(ex.aPerSec)} × ${r6(v.atk)} × ${r6(v.aMul)} × ${r6(ex.aBaseMul)} × ${r6(ex.aCritMul)} = ${r6(ex.aDPS)}`);
-    lines.push(`スキルB DPS成分 = ${r6(ex.bPerSec)} × ${r6(v.atk)} × ${r6((v.bType === "none") ? 0 : v.bMul)} × ${r6(ex.bBaseMul)} × ${r6(ex.bCritMul)} = ${r6(ex.bDPS)}`);
-    lines.push(`究極DPS成分 = ${r6(ex.ultPerSec)} × ${r6(v.atk)} × ${r6(hasUlt ? v.ultMul : 0)} × ${r6(ex.uBaseMul)} × ${r6(ex.uCritMul)} = ${r6(ex.ultDPS)}`);
-
-    lines.push("");
-    lines.push("■ 属性 / 特性 / クリ寄与");
-    lines.push(`物理DPS / 割合 = ${r6(tb.phys)} / ${r6(tb.physPct)}%`);
-    lines.push(`魔法DPS / 割合 = ${r6(tb.magic)} / ${r6(tb.magicPct)}%`);
-    lines.push(`単体DPS / 割合 = ${r6(tb.single)} / ${r6(tb.singlePct)}%`);
-    lines.push(`複数DPS / 割合 = ${r6(tb.multi)} / ${r6(tb.multiPct)}%`);
-    lines.push(`物理クリ寄与DPS / 割合 = ${r6(ex.physCritGainDPS)} / ${r6(ex.physCritGainPct)}%`);
-    lines.push(`魔法クリ寄与DPS / 割合 = ${r6(ex.magicCritGainDPS)} / ${r6(ex.magicCritGainPct)}%`);
-    lines.push(`合計クリ寄与DPS / 割合 = ${r6(ex.totalCritGainDPS)} / ${r6(ex.totalCritGainPct)}%`);
 
     if (br) {
       lines.push("");
       lines.push("■ 40F境界の厳密レンジ");
-      lines.push(`minTick = floor(究極F / 40) = ${br.minTick}`);
-      lines.push(`maxTick = ceil(究極F / 40) = ${br.maxTick}`);
-      lines.push(`1tickあたり増える${gaugeLabel}: ${r6(br.perTick)}`);
+      lines.push("minTick = floor(究極F / 40)");
+      lines.push(`  = floor(${r6(v.ultF)} / 40) = ${br.minTick}`);
+      lines.push("maxTick = ceil(究極F / 40)");
+      lines.push(`  = ceil(${r6(v.ultF)} / 40) = ${br.maxTick}`);
       lines.push(`DPSレンジ = ${r6(br.lo)} ～ ${r6(br.hi)}`);
     }
 
-    lines.push("");
-    lines.push("■ 検算");
-    lines.push(`内訳合計DPS = ${r6(ex.basicDPS)} + ${r6(ex.aDPS)} + ${r6(ex.bDPS)} + ${r6(ex.ultDPS)} = ${r6(ex.checkTotalDPS)}`);
-    lines.push(`表示DPS（周期合成） = ${r6(res.dps)}`);
     return lines.join("\n");
   }
 
@@ -1167,20 +1364,12 @@ function buildDetailHtml(v, res, ex, tb, br) {
     html += lineHtml(`スキルB/秒: ${hVal("valB", r6(ex.bPerSec))}`);
     html += lineHtml(`究極/秒: ${hVal("valUlt", r6(ex.ultPerSec))}`);
 
-    const eff = calcEffectTimes(v, ex);
-    html += lineHtml("");
-    html += lineHtml(`<span class="sectionHead">=== 影響時間（平均・ダメージとは別計算） ===</span>`);
-    html += lineHtml(`スキルA: 影響F/秒=${hVal("valA", r6(eff.a.rawFPerSec))} / 秒換算=${hVal("valA", r6(eff.a.rawSecPerSec))} / 参考影響率=${hVal("valA", r6(eff.a.refPct))}%`);
-    html += lineHtml(`スキルB: 影響F/秒=${hVal("valB", r6(eff.b.rawFPerSec))} / 秒換算=${hVal("valB", r6(eff.b.rawSecPerSec))} / 参考影響率=${hVal("valB", r6(eff.b.refPct))}%`);
-    html += lineHtml(`究極: 影響F/秒=${hVal("valUlt", r6(eff.u.rawFPerSec))} / 秒換算=${hVal("valUlt", r6(eff.u.rawSecPerSec))} / 参考影響率=${hVal("valUlt", r6(eff.u.refPct))}%`);
-    html += lineHtml(`参考合計: 影響F/秒=${hVal("valMix", r6(eff.totalRawFPerSec))} / 秒換算=${hVal("valMix", r6(eff.totalRawSecPerSec))} / 参考影響率=${hVal("valMix", r6(eff.totalRefPct))}%`);
-
     html += lineHtml("");
     html += lineHtml(`<span class="sectionHead">=== 環境（物理補正） ===</span>`);
     html += lineHtml(`難易度: ${hVal("valEnv", diffLabel)}（80w防御力は難易度に応じて内部適用）`);
     html += lineHtml(`防御力減少値: ${hVal("valEnv", v.defReduce)} / 実防御力=${hVal("valEnv", realDef)}`);
     html += lineHtml(`物理補正倍率（小数第2位まで）: ${hVal("valMixEnvPhys", $("physMulOut").value)}`);
-    html += lineHtml(`クリ率: ${hVal("valCrit", $("critChancePct").value)} / 物理クリ補正: ${hVal("valCrit", $("critPhysBonusPct").value)} / 魔法クリ寄与補正: ${hVal("valCrit", $("critMagicBonusPct").value)}`);
+    html += lineHtml(`クリ率: ${hVal("valCrit", $("critChancePct").value)} / 物理クリ補正: ${hVal("valCrit", $("critPhysBonusPct").value)} / 魔法クリ補正: ${hVal("valCrit", $("critMagicBonusPct").value)}`);
     html += lineHtml(`期待クリ倍率（物理/魔法）: ${hVal("valCrit", r6(v.critPhysMul))} / ${hVal("valCrit", r6(v.critMagicMul))}`);
 
     html += lineHtml("");
@@ -1209,8 +1398,21 @@ function buildDetailHtml(v, res, ex, tb, br) {
     if (br) {
       html += lineHtml("");
       html += lineHtml(`<span class="sectionHead">=== 境界(40F)による厳密レンジ（開始位相で±1tickの差） ===</span>`);
-      html += lineHtml(`究極中のtick数: ${hVal("valUlt", br.minTick)}〜${hVal("valUlt", br.maxTick)} （1tickあたり+${hVal("valGauge", br.perTick)} ${v.ultType === "mana" ? "マナ" : "クールタイム"}）`);
+      html += lineHtml(`究極中のtick数: ${hVal("valUlt", br.minTick)}〜${hVal("valUlt", br.maxTick)} （1tickあたり+${hVal("valGauge", br.perTick)} ${v.ultType === "mana" ? "マナ" : "秒"}）`);
       html += lineHtml(`DPSレンジ: ${hVal("valMix", r6(br.lo))} 〜 ${hVal("valMix", r6(br.hi))}`);
+    }
+
+    if ((v.ext?.rows || []).length) {
+      html += lineHtml("");
+      html += lineHtml(`<span class="sectionHead">=== 外部支援（平均反映） ===</span>`);
+      for (const row of v.ext.rows) {
+        if (row.mode === "coverage") html += lineHtml(`支援${row.idx} ${supportTypeLabel(row.type)}: 実効被覆率=${hVal("valMix", r6(row.effectiveCoverage * 100))}% / 効果量=${hVal("valMix", row.type === "procMul" ? r6(row.amountNum) + "倍" : r6(row.amountNum * 100) + "%")}`);
+        else {
+          const extra = row.type === "manaPct" ? `追加マナ/秒=${r6(row.addManaPerSec)}` : `追加CT短縮秒/秒=${r6(row.addCoolPerSec)}`;
+          html += lineHtml(`支援${row.idx} ${supportTypeLabel(row.type)}: 合計発動回数/秒=${hVal("valMix", r6(row.totalRate))} / ${hVal("valMix", extra)}`);
+        }
+      }
+      html += lineHtml(`平均物理増加=${hVal("valMix", r6(v.ext.physPct * 100))}% / 平均魔法増加=${hVal("valMix", r6(v.ext.magicPct * 100))}% / 平均基本攻撃増加=${hVal("valMix", r6(v.ext.basicPct * 100))}% / 平均最終ダメ増加=${hVal("valMix", r6(v.ext.finalPct * 100))}%`);
     }
 
     html += lineHtml("");
@@ -1225,7 +1427,7 @@ function buildDetailHtml(v, res, ex, tb, br) {
     const items = [
       ["valAtk", "攻撃力"],
       ["valSpd", "攻撃速度 / 基本攻撃系"],
-      ["valGauge", "マナ・クールタイム・ゲージ系"],
+      ["valGauge", "マナ・CT・ゲージ系"],
       ["valA", "スキルA系"],
       ["valB", "スキルB系"],
       ["valUlt", "究極系"],
@@ -1280,10 +1482,6 @@ function render() {
       setBar("barMulti","valMulti",0);
       setBar("barCorrPhys","valCorrPhys",0);
       setBar("barCritMagic","valCritMagic",0);
-      if ($("effectA")) $("effectA").textContent = "-";
-      if ($("effectB")) $("effectB").textContent = "-";
-      if ($("effectU")) $("effectU").textContent = "-";
-      if ($("effectTotal")) $("effectTotal").textContent = "-";
       save(true);
       return;
     }
@@ -1304,7 +1502,6 @@ function render() {
 
 
     const ex = calcRatesAndShares(v, res);
-    const eff = calcEffectTimes(v, ex);
     $("dpsOut").textContent = `${r6(res.dps)}`;
 
     setBar("barBasic","valBasic", ex.basicPct);
@@ -1340,10 +1537,6 @@ function render() {
     setBar("barMulti","valMulti", tb.multiPct);
     setBar("barCorrPhys","valCorrPhys", ex.physCritGainPct);
     setBar("barCritMagic","valCritMagic", ex.magicCritGainPct);
-    if ($("effectA")) $("effectA").textContent = `${r6(eff.a.ratePerSec)} 回/秒 × ${v.aImpactF}F = ${r6(eff.a.rawFPerSec)}F/秒（${r6(eff.a.rawSecPerSec)} 秒/秒, 参考 ${r6(eff.a.refPct)}%）`;
-    if ($("effectB")) $("effectB").textContent = `${r6(eff.b.ratePerSec)} 回/秒 × ${v.bImpactF}F = ${r6(eff.b.rawFPerSec)}F/秒（${r6(eff.b.rawSecPerSec)} 秒/秒, 参考 ${r6(eff.b.refPct)}%）`;
-    if ($("effectU")) $("effectU").textContent = `${r6(eff.u.ratePerSec)} 回/秒 × ${v.ultImpactF}F = ${r6(eff.u.rawFPerSec)}F/秒（${r6(eff.u.rawSecPerSec)} 秒/秒, 参考 ${r6(eff.u.refPct)}%）`;
-    if ($("effectTotal")) $("effectTotal").textContent = `${r6(eff.totalRawFPerSec)}F/秒（${r6(eff.totalRawSecPerSec)} 秒/秒, 参考 ${r6(eff.totalRefPct)}%）`;
     lines.push("\n=== 属性内訳（物理/魔法） ===");
     lines.push(`物理DPS: ${r6(tb.phys)} / 物理割合(%): ${r6(tb.physPct)}`);
     lines.push(`魔法DPS: ${r6(tb.magic)} / 魔法割合(%): ${r6(tb.magicPct)}`);
@@ -1355,7 +1548,7 @@ function render() {
     const br = calcBoundaryRange(v, res);
     if (br) {
       lines.push("\n=== 境界(40F)による厳密レンジ（開始位相で±1tickの差） ===");
-      lines.push(`究極中のtick数: ${br.minTick}〜${br.maxTick} （1tickあたり+${br.perTick} ${v.ultType === "mana" ? "マナ" : "クールタイム"}）`);
+      lines.push(`究極中のtick数: ${br.minTick}〜${br.maxTick} （1tickあたり+${br.perTick} ${v.ultType === "mana" ? "マナ" : "秒"}）`);
       lines.push(`DPSレンジ: ${r6(br.lo)} 〜 ${r6(br.hi)}`);
     }
 
@@ -1394,10 +1587,6 @@ function render() {
       setBar("barMulti","valMulti",0);
       setBar("barCorrPhys","valCorrPhys",0);
       setBar("barCritMagic","valCritMagic",0);
-      if ($("effectA")) $("effectA").textContent = "-";
-      if ($("effectB")) $("effectB").textContent = "-";
-      if ($("effectU")) $("effectU").textContent = "-";
-      if ($("effectTotal")) $("effectTotal").textContent = "-";
       save(true);
       return;
     }
@@ -1445,7 +1634,6 @@ function render() {
       syncSkillBMode();
       syncSegmentsFromHidden();
       syncEnvDerivedUI();
-      syncNoteVisibility();
       validateAndRender();
       if (!silent) alert("読み込みました");
       return true;
@@ -1463,7 +1651,6 @@ function render() {
     syncSkillBMode();
     syncSegmentsFromHidden();
     syncEnvDerivedUI();
-    syncNoteVisibility();
     validateAndRender();
   }
 
@@ -1483,27 +1670,29 @@ function render() {
     $("ultReset").value = "end";
     $("ultMulPct").value = "1500%";
     $("ultF").value = "44";
-    $("ultImpactF").value = "0";
     $("ultStopsGauge").checked = true;
 
     $("aMulPct").value = "600%";
     $("aPPct").value = "10.0%";
     $("aF").value = "32";
-    $("aImpactF").value = "0";
 
     $("bType").value = "none";
     $("bMulPct").value = "1500%";
     $("bThird").value = "0.0%";
     $("bF").value = "40";
-    $("bImpactF").value = "0";
-    $("showNotes").checked = false;
+    for (let i = 1; i <= 6; i++) {
+      $("ext" + i + "Enabled").checked = false;
+      $("ext" + i + "Type").value = "none";
+      $("ext" + i + "Amount").value = "";
+      $("ext" + i + "Base").value = "";
+      $("ext" + i + "Count").value = "1";
+    }
   }
 
   syncUltType();
   syncSkillBMode();
   seedDefaults();
   normalizeAll();
-  syncNoteVisibility();
   initBindings();
   setupSegments();
   setupAccordions();
