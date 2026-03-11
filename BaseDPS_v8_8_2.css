@@ -1,0 +1,404 @@
+:root{
+  --bg:#0b0f14; --card:#121a23; --txt:#e8f0ff; --mut:#9fb3c8; --line:#223244; --mut2:#6f859e;
+}
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+  background:var(--bg);
+  color:var(--txt);
+}
+.wrap{ max-width:980px; margin:0 auto; padding:18px; }
+h1{ font-size:20px; margin:0 0 10px; }
+.note{ color:var(--mut); font-size:12px; line-height:1.5; }
+.topBar{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; flex-wrap:wrap; }
+.topBar h1{ margin:0; }
+.notesToggle{ display:inline-flex; align-items:center; gap:8px; color:var(--mut); font-size:12px; user-select:none; }
+.notesToggle input{ transform:scale(1.05); }
+.annotationHidden{ display:none !important; }
+
+.grid{ display:grid; grid-template-columns: 1fr; gap:12px; }
+@media(min-width:860px){ .grid{ grid-template-columns: 1fr 1fr; } }
+
+.card{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; }
+.card h2{ font-size:13px; margin:0; color:#cfe3ff; }
+
+/* 見出し行（入力：＊＊ + トグル2種を1行に収める） */
+.headRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin:0 0 8px;
+  flex-wrap:nowrap;
+}
+.headRow h2{
+  margin:0;
+  font-size:13px;
+  white-space:nowrap;
+  flex:0 0 auto;
+}
+.headToggles{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:6px;
+  flex:1 1 auto;
+  min-width:0;
+}
+.seg{
+  display:inline-flex;
+  border:1px solid var(--line);
+  border-radius:999px;
+  overflow:hidden;
+  background:#0e141c;
+  flex:0 0 auto;
+}
+.seg button{
+  border:0;
+  background:transparent;
+  color:var(--mut);
+  font-size:11px;
+  padding:6px 8px;
+  line-height:1;
+  cursor:pointer;
+}
+.seg button.active{
+  background:#1e3a5a;
+  color:var(--txt);
+}
+
+/* 2行グリッド（1行目ラベル、2行目入力） */
+.tworow{ display:grid; gap:8px 10px; align-items:end; }
+.tworow.cols4{ grid-template-columns: repeat(4, minmax(0,1fr)); grid-template-rows:auto auto; }
+.tworow.cols3{ grid-template-columns: repeat(3, minmax(0,1fr)); grid-template-rows:auto auto; }
+.tworow.cols5{ grid-template-columns: repeat(5, minmax(0,1fr)); grid-template-rows:auto auto; }
+.tworow.cols4 > .lbl{ grid-row:1; }
+.tworow.cols4 > .inp{ grid-row:2; }
+.tworow.cols3 > .lbl{ grid-row:1; }
+.tworow.cols3 > .inp{ grid-row:2; }
+.tworow.cols5 > .lbl{ grid-row:1; }
+.tworow.cols5 > .inp{ grid-row:2; }
+
+.lbl{ font-size:12px; color:var(--mut); padding-left:2px; white-space:nowrap; }
+.inp input, .inp select{
+  width:100%;
+  padding:10px 10px;
+  border-radius:10px;
+  border:1px solid var(--line);
+  background:#0e141c;
+  color:var(--txt);
+  font-size:14px;
+  box-sizing:border-box;
+  height:40px;
+}
+
+.chk{ display:flex; align-items:center; gap:8px; color:var(--mut); font-size:12px; margin-top:10px; }
+.chk input{ transform: scale(1.1); }
+
+.disabledGroup input{ color:var(--mut2); opacity:0.9; }
+.disabledGroup input:disabled{ background:#0c1016; }
+
+.btns{ display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+button{ padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:#152131; color:var(--txt); cursor:pointer; }
+button:hover{ filter:brightness(1.07); }
+
+.out{ font-size:28px; font-weight:700; letter-spacing:0.2px; }
+.subout{ color:var(--mut); font-size:12px; margin-top:6px; }
+.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px; color:#cfe3ff; white-space:pre-wrap; }
+.hr{ height:1px; background:var(--line); margin:12px 0; }
+
+.hint{ color:var(--mut2); font-size:11px; margin-top:8px; line-height:1.4; }
+
+/* 横棒UI */
+.bars{ display:grid; gap:10px; margin-top:10px; }
+.barRow{ display:grid; grid-template-columns: 90px 1fr 110px; gap:10px; align-items:center; }
+.barLabel{ color:var(--mut); font-size:12px; }
+.barTrack{ height:14px; border:1px solid var(--line); border-radius:999px; background:#0e141c; overflow:hidden; position:relative; }
+.barFill{ height:100%; width:0%; background:#1e3a5a; border-radius:999px; transition: width 120ms ease-out; }
+.barValue{ text-align:right; font-size:12px; color:#cfe3ff; font-variant-numeric: tabular-nums; }
+
+/* エラー強調 */
+.errField{ border-color:#ff4d4d !important; background:#2a0f14 !important; }
+.dimLbl{ color: var(--mut2) !important; }
+.errLbl{ color:#ff8a8a !important; }
+
+
+/* 40F境界ズレ表示（結果欄） */
+.rangeBox{
+  margin-top:10px;
+  padding:10px;
+  border:1px dashed var(--line);
+  border-radius:12px;
+  background:#0e141c;
+}
+.rangeTitle{
+  font-size:12px;
+  color:var(--mut);
+  margin-bottom:6px;
+}
+.rangeText{
+  font-size:14px;
+  font-variant-numeric: tabular-nums;
+  color:#cfe3ff;
+}
+.rangeHint{
+  margin-top:6px;
+  font-size:11px;
+  color:var(--mut2);
+  line-height:1.35;
+}
+
+/* 算出式セクション */
+.formulaTitle{
+  font-size:12px;
+  color:var(--mut);
+  margin:2px 0 8px;
+}
+
+
+/* 横棒：見やすい明色（なるべく全部違う色） */
+#barBasic{ background:#4FB6FF; }   /* sky */
+#barA{ background:#66FF7A; }       /* green */
+#barB{ background:#FFD84F; }       /* yellow */
+#barU{ background:#FF4FD8; }       /* pink */
+#barPhys{ background:#FF8A4F; }    /* orange */
+#barMagic{ background:#A84FFF; }   /* purple */
+#barSingle{ background:#4FFFF0; }  /* cyan */
+#barMulti{ background:#FF4F6E; }   /* red */
+
+.barDivider{
+  height:1px;
+  background:var(--line);
+  opacity:.7;
+  margin:8px 0;
+}
+.barGroupTitle{
+  font-size:12px;
+  color:var(--mut);
+  margin:2px 0 6px;
+}
+
+
+/* アコーディオン（入力カード） */
+.accordionCard .accHeader{
+  cursor:pointer;
+  user-select:none;
+}
+.accordionCard .accIcon{
+  display:inline-block;
+  margin-right:6px;
+  transform:rotate(0deg);
+  transition:transform 120ms ease-out;
+}
+.accordionCard.open .accIcon{
+  transform:rotate(180deg); /* ▼を回転させて▲に見せる */
+}
+.accordionCard .cardBody{
+  display:block;
+}
+.accordionCard:not(.open) .cardBody{
+  display:none;
+}
+
+/* ヘッダー行でトグルが折り返さないように、さらに詰める */
+.headRow{ gap:6px; }
+.headToggles{ gap:4px; }
+.seg button{ padding:6px 7px; font-size:11px; }
+
+
+/* 入力：環境（難易度セレクトを細めに + 防御値表示） */
+.envDiffWrap{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.envDiffSelect{
+  font-size:12px;
+  padding:7px 8px;
+  border-radius:10px;
+  border:1px solid var(--line);
+  background:#0e141c;
+  color:var(--txt);
+  width:112px; /* iPhone SEでも1行に収まりやすい */
+}
+#physMulOut{
+  opacity:.92;
+}
+
+
+/* 行動レート〜検算 / 算出式 の強調表示 */
+.monoHtml{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size:12px;
+  color:#cfe3ff;
+  white-space:pre-wrap;
+  line-height:1.45;
+}
+.hlVal{
+  display:inline-block;
+  padding:0 4px;
+  margin:0 1px;
+  border-radius:4px;
+  font-weight:700;
+  box-decoration-break:clone;
+  -webkit-box-decoration-break:clone;
+}
+.valAtk{ color:#fff5cc; background:rgba(255,209,102,.25); border:1px solid rgba(255,209,102,.45); }
+.valSpd{ color:#d9fbff; background:rgba(103,232,249,.22); border:1px solid rgba(103,232,249,.42); }
+.valGauge{ color:#f0e7ff; background:rgba(196,181,253,.22); border:1px solid rgba(196,181,253,.42); }
+.valA{ color:#e9ffe9; background:rgba(134,239,172,.22); border:1px solid rgba(134,239,172,.42); }
+.valB{ color:#fff0f0; background:rgba(252,165,165,.22); border:1px solid rgba(252,165,165,.42); }
+.valUlt{ color:#fff0fa; background:rgba(249,168,212,.22); border:1px solid rgba(249,168,212,.42); }
+.valEnv{ color:#fff4e8; background:rgba(253,186,116,.22); border:1px solid rgba(253,186,116,.42); }
+.valMix{ color:#eef6ff; background:rgba(160,196,255,.22); border:1px solid rgba(160,196,255,.44); }
+.valMixAB{ color:#f6fff6; background:rgba(190,229,170,.22); border:1px solid rgba(190,229,170,.44); }
+.valMixEnvPhys{ color:#fff7ea; background:rgba(255,190,120,.28); border:1px solid rgba(255,190,120,.50); }
+.sectionHead{ font-weight:700; color:#e5f0ff; }
+
+.valCrit{ color:#fef9c3; background:rgba(250, 204, 21, .22); border:1px solid rgba(250, 204, 21, .42); }
+
+
+#barCorrPhys{ background:#f59e0b; }  /* physical crit gain */
+#barCritMagic{ background:#84cc16; } /* magic crit gain */
+
+
+.legendBox{
+  margin-top:8px;
+  padding:8px 10px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;
+  background:rgba(255,255,255,.03);
+}
+.legendTitle{
+  font-size:12px;
+  color:var(--mut);
+  margin:0 0 6px;
+}
+.legendItems{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px 8px;
+}
+.legendItem{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:11px;
+  color:#d8e7ff;
+}
+.legendSwatch{
+  min-width:fit-content;
+}
+
+
+#calcOrderGuide{
+  margin-top:14px;
+}
+#calcOrderGuide h2{
+  margin:0 0 10px;
+}
+.guideBox{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.guideStep{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  padding:10px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  background:rgba(255,255,255,.03);
+}
+.guideNum{
+  flex:0 0 24px;
+  height:24px;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:700;
+  color:#fff;
+  background:rgba(255,255,255,.16);
+}
+.guideText{
+  flex:1 1 auto;
+  min-width:0;
+}
+.guideTitle{
+  font-size:13px;
+  font-weight:700;
+  color:#e8f1ff;
+  margin-bottom:4px;
+}
+.guideBody{
+  font-size:12px;
+  line-height:1.5;
+  color:#cfe3ff;
+}
+.guideNote{
+  padding:10px;
+  border-radius:12px;
+  background:rgba(255,255,255,.04);
+  border:1px dashed rgba(255,255,255,.10);
+  font-size:12px;
+  line-height:1.5;
+  color:#d7e6ff;
+}
+
+
+.effectBox{
+  margin-top:10px;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#0e141c;
+}
+.effectRow{
+  display:grid;
+  grid-template-columns:88px 1fr;
+  gap:10px;
+  align-items:start;
+  margin-top:8px;
+}
+.effectRow:first-of-type{ margin-top:0; }
+.effectRow.total{ padding-top:8px; border-top:1px dashed var(--line); margin-top:10px; }
+.effectLabel{ font-size:12px; color:var(--mut); }
+.effectValue{ font-size:12px; color:#cfe3ff; line-height:1.45; font-variant-numeric: tabular-nums; }
+@media(max-width:720px){
+  .effectRow{ grid-template-columns:72px 1fr; gap:8px; }
+}
+
+.tworow.cols1{ grid-template-columns: minmax(0,1fr); grid-template-rows:auto auto; }
+.tworow.cols1 > .lbl{ grid-row:1; }
+.tworow.cols1 > .inp{ grid-row:2; }
+
+.effectMeta{
+  margin:0 0 8px;
+  color:var(--mut);
+  font-size:12px;
+}
+.effectRow{
+  display:grid;
+  grid-template-columns: 76px 1fr;
+  gap:10px;
+  align-items:start;
+  margin:8px 0;
+}
+.effectLabel{
+  color:var(--mut);
+  font-size:12px;
+  padding-top:2px;
+}
+.effectValue{
+  color:#cfe3ff;
+  font-size:12px;
+  line-height:1.45;
+}
+.effectRow.total{
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px dashed var(--line);
+}
