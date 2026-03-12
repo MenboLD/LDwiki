@@ -1,7 +1,8 @@
 (() => {
-  const APP_VERSION = "v8_8_19";
+  const APP_VERSION = "v8_9_1";
   const F = 40;
-  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
+  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_1", "LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
+  const MANUAL_SLOT_KEYS = ["LD_DPS_TOOL_SLOT1", "LD_DPS_TOOL_SLOT2", "LD_DPS_TOOL_SLOT3"];
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
   const SUPABASE_URL = String(window.LD_SUPABASE_URL || "").trim();
@@ -509,7 +510,7 @@
     display.value = String(input.value || "").replace(/%/g, "");
     overlay.hidden = false;
     document.body.classList.add("calcOpen");
-    setTimeout(() => { try { display.focus(); display.select(); } catch (_) {} }, 0);
+    setTimeout(() => { try { display.blur(); } catch (_) {} }, 0);
   }
 
   function closeCalc() {
@@ -546,6 +547,7 @@
         }
       });
     });
+    if ($("calcDisplay")) { $("calcDisplay").setAttribute("readonly", "readonly"); $("calcDisplay").setAttribute("inputmode", "none"); }
     $("calcBackdrop")?.addEventListener("click", closeCalc);
     $("calcCloseBtn")?.addEventListener("click", closeCalc);
     $("calcDisplay")?.addEventListener("keydown", (e) => {
@@ -574,6 +576,108 @@
         requestAnimationFrame(() => { try { display.setSelectionRange(pos, pos); display.focus(); } catch (_) {} });
       }
     });
+  }
+
+
+  let _openSheetKey = null;
+
+  function setupBottomSheets() {
+    const map = { env: "envCard", basic: "basicCard", a: "aCard", b: "bCard", ult: "ultCard", ext: "extCard" };
+    Object.entries(map).forEach(([key, id]) => {
+      const card = $(id);
+      if (!card) return;
+      card.dataset.sheet = key;
+      card.classList.add("inputSheet");
+      const head = card.querySelector('.headRow');
+      if (head && !head.querySelector('[data-close-sheet]')) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'sheetClose';
+        btn.setAttribute('data-close-sheet', '');
+        btn.textContent = '×';
+        head.appendChild(btn);
+      }
+      const body = card.querySelector('.cardBody');
+      if (body) body.style.display = 'block';
+    });
+    document.querySelectorAll('[data-open-sheet]').forEach((btn) => {
+      btn.addEventListener('click', () => openSheet(btn.dataset.openSheet || ''));
+    });
+    document.querySelectorAll('[data-close-sheet]').forEach((btn) => {
+      btn.addEventListener('click', closeSheet);
+    });
+    $("sheetBackdrop")?.addEventListener("click", closeSheet);
+  }
+
+  function openSheet(key) {
+    if (!key) return;
+    _openSheetKey = key;
+    document.body.classList.add('bodySheetOpen');
+    if ($("sheetOverlay")) $("sheetOverlay").hidden = false;
+    document.querySelectorAll('.inputSheet[data-sheet]').forEach((sheet) => {
+      sheet.classList.toggle('openSheet', sheet.dataset.sheet === key);
+    });
+    updateOpenSheetButtons();
+  }
+
+  function closeSheet() {
+    _openSheetKey = null;
+    document.body.classList.remove('bodySheetOpen');
+    if ($("sheetOverlay")) $("sheetOverlay").hidden = true;
+    document.querySelectorAll('.inputSheet[data-sheet]').forEach((sheet) => sheet.classList.remove('openSheet'));
+    updateOpenSheetButtons();
+  }
+
+  function updateOpenSheetButtons() {
+    document.querySelectorAll('.bottomMenuBtn[data-open-sheet], .summaryCard[data-open-sheet]').forEach((btn) => {
+      btn.classList.toggle('active', !!_openSheetKey && btn.dataset.openSheet === _openSheetKey);
+    });
+  }
+
+  function saveSlot(idx) {
+    try {
+      const key = MANUAL_SLOT_KEYS[idx - 1];
+      if (!key) return false;
+      localStorage.setItem(key, JSON.stringify(readFormState()));
+      alert(`セーブ${idx}に保存しました`);
+      return true;
+    } catch (_) {
+      alert(`セーブ${idx}に保存できませんでした`);
+      return false;
+    }
+  }
+
+  function loadSlot(idx) {
+    try {
+      const key = MANUAL_SLOT_KEYS[idx - 1];
+      if (!key) return false;
+      const raw = localStorage.getItem(key);
+      if (!raw) { alert(`セーブ${idx}は空です`); return false; }
+      applyFormState(JSON.parse(raw));
+      normalizeAll();
+      syncUiState();
+      validateAndRender();
+      alert(`ロード${idx}を読み込みました`);
+      return true;
+    } catch (_) {
+      alert(`ロード${idx}の読み込みに失敗しました`);
+      return false;
+    }
+  }
+
+  function updateSummaryCards() {
+    const gaugeLabel = ($("ultType")?.value === "cool") ? "CT" : "マナ";
+    const envDiffText = $("envDiff")?.selectedOptions?.[0]?.textContent || "-";
+    const extUsed = Array.from({length:6}, (_,i)=> i+1).filter((i)=> $("ext"+i+"Enabled")?.checked).length;
+    const ultEventText = $("ultEventType")?.selectedOptions?.[0]?.textContent || "無し";
+    if ($("summaryEnv")) $("summaryEnv").textContent = `難易度:${envDiffText} / 防御減少:${$("defReduce")?.value || "-"} / Rege:${$("manaRegenPct")?.value || "-"}`;
+    if ($("summaryBasic")) $("summaryBasic").textContent = `攻撃力:${$("atk")?.value || "-"} / 攻速:${$("aspd")?.value || "-"} / ${gaugeLabel}:${$("gaugeMax")?.value || "-"} / 同ユニット:${$("sameUnitCount")?.value || "-"}`;
+    if ($("summaryA")) $("summaryA").textContent = `倍率:${$("aMulPct")?.value || "-"} / 確率:${$("aPPct")?.value || "-"} / F:${$("aF")?.value || "-"} / 影響F:${$("aImpactF")?.value || "0"}` + ($("aUseGainMana5")?.checked ? " / 猫ON" : "");
+    const bTypeText = $("bType")?.selectedOptions?.[0]?.textContent || "-";
+    const bThirdLabel = ($("bType")?.value === "count") ? "規定" : "確率";
+    if ($("summaryB")) $("summaryB").textContent = `タイプ:${bTypeText} / 倍率:${$("bMulPct")?.value || "-"} / ${bThirdLabel}:${$("bThird")?.value || "-"} / F:${$("bF")?.value || "-"} / 影響F:${$("bImpactF")?.value || "0"}`;
+    if ($("summaryUlt")) $("summaryUlt").textContent = `タイプ:${$("ultType")?.selectedOptions?.[0]?.textContent || "-"} / 倍率:${$("ultMulPct")?.value || "-"} / ${gaugeLabel}:${$("gaugeMax")?.value || "-"} / F:${$("ultF")?.value || "-"} / 影響F:${$("ultImpactF")?.value || "0"} / イベント:${ultEventText}`;
+    if ($("summaryExt")) $("summaryExt").textContent = extUsed > 0 ? `${extUsed}枠使用中` : "未使用";
   }
 
   function initBindings() {
@@ -667,11 +771,14 @@
     $("detailOut").addEventListener("click", onCopyBtnClick);
     if ($("effectBox")) $("effectBox").addEventListener("click", onCopyBtnClick);
 
-    $("calcBtn").addEventListener("click", () => { normalizeAll(); validateAndRender(); });
-    $("saveBtn").addEventListener("click", save);
-    $("loadBtn").addEventListener("click", load);
-    $("resetBtn").addEventListener("click", resetAll);
-    $("showNotes").addEventListener("change", () => { syncNoteVisibility(); save(true); });
+    $("slotSave1")?.addEventListener("click", () => saveSlot(1));
+    $("slotLoad1")?.addEventListener("click", () => loadSlot(1));
+    $("slotSave2")?.addEventListener("click", () => saveSlot(2));
+    $("slotLoad2")?.addEventListener("click", () => loadSlot(2));
+    $("slotSave3")?.addEventListener("click", () => saveSlot(3));
+    $("slotLoad3")?.addEventListener("click", () => loadSlot(3));
+    $("resetBtn")?.addEventListener("click", resetAll);
+    $("showNotes").addEventListener("change", () => { syncNoteVisibility(); updateSummaryCards(); save(true); });
   }
 
   // ---------- 物理/魔法・単体/複数 トグル（seg） ----------
@@ -716,11 +823,14 @@
       const body = document.getElementById(`accBody_${key}`);
       if (!card || !body) return;
 
-      // 初期状態：openクラスがあれば開く
+      if (card.classList.contains("inputSheet")) {
+        body.style.display = "block";
+        return;
+      }
+
       body.style.display = card.classList.contains("open") ? "block" : "none";
 
       h.addEventListener("click", (e) => {
-        // トグル操作中はアコーディオンを開閉しない
         if (e.target && e.target.closest && e.target.closest(".seg")) return;
 
         card.classList.toggle("open");
@@ -1726,6 +1836,7 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     syncSegmentsFromHidden();
     syncEnvDerivedUI();
     syncNoteVisibility();
+    updateSummaryCards();
   }
 
   function clearResultBars() {
@@ -1982,6 +2093,7 @@ function render() {
   initBindings();
   setupCalculator();
   setupSegments();
+  setupBottomSheets();
   setupAccordions();
   if (!load(true)) {
     validateAndRender();

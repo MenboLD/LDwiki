@@ -21,7 +21,18 @@
   <div class="note annotation">
     ・1秒=40フレーム。マナ/クールタイムは <b>40Fのグローバル境界</b>で加算。<br>
     ・出力の小数は <b>小数第6位まで</b>（=第7位四捨五入）。内部計算の丸め規則は変更していません。<br>
-    ・影響時間は <b>ダメージとは別</b> に集計します。スキルA / スキルB / 究極ごとの平均影響時間と、同ユニット複数体時の参考稼働率を表示します。<br>・スキルA / スキルB / 究極の「倍率」はタップで電卓入力できます。
+    ・影響時間は <b>ダメージとは別</b> に集計します。スキルA / スキルB / 究極ごとの平均影響時間と、同ユニット複数体時の参考稼働率を表示します。<br>・数値入力は、セレクト/チェックボックス/派生表示を除き、タップで電卓入力できます。
+  </div>
+
+
+
+  <div class="summaryDeck" id="summaryDeck">
+    <button type="button" class="summaryCard" data-open-sheet="env"><span class="summaryTitle">環境</span><span class="summaryText" id="summaryEnv">-</span></button>
+    <button type="button" class="summaryCard" data-open-sheet="basic"><span class="summaryTitle">基本</span><span class="summaryText" id="summaryBasic">-</span></button>
+    <button type="button" class="summaryCard" data-open-sheet="a"><span class="summaryTitle">スキルA</span><span class="summaryText" id="summaryA">-</span></button>
+    <button type="button" class="summaryCard" data-open-sheet="b"><span class="summaryTitle">スキルB</span><span class="summaryText" id="summaryB">-</span></button>
+    <button type="button" class="summaryCard" data-open-sheet="ult"><span class="summaryTitle">究極</span><span class="summaryText" id="summaryUlt">-</span></button>
+    <button type="button" class="summaryCard" data-open-sheet="ext"><span class="summaryTitle">外部支援</span><span class="summaryText" id="summaryExt">-</span></button>
   </div>
 
   <div class="grid">
@@ -100,7 +111,7 @@
       </div>
     </div>
 
-<div class="card accordionCard open">
+<div class="card accordionCard open" id="basicCard">
       <div class="headRow accHeader" data-acc="basic">
       <h2 class="accTitle"><span class="accIcon" aria-hidden="true">▼</span>入力：基本</h2>
       <div class="headToggles">
@@ -141,7 +152,7 @@
 
     </div>
 
-    <div class="card accordionCard open">
+    <div class="card accordionCard open" id="ultCard">
       <div class="headRow accHeader" data-acc="ult">
       <h2 class="accTitle"><span class="accIcon" aria-hidden="true">▼</span>入力：究極</h2>
       <div class="headToggles">
@@ -221,7 +232,7 @@
 
     </div>
 
-    <div class="card accordionCard open">
+    <div class="card accordionCard open" id="aCard">
       <div class="headRow accHeader" data-acc="a">
       <h2 class="accTitle"><span class="accIcon" aria-hidden="true">▼</span>入力：スキルA</h2>
       <div class="headToggles">
@@ -275,7 +286,7 @@
 
     </div>
 
-    <div class="card accordionCard open">
+    <div class="card accordionCard open" id="bCard">
       <div class="headRow accHeader" data-acc="b">
       <h2 class="accTitle"><span class="accIcon" aria-hidden="true">▼</span>入力：スキルB</h2>
       <div class="headToggles">
@@ -581,13 +592,6 @@
       </div>
 </div>
 
-    <div class="btns">
-      <button id="calcBtn">計算する</button>
-      <button id="saveBtn">入力を保存</button>
-      <button id="loadBtn">保存を読み込み</button>
-      <button id="resetBtn">初期化</button>
-    </div>
-
     <div class="hr"></div>
     <div class="mono monoHtml" id="detailOut"></div>
     <div class="legendBox" id="detailLegend"></div>
@@ -600,16 +604,44 @@
 </div>
 
 
+<div class="sheetOverlay" id="sheetOverlay" hidden><div class="sheetBackdrop" id="sheetBackdrop"></div></div>
+
+<div class="card inputSheet recordSheet" id="recordSheet" data-sheet="record">
+  <div class="headRow">
+    <h2 class="accTitle">記録</h2>
+    <button type="button" class="sheetClose" data-close-sheet>×</button>
+  </div>
+  <div class="cardBody">
+    <div class="recordGrid">
+      <div class="recordRow"><div class="recordLabel">記録1</div><div class="recordBtns"><button type="button" id="slotSave1">セーブ1</button><button type="button" id="slotLoad1">ロード1</button></div></div>
+      <div class="recordRow"><div class="recordLabel">記録2</div><div class="recordBtns"><button type="button" id="slotSave2">セーブ2</button><button type="button" id="slotLoad2">ロード2</button></div></div>
+      <div class="recordRow"><div class="recordLabel">記録3</div><div class="recordBtns"><button type="button" id="slotSave3">セーブ3</button><button type="button" id="slotLoad3">ロード3</button></div></div>
+      <div class="recordRow recordRowLast"><div class="recordLabel">その他</div><div class="recordBtns"><button type="button" id="resetBtn">初期化</button></div></div>
+    </div>
+    <div class="hint annotation">・通常の自動保存とは別に、3つの手動保存スロットを使えます。</div>
+  </div>
+</div>
+
+<nav class="bottomMenu" id="bottomMenu">
+  <button type="button" class="bottomMenuBtn" data-open-sheet="env">環境</button>
+  <button type="button" class="bottomMenuBtn" data-open-sheet="basic">基本</button>
+  <button type="button" class="bottomMenuBtn" data-open-sheet="a">A</button>
+  <button type="button" class="bottomMenuBtn" data-open-sheet="b">B</button>
+  <button type="button" class="bottomMenuBtn" data-open-sheet="ult">究極</button>
+  <button type="button" class="bottomMenuBtn" data-open-sheet="ext">外部支援</button>
+  <button type="button" class="bottomMenuBtn" data-open-sheet="record">記録</button>
+</nav>
+
 <div class="calcOverlay" id="calcOverlay" hidden>
   <div class="calcBackdrop" id="calcBackdrop"></div>
   <div class="calcModal" role="dialog" aria-modal="true" aria-labelledby="calcTitle">
     <div class="calcHead">
-      <div class="calcTitle" id="calcTitle">倍率入力</div>
+      <div class="calcTitle" id="calcTitle">数値入力</div>
       <button type="button" class="calcClose" id="calcCloseBtn" aria-label="閉じる">×</button>
     </div>
     <div class="calcTarget" id="calcTargetLabel">-</div>
-    <input id="calcDisplay" class="calcDisplay" type="text" inputmode="decimal" autocomplete="off" placeholder="数値または式を入力">
-    <div class="calcHint">四則演算に対応。確定で倍率欄へ % 付きで反映します。</div>
+    <input id="calcDisplay" class="calcDisplay" type="text" inputmode="none" autocomplete="off" placeholder="数値または式を入力" readonly>
+    <div class="calcHint">四則演算に対応。確定で対象の入力欄へ反映します。</div>
     <div class="calcKeys" id="calcKeys">
       <button type="button" class="calcKey calcWide" data-calc-action="clear">C</button>
       <button type="button" class="calcKey" data-calc-action="back">BS</button>
