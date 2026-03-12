@@ -183,7 +183,7 @@
           </select>
         </div>
         <div class="inp" style="grid-column:3;">
-          <input id="ultMulPct" class="calcField" data-calc-target="ultMulPct" type="text" inputmode="none" autocomplete="off" placeholder="1500%" readonly>
+          <input id="ultMulPct" class="calcField" data-calc-target="ultMulPct" data-calc-label="究極倍率" type="text" inputmode="none" autocomplete="off" placeholder="1500%" readonly>
         </div>
         <div class="inp" style="grid-column:4;">
           <input id="ultF" type="text" inputmode="numeric" autocomplete="off" placeholder="44">
@@ -247,7 +247,7 @@
         <div class="lbl" style="grid-column:4;">影響F</div>
 
         <div class="inp" style="grid-column:1;">
-          <input id="aMulPct" class="calcField" data-calc-target="aMulPct" type="text" inputmode="none" autocomplete="off" placeholder="600%" readonly>
+          <input id="aMulPct" class="calcField" data-calc-target="aMulPct" data-calc-label="スキルA倍率" type="text" inputmode="none" autocomplete="off" placeholder="600%" readonly>
         </div>
         <div class="inp" style="grid-column:2;">
           <input id="aPPct" type="text" inputmode="decimal" autocomplete="off" placeholder="10.0%">
@@ -261,7 +261,7 @@
       </div>
 
       <div class="chk">
-        <input id="aUseGainMana8" type="checkbox">
+        <input id="aUseGainMana5" type="checkbox">
         <span>猫の魔法使い：スキルA使用時、自身のマナを8得る</span>
       </div>
 
@@ -309,7 +309,7 @@
           </select>
         </div>
         <div class="inp" style="grid-column:2;">
-          <input id="bMulPct" class="calcField" data-calc-target="bMulPct" type="text" inputmode="none" autocomplete="off" placeholder="1500%" readonly>
+          <input id="bMulPct" class="calcField" data-calc-target="bMulPct" data-calc-label="スキルB倍率" type="text" inputmode="none" autocomplete="off" placeholder="1500%" readonly>
         </div>
         <div class="inp" style="grid-column:3;">
           <input id="bThird" type="text" inputmode="decimal" autocomplete="off" placeholder="12.0%">
@@ -598,6 +598,7 @@
 
   </div>
 </div>
+
 
 <div class="calcOverlay" id="calcOverlay" hidden>
   <div class="calcBackdrop" id="calcBackdrop"></div>
