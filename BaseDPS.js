@@ -459,7 +459,7 @@
     $("ultEventType").addEventListener("change", validateAndRender);
     $("bType").addEventListener("change", () => { syncSkillBMode(); validateAndRender(); });
 
-    $("detailOut").addEventListener("click", async (e) => {
+    const onCopyBtnClick = async (e) => {
       const btn = e.target.closest(".copyBtn[data-copy]");
       if (!btn) return;
       const text = decodeURIComponent(btn.dataset.copy || "");
@@ -481,7 +481,9 @@
       } catch (_) {
         alert("コピーに失敗しました");
       }
-    });
+    };
+    $("detailOut").addEventListener("click", onCopyBtnClick);
+    if ($("effectBox")) $("effectBox").addEventListener("click", onCopyBtnClick);
 
     $("calcBtn").addEventListener("click", () => { normalizeAll(); validateAndRender(); });
     $("saveBtn").addEventListener("click", save);
@@ -1175,7 +1177,7 @@ function calcBoundaryRange(v, res) {
     };
   }
 
-  function buildFormulaText(v, res, ex, tb, br) {
+  function buildFormulaText(v, res, ex, eff, tb, br) {
     const d = res.detail;
     const pm = (isFinite(v.physMul) ? v.physMul : 1);
     const baseDef = DIFF_DEF[v.envDiff] ?? 175;
@@ -1404,8 +1406,8 @@ function setBar(fillId, valId, pct) {
     return s.replace(/\n/g, "<br>");
   }
 
-  function buildFormulaHtml(v, res, ex, tb, br) {
-    return highlightFormulaHtml(buildFormulaText(v, res, ex, tb, br), v, ex);
+  function buildFormulaHtml(v, res, ex, eff, tb, br) {
+    return highlightFormulaHtml(buildFormulaText(v, res, ex, eff, tb, br), v, ex);
   }
 
 
@@ -1629,14 +1631,17 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     setBar("barCritMagic","valCritMagic", ex.magicCritGainPct);
 
     if ($("effectMeta")) $("effectMeta").textContent = `同ユニット数: ${eff.unitCount}体`;
-    if ($("effectA")) $("effectA").textContent = `${r6(eff.a.ratePerSec)} 回/秒 / ${eff.a.ratePerSec > 0 ? r6(eff.a.secPerProc) : "-"} 秒/回 / ${v.aImpactF}F → ${r6(eff.a.rawFPerSec)}F/秒（単体 ${r6(eff.a.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.a.multiCoveragePct)}%）`;
-    if ($("effectB")) $("effectB").textContent = `${r6(eff.b.ratePerSec)} 回/秒 / ${eff.b.ratePerSec > 0 ? r6(eff.b.secPerProc) : "-"} 秒/回 / ${v.bImpactF}F → ${r6(eff.b.rawFPerSec)}F/秒（単体 ${r6(eff.b.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.b.multiCoveragePct)}%）`;
-    if ($("effectU")) $("effectU").textContent = `${r6(eff.u.ratePerSec)} 回/秒 / ${eff.u.ratePerSec > 0 ? r6(eff.u.secPerProc) : "-"} 秒/回 / ${v.ultImpactF}F → ${r6(eff.u.rawFPerSec)}F/秒（単体 ${r6(eff.u.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.u.multiCoveragePct)}%）`;
+    const copyACoverMini = `mode=coverage / source=A / 単体被覆率=${r6(eff.a.singleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.a.multiCoveragePct)}%`;
+    const copyBCoverMini = `mode=coverage / source=B / 単体被覆率=${r6(eff.b.singleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.b.multiCoveragePct)}%`;
+    const copyUCoverMini = `mode=coverage / source=究極 / 単体被覆率=${r6(eff.u.singleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.u.multiCoveragePct)}%`;
+    if ($("effectA")) $("effectA").innerHTML = `${r6(eff.a.ratePerSec)} 回/秒 / ${eff.a.ratePerSec > 0 ? r6(eff.a.secPerProc) : "-"} 秒/回 / ${v.aImpactF}F → ${r6(eff.a.rawFPerSec)}F/秒（単体 ${r6(eff.a.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.a.multiCoveragePct)}%）${copyBtn(copyACoverMini, "コピー")}`;
+    if ($("effectB")) $("effectB").innerHTML = `${r6(eff.b.ratePerSec)} 回/秒 / ${eff.b.ratePerSec > 0 ? r6(eff.b.secPerProc) : "-"} 秒/回 / ${v.bImpactF}F → ${r6(eff.b.rawFPerSec)}F/秒（単体 ${r6(eff.b.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.b.multiCoveragePct)}%）${copyBtn(copyBCoverMini, "コピー")}`;
+    if ($("effectU")) $("effectU").innerHTML = `${r6(eff.u.ratePerSec)} 回/秒 / ${eff.u.ratePerSec > 0 ? r6(eff.u.secPerProc) : "-"} 秒/回 / ${v.ultImpactF}F → ${r6(eff.u.rawFPerSec)}F/秒（単体 ${r6(eff.u.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.u.multiCoveragePct)}%）${copyBtn(copyUCoverMini, "コピー")}`;
     if ($("effectTotal")) $("effectTotal").textContent = `${r6(eff.totalRawFPerSec)}F/秒（単体 ${r6(eff.totalSingleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.totalMultiCoveragePct)}%）`;
 
     $("detailOut").innerHTML = buildDetailHtml(v, res, ex, eff, tb, br);
     $("detailLegend").innerHTML = buildLegendHtml();
-    $("formulaOut").innerHTML = buildFormulaHtml(v, res, ex, tb, br);
+    $("formulaOut").innerHTML = buildFormulaHtml(v, res, ex, eff, tb, br);
     $("formulaLegend").innerHTML = buildLegendHtml();
   }
 
