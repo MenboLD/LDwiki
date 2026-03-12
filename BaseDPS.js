@@ -1,6 +1,7 @@
 (() => {
+  const APP_VERSION = "v8_8_8";
   const F = 40;
-  const STORAGE_KEY = "LD_DPS_TOOL_V8_8_7";
+  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
   const SUPABASE_URL = String(window.LD_SUPABASE_URL || "").trim();
@@ -78,6 +79,11 @@
   const r6 = (x) => (isFinite(x) ? Math.round(x * 1e6) / 1e6 : NaN);
   const rateToSecPerUse = (rate) => (rate > 0 ? r6(1 / rate) : null);
   const fmtRatePair = (rate) => `${r6(rate)} 回/秒 / ${rate > 0 ? r6(1 / rate) : "-"} 秒/回`;
+  const RESULT_BAR_IDS = [
+    ["barBasic","valBasic"], ["barA","valA"], ["barB","valB"], ["barU","valU"],
+    ["barPhys","valPhys"], ["barMagic","valMagic"], ["barSingle","valSingle"], ["barMulti","valMulti"],
+    ["barCorrPhys","valCorrPhys"], ["barCritMagic","valCritMagic"],
+  ];
 
   let _rafPending = false;
   function scheduleRender() {
@@ -1537,128 +1543,79 @@ function buildDetailHtml(v, res, ex, tb, br) {
     return html;
   }
 
-function render() {
+  function syncUiState() {
     syncUltType();
     syncSkillBMode();
     syncSegmentsFromHidden();
     syncEnvDerivedUI();
+    syncNoteVisibility();
+  }
 
-    const v = getValInternal();
+  function clearResultBars() {
+    RESULT_BAR_IDS.forEach(([fillId, valId]) => setBar(fillId, valId, 0));
+  }
+
+  function clearEffectOutputs() {
+    if ($("effectMeta")) $("effectMeta").textContent = "同ユニット数: -";
+    if ($("effectA")) $("effectA").textContent = "-";
+    if ($("effectB")) $("effectB").textContent = "-";
+    if ($("effectU")) $("effectU").textContent = "-";
+    if ($("effectTotal")) $("effectTotal").textContent = "-";
+  }
+
+  function clearDetailOutputs() {
+    $("detailOut").innerHTML = "";
+    $("formulaOut").innerHTML = "-";
+    if ($("detailLegend")) $("detailLegend").innerHTML = "";
+    if ($("formulaLegend")) $("formulaLegend").innerHTML = "";
+  }
+
+  function renderFailure(title, message) {
+    $("dpsOut").textContent = title;
+    $("dpsSub").textContent = message;
+    clearDetailOutputs();
+    clearResultBars();
+    clearEffectOutputs();
+    $("boundaryOut").textContent = "究極中tick数: - / DPSレンジ: -";
+  }
+
+  function collectResultBundle(v) {
     const res = calcTotal(v);
+    if (res.err) return { v, res, err: res.err };
+    const ex = calcRatesAndShares(v, res);
+    const eff = calcEffectTimes(v, ex);
+    const tb = calcTypeBreakdown(v, ex);
+    const br = calcBoundaryRange(v, res);
+    return { v, res, ex, eff, tb, br, err: null };
+  }
 
-    if (res.err) {
-      $("dpsOut").textContent = "計算エラー";
-      $("dpsSub").textContent = res.err;
-      $("detailOut").innerHTML = "";
-      if ($("detailLegend")) $("detailLegend").innerHTML = "";
-      if ($("formulaLegend")) $("formulaLegend").innerHTML = "";
-
-      if (String(res.err).includes("究極に到達しません")) {
-        if ($("ultType").value === "mana") {
-          setErr($("manaRegenPct"), true);
-          setLblErr($("regenLbl"), true);
-          if ($("bType").value === "prob") setErr($("bThird"), true);
-          setErr($("aPPct"), true);
-        }
-      }
-
-      setBar("barBasic","valBasic",0);
-      setBar("barA","valA",0);
-      setBar("barB","valB",0);
-      $("boundaryOut").textContent = "究極中tick数: - / DPSレンジ: -";
-      setBar("barU","valU",0);
-
-      setBar("barPhys","valPhys",0);
-      setBar("barMagic","valMagic",0);
-      setBar("barSingle","valSingle",0);
-      setBar("barMulti","valMulti",0);
-      setBar("barCorrPhys","valCorrPhys",0);
-      setBar("barCritMagic","valCritMagic",0);
-      if ($("effectMeta")) $("effectMeta").textContent = "同ユニット数: -";
-      if ($("effectMeta")) $("effectMeta").textContent = "同ユニット数: -";
-      if ($("effectA")) $("effectA").textContent = "-";
-      if ($("effectB")) $("effectB").textContent = "-";
-      if ($("effectU")) $("effectU").textContent = "-";
-      if ($("effectTotal")) $("effectTotal").textContent = "-";
-      save(true);
-      return;
-    }
-
+  function applyResultBundle(bundle) {
+    const { v, res, ex, eff, tb, br } = bundle;
     $("dpsOut").textContent = `${r6(res.dps)}`;
     $("dpsSub").textContent = "（小数第6位まで = 第7位四捨五入）";
-    // 40F境界ズレ（上限）の可視化：究極中tick数(min/max)と、それに基づくDPSレンジ
-    const brTop = calcBoundaryRange(v, res);
-    if (brTop) {
-      const minTick = brTop.minTick;
-      const maxTick = brTop.maxTick;
-      const lo = r6(brTop.lo);
-      const hi = r6(brTop.hi);
-      $("boundaryOut").textContent = `究極中tick数: ${minTick}〜${maxTick} / DPSレンジ: ${lo}〜${hi}`;
+
+    if (br) {
+      $("boundaryOut").textContent = `究極中tick数: ${br.minTick}〜${br.maxTick} / DPSレンジ: ${r6(br.lo)}〜${r6(br.hi)}`;
     } else {
       $("boundaryOut").textContent = "究極中tick数: - / DPSレンジ: -";
     }
-
-
-    const ex = calcRatesAndShares(v, res);
-    const eff = calcEffectTimes(v, ex);
-    $("dpsOut").textContent = `${r6(res.dps)}`;
 
     setBar("barBasic","valBasic", ex.basicPct);
     setBar("barA","valA", ex.aPct);
     setBar("barB","valB", ex.bPct);
     setBar("barU","valU", ex.ultPct);
-
-    const lines = [];
-    lines.push("=== 行動レート（回/秒 / 秒/回）※究極時間込み平均 ===");
-    lines.push(`非究極時間比率 (=非究極F/周期F): ${r6(ex.nonUltFrac)}`);
-    lines.push(`行動合計（究極も1行動扱い）: ${r6(ex.actPerSec)} 回/秒 / ${ex.actPerSec > 0 ? r6(1 / ex.actPerSec) : "-"} 秒/回`);
-    lines.push(`基本攻撃: ${r6(ex.basicPerSec)} 回/秒 / ${ex.basicPerSec > 0 ? r6(1 / ex.basicPerSec) : "-"} 秒/回`);
-    lines.push(`スキルA: ${r6(ex.aPerSec)} 回/秒 / ${ex.aPerSec > 0 ? r6(1 / ex.aPerSec) : "-"} 秒/回`);
-    lines.push(`スキルB: ${r6(ex.bPerSec)} 回/秒 / ${ex.bPerSec > 0 ? r6(1 / ex.bPerSec) : "-"} 秒/回`);
-    lines.push(`究極: ${r6(ex.ultPerSec)} 回/秒 / ${ex.ultPerSec > 0 ? r6(1 / ex.ultPerSec) : "-"} 秒/回`);
-
-    lines.push("\n=== 環境（物理補正） ===");
-    lines.push(`難易度: ${$("envDiff").value}（80w防御力は難易度に応じて内部適用）`);
-    lines.push(`防御力減少値: ${readInt($("defReduce").value)} / 実防御力=${readInt($("defReduce").value) - (DIFF_DEF[$("envDiff").value] ?? 175)}`);
-    lines.push(`物理補正倍率（小数第2位まで）: ${$("physMulOut").value}`);
-
-    lines.push("\n=== ダメージ内訳（DPS成分）と割合（合計=100%） ===");
-    lines.push(`基本DPS成分: ${r6(ex.basicDPS)} / 基本割合(%): ${r6(ex.basicPct)}`);
-    lines.push(`スキルA DPS成分: ${r6(ex.aDPS)} / スキルA割合(%): ${r6(ex.aPct)}`);
-    lines.push(`スキルB DPS成分: ${r6(ex.bDPS)} / スキルB割合(%): ${r6(ex.bPct)}`);
-    lines.push(`究極DPS成分: ${r6(ex.ultDPS)} / 究極割合(%): ${r6(ex.ultPct)}`);
-
-    const tb = calcTypeBreakdown(v, ex);
-    // 物理/魔法・単体/複数（割合）※既存4種バーの直下に追加した表示
     setBar("barPhys","valPhys", tb.physPct);
     setBar("barMagic","valMagic", tb.magicPct);
     setBar("barSingle","valSingle", tb.singlePct);
     setBar("barMulti","valMulti", tb.multiPct);
     setBar("barCorrPhys","valCorrPhys", ex.physCritGainPct);
     setBar("barCritMagic","valCritMagic", ex.magicCritGainPct);
+
     if ($("effectMeta")) $("effectMeta").textContent = `同ユニット数: ${eff.unitCount}体`;
     if ($("effectA")) $("effectA").textContent = `${r6(eff.a.ratePerSec)} 回/秒 / ${eff.a.ratePerSec > 0 ? r6(eff.a.secPerProc) : "-"} 秒/回 / ${v.aImpactF}F → ${r6(eff.a.rawFPerSec)}F/秒（単体 ${r6(eff.a.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.a.multiCoveragePct)}%）`;
     if ($("effectB")) $("effectB").textContent = `${r6(eff.b.ratePerSec)} 回/秒 / ${eff.b.ratePerSec > 0 ? r6(eff.b.secPerProc) : "-"} 秒/回 / ${v.bImpactF}F → ${r6(eff.b.rawFPerSec)}F/秒（単体 ${r6(eff.b.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.b.multiCoveragePct)}%）`;
     if ($("effectU")) $("effectU").textContent = `${r6(eff.u.ratePerSec)} 回/秒 / ${eff.u.ratePerSec > 0 ? r6(eff.u.secPerProc) : "-"} 秒/回 / ${v.ultImpactF}F → ${r6(eff.u.rawFPerSec)}F/秒（単体 ${r6(eff.u.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.u.multiCoveragePct)}%）`;
     if ($("effectTotal")) $("effectTotal").textContent = `${r6(eff.totalRawFPerSec)}F/秒（単体 ${r6(eff.totalSingleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.totalMultiCoveragePct)}%）`;
-    lines.push("\n=== 属性内訳（物理/魔法） ===");
-    lines.push(`物理DPS: ${r6(tb.phys)} / 物理割合(%): ${r6(tb.physPct)}`);
-    lines.push(`魔法DPS: ${r6(tb.magic)} / 魔法割合(%): ${r6(tb.magicPct)}`);
-
-    lines.push("\n=== 特性内訳（単体/複数） ===");
-    lines.push(`単体DPS: ${r6(tb.single)} / 単体割合(%): ${r6(tb.singlePct)}`);
-    lines.push(`複数DPS: ${r6(tb.multi)} / 複数割合(%): ${r6(tb.multiPct)}`);
-
-    const br = calcBoundaryRange(v, res);
-    if (br) {
-      lines.push("\n=== 境界(40F)による厳密レンジ（開始位相で±1tickの差） ===");
-      lines.push(`究極中のtick数: ${br.minTick}〜${br.maxTick} （1tickあたり+${br.perTick} ${v.ultType === "mana" ? "マナ" : "クールタイム"}${br.fixedGainDuringUlt > 0 ? ` / 外部支援固定+${r6(br.fixedGainDuringUlt)}` : ""}）`);
-      lines.push(`DPSレンジ: ${r6(br.lo)} 〜 ${r6(br.hi)}`);
-    }
-
-    lines.push("\n--- 検算（丸めで微差が出る場合あり） ---");
-    lines.push(`内訳合計DPS（基本+スキルA+スキルB+究極）: ${r6(ex.checkTotalDPS)}`);
-    lines.push(`表示DPS（周期合成）: ${r6(res.dps)}`);
 
     $("detailOut").innerHTML = buildDetailHtml(v, res, ex, tb, br);
     $("detailLegend").innerHTML = buildLegendHtml();
@@ -1666,36 +1623,35 @@ function render() {
     $("formulaLegend").innerHTML = buildLegendHtml();
   }
 
+function render() {
+    syncUiState();
+
+    const v = getValInternal();
+    const bundle = collectResultBundle(v);
+
+    if (bundle.err) {
+      renderFailure("計算エラー", bundle.err);
+
+      if (String(bundle.err).includes("究極に到達しません")) {
+        if ($("ultType").value === "mana") {
+          setErr($("manaRegenPct"), true);
+          setLblErr($("regenLbl"), true);
+          if ($("bType").value === "prob") setErr($("bThird"), true);
+          setErr($("aPPct"), true);
+        }
+      }
+      return;
+    }
+
+    applyResultBundle(bundle);
+  }
+
   function validateAndRender() {
-    syncUltType();
-    syncSkillBMode();
-    syncSegmentsFromHidden();
+    syncUiState();
 
     const errs = validateInputs();
     if (errs.length) {
-      $("dpsOut").textContent = "入力エラー";
-      $("dpsSub").textContent = errs.join(" / ");
-      $("detailOut").innerHTML = "";
-      if ($("detailLegend")) $("detailLegend").innerHTML = "";
-      if ($("formulaLegend")) $("formulaLegend").innerHTML = "";
-      setBar("barBasic","valBasic",0);
-      setBar("barA","valA",0);
-      setBar("barB","valB",0);
-      $("boundaryOut").textContent = "究極中tick数: - / DPSレンジ: -";
-      $("formulaOut").innerHTML = "-";
-      if ($("formulaLegend")) $("formulaLegend").innerHTML = "";
-      setBar("barU","valU",0);
-      setBar("barPhys","valPhys",0);
-      setBar("barMagic","valMagic",0);
-      setBar("barSingle","valSingle",0);
-      setBar("barMulti","valMulti",0);
-      setBar("barCorrPhys","valCorrPhys",0);
-      setBar("barCritMagic","valCritMagic",0);
-      if ($("effectMeta")) $("effectMeta").textContent = "同ユニット数: -";
-      if ($("effectA")) $("effectA").textContent = "-";
-      if ($("effectB")) $("effectB").textContent = "-";
-      if ($("effectU")) $("effectU").textContent = "-";
-      if ($("effectTotal")) $("effectTotal").textContent = "-";
+      renderFailure("入力エラー", errs.join(" / "));
       save(true);
       return;
     }
@@ -1703,7 +1659,7 @@ function render() {
     save(true);
   }
 
-  function collectFormState() {
+  function readFormState() {
     const v = {};
     document.querySelectorAll("input,select").forEach(el => {
       if (!el.id) return;
@@ -1713,9 +1669,28 @@ function render() {
     return v;
   }
 
+  function applyFormState(v) {
+    for (const [k, val] of Object.entries(v || {})) {
+      const el = $(k);
+      if (!el) continue;
+      if (el.type === "checkbox") el.checked = !!val;
+      else el.value = val;
+    }
+  }
+
+  function getStoredStateRaw() {
+    for (const key of STORAGE_KEYS) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw) return { key, raw };
+      } catch (_) {}
+    }
+    return null;
+  }
+
   function save(silent = false) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(collectFormState()));
+      localStorage.setItem(STORAGE_KEYS[0], JSON.stringify(readFormState()));
       if (!silent) alert("保存しました");
       return true;
     } catch (_) {
@@ -1726,24 +1701,14 @@ function render() {
 
   function load(silent = false) {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
+      const found = getStoredStateRaw();
+      if (!found) {
         if (!silent) alert("保存データがありません");
         return false;
       }
-      const v = JSON.parse(raw);
-      for (const [k,val] of Object.entries(v)) {
-        const el = $(k);
-        if (!el) continue;
-        if (el.type === "checkbox") el.checked = !!val;
-        else el.value = val;
-      }
+      applyFormState(JSON.parse(found.raw));
       normalizeAll();
-      syncUltType();
-      syncSkillBMode();
-      syncSegmentsFromHidden();
-      syncEnvDerivedUI();
-      syncNoteVisibility();
+      syncUiState();
       validateAndRender();
       if (!silent) alert("読み込みました");
       return true;
@@ -1754,14 +1719,10 @@ function render() {
   }
 
   function resetAll() {
-    try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+    try { STORAGE_KEYS.forEach((key) => localStorage.removeItem(key)); } catch (_) {}
     seedDefaults();
     normalizeAll();
-    syncUltType();
-    syncSkillBMode();
-    syncSegmentsFromHidden();
-    syncEnvDerivedUI();
-    syncNoteVisibility();
+    syncUiState();
     validateAndRender();
   }
 
@@ -1811,11 +1772,10 @@ function render() {
     $("showNotes").checked = false;
   }
 
-  syncUltType();
-  syncSkillBMode();
+  syncUiState();
   seedDefaults();
   normalizeAll();
-  syncNoteVisibility();
+  syncUiState();
   initBindings();
   setupSegments();
   setupAccordions();
