@@ -1292,11 +1292,7 @@ function calcBoundaryRange(v, res) {
     lines.push(`  = min(100%, ${r6(eff.u.rawFPerSec)} / 40 × 100) = ${r6(eff.u.singleCoveragePct)}%`);
     lines.push(`究極 ${eff.unitCount}体参考稼働率 = 1 − (1 − 単体稼働率)^${eff.unitCount}`);
     lines.push(`  = 1 − (1 − ${r6(eff.u.singleCoverageSecPerSec)})^${eff.unitCount} = ${r6(eff.u.multiCoveragePct)}%`);
-    lines.push("参考合計影響F/秒 = A + B + 究極");
-    lines.push(`  = ${r6(eff.a.rawFPerSec)} + ${r6(eff.b.rawFPerSec)} + ${r6(eff.u.rawFPerSec)} = ${r6(eff.totalRawFPerSec)}`);
-    lines.push("参考合計単体稼働率 = min(100%, 参考合計影響F/秒 / 40 × 100)");
     lines.push(`  = min(100%, ${r6(eff.totalRawFPerSec)} / 40 × 100) = ${r6(eff.totalSingleCoveragePct)}%`);
-    lines.push(`参考合計 ${eff.unitCount}体稼働率 = 1 − (1 − 参考合計単体稼働率)^${eff.unitCount}`);
     lines.push(`  = 1 − (1 − ${r6(eff.totalSingleCoverageSecPerSec)})^${eff.unitCount} = ${r6(eff.totalMultiCoveragePct)}%`);
     if (eff.ultEvent.type !== "none" && eff.ultEvent.amount > 0) {
       lines.push(`究極イベント支援種別 = ${eff.ultEvent.typeLabel}`);
@@ -1467,7 +1463,6 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     html += lineHtml(`スキルA: 回/秒=${hVal("valA", r6(eff.a.ratePerSec))} / 秒/回=${hVal("valA", eff.a.ratePerSec > 0 ? r6(eff.a.secPerProc) : "-")} / 影響F/秒=${hVal("valA", r6(eff.a.rawFPerSec))} / 単体稼働率=${hVal("valA", r6(eff.a.singleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valA", r6(eff.a.multiCoveragePct))}%${copyBtn(copyACover, "外部支援用コピー")}`);
     html += lineHtml(`スキルB: 回/秒=${hVal("valB", r6(eff.b.ratePerSec))} / 秒/回=${hVal("valB", eff.b.ratePerSec > 0 ? r6(eff.b.secPerProc) : "-")} / 影響F/秒=${hVal("valB", r6(eff.b.rawFPerSec))} / 単体稼働率=${hVal("valB", r6(eff.b.singleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valB", r6(eff.b.multiCoveragePct))}%${copyBtn(copyBCover, "外部支援用コピー")}`);
     html += lineHtml(`究極: 回/秒=${hVal("valUlt", r6(eff.u.ratePerSec))} / 秒/回=${hVal("valUlt", eff.u.ratePerSec > 0 ? r6(eff.u.secPerProc) : "-")} / 影響F/秒=${hVal("valUlt", r6(eff.u.rawFPerSec))} / 単体稼働率=${hVal("valUlt", r6(eff.u.singleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valUlt", r6(eff.u.multiCoveragePct))}%${copyBtn(copyUCover, "外部支援用コピー")}`);
-    html += lineHtml(`参考合計: 影響F/秒=${hVal("valMix", r6(eff.totalRawFPerSec))} / 単体稼働率=${hVal("valMix", r6(eff.totalSingleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valMix", r6(eff.totalMultiCoveragePct))}%${copyBtn(copyTotalCover, "外部支援用コピー")}`);
     if (eff.ultEvent.type !== "none" && eff.ultEvent.amount > 0) {
       const ultEventText = eff.ultEvent.type === "manaPct"
         ? `究極イベント支援: ${hVal("valUlt", eff.ultEvent.typeLabel)} / 効果量=${hVal("valUlt", r6(eff.ultEvent.amount * 100))}% / 単体発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.unitRate))} / ${eff.ultEvent.count}体合計発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.totalRate))} / 参考マナ増加=${hVal("valUlt", r6(eff.ultEvent.addManaPerSec))} /秒${copyBtn(`${r6(eff.ultEvent.unitRate)}`, "外部支援用コピー")}`
@@ -1560,7 +1555,6 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     if ($("effectA")) $("effectA").textContent = "-";
     if ($("effectB")) $("effectB").textContent = "-";
     if ($("effectU")) $("effectU").textContent = "-";
-    if ($("effectTotal")) $("effectTotal").textContent = "-";
   }
 
   function clearDetailOutputs() {
@@ -1637,13 +1631,12 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     const ultEventCopyMini = `${r6(eff.ultEvent.unitRate)}`;
     const ultEventMini = (eff.ultEvent.type !== "none" && eff.ultEvent.amount > 0)
       ? (eff.ultEvent.type === "manaPct"
-          ? `<div class="effectSub">イベント支援: ${eff.ultEvent.typeLabel} ${r6(eff.ultEvent.amount * 100)}% / 単体 ${r6(eff.ultEvent.unitRate)} 回/秒 / ${eff.ultEvent.count}体合計 ${r6(eff.ultEvent.totalRate)} 回/秒 / 参考マナ増加 ${r6(eff.ultEvent.addManaPerSec)} /秒${copyBtn(ultEventCopyMini, "イベントコピー")}</div>`
-          : `<div class="effectSub">イベント支援: ${eff.ultEvent.typeLabel} ${r6(eff.ultEvent.amount * 100)}% / 単体 ${r6(eff.ultEvent.unitRate)} 回/秒 / ${eff.ultEvent.count}体合計 ${r6(eff.ultEvent.totalRate)} 回/秒 / 参考CT短縮 ${r6(eff.ultEvent.addCoolPerSec)} 秒/秒${copyBtn(ultEventCopyMini, "イベントコピー")}</div>`)
+          ? `<div class="effectSub">イベント支援: ${eff.ultEvent.typeLabel} ${r6(eff.ultEvent.amount * 100)}% / ${eff.ultEvent.count}体合計 ${r6(eff.ultEvent.totalRate)} 回/秒 / 参考マナ増加 ${r6(eff.ultEvent.addManaPerSec)} /秒 / 単体 ${r6(eff.ultEvent.unitRate)} 回/秒${copyBtn(ultEventCopyMini, "イベントコピー")}</div>`
+          : `<div class="effectSub">イベント支援: ${eff.ultEvent.typeLabel} ${r6(eff.ultEvent.amount * 100)}% / ${eff.ultEvent.count}体合計 ${r6(eff.ultEvent.totalRate)} 回/秒 / 参考CT短縮 ${r6(eff.ultEvent.addCoolPerSec)} 秒/秒 / 単体 ${r6(eff.ultEvent.unitRate)} 回/秒${copyBtn(ultEventCopyMini, "イベントコピー")}</div>`)
       : "";
     if ($("effectA")) $("effectA").innerHTML = `${r6(eff.a.ratePerSec)} 回/秒 / ${eff.a.ratePerSec > 0 ? r6(eff.a.secPerProc) : "-"} 秒/回 / ${v.aImpactF}F → ${r6(eff.a.rawFPerSec)}F/秒（単体 ${r6(eff.a.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.a.multiCoveragePct)}%）${copyBtn(copyACoverMini, "コピー")}`;
     if ($("effectB")) $("effectB").innerHTML = `${r6(eff.b.ratePerSec)} 回/秒 / ${eff.b.ratePerSec > 0 ? r6(eff.b.secPerProc) : "-"} 秒/回 / ${v.bImpactF}F → ${r6(eff.b.rawFPerSec)}F/秒（単体 ${r6(eff.b.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.b.multiCoveragePct)}%）${copyBtn(copyBCoverMini, "コピー")}`;
     if ($("effectU")) $("effectU").innerHTML = `${r6(eff.u.ratePerSec)} 回/秒 / ${eff.u.ratePerSec > 0 ? r6(eff.u.secPerProc) : "-"} 秒/回 / ${v.ultImpactF}F → ${r6(eff.u.rawFPerSec)}F/秒（単体 ${r6(eff.u.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.u.multiCoveragePct)}%）${copyBtn(copyUCoverMini, "コピー")}${ultEventMini}`;
-    if ($("effectTotal")) $("effectTotal").textContent = `${r6(eff.totalRawFPerSec)}F/秒（単体 ${r6(eff.totalSingleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.totalMultiCoveragePct)}%）`;
 
     $("detailOut").innerHTML = buildDetailHtml(v, res, ex, eff, tb, br);
     $("detailLegend").innerHTML = buildLegendHtml();
