@@ -1581,6 +1581,26 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     const res = calcTotal(v);
     if (res.err) return { v, res, err: res.err };
     const ex = calcRatesAndShares(v, res);
+    const effBase = calcEffectTimes(v, ex);
+    const eff = {
+      ...effBase,
+      ultEvent: {
+        type: v.ultEventType || "none",
+        typeLabel: supportTypeLabel(v.ultEventType || "none"),
+        amount: Math.max(0, v.ultEventAmount || 0),
+        unitRate: (v.ultType === "none") ? 0 : Math.max(0, ex.ultPerSec || 0),
+        count: Math.max(1, Math.min(36, v.sameUnitCount || 1)),
+        totalRate: 0,
+        addManaPerSec: 0,
+        addCoolPerSec: 0,
+      }
+    };
+    eff.ultEvent.totalRate = eff.ultEvent.unitRate * eff.ultEvent.count;
+    if (eff.ultEvent.type === "manaPct") {
+      eff.ultEvent.addManaPerSec = eff.ultEvent.totalRate * Math.max(0, v.gaugeMax || 0) * eff.ultEvent.amount;
+    } else if (eff.ultEvent.type === "coolRemainPct") {
+      eff.ultEvent.addCoolPerSec = eff.ultEvent.totalRate * Math.max(0, v.gaugeMax || 0) * eff.ultEvent.amount * 0.5;
+    }
     const tb = calcTypeBreakdown(v, ex);
     const br = calcBoundaryRange(v, res);
     return { v, res, ex, eff, tb, br, err: null };
