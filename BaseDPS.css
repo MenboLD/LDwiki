@@ -412,3 +412,20 @@ button:hover{ filter:brightness(1.07); }
 @media(max-width:859px){ .supportGrid{ grid-template-columns: 1fr 1fr; } }
 .supportGrid .lbl{ font-size:11px; }
 .extType{ font-size:12px; }
+
+.tworow.cols7{ grid-template-columns: repeat(7, minmax(0,1fr)); grid-template-rows:auto auto; }
+
+.copyBtn{
+  margin-left:8px;
+  padding:3px 8px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:#182230;
+  color:#cfe3ff;
+  font-size:11px;
+  line-height:1.2;
+  cursor:pointer;
+}
+.copyBtn:hover{ filter:brightness(1.06); }
+.copyBtn.done{ background:#1f3b26; color:#d8ffe3; border-color:#2a6b3d; }
+@media(max-width:920px){ .copyBtn{ margin-left:0; margin-top:6px; display:inline-block; } }

@@ -6,6 +6,7 @@
   <title>DPS計算ツール - ラッキー傭兵団</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="BaseDPS.css">
+  <script src="supabase_config.js"></script>
   <script defer src="BaseDPS.js"></script>
 </head>
 <body>
@@ -159,12 +160,14 @@
 
       <div class="cardBody" id="accBody_ult">
 
-      <div class="tworow cols5">
+      <div class="tworow cols7">
         <div class="lbl" style="grid-column:1;">タイプ</div>
         <div class="lbl" style="grid-column:2;">リセット</div>
         <div class="lbl" style="grid-column:3;">倍率</div>
         <div class="lbl" style="grid-column:4;">Ｆ数</div>
         <div class="lbl" style="grid-column:5;">影響F</div>
+        <div class="lbl" style="grid-column:6;">影響イベント</div>
+        <div class="lbl" style="grid-column:7;">効果量</div>
 
         <div class="inp" style="grid-column:1;">
           <select id="ultType">
@@ -188,6 +191,16 @@
         <div class="inp" style="grid-column:5;">
           <input id="ultImpactF" type="text" inputmode="numeric" autocomplete="off" placeholder="0">
         </div>
+        <div class="inp" style="grid-column:6;">
+          <select id="ultEventType">
+            <option value="none" selected>無し</option>
+            <option value="manaPct">最大マナ割合獲得</option>
+            <option value="coolRemainPct">残りクールタイム割合減少</option>
+          </select>
+        </div>
+        <div class="inp" style="grid-column:7;">
+          <input id="ultEventAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="20%">
+        </div>
       </div>
 
       <div class="chk">
@@ -201,6 +214,8 @@
 
       <div class="hint annotation">
         ・影響F：究極発動後、周囲への効果などが持続するフレーム数。0で未使用。<br>
+        ・影響イベント：究極発動時に1回だけ起こる、外部支援向けのイベント効果です。<br>
+        ・効果量：最大マナ割合獲得 / 残りクールタイム割合減少 の割合（%）を入力します。<br>
         ・鬼神忍者チェック：究極タイプ=クールタイムのときだけ内部計算に使用します。
       </div>      </div>
 

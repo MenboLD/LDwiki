@@ -1,10 +1,10 @@
 (() => {
   const F = 40;
-  const STORAGE_KEY = "LD_DPS_TOOL_V8_8_4";
+  const STORAGE_KEY = "LD_DPS_TOOL_V8_8_7";
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
-  const SUPABASE_URL = "https://teggcuiyqkbcvbhdntni.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlZ2djdWl5cWtiY3ZiaGRudG5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTIyNzUsImV4cCI6MjA4MDE2ODI3NX0.R1p_nZdmR9r4k0fNwgr9w4irkFwp-T8tGiEeJwJioK";
+  const SUPABASE_URL = String(window.LD_SUPABASE_URL || "").trim();
+  const SUPABASE_ANON_KEY = String(window.LD_SUPABASE_ANON_KEY || "").trim();
 
   function pvGetSessionId() {
     const k = "pv_session_id";
@@ -22,6 +22,7 @@
 
   function pvCountOnce() {
     try {
+      if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
       const url = SUPABASE_URL + "/rest/v1/pageviews";
       const payload = {
         site: PV_SITE_NAME,
@@ -40,7 +41,7 @@
         },
         body: JSON.stringify(payload),
         keepalive: true,
-      }).catch(() => {});
+      }).then((res) => { if (!res.ok) return null; return null; }).catch(() => {});
     } catch (_) {}
   }
 
@@ -254,6 +255,10 @@
   // ---------- 外部支援（別ユニット由来） ----------
   function isCoverageSupportType(type){ return ["physPct","magicPct","basicPct","procMul","finalPct"].includes(type); }
   function supportTypeLabel(type){ return { none:"無し", physPct:"物理ダメージ増加", magicPct:"魔法ダメージ増加", basicPct:"基本攻撃ダメージ増加", procMul:"発動率倍率", finalPct:"最終ダメージ増加", manaPct:"最大マナ割合獲得", coolRemainPct:"残りクールタイム割合減少" }[type] || type; }
+  function copyBtn(text, label = "コピー") {
+    const safe = encodeURIComponent(String(text ?? ""));
+    return ` <button type="button" class="copyBtn" data-copy="${safe}">${label}</button>`;
+  }
   function toSupportAmountDisplay(type, raw){
     if (type === "procMul") return trimDecimals(raw, 2);
     return toPctDisplay(raw, 2, 6);
@@ -398,6 +403,7 @@
     bindField($("ultMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
     bindField($("ultF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
     bindField($("ultImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
+    bindField($("ultEventAmount"), (v)=>trimDecimalsLive(v,2), (v)=>toPctDisplay(v,2,6));
 
     bindField($("aMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
     bindField($("aPPct"), (v)=>trimDecimalsLive(v,1), (v)=>toProbPctDisplay(v));
@@ -444,7 +450,32 @@
     $("ultStopsGauge").addEventListener("change", validateAndRender);
     $("aUseGainMana5").addEventListener("change", validateAndRender);
     $("critABShortenUlt2s").addEventListener("change", validateAndRender);
+    $("ultEventType").addEventListener("change", validateAndRender);
     $("bType").addEventListener("change", () => { syncSkillBMode(); validateAndRender(); });
+
+    $("detailOut").addEventListener("click", async (e) => {
+      const btn = e.target.closest(".copyBtn[data-copy]");
+      if (!btn) return;
+      const text = decodeURIComponent(btn.dataset.copy || "");
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          ta.remove();
+        }
+        const prev = btn.textContent;
+        btn.textContent = "コピー済み";
+        btn.classList.add("done");
+        setTimeout(() => { btn.textContent = prev === "コピー済み" ? "コピー" : prev; btn.classList.remove("done"); }, 1200);
+      } catch (_) {
+        alert("コピーに失敗しました");
+      }
+    });
 
     $("calcBtn").addEventListener("click", () => { normalizeAll(); validateAndRender(); });
     $("saveBtn").addEventListener("click", save);
@@ -524,6 +555,7 @@
     $("ultMulPct").value = toPctDisplay($("ultMulPct").value, 1, 6);
     $("ultF").value = toIntDisplay($("ultF").value, 4);
     $("ultImpactF").value = toIntDisplay($("ultImpactF").value, 4);
+    $("ultEventAmount").value = toPctDisplay($("ultEventAmount").value, 2, 6);
 
     $("aMulPct").value = toPctDisplay($("aMulPct").value, 1, 6);
     $("aPPct").value = toProbPctDisplay($("aPPct").value);
@@ -577,6 +609,8 @@
     const ultMul = readNumber($("ultMulPct").value) / 100;
     const ultF = readInt($("ultF").value);
     const ultImpactF = readInt($("ultImpactF").value);
+    const ultEventType = $("ultEventType").value;
+    const ultEventAmount = readNumber($("ultEventAmount").value) / 100;
     const ultStopsGauge = $("ultStopsGauge").checked;
     const critABShortenUlt2s = $("critABShortenUlt2s").checked;
 
@@ -608,7 +642,7 @@
 
     const base = { atk, aspd, gaugeMax, sameUnitCount, manaPerSec, envDiff, baseDef, defReduce, realDef, physMul,
       critChancePct, critPhysBonusPct, critMagicBonusPct, critChance, critPhysBonus, critMagicBonus, critPhysMul, critMagicMul,
-      ultType, ultReset, ultMul, ultF, ultImpactF, ultStopsGauge, critABShortenUlt2s,
+      ultType, ultReset, ultMul, ultF, ultImpactF, ultEventType, ultEventAmount, ultStopsGauge, critABShortenUlt2s,
       aMul, aP, aF, aImpactF, aUseGainMana5, bType, bMul, bF, bImpactF, bP, bN,
       basicAttr, basicTarget, aAttr, aTarget, bAttr, bTarget, uAttr, uTarget, supports };
     base.ext = calcExternalSupportAgg(base);
@@ -616,7 +650,7 @@
   }
 
   function clearErrAll() {
-    const ids = ["atk","aspd","gaugeMax","sameUnitCount","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","ultImpactF","aMulPct","aPPct","aF","aImpactF","bMulPct","bThird","bF","bImpactF","ext1Amount","ext1Base","ext1Count","ext2Amount","ext2Base","ext2Count","ext3Amount","ext3Base","ext3Count","ext4Amount","ext4Base","ext4Count","ext5Amount","ext5Base","ext5Count","ext6Amount","ext6Base","ext6Count"];
+    const ids = ["atk","aspd","gaugeMax","sameUnitCount","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","ultImpactF","ultEventAmount","aMulPct","aPPct","aF","aImpactF","bMulPct","bThird","bF","bImpactF","ext1Amount","ext1Base","ext1Count","ext2Amount","ext2Base","ext2Count","ext3Amount","ext3Base","ext3Count","ext4Amount","ext4Base","ext4Count","ext5Amount","ext5Base","ext5Count","ext6Amount","ext6Base","ext6Count"];
     ids.forEach(id => setErr($(id), false));
     setLblErr($("regenLbl"), false);
   }
@@ -655,6 +689,10 @@
       const ultImpactF = readInt($("ultImpactF").value);
       if (ultF <= 0) { setErr($("ultF"), true); errors.push("究極のＦ数は1以上"); }
       if (ultImpactF < 0 || ultImpactF > 9999) { setErr($("ultImpactF"), true); errors.push("究極の影響Fは0〜9999"); }
+      if ($("ultEventType").value !== "none") {
+        const ultEventAmount = readNumber($("ultEventAmount").value);
+        if (!(ultEventAmount >= 0 && ultEventAmount <= 9999)) { setErr($("ultEventAmount"), true); errors.push("究極の影響イベント効果量は0〜9999%"); }
+      }
     }
 
     const aPpct = readNumber($("aPPct").value);
@@ -1253,6 +1291,19 @@ function calcBoundaryRange(v, res) {
     lines.push(`  = min(100%, ${r6(eff.totalRawFPerSec)} / 40 × 100) = ${r6(eff.totalSingleCoveragePct)}%`);
     lines.push(`参考合計 ${eff.unitCount}体稼働率 = 1 − (1 − 参考合計単体稼働率)^${eff.unitCount}`);
     lines.push(`  = 1 − (1 − ${r6(eff.totalSingleCoverageSecPerSec)})^${eff.unitCount} = ${r6(eff.totalMultiCoveragePct)}%`);
+    if (eff.ultEvent.type !== "none" && eff.ultEvent.amount > 0) {
+      lines.push(`究極イベント支援種別 = ${eff.ultEvent.typeLabel}`);
+      lines.push(`究極イベント支援 効果量 = ${r6(eff.ultEvent.amount * 100)}%`);
+      lines.push(`究極イベント支援 単体発動回数/秒 = 究極/秒 = ${r6(eff.ultEvent.unitRate)}`);
+      lines.push(`究極イベント支援 ${eff.ultEvent.count}体合計発動回数/秒 = ${r6(eff.ultEvent.unitRate)} × ${eff.ultEvent.count} = ${r6(eff.ultEvent.totalRate)}`);
+      if (eff.ultEvent.type === "manaPct") {
+        lines.push(`参考マナ増加/秒 = 合計発動回数/秒 × 最大マナ × 効果量`);
+        lines.push(`  = ${r6(eff.ultEvent.totalRate)} × ${r6(v.gaugeMax)} × ${r6(eff.ultEvent.amount)} = ${r6(eff.ultEvent.addManaPerSec)}`);
+      } else if (eff.ultEvent.type === "coolRemainPct") {
+        lines.push(`参考クール短縮 秒/秒 ≒ 合計発動回数/秒 × クールタイム × 効果量 × 0.5`);
+        lines.push(`  = ${r6(eff.ultEvent.totalRate)} × ${r6(v.gaugeMax)} × ${r6(eff.ultEvent.amount)} × 0.5 = ${r6(eff.ultEvent.addCoolPerSec)}`);
+      }
+    }
 
     lines.push("");
     lines.push("■ 環境（物理補正・クリティカル）");
@@ -1403,10 +1454,20 @@ function buildDetailHtml(v, res, ex, tb, br) {
     html += lineHtml("");
     html += lineHtml(`<span class="sectionHead">=== 影響時間（平均・ダメージとは別計算） ===</span>`);
     html += lineHtml(`同ユニット数: ${hVal("valMix", eff.unitCount)}`);
-    html += lineHtml(`スキルA: 回/秒=${hVal("valA", r6(eff.a.ratePerSec))} / 秒/回=${hVal("valA", eff.a.ratePerSec > 0 ? r6(eff.a.secPerProc) : "-")} / 影響F/秒=${hVal("valA", r6(eff.a.rawFPerSec))} / 単体稼働率=${hVal("valA", r6(eff.a.singleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valA", r6(eff.a.multiCoveragePct))}%`);
-    html += lineHtml(`スキルB: 回/秒=${hVal("valB", r6(eff.b.ratePerSec))} / 秒/回=${hVal("valB", eff.b.ratePerSec > 0 ? r6(eff.b.secPerProc) : "-")} / 影響F/秒=${hVal("valB", r6(eff.b.rawFPerSec))} / 単体稼働率=${hVal("valB", r6(eff.b.singleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valB", r6(eff.b.multiCoveragePct))}%`);
-    html += lineHtml(`究極: 回/秒=${hVal("valUlt", r6(eff.u.ratePerSec))} / 秒/回=${hVal("valUlt", eff.u.ratePerSec > 0 ? r6(eff.u.secPerProc) : "-")} / 影響F/秒=${hVal("valUlt", r6(eff.u.rawFPerSec))} / 単体稼働率=${hVal("valUlt", r6(eff.u.singleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valUlt", r6(eff.u.multiCoveragePct))}%`);
-    html += lineHtml(`参考合計: 影響F/秒=${hVal("valMix", r6(eff.totalRawFPerSec))} / 単体稼働率=${hVal("valMix", r6(eff.totalSingleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valMix", r6(eff.totalMultiCoveragePct))}%`);
+    const copyACover = `mode=coverage / source=スキルA / 単体被覆率=${r6(eff.a.singleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.a.multiCoveragePct)}%`;
+    const copyBCover = `mode=coverage / source=スキルB / 単体被覆率=${r6(eff.b.singleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.b.multiCoveragePct)}%`;
+    const copyUCover = `mode=coverage / source=究極 / 単体被覆率=${r6(eff.u.singleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.u.multiCoveragePct)}%`;
+    const copyTotalCover = `mode=coverage / source=参考合計 / 単体被覆率=${r6(eff.totalSingleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.totalMultiCoveragePct)}%`;
+    html += lineHtml(`スキルA: 回/秒=${hVal("valA", r6(eff.a.ratePerSec))} / 秒/回=${hVal("valA", eff.a.ratePerSec > 0 ? r6(eff.a.secPerProc) : "-")} / 影響F/秒=${hVal("valA", r6(eff.a.rawFPerSec))} / 単体稼働率=${hVal("valA", r6(eff.a.singleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valA", r6(eff.a.multiCoveragePct))}%${copyBtn(copyACover, "外部支援用コピー")}`);
+    html += lineHtml(`スキルB: 回/秒=${hVal("valB", r6(eff.b.ratePerSec))} / 秒/回=${hVal("valB", eff.b.ratePerSec > 0 ? r6(eff.b.secPerProc) : "-")} / 影響F/秒=${hVal("valB", r6(eff.b.rawFPerSec))} / 単体稼働率=${hVal("valB", r6(eff.b.singleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valB", r6(eff.b.multiCoveragePct))}%${copyBtn(copyBCover, "外部支援用コピー")}`);
+    html += lineHtml(`究極: 回/秒=${hVal("valUlt", r6(eff.u.ratePerSec))} / 秒/回=${hVal("valUlt", eff.u.ratePerSec > 0 ? r6(eff.u.secPerProc) : "-")} / 影響F/秒=${hVal("valUlt", r6(eff.u.rawFPerSec))} / 単体稼働率=${hVal("valUlt", r6(eff.u.singleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valUlt", r6(eff.u.multiCoveragePct))}%${copyBtn(copyUCover, "外部支援用コピー")}`);
+    html += lineHtml(`参考合計: 影響F/秒=${hVal("valMix", r6(eff.totalRawFPerSec))} / 単体稼働率=${hVal("valMix", r6(eff.totalSingleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valMix", r6(eff.totalMultiCoveragePct))}%${copyBtn(copyTotalCover, "外部支援用コピー")}`);
+    if (eff.ultEvent.type !== "none" && eff.ultEvent.amount > 0) {
+      const ultEventText = eff.ultEvent.type === "manaPct"
+        ? `究極イベント支援: ${hVal("valUlt", eff.ultEvent.typeLabel)} / 効果量=${hVal("valUlt", r6(eff.ultEvent.amount * 100))}% / 単体発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.unitRate))} / ${eff.ultEvent.count}体合計発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.totalRate))} / 参考マナ増加=${hVal("valUlt", r6(eff.ultEvent.addManaPerSec))} /秒${copyBtn(`mode=rate / source=究極イベント / type=${eff.ultEvent.type} / 効果量=${r6(eff.ultEvent.amount * 100)}% / 単体発動回数/秒=${r6(eff.ultEvent.unitRate)} / 体数=${eff.ultEvent.count} / 合計発動回数/秒=${r6(eff.ultEvent.totalRate)}`, "外部支援用コピー")}`
+        : `究極イベント支援: ${hVal("valUlt", eff.ultEvent.typeLabel)} / 効果量=${hVal("valUlt", r6(eff.ultEvent.amount * 100))}% / 単体発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.unitRate))} / ${eff.ultEvent.count}体合計発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.totalRate))} / 参考クール短縮=${hVal("valUlt", r6(eff.ultEvent.addCoolPerSec))} 秒/秒${copyBtn(`mode=rate / source=究極イベント / type=${eff.ultEvent.type} / 効果量=${r6(eff.ultEvent.amount * 100)}% / 単体発動回数/秒=${r6(eff.ultEvent.unitRate)} / 体数=${eff.ultEvent.count} / 合計発動回数/秒=${r6(eff.ultEvent.totalRate)}`, "外部支援用コピー")}`;
+      html += lineHtml(ultEventText);
+    }
 
     html += lineHtml("");
     html += lineHtml(`<span class="sectionHead">=== 環境（物理補正） ===</span>`);
@@ -1722,6 +1783,8 @@ function render() {
     $("ultMulPct").value = "1500%";
     $("ultF").value = "44";
     $("ultImpactF").value = "0";
+    $("ultEventType").value = "none";
+    $("ultEventAmount").value = "0%";
     $("ultStopsGauge").checked = true;
     $("critABShortenUlt2s").checked = false;
 
