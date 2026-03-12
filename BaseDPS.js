@@ -1,7 +1,8 @@
 (() => {
-  const APP_VERSION = "v8_8_13";
+  const APP_VERSION = "v8_9_0";
   const F = 40;
-  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
+  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_0", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
+  const SLOT_KEYS = ["LD_DPS_TOOL_SLOT1_V8_9_0", "LD_DPS_TOOL_SLOT2_V8_9_0", "LD_DPS_TOOL_SLOT3_V8_9_0"];
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
   const SUPABASE_URL = String(window.LD_SUPABASE_URL || "").trim();
@@ -261,6 +262,12 @@
   // ---------- 外部支援（別ユニット由来） ----------
   function isCoverageSupportType(type){ return ["physPct","magicPct","basicPct","procMul","finalPct"].includes(type); }
   function supportTypeLabel(type){ return { none:"無し", physPct:"物理ダメージ増加", magicPct:"魔法ダメージ増加", basicPct:"基本攻撃ダメージ増加", procMul:"発動率倍率", finalPct:"最終ダメージ増加", manaPct:"最大マナ割合獲得", coolRemainPct:"残りクールタイム割合減少" }[type] || type; }
+  function diffLabel(type){ return { normal:"ノーマル", hard:"ハード", hell:"地獄", god:"神", prime:"太初" }[type] || type; }
+  function attrLabel(type){ return type === "magic" ? "魔法" : "物理"; }
+  function targetLabel(type){ return type === "multi" ? "複数" : "単体"; }
+  function ultTypeLabel(type){ return { none:"無し", mana:"マナ", cool:"クールタイム" }[type] || type; }
+  function ultResetLabel(type){ return type === "start" ? "開始時" : "終了時"; }
+  function bTypeLabel(type){ return { none:"無し", prob:"確率", count:"基本攻撃規定回数" }[type] || type; }
   function copyBtn(text, label = "コピー") {
     const safe = encodeURIComponent(String(text ?? ""));
     return ` <button type="button" class="copyBtn" data-copy="${safe}">${label}</button>`;
@@ -485,11 +492,15 @@
     $("detailOut").addEventListener("click", onCopyBtnClick);
     if ($("effectBox")) $("effectBox").addEventListener("click", onCopyBtnClick);
 
-    $("calcBtn").addEventListener("click", () => { normalizeAll(); validateAndRender(); });
-    $("saveBtn").addEventListener("click", save);
-    $("loadBtn").addEventListener("click", load);
-    $("resetBtn").addEventListener("click", resetAll);
-    $("showNotes").addEventListener("change", () => { syncNoteVisibility(); save(true); });
+    if ($("calcBtn")) $("calcBtn").addEventListener("click", () => { normalizeAll(); validateAndRender(); });
+    if ($("saveBtn")) $("saveBtn").addEventListener("click", save);
+    if ($("loadBtn")) $("loadBtn").addEventListener("click", load);
+    if ($("resetBtn")) $("resetBtn").addEventListener("click", resetAll);
+    for (let i = 1; i <= 3; i++) {
+      if ($("saveSlot" + i + "Btn")) $("saveSlot" + i + "Btn").addEventListener("click", () => saveSlot(i));
+      if ($("loadSlot" + i + "Btn")) $("loadSlot" + i + "Btn").addEventListener("click", () => loadSlot(i));
+    }
+    $("showNotes").addEventListener("change", () => { syncNoteVisibility(); save(true); refreshSettingsSummaries(); });
   }
 
   // ---------- 物理/魔法・単体/複数 トグル（seg） ----------
@@ -524,6 +535,236 @@
       if (!hidden) return;
       applySegActive(seg, hidden.value);
     });
+  }
+
+
+  function interleavePairGrid(gridEl) {
+    if (!gridEl) return;
+    const labels = Array.from(gridEl.children).filter(el => el.classList && el.classList.contains("lbl"));
+    const inputs = Array.from(gridEl.children).filter(el => el.classList && el.classList.contains("inp"));
+    if (!labels.length || labels.length !== inputs.length) return;
+
+    const colOf = (el, fallback) => {
+      const raw = (el.style && (el.style.gridColumn || el.style.gridColumnStart)) || "";
+      const m = String(raw).match(/\d+/);
+      return m ? parseInt(m[0], 10) : fallback;
+    };
+
+    const ordered = labels.map((lbl, idx) => {
+      const col = colOf(lbl, idx + 1);
+      const match = inputs.find(inp => colOf(inp, -1) === col) || inputs[idx];
+      return { col, lbl, inp: match };
+    }).sort((a, b) => a.col - b.col);
+
+    const frag = document.createDocumentFragment();
+    ordered.forEach(pair => {
+      frag.appendChild(pair.lbl);
+      frag.appendChild(pair.inp);
+    });
+    gridEl.innerHTML = "";
+    gridEl.appendChild(frag);
+  }
+
+  function setupBottomSheetUi() {
+    const host = $("sheetContentHost");
+    const overlay = $("sheetOverlay");
+    if (!host || !overlay) return;
+
+    const sheetDefs = [
+      { key: "env", title: "環境", card: $("envCard") },
+      { key: "basic", title: "基本", card: $("accBody_basic") ? $("accBody_basic").closest(".accordionCard") : null },
+      { key: "a", title: "スキルA", card: $("accBody_a") ? $("accBody_a").closest(".accordionCard") : null },
+      { key: "b", title: "スキルB", card: $("accBody_b") ? $("accBody_b").closest(".accordionCard") : null },
+      { key: "ult", title: "究極", card: $("accBody_ult") ? $("accBody_ult").closest(".accordionCard") : null },
+      { key: "ext", title: "外部支援", card: $("extSupportCard") },
+    ];
+
+    sheetDefs.forEach(def => {
+      if (!def.card) return;
+      def.card.dataset.sheet = def.key;
+      def.card.dataset.sheetTitle = def.title;
+      def.card.classList.add("sheetSection", "sheetCard", "active");
+      def.card.classList.remove("open");
+      const body = def.card.querySelector(".cardBody");
+      if (body) body.style.display = "block";
+      host.appendChild(def.card);
+      def.card.querySelectorAll(".tworow, .supportGrid").forEach(interleavePairGrid);
+      def.card.querySelectorAll(".supportHead").forEach(head => {
+        const label = head.querySelector("label");
+        if (label) {
+          head.parentElement.insertBefore(label, head.parentElement.firstChild);
+        }
+        head.remove();
+      });
+    });
+
+    const panels = Array.from(document.querySelectorAll(".sheetSection"));
+    const titles = { env: "環境", basic: "基本", a: "スキルA", b: "スキルB", ult: "究極", ext: "外部支援", record: "記録" };
+    let current = null;
+
+    const updateDockActive = () => {
+      document.querySelectorAll(".dockBtn[data-sheet]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.sheet === current);
+      });
+    };
+
+    const openSheet = (key) => {
+      current = key;
+      panels.forEach(p => p.classList.toggle("active", p.dataset.sheet === key));
+      if ($("sheetTitle")) $("sheetTitle").textContent = titles[key] || "設定";
+      overlay.classList.add("open");
+      overlay.setAttribute("aria-hidden", "false");
+      document.body.classList.add("sheetOpen");
+      updateDockActive();
+    };
+
+    const closeSheet = () => {
+      current = null;
+      overlay.classList.remove("open");
+      overlay.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("sheetOpen");
+      updateDockActive();
+    };
+
+    document.querySelectorAll(".dockBtn[data-sheet], .summaryCard[data-open-sheet]").forEach(btn => {
+      btn.addEventListener("click", () => openSheet(btn.dataset.sheet || btn.dataset.openSheet));
+    });
+    if ($("sheetClose")) $("sheetClose").addEventListener("click", closeSheet);
+    if ($("sheetBackdrop")) $("sheetBackdrop").addEventListener("click", closeSheet);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
+  }
+
+  function fmtPct1(num) {
+    return `${r6(num)}%`;
+  }
+
+  function summaryLinesHtml(rows) {
+    if (!rows || !rows.length) return '<div class="summaryEmpty">未設定</div>';
+    return rows.map(([k, v]) => `<div class="summaryLine"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
+  }
+
+  function setSummaryHtml(id, rows) {
+    const el = $(id);
+    if (!el) return;
+    el.innerHTML = summaryLinesHtml(rows);
+  }
+
+  function refreshSettingsSummaries() {
+    const v = getValInternal();
+    setSummaryHtml("summary_env", [
+      ["難易度", diffLabel(v.envDiff)],
+      ["防御減少", `${v.defReduce}`],
+      ["物理補正", `${r6(v.physMul)}`],
+      ["Rege", `${r6(v.manaPerSec * 100)}%`],
+      ["クリ率", `${r6(v.critChancePct)}%`],
+      ["同ユニット", `${v.sameUnitCount}体`],
+    ]);
+
+    setSummaryHtml("summary_basic", [
+      ["攻撃力", addComma(v.atk)],
+      ["攻撃速度", `${r6(v.aspd)}`],
+      ["属性 / 対象", `${attrLabel(v.basicAttr)} / ${targetLabel(v.basicTarget)}`],
+      [v.ultType === "cool" ? "クールタイム" : "Maxマナ", `${v.gaugeMax}`],
+    ]);
+
+    setSummaryHtml("summary_a", [
+      ["倍率 / 確率", `${r6(v.aMul * 100)}% / ${r6(v.aP * 100)}%`],
+      ["F / 影響F", `${v.aF} / ${v.aImpactF}`],
+      ["属性 / 対象", `${attrLabel(v.aAttr)} / ${targetLabel(v.aTarget)}`],
+      ["猫の魔法使い", v.aUseGainMana5 ? "ON" : "OFF"],
+    ]);
+
+    const bThird = v.bType === "prob" ? `${r6(v.bP * 100)}%` : (v.bType === "count" ? `${v.bN}回` : "-" );
+    setSummaryHtml("summary_b", [
+      ["タイプ", bTypeLabel(v.bType)],
+      ["倍率 / 第3項目", `${r6(v.bMul * 100)}% / ${bThird}`],
+      ["F / 影響F", `${v.bF} / ${v.bImpactF}`],
+      ["属性 / 対象", `${attrLabel(v.bAttr)} / ${targetLabel(v.bTarget)}`],
+    ]);
+
+    const eventLabel = supportTypeLabel(v.ultEventType || "none");
+    setSummaryHtml("summary_ult", [
+      ["タイプ", ultTypeLabel(v.ultType)],
+      ["倍率 / F", `${r6(v.ultMul * 100)}% / ${v.ultF}`],
+      ["影響F / イベント", `${v.ultImpactF} / ${eventLabel}`],
+      ["効果量", v.ultEventType === "none" ? "-" : `${r6(v.ultEventAmount * 100)}%`],
+      ["リセット / 停止", `${ultResetLabel(v.ultReset)} / ${v.ultStopsGauge ? "停止" : "進行"}`],
+      ["鬼神忍者", v.critABShortenUlt2s ? "ON" : "OFF"],
+    ]);
+
+    const enabledSupports = (v.supports || []).filter(s => s.enabled && s.type !== "none");
+    const extRows = [["使用枠", `${enabledSupports.length}/6`]];
+    enabledSupports.slice(0, 2).forEach((s, idx) => {
+      const suffix = isCoverageSupportType(s.type) ? `${r6(s.base)}% × ${s.count}体` : `${r6(s.base)}回/秒 × ${s.count}体`;
+      extRows.push([`枠${idx + 1}`, `${supportTypeLabel(s.type)} / ${suffix}`]);
+    });
+    if (enabledSupports.length > 2) extRows.push(["その他", `+${enabledSupports.length - 2}枠`]);
+    setSummaryHtml("summary_ext", extRows);
+
+    refreshRecordStatus();
+  }
+
+  function fmtSavedAt(ts) {
+    try {
+      const d = new Date(ts);
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } catch (_) {
+      return "保存済み";
+    }
+  }
+
+  function readSlot(slotNo) {
+    try {
+      const raw = localStorage.getItem(SLOT_KEYS[slotNo - 1]);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.state) return parsed;
+      return { savedAt: null, state: parsed };
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function refreshRecordStatus() {
+    for (let i = 1; i <= 3; i++) {
+      const status = $("slot" + i + "Status");
+      if (!status) continue;
+      const slot = readSlot(i);
+      status.textContent = slot ? (slot.savedAt ? fmtSavedAt(slot.savedAt) : "保存済み") : "未保存";
+    }
+  }
+
+  function saveSlot(slotNo) {
+    try {
+      const payload = { savedAt: Date.now(), state: readFormState() };
+      localStorage.setItem(SLOT_KEYS[slotNo - 1], JSON.stringify(payload));
+      refreshRecordStatus();
+      alert(`記録${slotNo}へ保存しました`);
+      return true;
+    } catch (_) {
+      alert(`記録${slotNo}への保存に失敗しました`);
+      return false;
+    }
+  }
+
+  function loadSlot(slotNo) {
+    try {
+      const slot = readSlot(slotNo);
+      if (!slot) {
+        alert(`記録${slotNo}は未保存です`);
+        return false;
+      }
+      applyFormState(slot.state || {});
+      normalizeAll();
+      syncUiState();
+      validateAndRender();
+      alert(`記録${slotNo}を読み込みました`);
+      return true;
+    } catch (_) {
+      alert(`記録${slotNo}の読込に失敗しました`);
+      return false;
+    }
   }
 
   // ---------- アコーディオン（入力カード） ----------
@@ -1544,6 +1785,7 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     syncSegmentsFromHidden();
     syncEnvDerivedUI();
     syncNoteVisibility();
+    refreshSettingsSummaries();
   }
 
   function clearResultBars() {
@@ -1740,7 +1982,7 @@ function render() {
   }
 
   function resetAll() {
-    try { STORAGE_KEYS.forEach((key) => localStorage.removeItem(key)); } catch (_) {}
+    try { STORAGE_KEYS.forEach((key) => localStorage.removeItem(key)); SLOT_KEYS.forEach((key) => localStorage.removeItem(key)); } catch (_) {}
     seedDefaults();
     normalizeAll();
     syncUiState();
@@ -1800,6 +2042,7 @@ function render() {
   initBindings();
   setupSegments();
   setupAccordions();
+  setupBottomSheetUi();
   if (!load(true)) {
     validateAndRender();
   }

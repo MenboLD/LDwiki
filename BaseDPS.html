@@ -24,7 +24,36 @@
     ・影響時間は <b>ダメージとは別</b> に集計します。スキルA / スキルB / 究極ごとの平均影響時間と、同ユニット複数体時の参考稼働率を表示します。
   </div>
 
-  <div class="grid">
+  
+
+  <div class="summaryGrid" id="summaryGrid">
+    <button type="button" class="summaryCard" data-open-sheet="env">
+      <div class="summaryHead">環境</div>
+      <div class="summaryBody" id="summary_env">-</div>
+    </button>
+    <button type="button" class="summaryCard" data-open-sheet="basic">
+      <div class="summaryHead">基本</div>
+      <div class="summaryBody" id="summary_basic">-</div>
+    </button>
+    <button type="button" class="summaryCard" data-open-sheet="a">
+      <div class="summaryHead">スキルA</div>
+      <div class="summaryBody" id="summary_a">-</div>
+    </button>
+    <button type="button" class="summaryCard" data-open-sheet="b">
+      <div class="summaryHead">スキルB</div>
+      <div class="summaryBody" id="summary_b">-</div>
+    </button>
+    <button type="button" class="summaryCard" data-open-sheet="ult">
+      <div class="summaryHead">究極</div>
+      <div class="summaryBody" id="summary_ult">-</div>
+    </button>
+    <button type="button" class="summaryCard" data-open-sheet="ext">
+      <div class="summaryHead">外部支援</div>
+      <div class="summaryBody" id="summary_ext">-</div>
+    </button>
+  </div>
+
+  <div class="grid" id="inputCardsGrid">
     
     <div class="card accordionCard open" id="envCard">
       <div class="headRow accHeader" data-acc="env">
@@ -580,15 +609,7 @@
         <div class="barValue" id="valCritMagic">-</div>
       </div>
 </div>
-
-    <div class="btns">
-      <button id="calcBtn">計算する</button>
-      <button id="saveBtn">入力を保存</button>
-      <button id="loadBtn">保存を読み込み</button>
-      <button id="resetBtn">初期化</button>
-    </div>
-
-    <div class="hr"></div>
+<div class="hr"></div>
     <div class="mono monoHtml" id="detailOut"></div>
     <div class="legendBox" id="detailLegend"></div>
     <div class="hr"></div>
@@ -597,6 +618,47 @@
     <div class="legendBox" id="formulaLegend"></div>
 
   </div>
+</div>
+
+<div class="bottomDock" id="bottomDock">
+  <button type="button" class="dockBtn" data-sheet="env">環境</button>
+  <button type="button" class="dockBtn" data-sheet="basic">基本</button>
+  <button type="button" class="dockBtn" data-sheet="a">A</button>
+  <button type="button" class="dockBtn" data-sheet="b">B</button>
+  <button type="button" class="dockBtn" data-sheet="ult">究極</button>
+  <button type="button" class="dockBtn" data-sheet="ext">外部支援</button>
+  <button type="button" class="dockBtn" data-sheet="record">記録</button>
+</div>
+
+<div class="sheetOverlay" id="sheetOverlay" aria-hidden="true">
+  <button type="button" class="sheetBackdrop" id="sheetBackdrop" aria-label="閉じる"></button>
+  <section class="sheetPanel" id="sheetPanel" aria-modal="true" role="dialog">
+    <div class="sheetHandle" aria-hidden="true"></div>
+    <div class="sheetTopBar">
+      <div class="sheetTitle" id="sheetTitle">設定</div>
+      <button type="button" class="sheetClose" id="sheetClose">閉じる</button>
+    </div>
+    <div class="sheetContentHost" id="sheetContentHost"></div>
+    <section class="sheetSection recordSheet" data-sheet="record" id="recordPanel">
+      <div class="recordIntro">自動保存は常時有効です。下の3枠は手動保存/読込用です。</div>
+      <div class="recordRow">
+        <div class="recordMeta"><div class="recordName">記録1</div><div class="recordStatus" id="slot1Status">未保存</div></div>
+        <div class="recordBtns"><button type="button" id="saveSlot1Btn">セーブ1</button><button type="button" id="loadSlot1Btn">ロード1</button></div>
+      </div>
+      <div class="recordRow">
+        <div class="recordMeta"><div class="recordName">記録2</div><div class="recordStatus" id="slot2Status">未保存</div></div>
+        <div class="recordBtns"><button type="button" id="saveSlot2Btn">セーブ2</button><button type="button" id="loadSlot2Btn">ロード2</button></div>
+      </div>
+      <div class="recordRow">
+        <div class="recordMeta"><div class="recordName">記録3</div><div class="recordStatus" id="slot3Status">未保存</div></div>
+        <div class="recordBtns"><button type="button" id="saveSlot3Btn">セーブ3</button><button type="button" id="loadSlot3Btn">ロード3</button></div>
+      </div>
+      <div class="recordRow recordReset">
+        <div class="recordMeta"><div class="recordName">初期化</div><div class="recordStatus">現在入力と自動保存を初期値へ戻します</div></div>
+        <div class="recordBtns"><button type="button" id="resetBtn">初期化</button></div>
+      </div>
+    </section>
+  </section>
 </div>
 </body>
 </html>
