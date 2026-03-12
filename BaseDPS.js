@@ -1460,18 +1460,18 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     html += lineHtml("");
     html += lineHtml(`<span class="sectionHead">=== 影響時間（平均・ダメージとは別計算） ===</span>`);
     html += lineHtml(`同ユニット数: ${hVal("valMix", eff.unitCount)}`);
-    const copyACover = `mode=coverage / source=スキルA / 単体被覆率=${r6(eff.a.singleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.a.multiCoveragePct)}%`;
-    const copyBCover = `mode=coverage / source=スキルB / 単体被覆率=${r6(eff.b.singleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.b.multiCoveragePct)}%`;
-    const copyUCover = `mode=coverage / source=究極 / 単体被覆率=${r6(eff.u.singleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.u.multiCoveragePct)}%`;
-    const copyTotalCover = `mode=coverage / source=参考合計 / 単体被覆率=${r6(eff.totalSingleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.totalMultiCoveragePct)}%`;
+    const copyACover = `${r6(eff.a.singleCoveragePct)}`;
+    const copyBCover = `${r6(eff.b.singleCoveragePct)}`;
+    const copyUCover = `${r6(eff.u.singleCoveragePct)}`;
+    const copyTotalCover = `${r6(eff.totalSingleCoveragePct)}`;
     html += lineHtml(`スキルA: 回/秒=${hVal("valA", r6(eff.a.ratePerSec))} / 秒/回=${hVal("valA", eff.a.ratePerSec > 0 ? r6(eff.a.secPerProc) : "-")} / 影響F/秒=${hVal("valA", r6(eff.a.rawFPerSec))} / 単体稼働率=${hVal("valA", r6(eff.a.singleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valA", r6(eff.a.multiCoveragePct))}%${copyBtn(copyACover, "外部支援用コピー")}`);
     html += lineHtml(`スキルB: 回/秒=${hVal("valB", r6(eff.b.ratePerSec))} / 秒/回=${hVal("valB", eff.b.ratePerSec > 0 ? r6(eff.b.secPerProc) : "-")} / 影響F/秒=${hVal("valB", r6(eff.b.rawFPerSec))} / 単体稼働率=${hVal("valB", r6(eff.b.singleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valB", r6(eff.b.multiCoveragePct))}%${copyBtn(copyBCover, "外部支援用コピー")}`);
     html += lineHtml(`究極: 回/秒=${hVal("valUlt", r6(eff.u.ratePerSec))} / 秒/回=${hVal("valUlt", eff.u.ratePerSec > 0 ? r6(eff.u.secPerProc) : "-")} / 影響F/秒=${hVal("valUlt", r6(eff.u.rawFPerSec))} / 単体稼働率=${hVal("valUlt", r6(eff.u.singleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valUlt", r6(eff.u.multiCoveragePct))}%${copyBtn(copyUCover, "外部支援用コピー")}`);
     html += lineHtml(`参考合計: 影響F/秒=${hVal("valMix", r6(eff.totalRawFPerSec))} / 単体稼働率=${hVal("valMix", r6(eff.totalSingleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valMix", r6(eff.totalMultiCoveragePct))}%${copyBtn(copyTotalCover, "外部支援用コピー")}`);
     if (eff.ultEvent.type !== "none" && eff.ultEvent.amount > 0) {
       const ultEventText = eff.ultEvent.type === "manaPct"
-        ? `究極イベント支援: ${hVal("valUlt", eff.ultEvent.typeLabel)} / 効果量=${hVal("valUlt", r6(eff.ultEvent.amount * 100))}% / 単体発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.unitRate))} / ${eff.ultEvent.count}体合計発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.totalRate))} / 参考マナ増加=${hVal("valUlt", r6(eff.ultEvent.addManaPerSec))} /秒${copyBtn(`mode=rate / source=究極イベント / type=${eff.ultEvent.type} / 効果量=${r6(eff.ultEvent.amount * 100)}% / 単体発動回数/秒=${r6(eff.ultEvent.unitRate)} / 体数=${eff.ultEvent.count} / 合計発動回数/秒=${r6(eff.ultEvent.totalRate)}`, "外部支援用コピー")}`
-        : `究極イベント支援: ${hVal("valUlt", eff.ultEvent.typeLabel)} / 効果量=${hVal("valUlt", r6(eff.ultEvent.amount * 100))}% / 単体発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.unitRate))} / ${eff.ultEvent.count}体合計発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.totalRate))} / 参考クール短縮=${hVal("valUlt", r6(eff.ultEvent.addCoolPerSec))} 秒/秒${copyBtn(`mode=rate / source=究極イベント / type=${eff.ultEvent.type} / 効果量=${r6(eff.ultEvent.amount * 100)}% / 単体発動回数/秒=${r6(eff.ultEvent.unitRate)} / 体数=${eff.ultEvent.count} / 合計発動回数/秒=${r6(eff.ultEvent.totalRate)}`, "外部支援用コピー")}`;
+        ? `究極イベント支援: ${hVal("valUlt", eff.ultEvent.typeLabel)} / 効果量=${hVal("valUlt", r6(eff.ultEvent.amount * 100))}% / 単体発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.unitRate))} / ${eff.ultEvent.count}体合計発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.totalRate))} / 参考マナ増加=${hVal("valUlt", r6(eff.ultEvent.addManaPerSec))} /秒${copyBtn(`${r6(eff.ultEvent.unitRate)}`, "外部支援用コピー")}`
+        : `究極イベント支援: ${hVal("valUlt", eff.ultEvent.typeLabel)} / 効果量=${hVal("valUlt", r6(eff.ultEvent.amount * 100))}% / 単体発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.unitRate))} / ${eff.ultEvent.count}体合計発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.totalRate))} / 参考クール短縮=${hVal("valUlt", r6(eff.ultEvent.addCoolPerSec))} 秒/秒${copyBtn(`${r6(eff.ultEvent.unitRate)}`, "外部支援用コピー")}`;
       html += lineHtml(ultEventText);
     }
 
@@ -1631,10 +1631,10 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     setBar("barCritMagic","valCritMagic", ex.magicCritGainPct);
 
     if ($("effectMeta")) $("effectMeta").textContent = `同ユニット数: ${eff.unitCount}体`;
-    const copyACoverMini = `mode=coverage / source=A / 単体被覆率=${r6(eff.a.singleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.a.multiCoveragePct)}%`;
-    const copyBCoverMini = `mode=coverage / source=B / 単体被覆率=${r6(eff.b.singleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.b.multiCoveragePct)}%`;
-    const copyUCoverMini = `mode=coverage / source=究極 / 単体被覆率=${r6(eff.u.singleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.u.multiCoveragePct)}%`;
-    const ultEventCopyMini = `mode=rate / source=究極イベント / type=${eff.ultEvent.type} / 効果量=${r6(eff.ultEvent.amount * 100)}% / 単体発動回数/秒=${r6(eff.ultEvent.unitRate)} / 体数=${eff.ultEvent.count} / 合計発動回数/秒=${r6(eff.ultEvent.totalRate)}`;
+    const copyACoverMini = `${r6(eff.a.singleCoveragePct)}`;
+    const copyBCoverMini = `${r6(eff.b.singleCoveragePct)}`;
+    const copyUCoverMini = `${r6(eff.u.singleCoveragePct)}`;
+    const ultEventCopyMini = `${r6(eff.ultEvent.unitRate)}`;
     const ultEventMini = (eff.ultEvent.type !== "none" && eff.ultEvent.amount > 0)
       ? (eff.ultEvent.type === "manaPct"
           ? `<div class="effectSub">イベント支援: ${eff.ultEvent.typeLabel} ${r6(eff.ultEvent.amount * 100)}% / 単体 ${r6(eff.ultEvent.unitRate)} 回/秒 / ${eff.ultEvent.count}体合計 ${r6(eff.ultEvent.totalRate)} 回/秒 / 参考マナ増加 ${r6(eff.ultEvent.addManaPerSec)} /秒${copyBtn(ultEventCopyMini, "イベントコピー")}</div>`
