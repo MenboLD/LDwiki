@@ -480,3 +480,5 @@ button:hover{ filter:brightness(1.07); }
 .bottomSheet input,.bottomSheet select{ font-size:16px; }
 .bottomSheet .inputManagedCard{ display:block !important; }
 .bottomSheet .recordPanelTemplate{ display:block !important; }
+
+[hidden]{ display:none !important; }

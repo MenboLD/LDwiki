@@ -1,7 +1,7 @@
 (() => {
-  const APP_VERSION = "v8_9_5";
+  const APP_VERSION = "v8_9_7";
   const F = 40;
-  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_5", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
+  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_7", "LD_DPS_TOOL_V8_9_5", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
   const SLOT_KEYS = ["LD_DPS_TOOL_SLOT1", "LD_DPS_TOOL_SLOT2", "LD_DPS_TOOL_SLOT3"];
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
@@ -1711,12 +1711,18 @@ function render() {
     if (!box) return;
     const g = getValInternal();
     const extUsed = [1,2,3,4,5,6].filter(i => !!($("ext"+i+"Enabled") && $("ext"+i+"Enabled").checked && $("ext"+i+"Type").value !== "none")).length;
+    const regenPct = readNumber($("manaRegenPct") ? $("manaRegenPct").value : "0");
+    const aMulPct = readNumber($("aMulPct") ? $("aMulPct").value : "0");
+    const aPPct = readNumber($("aPPct") ? $("aPPct").value : "0");
+    const bMulPct = readNumber($("bMulPct") ? $("bMulPct").value : "0");
+    const ultMulPct = readNumber($("ultMulPct") ? $("ultMulPct").value : "0");
+    const envText = $("envDiff") && $("envDiff").selectedOptions[0] ? $("envDiff").selectedOptions[0].textContent : "ノーマル";
     const items = [
-      ["環境", `Rege ${g.manaRegenPct}% / ${$("envDiff").selectedOptions[0].textContent} / 防御減少 ${g.defReduce}`],
+      ["環境", `Rege ${regenPct}% / ${envText} / 防御減少 ${g.defReduce}`],
       ["基本", `攻撃力 ${g.atk} / 速度 ${r6(g.aspd)} / ${g.basicAttr === "phys" ? "物理" : "魔法"}`],
-      ["スキルA", `倍率 ${g.aMulPct}% / 確率 ${g.aPPct}% / F ${g.aF}${g.aUseGainMana5 ? " / 猫ON" : ""}`],
-      ["スキルB", `${g.bType === "none" ? "無し" : g.bType === "prob" ? "確率" : "規定回数"} / 倍率 ${g.bMulPct}% / F ${g.bF}`],
-      ["究極", `${g.ultType === "none" ? "無し" : g.ultType === "mana" ? "マナ" : "クールタイム"} / 倍率 ${g.ultMulPct}% / F ${g.ultF}`],
+      ["スキルA", `倍率 ${aMulPct}% / 確率 ${aPPct}% / F ${g.aF}${g.aUseGainMana5 ? " / 猫ON" : ""}`],
+      ["スキルB", `${g.bType === "none" ? "無し" : g.bType === "prob" ? "確率" : "規定回数"} / 倍率 ${bMulPct}% / F ${g.bF}`],
+      ["究極", `${g.ultType === "none" ? "無し" : g.ultType === "mana" ? "マナ" : "クールタイム"} / 倍率 ${ultMulPct}% / F ${g.ultF}`],
       ["外部支援", extUsed ? `${extUsed}枠使用中` : "未使用"],
       ["記録", "セーブ1〜3 / ロード1〜3 / 初期化"],
     ];
@@ -1782,6 +1788,7 @@ function render() {
       if ($("loadSlot"+i)) $("loadSlot"+i).addEventListener("click", () => loadSlot(i));
     });
     if ($("resetAllRecord")) $("resetAllRecord").addEventListener("click", resetAll);
+    closeSheet();
     refreshInputSummary();
   }
 
