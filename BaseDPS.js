@@ -1,7 +1,7 @@
 (() => {
-  const APP_VERSION = "v8_8_8";
+  const APP_VERSION = "v8_8_13";
   const F = 40;
-  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
+  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
   const SUPABASE_URL = String(window.LD_SUPABASE_URL || "").trim();
@@ -1634,9 +1634,15 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     const copyACoverMini = `mode=coverage / source=A / 単体被覆率=${r6(eff.a.singleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.a.multiCoveragePct)}%`;
     const copyBCoverMini = `mode=coverage / source=B / 単体被覆率=${r6(eff.b.singleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.b.multiCoveragePct)}%`;
     const copyUCoverMini = `mode=coverage / source=究極 / 単体被覆率=${r6(eff.u.singleCoveragePct)}% / 体数=${eff.unitCount} / ${eff.unitCount}体参考稼働率=${r6(eff.u.multiCoveragePct)}%`;
+    const ultEventCopyMini = `mode=rate / source=究極イベント / type=${eff.ultEvent.type} / 効果量=${r6(eff.ultEvent.amount * 100)}% / 単体発動回数/秒=${r6(eff.ultEvent.unitRate)} / 体数=${eff.ultEvent.count} / 合計発動回数/秒=${r6(eff.ultEvent.totalRate)}`;
+    const ultEventMini = (eff.ultEvent.type !== "none" && eff.ultEvent.amount > 0)
+      ? (eff.ultEvent.type === "manaPct"
+          ? `<div class="effectSub">イベント支援: ${eff.ultEvent.typeLabel} ${r6(eff.ultEvent.amount * 100)}% / 単体 ${r6(eff.ultEvent.unitRate)} 回/秒 / ${eff.ultEvent.count}体合計 ${r6(eff.ultEvent.totalRate)} 回/秒 / 参考マナ増加 ${r6(eff.ultEvent.addManaPerSec)} /秒${copyBtn(ultEventCopyMini, "イベントコピー")}</div>`
+          : `<div class="effectSub">イベント支援: ${eff.ultEvent.typeLabel} ${r6(eff.ultEvent.amount * 100)}% / 単体 ${r6(eff.ultEvent.unitRate)} 回/秒 / ${eff.ultEvent.count}体合計 ${r6(eff.ultEvent.totalRate)} 回/秒 / 参考CT短縮 ${r6(eff.ultEvent.addCoolPerSec)} 秒/秒${copyBtn(ultEventCopyMini, "イベントコピー")}</div>`)
+      : "";
     if ($("effectA")) $("effectA").innerHTML = `${r6(eff.a.ratePerSec)} 回/秒 / ${eff.a.ratePerSec > 0 ? r6(eff.a.secPerProc) : "-"} 秒/回 / ${v.aImpactF}F → ${r6(eff.a.rawFPerSec)}F/秒（単体 ${r6(eff.a.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.a.multiCoveragePct)}%）${copyBtn(copyACoverMini, "コピー")}`;
     if ($("effectB")) $("effectB").innerHTML = `${r6(eff.b.ratePerSec)} 回/秒 / ${eff.b.ratePerSec > 0 ? r6(eff.b.secPerProc) : "-"} 秒/回 / ${v.bImpactF}F → ${r6(eff.b.rawFPerSec)}F/秒（単体 ${r6(eff.b.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.b.multiCoveragePct)}%）${copyBtn(copyBCoverMini, "コピー")}`;
-    if ($("effectU")) $("effectU").innerHTML = `${r6(eff.u.ratePerSec)} 回/秒 / ${eff.u.ratePerSec > 0 ? r6(eff.u.secPerProc) : "-"} 秒/回 / ${v.ultImpactF}F → ${r6(eff.u.rawFPerSec)}F/秒（単体 ${r6(eff.u.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.u.multiCoveragePct)}%）${copyBtn(copyUCoverMini, "コピー")}`;
+    if ($("effectU")) $("effectU").innerHTML = `${r6(eff.u.ratePerSec)} 回/秒 / ${eff.u.ratePerSec > 0 ? r6(eff.u.secPerProc) : "-"} 秒/回 / ${v.ultImpactF}F → ${r6(eff.u.rawFPerSec)}F/秒（単体 ${r6(eff.u.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.u.multiCoveragePct)}%）${copyBtn(copyUCoverMini, "コピー")}${ultEventMini}`;
     if ($("effectTotal")) $("effectTotal").textContent = `${r6(eff.totalRawFPerSec)}F/秒（単体 ${r6(eff.totalSingleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.totalMultiCoveragePct)}%）`;
 
     $("detailOut").innerHTML = buildDetailHtml(v, res, ex, eff, tb, br);

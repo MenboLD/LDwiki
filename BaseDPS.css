@@ -397,6 +397,12 @@ button:hover{ filter:brightness(1.07); }
   font-size:12px;
   line-height:1.45;
 }
+.effectSub{
+  margin-top:6px;
+  color:#a9c9ff;
+  font-size:11px;
+  line-height:1.45;
+}
 .effectRow.total{
   margin-top:10px;
   padding-top:10px;
