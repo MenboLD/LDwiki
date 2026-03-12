@@ -1710,19 +1710,24 @@ function render() {
     const box = $("inputSummary");
     if (!box) return;
     const g = getValInternal();
-    const extUsed = [1,2,3,4,5,6].filter(i => !!($("ext"+i+"Enabled") && $("ext"+i+"Enabled").checked && $("ext"+i+"Type").value !== "none")).length;
-    const regenPct = readNumber($("manaRegenPct") ? $("manaRegenPct").value : "0");
-    const aMulPct = readNumber($("aMulPct") ? $("aMulPct").value : "0");
-    const aPPct = readNumber($("aPPct") ? $("aPPct").value : "0");
-    const bMulPct = readNumber($("bMulPct") ? $("bMulPct").value : "0");
-    const ultMulPct = readNumber($("ultMulPct") ? $("ultMulPct").value : "0");
+    const extUsed = [1,2,3,4,5,6].filter(i => !!($("ext"+i+"Enabled") && $("ext"+i+"Enabled").checked && $("ext"+i+"Type") && $("ext"+i+"Type").value !== "none")).length;
+    const regenPct = readNumber($("manaRegenPct") ? $("manaRegenPct").value : 0);
+    const aMulPct = readNumber($("aMulPct") ? $("aMulPct").value : 0);
+    const aPPct = readNumber($("aPPct") ? $("aPPct").value : 0);
+    const bMulPct = readNumber($("bMulPct") ? $("bMulPct").value : 0);
+    const ultMulPct = readNumber($("ultMulPct") ? $("ultMulPct").value : 0);
     const envText = $("envDiff") && $("envDiff").selectedOptions[0] ? $("envDiff").selectedOptions[0].textContent : "ノーマル";
+    const defReduce = Number.isFinite(g.defReduce) ? g.defReduce : readInt($("defReduce") ? $("defReduce").value : 0);
+    const aspd = Number.isFinite(g.aspd) ? g.aspd : readNumber($("aspd") ? $("aspd").value : 0);
+    const aF = Number.isFinite(g.aF) ? g.aF : readInt($("aF") ? $("aF").value : 0);
+    const bF = Number.isFinite(g.bF) ? g.bF : readInt($("bF") ? $("bF").value : 0);
+    const ultF = Number.isFinite(g.ultF) ? g.ultF : readInt($("ultF") ? $("ultF").value : 0);
     const items = [
-      ["環境", `Rege ${regenPct}% / ${envText} / 防御減少 ${g.defReduce}`],
-      ["基本", `攻撃力 ${g.atk} / 速度 ${r6(g.aspd)} / ${g.basicAttr === "phys" ? "物理" : "魔法"}`],
-      ["スキルA", `倍率 ${aMulPct}% / 確率 ${aPPct}% / F ${g.aF}${g.aUseGainMana5 ? " / 猫ON" : ""}`],
-      ["スキルB", `${g.bType === "none" ? "無し" : g.bType === "prob" ? "確率" : "規定回数"} / 倍率 ${bMulPct}% / F ${g.bF}`],
-      ["究極", `${g.ultType === "none" ? "無し" : g.ultType === "mana" ? "マナ" : "クールタイム"} / 倍率 ${ultMulPct}% / F ${g.ultF}`],
+      ["環境", `Rege ${regenPct}% / ${envText} / 防御減少 ${defReduce}`],
+      ["基本", `攻撃力 ${g.atk} / 速度 ${r6(aspd)} / ${g.basicAttr === "phys" ? "物理" : "魔法"}`],
+      ["スキルA", `倍率 ${aMulPct}% / 確率 ${aPPct}% / F ${aF}${g.aUseGainMana5 ? " / 猫ON" : ""}`],
+      ["スキルB", `${g.bType === "none" ? "無し" : g.bType === "prob" ? "確率" : "規定回数"} / 倍率 ${bMulPct}% / F ${bF}`],
+      ["究極", `${g.ultType === "none" ? "無し" : g.ultType === "mana" ? "マナ" : "クールタイム"} / 倍率 ${ultMulPct}% / F ${ultF}`],
       ["外部支援", extUsed ? `${extUsed}枠使用中` : "未使用"],
       ["記録", "セーブ1〜3 / ロード1〜3 / 初期化"],
     ];
@@ -1733,15 +1738,14 @@ function render() {
   }
 
   function closeSheet() {
-    if (!_activeSheet) return;
     const overlay = $("sheetOverlay");
     const sheet = $("bottomSheet");
     const body = $("sheetBody");
     const stash = $("sheetStash");
-    if (_activeSheetNode && body.contains(_activeSheetNode)) stash.appendChild(_activeSheetNode);
-    body.innerHTML = "";
-    sheet.hidden = true;
-    overlay.hidden = true;
+    if (_activeSheetNode && body && body.contains(_activeSheetNode)) stash.appendChild(_activeSheetNode);
+    if (body) body.innerHTML = "";
+    if (sheet) sheet.hidden = true;
+    if (overlay) overlay.hidden = true;
     document.querySelectorAll("#bottomMenu [data-sheet]").forEach(btn => btn.classList.toggle("active", false));
     _activeSheet = null;
     _activeSheetNode = null;
