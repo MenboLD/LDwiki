@@ -21,39 +21,10 @@
   <div class="note annotation">
     ・1秒=40フレーム。マナ/クールタイムは <b>40Fのグローバル境界</b>で加算。<br>
     ・出力の小数は <b>小数第6位まで</b>（=第7位四捨五入）。内部計算の丸め規則は変更していません。<br>
-    ・影響時間は <b>ダメージとは別</b> に集計します。スキルA / スキルB / 究極ごとの平均影響時間と、同ユニット複数体時の参考稼働率を表示します。
+    ・影響時間は <b>ダメージとは別</b> に集計します。スキルA / スキルB / 究極ごとの平均影響時間と、同ユニット複数体時の参考稼働率を表示します。<br>・スキルA / スキルB / 究極の「倍率」はタップで電卓入力できます。
   </div>
 
-  
-
-  <div class="summaryGrid" id="summaryGrid">
-    <button type="button" class="summaryCard" data-open-sheet="env">
-      <div class="summaryHead">環境</div>
-      <div class="summaryBody" id="summary_env">-</div>
-    </button>
-    <button type="button" class="summaryCard" data-open-sheet="basic">
-      <div class="summaryHead">基本</div>
-      <div class="summaryBody" id="summary_basic">-</div>
-    </button>
-    <button type="button" class="summaryCard" data-open-sheet="a">
-      <div class="summaryHead">スキルA</div>
-      <div class="summaryBody" id="summary_a">-</div>
-    </button>
-    <button type="button" class="summaryCard" data-open-sheet="b">
-      <div class="summaryHead">スキルB</div>
-      <div class="summaryBody" id="summary_b">-</div>
-    </button>
-    <button type="button" class="summaryCard" data-open-sheet="ult">
-      <div class="summaryHead">究極</div>
-      <div class="summaryBody" id="summary_ult">-</div>
-    </button>
-    <button type="button" class="summaryCard" data-open-sheet="ext">
-      <div class="summaryHead">外部支援</div>
-      <div class="summaryBody" id="summary_ext">-</div>
-    </button>
-  </div>
-
-  <div class="grid" id="inputCardsGrid">
+  <div class="grid">
     
     <div class="card accordionCard open" id="envCard">
       <div class="headRow accHeader" data-acc="env">
@@ -212,7 +183,7 @@
           </select>
         </div>
         <div class="inp" style="grid-column:3;">
-          <input id="ultMulPct" type="text" inputmode="decimal" autocomplete="off" placeholder="1500%">
+          <input id="ultMulPct" class="calcField" data-calc-target="ultMulPct" type="text" inputmode="none" autocomplete="off" placeholder="1500%" readonly>
         </div>
         <div class="inp" style="grid-column:4;">
           <input id="ultF" type="text" inputmode="numeric" autocomplete="off" placeholder="44">
@@ -276,7 +247,7 @@
         <div class="lbl" style="grid-column:4;">影響F</div>
 
         <div class="inp" style="grid-column:1;">
-          <input id="aMulPct" type="text" inputmode="decimal" autocomplete="off" placeholder="600%">
+          <input id="aMulPct" class="calcField" data-calc-target="aMulPct" type="text" inputmode="none" autocomplete="off" placeholder="600%" readonly>
         </div>
         <div class="inp" style="grid-column:2;">
           <input id="aPPct" type="text" inputmode="decimal" autocomplete="off" placeholder="10.0%">
@@ -290,8 +261,8 @@
       </div>
 
       <div class="chk">
-        <input id="aUseGainMana5" type="checkbox">
-        <span>猫の魔法使い：スキルA使用時、自身のマナを5得る</span>
+        <input id="aUseGainMana8" type="checkbox">
+        <span>猫の魔法使い：スキルA使用時、自身のマナを8得る</span>
       </div>
 
       <div class="hint annotation">
@@ -338,7 +309,7 @@
           </select>
         </div>
         <div class="inp" style="grid-column:2;">
-          <input id="bMulPct" type="text" inputmode="decimal" autocomplete="off" placeholder="1500%">
+          <input id="bMulPct" class="calcField" data-calc-target="bMulPct" type="text" inputmode="none" autocomplete="off" placeholder="1500%" readonly>
         </div>
         <div class="inp" style="grid-column:3;">
           <input id="bThird" type="text" inputmode="decimal" autocomplete="off" placeholder="12.0%">
@@ -609,7 +580,15 @@
         <div class="barValue" id="valCritMagic">-</div>
       </div>
 </div>
-<div class="hr"></div>
+
+    <div class="btns">
+      <button id="calcBtn">計算する</button>
+      <button id="saveBtn">入力を保存</button>
+      <button id="loadBtn">保存を読み込み</button>
+      <button id="resetBtn">初期化</button>
+    </div>
+
+    <div class="hr"></div>
     <div class="mono monoHtml" id="detailOut"></div>
     <div class="legendBox" id="detailLegend"></div>
     <div class="hr"></div>
@@ -620,45 +599,40 @@
   </div>
 </div>
 
-<div class="bottomDock" id="bottomDock">
-  <button type="button" class="dockBtn" data-sheet="env">環境</button>
-  <button type="button" class="dockBtn" data-sheet="basic">基本</button>
-  <button type="button" class="dockBtn" data-sheet="a">A</button>
-  <button type="button" class="dockBtn" data-sheet="b">B</button>
-  <button type="button" class="dockBtn" data-sheet="ult">究極</button>
-  <button type="button" class="dockBtn" data-sheet="ext">外部支援</button>
-  <button type="button" class="dockBtn" data-sheet="record">記録</button>
+<div class="calcOverlay" id="calcOverlay" hidden>
+  <div class="calcBackdrop" id="calcBackdrop"></div>
+  <div class="calcModal" role="dialog" aria-modal="true" aria-labelledby="calcTitle">
+    <div class="calcHead">
+      <div class="calcTitle" id="calcTitle">倍率入力</div>
+      <button type="button" class="calcClose" id="calcCloseBtn" aria-label="閉じる">×</button>
+    </div>
+    <div class="calcTarget" id="calcTargetLabel">-</div>
+    <input id="calcDisplay" class="calcDisplay" type="text" inputmode="decimal" autocomplete="off" placeholder="数値または式を入力">
+    <div class="calcHint">四則演算に対応。確定で倍率欄へ % 付きで反映します。</div>
+    <div class="calcKeys" id="calcKeys">
+      <button type="button" class="calcKey calcWide" data-calc-action="clear">C</button>
+      <button type="button" class="calcKey" data-calc-action="back">BS</button>
+      <button type="button" class="calcKey" data-calc-value="(">(</button>
+      <button type="button" class="calcKey" data-calc-value=")">)</button>
+      <button type="button" class="calcKey" data-calc-value="7">7</button>
+      <button type="button" class="calcKey" data-calc-value="8">8</button>
+      <button type="button" class="calcKey" data-calc-value="9">9</button>
+      <button type="button" class="calcKey calcOp" data-calc-value="÷">÷</button>
+      <button type="button" class="calcKey" data-calc-value="4">4</button>
+      <button type="button" class="calcKey" data-calc-value="5">5</button>
+      <button type="button" class="calcKey" data-calc-value="6">6</button>
+      <button type="button" class="calcKey calcOp" data-calc-value="×">×</button>
+      <button type="button" class="calcKey" data-calc-value="1">1</button>
+      <button type="button" class="calcKey" data-calc-value="2">2</button>
+      <button type="button" class="calcKey" data-calc-value="3">3</button>
+      <button type="button" class="calcKey calcOp" data-calc-value="-">-</button>
+      <button type="button" class="calcKey calcWide" data-calc-value="0">0</button>
+      <button type="button" class="calcKey" data-calc-value=".">.</button>
+      <button type="button" class="calcKey calcOp" data-calc-value="+">+</button>
+      <button type="button" class="calcKey calcEval" data-calc-action="apply">確定</button>
+    </div>
+  </div>
 </div>
 
-<div class="sheetOverlay" id="sheetOverlay" aria-hidden="true">
-  <button type="button" class="sheetBackdrop" id="sheetBackdrop" aria-label="閉じる"></button>
-  <section class="sheetPanel" id="sheetPanel" aria-modal="true" role="dialog">
-    <div class="sheetHandle" aria-hidden="true"></div>
-    <div class="sheetTopBar">
-      <div class="sheetTitle" id="sheetTitle">設定</div>
-      <button type="button" class="sheetClose" id="sheetClose">閉じる</button>
-    </div>
-    <div class="sheetContentHost" id="sheetContentHost"></div>
-    <section class="sheetSection recordSheet" data-sheet="record" id="recordPanel">
-      <div class="recordIntro">自動保存は常時有効です。下の3枠は手動保存/読込用です。</div>
-      <div class="recordRow">
-        <div class="recordMeta"><div class="recordName">記録1</div><div class="recordStatus" id="slot1Status">未保存</div></div>
-        <div class="recordBtns"><button type="button" id="saveSlot1Btn">セーブ1</button><button type="button" id="loadSlot1Btn">ロード1</button></div>
-      </div>
-      <div class="recordRow">
-        <div class="recordMeta"><div class="recordName">記録2</div><div class="recordStatus" id="slot2Status">未保存</div></div>
-        <div class="recordBtns"><button type="button" id="saveSlot2Btn">セーブ2</button><button type="button" id="loadSlot2Btn">ロード2</button></div>
-      </div>
-      <div class="recordRow">
-        <div class="recordMeta"><div class="recordName">記録3</div><div class="recordStatus" id="slot3Status">未保存</div></div>
-        <div class="recordBtns"><button type="button" id="saveSlot3Btn">セーブ3</button><button type="button" id="loadSlot3Btn">ロード3</button></div>
-      </div>
-      <div class="recordRow recordReset">
-        <div class="recordMeta"><div class="recordName">初期化</div><div class="recordStatus">現在入力と自動保存を初期値へ戻します</div></div>
-        <div class="recordBtns"><button type="button" id="resetBtn">初期化</button></div>
-      </div>
-    </section>
-  </section>
-</div>
 </body>
 </html>

@@ -1,8 +1,7 @@
 (() => {
-  const APP_VERSION = "v8_9_0";
+  const APP_VERSION = "v8_8_17";
   const F = 40;
-  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_0", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
-  const SLOT_KEYS = ["LD_DPS_TOOL_SLOT1_V8_9_0", "LD_DPS_TOOL_SLOT2_V8_9_0", "LD_DPS_TOOL_SLOT3_V8_9_0"];
+  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_8_17", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
   const SUPABASE_URL = String(window.LD_SUPABASE_URL || "").trim();
@@ -98,6 +97,13 @@
   }
 
   const addComma = (nStr) => String(nStr).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  function fmtDec(x, maxDec = 6) {
+    if (!isFinite(x)) return "";
+    const s = Number(x).toFixed(maxDec);
+    return s.replace(/\.0+$/, "").replace(/(\.\d*?[1-9])0+$/, "$1");
+  }
+
 
   function setErr(el, on) { if (el) el.classList.toggle("errField", !!on); }
   function setLblErr(el, on) { if (el) el.classList.toggle("errLbl", !!on); }
@@ -205,20 +211,20 @@
     return b ? `${a}.${b}%` : `${a}%`;
   }
 
-  function toProbPctDisplay(raw) {
-    const t = trimDecimals(raw, 1);
+  function toProbPctDisplay(raw, maxDec = 6) {
+    const t = trimDecimals(raw, maxDec);
     if (!t) return "";
     const x = parseFloat(t);
     const v = isFinite(x) ? x : 0;
-    return `${v.toFixed(1)}%`;
+    return `${fmtDec(v, maxDec)}%`;
   }
 
-  function toAspdDisplay(raw) {
-    const t = trimDecimals(raw, 2);
+  function toAspdDisplay(raw, maxDec = 6) {
+    const t = trimDecimals(raw, maxDec);
     if (!t) return "";
     const x = parseFloat(t);
     const v = isFinite(x) ? x : 0;
-    return v.toFixed(2);
+    return fmtDec(v, maxDec);
   }
 
   function toAtkDisplay(raw) {
@@ -262,23 +268,17 @@
   // ---------- 外部支援（別ユニット由来） ----------
   function isCoverageSupportType(type){ return ["physPct","magicPct","basicPct","procMul","finalPct"].includes(type); }
   function supportTypeLabel(type){ return { none:"無し", physPct:"物理ダメージ増加", magicPct:"魔法ダメージ増加", basicPct:"基本攻撃ダメージ増加", procMul:"発動率倍率", finalPct:"最終ダメージ増加", manaPct:"最大マナ割合獲得", coolRemainPct:"残りクールタイム割合減少" }[type] || type; }
-  function diffLabel(type){ return { normal:"ノーマル", hard:"ハード", hell:"地獄", god:"神", prime:"太初" }[type] || type; }
-  function attrLabel(type){ return type === "magic" ? "魔法" : "物理"; }
-  function targetLabel(type){ return type === "multi" ? "複数" : "単体"; }
-  function ultTypeLabel(type){ return { none:"無し", mana:"マナ", cool:"クールタイム" }[type] || type; }
-  function ultResetLabel(type){ return type === "start" ? "開始時" : "終了時"; }
-  function bTypeLabel(type){ return { none:"無し", prob:"確率", count:"基本攻撃規定回数" }[type] || type; }
   function copyBtn(text, label = "コピー") {
     const safe = encodeURIComponent(String(text ?? ""));
     return ` <button type="button" class="copyBtn" data-copy="${safe}">${label}</button>`;
   }
   function toSupportAmountDisplay(type, raw){
-    if (type === "procMul") return trimDecimals(raw, 2);
-    return toPctDisplay(raw, 2, 6);
+    if (type === "procMul") return fmtDec(readNumber(trimDecimals(raw, 6) || 0), 6);
+    return toPctDisplay(raw, 6, 6);
   }
   function toSupportBaseDisplay(type, raw){
-    if (isCoverageSupportType(type)) return toPctDisplay(raw, 2, 6);
-    return trimDecimals(raw, 3);
+    if (isCoverageSupportType(type)) return toPctDisplay(raw, 6, 6);
+    return fmtDec(readNumber(trimDecimals(raw, 6) || 0), 6);
   }
   function getSupportRows(){
     const rows=[];
@@ -401,36 +401,124 @@
     el.addEventListener("change", commit);
   }
 
+
+
+  let _calcTargetId = null;
+  function evaluateCalcExpression(expr) {
+    const raw = String(expr || "").replace(/\s+/g, "").replace(/×/g, "*").replace(/÷/g, "/");
+    if (!raw) return null;
+    if (!/^[0-9+\-*/().]+$/.test(raw)) return null;
+    try {
+      const val = Function(`"use strict"; return (${raw});`)();
+      return (typeof val === "number" && isFinite(val)) ? val : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function openCalc(targetId) {
+    const input = $(targetId);
+    const overlay = $("calcOverlay");
+    const display = $("calcDisplay");
+    if (!input || !overlay || !display) return;
+    _calcTargetId = targetId;
+    $("calcTargetLabel").textContent = (input.closest('.inp')?.previousElementSibling?.textContent || '倍率').trim();
+    display.value = String(input.value || '').replace(/%/g, '');
+    overlay.hidden = false;
+    document.body.classList.add('calcOpen');
+    setTimeout(() => { try { display.focus(); display.select(); } catch (_) {} }, 0);
+  }
+
+  function closeCalc() {
+    const overlay = $("calcOverlay");
+    if (overlay) overlay.hidden = true;
+    document.body.classList.remove('calcOpen');
+    _calcTargetId = null;
+  }
+
+  function applyCalcValue() {
+    if (!_calcTargetId) return;
+    const input = $(_calcTargetId);
+    const display = $("calcDisplay");
+    if (!input || !display) return;
+    const val = evaluateCalcExpression(display.value);
+    if (val === null) {
+      display.classList.add('errField');
+      return;
+    }
+    display.classList.remove('errField');
+    input.value = toPctDisplay(String(val), 6, 6);
+    closeCalc();
+    validateAndRender();
+  }
+
+  function setupCalculator() {
+    document.querySelectorAll('.calcField').forEach((el) => {
+      el.addEventListener('click', () => openCalc(el.dataset.calcTarget || el.id));
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCalc(el.dataset.calcTarget || el.id); }
+      });
+    });
+    $("calcBackdrop")?.addEventListener('click', closeCalc);
+    $("calcCloseBtn")?.addEventListener('click', closeCalc);
+    $("calcDisplay")?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); applyCalcValue(); }
+      if (e.key === 'Escape') { e.preventDefault(); closeCalc(); }
+    });
+    $("calcKeys")?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.calcKey');
+      if (!btn) return;
+      btn.classList.remove('flash');
+      void btn.offsetWidth;
+      btn.classList.add('flash');
+      const display = $("calcDisplay");
+      if (!display) return;
+      const action = btn.dataset.calcAction || '';
+      const value = btn.dataset.calcValue || '';
+      display.classList.remove('errField');
+      if (action === 'clear') { display.value = ''; return; }
+      if (action === 'back') { display.value = display.value.slice(0, -1); return; }
+      if (action === 'apply') { applyCalcValue(); return; }
+      if (value) {
+        const start = display.selectionStart ?? display.value.length;
+        const end = display.selectionEnd ?? display.value.length;
+        display.value = display.value.slice(0, start) + value + display.value.slice(end);
+        const pos = start + value.length;
+        requestAnimationFrame(() => { try { display.setSelectionRange(pos, pos); display.focus(); } catch (_) {} });
+      }
+    });
+  }
+
   function initBindings() {
     bindField($("atk"), (v)=>sanitizeIntKeepComma(v,6), (v)=>toAtkDisplay(v));
-    bindField($("aspd"), (v)=>trimDecimalsLive(v,2), (v)=>toAspdDisplay(v));
+    bindField($("aspd"), (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6));
     bindField($("gaugeMax"), (v)=>sanitizeIntKeepComma(v,3), (v)=>toIntDisplay(v,3));
     bindField($("sameUnitCount"), (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2));
 
-    bindField($("manaRegenPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,4));
+    bindField($("manaRegenPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4));
     bindField($("defReduce"), (v)=>sanitizeIntKeepComma(v,3), (v)=>toIntDisplay(v,3));
-    bindField($("critChancePct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,4));
-    bindField($("critPhysBonusPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,4));
-    bindField($("critMagicBonusPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,4));
+    bindField($("critChancePct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4));
+    bindField($("critPhysBonusPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4));
+    bindField($("critMagicBonusPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4));
 
-    bindField($("ultMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
+    bindField($("ultMulPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6));
     bindField($("ultF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
     bindField($("ultImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
-    bindField($("ultEventAmount"), (v)=>trimDecimalsLive(v,2), (v)=>toPctDisplay(v,2,6));
+    bindField($("ultEventAmount"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6));
 
-    bindField($("aMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
-    bindField($("aPPct"), (v)=>trimDecimalsLive(v,1), (v)=>toProbPctDisplay(v));
+    bindField($("aMulPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6));
+    bindField($("aPPct"), (v)=>trimDecimalsLive(v,6), (v)=>toProbPctDisplay(v,6));
     bindField($("aF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
     bindField($("aImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
 
-    bindField($("bMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
+    bindField($("bMulPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6));
     bindField($("bF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
     bindField($("bImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
 
     // 外部支援（6枠）
     for (let i = 1; i <= 6; i++) {
-      bindField($("ext" + i + "Amount"), (v)=>trimDecimalsLive(v,2), (v)=>toSupportAmountDisplay($("ext" + i + "Type").value, v));
-      bindField($("ext" + i + "Base"), (v)=>trimDecimalsLive(v,2), (v)=>toSupportBaseDisplay($("ext" + i + "Type").value, v));
+      bindField($("ext" + i + "Amount"), (v)=>trimDecimalsLive(v,6), (v)=>toSupportAmountDisplay($("ext" + i + "Type").value, v));
+      bindField($("ext" + i + "Base"), (v)=>trimDecimalsLive(v,6), (v)=>toSupportBaseDisplay($("ext" + i + "Type").value, v));
       bindField($("ext" + i + "Count"), (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2));
       $("ext" + i + "Enabled").addEventListener("change", validateAndRender);
       $("ext" + i + "Type").addEventListener("change", () => {
@@ -442,13 +530,13 @@
 
     $("bThird").addEventListener("input", () => {
       const bType = $("bType").value;
-      if (bType === "prob") $("bThird").value = trimDecimalsLive($("bThird").value, 1);
+      if (bType === "prob") $("bThird").value = trimDecimalsLive($("bThird").value, 6);
       else if (bType === "count") $("bThird").value = sanitizeIntKeepComma($("bThird").value, 2);
       else $("bThird").value = "0.0%";
     });
     const commitBThird = () => {
       const bType = $("bType").value;
-      if (bType === "prob") $("bThird").value = toProbPctDisplay($("bThird").value);
+      if (bType === "prob") $("bThird").value = toProbPctDisplay($("bThird").value, 6);
       else if (bType === "count") $("bThird").value = String(readInt($("bThird").value));
       else $("bThird").value = "0.0%";
       validateAndRender();
@@ -461,7 +549,7 @@
     $("defReduce").addEventListener("input", () => { syncEnvDerivedUI(); validateAndRender(); });
     $("ultReset").addEventListener("change", validateAndRender);
     $("ultStopsGauge").addEventListener("change", validateAndRender);
-    $("aUseGainMana5").addEventListener("change", validateAndRender);
+    $("aUseGainMana8") && $("aUseGainMana8").addEventListener("change", validateAndRender);
     $("critABShortenUlt2s").addEventListener("change", validateAndRender);
     $("ultEventType").addEventListener("change", validateAndRender);
     $("bType").addEventListener("change", () => { syncSkillBMode(); validateAndRender(); });
@@ -492,15 +580,11 @@
     $("detailOut").addEventListener("click", onCopyBtnClick);
     if ($("effectBox")) $("effectBox").addEventListener("click", onCopyBtnClick);
 
-    if ($("calcBtn")) $("calcBtn").addEventListener("click", () => { normalizeAll(); validateAndRender(); });
-    if ($("saveBtn")) $("saveBtn").addEventListener("click", save);
-    if ($("loadBtn")) $("loadBtn").addEventListener("click", load);
-    if ($("resetBtn")) $("resetBtn").addEventListener("click", resetAll);
-    for (let i = 1; i <= 3; i++) {
-      if ($("saveSlot" + i + "Btn")) $("saveSlot" + i + "Btn").addEventListener("click", () => saveSlot(i));
-      if ($("loadSlot" + i + "Btn")) $("loadSlot" + i + "Btn").addEventListener("click", () => loadSlot(i));
-    }
-    $("showNotes").addEventListener("change", () => { syncNoteVisibility(); save(true); refreshSettingsSummaries(); });
+    $("calcBtn").addEventListener("click", () => { normalizeAll(); validateAndRender(); });
+    $("saveBtn").addEventListener("click", save);
+    $("loadBtn").addEventListener("click", load);
+    $("resetBtn").addEventListener("click", resetAll);
+    $("showNotes").addEventListener("change", () => { syncNoteVisibility(); save(true); });
   }
 
   // ---------- 物理/魔法・単体/複数 トグル（seg） ----------
@@ -537,236 +621,6 @@
     });
   }
 
-
-  function interleavePairGrid(gridEl) {
-    if (!gridEl) return;
-    const labels = Array.from(gridEl.children).filter(el => el.classList && el.classList.contains("lbl"));
-    const inputs = Array.from(gridEl.children).filter(el => el.classList && el.classList.contains("inp"));
-    if (!labels.length || labels.length !== inputs.length) return;
-
-    const colOf = (el, fallback) => {
-      const raw = (el.style && (el.style.gridColumn || el.style.gridColumnStart)) || "";
-      const m = String(raw).match(/\d+/);
-      return m ? parseInt(m[0], 10) : fallback;
-    };
-
-    const ordered = labels.map((lbl, idx) => {
-      const col = colOf(lbl, idx + 1);
-      const match = inputs.find(inp => colOf(inp, -1) === col) || inputs[idx];
-      return { col, lbl, inp: match };
-    }).sort((a, b) => a.col - b.col);
-
-    const frag = document.createDocumentFragment();
-    ordered.forEach(pair => {
-      frag.appendChild(pair.lbl);
-      frag.appendChild(pair.inp);
-    });
-    gridEl.innerHTML = "";
-    gridEl.appendChild(frag);
-  }
-
-  function setupBottomSheetUi() {
-    const host = $("sheetContentHost");
-    const overlay = $("sheetOverlay");
-    if (!host || !overlay) return;
-
-    const sheetDefs = [
-      { key: "env", title: "環境", card: $("envCard") },
-      { key: "basic", title: "基本", card: $("accBody_basic") ? $("accBody_basic").closest(".accordionCard") : null },
-      { key: "a", title: "スキルA", card: $("accBody_a") ? $("accBody_a").closest(".accordionCard") : null },
-      { key: "b", title: "スキルB", card: $("accBody_b") ? $("accBody_b").closest(".accordionCard") : null },
-      { key: "ult", title: "究極", card: $("accBody_ult") ? $("accBody_ult").closest(".accordionCard") : null },
-      { key: "ext", title: "外部支援", card: $("extSupportCard") },
-    ];
-
-    sheetDefs.forEach(def => {
-      if (!def.card) return;
-      def.card.dataset.sheet = def.key;
-      def.card.dataset.sheetTitle = def.title;
-      def.card.classList.add("sheetSection", "sheetCard", "active");
-      def.card.classList.remove("open");
-      const body = def.card.querySelector(".cardBody");
-      if (body) body.style.display = "block";
-      host.appendChild(def.card);
-      def.card.querySelectorAll(".tworow, .supportGrid").forEach(interleavePairGrid);
-      def.card.querySelectorAll(".supportHead").forEach(head => {
-        const label = head.querySelector("label");
-        if (label) {
-          head.parentElement.insertBefore(label, head.parentElement.firstChild);
-        }
-        head.remove();
-      });
-    });
-
-    const panels = Array.from(document.querySelectorAll(".sheetSection"));
-    const titles = { env: "環境", basic: "基本", a: "スキルA", b: "スキルB", ult: "究極", ext: "外部支援", record: "記録" };
-    let current = null;
-
-    const updateDockActive = () => {
-      document.querySelectorAll(".dockBtn[data-sheet]").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.sheet === current);
-      });
-    };
-
-    const openSheet = (key) => {
-      current = key;
-      panels.forEach(p => p.classList.toggle("active", p.dataset.sheet === key));
-      if ($("sheetTitle")) $("sheetTitle").textContent = titles[key] || "設定";
-      overlay.classList.add("open");
-      overlay.setAttribute("aria-hidden", "false");
-      document.body.classList.add("sheetOpen");
-      updateDockActive();
-    };
-
-    const closeSheet = () => {
-      current = null;
-      overlay.classList.remove("open");
-      overlay.setAttribute("aria-hidden", "true");
-      document.body.classList.remove("sheetOpen");
-      updateDockActive();
-    };
-
-    document.querySelectorAll(".dockBtn[data-sheet], .summaryCard[data-open-sheet]").forEach(btn => {
-      btn.addEventListener("click", () => openSheet(btn.dataset.sheet || btn.dataset.openSheet));
-    });
-    if ($("sheetClose")) $("sheetClose").addEventListener("click", closeSheet);
-    if ($("sheetBackdrop")) $("sheetBackdrop").addEventListener("click", closeSheet);
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
-  }
-
-  function fmtPct1(num) {
-    return `${r6(num)}%`;
-  }
-
-  function summaryLinesHtml(rows) {
-    if (!rows || !rows.length) return '<div class="summaryEmpty">未設定</div>';
-    return rows.map(([k, v]) => `<div class="summaryLine"><span class="k">${k}</span><span class="v">${v}</span></div>`).join("");
-  }
-
-  function setSummaryHtml(id, rows) {
-    const el = $(id);
-    if (!el) return;
-    el.innerHTML = summaryLinesHtml(rows);
-  }
-
-  function refreshSettingsSummaries() {
-    const v = getValInternal();
-    setSummaryHtml("summary_env", [
-      ["難易度", diffLabel(v.envDiff)],
-      ["防御減少", `${v.defReduce}`],
-      ["物理補正", `${r6(v.physMul)}`],
-      ["Rege", `${r6(v.manaPerSec * 100)}%`],
-      ["クリ率", `${r6(v.critChancePct)}%`],
-      ["同ユニット", `${v.sameUnitCount}体`],
-    ]);
-
-    setSummaryHtml("summary_basic", [
-      ["攻撃力", addComma(v.atk)],
-      ["攻撃速度", `${r6(v.aspd)}`],
-      ["属性 / 対象", `${attrLabel(v.basicAttr)} / ${targetLabel(v.basicTarget)}`],
-      [v.ultType === "cool" ? "クールタイム" : "Maxマナ", `${v.gaugeMax}`],
-    ]);
-
-    setSummaryHtml("summary_a", [
-      ["倍率 / 確率", `${r6(v.aMul * 100)}% / ${r6(v.aP * 100)}%`],
-      ["F / 影響F", `${v.aF} / ${v.aImpactF}`],
-      ["属性 / 対象", `${attrLabel(v.aAttr)} / ${targetLabel(v.aTarget)}`],
-      ["猫の魔法使い", v.aUseGainMana5 ? "ON" : "OFF"],
-    ]);
-
-    const bThird = v.bType === "prob" ? `${r6(v.bP * 100)}%` : (v.bType === "count" ? `${v.bN}回` : "-" );
-    setSummaryHtml("summary_b", [
-      ["タイプ", bTypeLabel(v.bType)],
-      ["倍率 / 第3項目", `${r6(v.bMul * 100)}% / ${bThird}`],
-      ["F / 影響F", `${v.bF} / ${v.bImpactF}`],
-      ["属性 / 対象", `${attrLabel(v.bAttr)} / ${targetLabel(v.bTarget)}`],
-    ]);
-
-    const eventLabel = supportTypeLabel(v.ultEventType || "none");
-    setSummaryHtml("summary_ult", [
-      ["タイプ", ultTypeLabel(v.ultType)],
-      ["倍率 / F", `${r6(v.ultMul * 100)}% / ${v.ultF}`],
-      ["影響F / イベント", `${v.ultImpactF} / ${eventLabel}`],
-      ["効果量", v.ultEventType === "none" ? "-" : `${r6(v.ultEventAmount * 100)}%`],
-      ["リセット / 停止", `${ultResetLabel(v.ultReset)} / ${v.ultStopsGauge ? "停止" : "進行"}`],
-      ["鬼神忍者", v.critABShortenUlt2s ? "ON" : "OFF"],
-    ]);
-
-    const enabledSupports = (v.supports || []).filter(s => s.enabled && s.type !== "none");
-    const extRows = [["使用枠", `${enabledSupports.length}/6`]];
-    enabledSupports.slice(0, 2).forEach((s, idx) => {
-      const suffix = isCoverageSupportType(s.type) ? `${r6(s.base)}% × ${s.count}体` : `${r6(s.base)}回/秒 × ${s.count}体`;
-      extRows.push([`枠${idx + 1}`, `${supportTypeLabel(s.type)} / ${suffix}`]);
-    });
-    if (enabledSupports.length > 2) extRows.push(["その他", `+${enabledSupports.length - 2}枠`]);
-    setSummaryHtml("summary_ext", extRows);
-
-    refreshRecordStatus();
-  }
-
-  function fmtSavedAt(ts) {
-    try {
-      const d = new Date(ts);
-      const pad = (n) => String(n).padStart(2, "0");
-      return `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    } catch (_) {
-      return "保存済み";
-    }
-  }
-
-  function readSlot(slotNo) {
-    try {
-      const raw = localStorage.getItem(SLOT_KEYS[slotNo - 1]);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (parsed && parsed.state) return parsed;
-      return { savedAt: null, state: parsed };
-    } catch (_) {
-      return null;
-    }
-  }
-
-  function refreshRecordStatus() {
-    for (let i = 1; i <= 3; i++) {
-      const status = $("slot" + i + "Status");
-      if (!status) continue;
-      const slot = readSlot(i);
-      status.textContent = slot ? (slot.savedAt ? fmtSavedAt(slot.savedAt) : "保存済み") : "未保存";
-    }
-  }
-
-  function saveSlot(slotNo) {
-    try {
-      const payload = { savedAt: Date.now(), state: readFormState() };
-      localStorage.setItem(SLOT_KEYS[slotNo - 1], JSON.stringify(payload));
-      refreshRecordStatus();
-      alert(`記録${slotNo}へ保存しました`);
-      return true;
-    } catch (_) {
-      alert(`記録${slotNo}への保存に失敗しました`);
-      return false;
-    }
-  }
-
-  function loadSlot(slotNo) {
-    try {
-      const slot = readSlot(slotNo);
-      if (!slot) {
-        alert(`記録${slotNo}は未保存です`);
-        return false;
-      }
-      applyFormState(slot.state || {});
-      normalizeAll();
-      syncUiState();
-      validateAndRender();
-      alert(`記録${slotNo}を読み込みました`);
-      return true;
-    } catch (_) {
-      alert(`記録${slotNo}の読込に失敗しました`);
-      return false;
-    }
-  }
-
   // ---------- アコーディオン（入力カード） ----------
   function setupAccordions() {
     document.querySelectorAll(".accHeader[data-acc]").forEach(h => {
@@ -794,31 +648,31 @@
     $("aspd").value = toAspdDisplay($("aspd").value);
     $("gaugeMax").value = toIntDisplay($("gaugeMax").value, 3);
     $("sameUnitCount").value = toIntDisplay($("sameUnitCount").value, 2);
-    $("manaRegenPct").value = toPctDisplay($("manaRegenPct").value, 1, 4);
+    $("manaRegenPct").value = toPctDisplay($("manaRegenPct").value, 6, 4);
     $("defReduce").value = toIntDisplay($("defReduce").value, 3);
-    $("critChancePct").value = toPctDisplay($("critChancePct").value, 1, 4);
-    $("critPhysBonusPct").value = toPctDisplay($("critPhysBonusPct").value, 1, 4);
-    $("critMagicBonusPct").value = toPctDisplay($("critMagicBonusPct").value, 1, 4);
+    $("critChancePct").value = toPctDisplay($("critChancePct").value, 6, 4);
+    $("critPhysBonusPct").value = toPctDisplay($("critPhysBonusPct").value, 6, 4);
+    $("critMagicBonusPct").value = toPctDisplay($("critMagicBonusPct").value, 6, 4);
     syncEnvDerivedUI();
 
-    $("ultMulPct").value = toPctDisplay($("ultMulPct").value, 1, 6);
+    $("ultMulPct").value = toPctDisplay($("ultMulPct").value, 6, 6);
     $("ultF").value = toIntDisplay($("ultF").value, 4);
     $("ultImpactF").value = toIntDisplay($("ultImpactF").value, 4);
-    $("ultEventAmount").value = toPctDisplay($("ultEventAmount").value, 2, 6);
+    $("ultEventAmount").value = toPctDisplay($("ultEventAmount").value, 6, 6);
 
-    $("aMulPct").value = toPctDisplay($("aMulPct").value, 1, 6);
-    $("aPPct").value = toProbPctDisplay($("aPPct").value);
+    $("aMulPct").value = toPctDisplay($("aMulPct").value, 6, 6);
+    $("aPPct").value = toProbPctDisplay($("aPPct").value, 6);
     $("aF").value = toIntDisplay($("aF").value, 4);
     $("aImpactF").value = toIntDisplay($("aImpactF").value, 4);
 
-    $("bMulPct").value = toPctDisplay($("bMulPct").value, 1, 6);
+    $("bMulPct").value = toPctDisplay($("bMulPct").value, 6, 6);
     $("bF").value = toIntDisplay($("bF").value, 4);
     $("bImpactF").value = toIntDisplay($("bImpactF").value, 4);
 
     syncSkillBMode();
     syncSegmentsFromHidden();
     syncEnvDerivedUI();
-    if ($("bType").value === "prob") $("bThird").value = toProbPctDisplay($("bThird").value);
+    if ($("bType").value === "prob") $("bThird").value = toProbPctDisplay($("bThird").value, 6);
     if ($("bType").value === "count") $("bThird").value = String(readInt($("bThird").value));
 
     for (let i = 1; i <= 6; i++) {
@@ -867,7 +721,7 @@
     const aP = readNumber($("aPPct").value) / 100;
     const aF = readInt($("aF").value);
     const aImpactF = readInt($("aImpactF").value);
-    const aUseGainMana5 = $("aUseGainMana5").checked;
+    const aUseGainMana8 = $("aUseGainMana8").checked;
 
     const bType = $("bType").value;
     const bMul = readNumber($("bMulPct").value) / 100;
@@ -892,7 +746,7 @@
     const base = { atk, aspd, gaugeMax, sameUnitCount, manaPerSec, envDiff, baseDef, defReduce, realDef, physMul,
       critChancePct, critPhysBonusPct, critMagicBonusPct, critChance, critPhysBonus, critMagicBonus, critPhysMul, critMagicMul,
       ultType, ultReset, ultMul, ultF, ultImpactF, ultEventType, ultEventAmount, ultStopsGauge, critABShortenUlt2s,
-      aMul, aP, aF, aImpactF, aUseGainMana5, bType, bMul, bF, bImpactF, bP, bN,
+      aMul, aP, aF, aImpactF, aUseGainMana8, bType, bMul, bF, bImpactF, bP, bN,
       basicAttr, basicTarget, aAttr, aTarget, bAttr, bTarget, uAttr, uTarget, supports };
     base.ext = calcExternalSupportAgg(base);
     return base;
@@ -1111,7 +965,7 @@
     if (v.ultType === "mana") {
       const timeManaPerFrame_nonUlt = v.manaPerSec / F;
       const basicManaPerFrame_nonUlt = nu.basicPerFrame * 1;
-      const aManaPerFrame_nonUlt = v.aUseGainMana5 ? (nu.aPerFrame * 5) : 0;
+      const aManaPerFrame_nonUlt = v.aUseGainMana8 ? (nu.aPerFrame * 8) : 0;
       const extManaPerFrame = ext.addManaPerSec / F;
       const manaPerFrame_nonUlt = timeManaPerFrame_nonUlt + basicManaPerFrame_nonUlt + aManaPerFrame_nonUlt + extManaPerFrame;
 
@@ -1687,7 +1541,7 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     html += lineHtml(`スキルA: ${hVal("valA", r6(ex.aPerSec))} 回/秒 / ${hVal("valA", ex.aPerSec > 0 ? r6(1 / ex.aPerSec) : "-")} 秒/回`);
     html += lineHtml(`スキルB: ${hVal("valB", r6(ex.bPerSec))} 回/秒 / ${hVal("valB", ex.bPerSec > 0 ? r6(1 / ex.bPerSec) : "-")} 秒/回`);
     html += lineHtml(`究極: ${hVal("valUlt", r6(ex.ultPerSec))} 回/秒 / ${hVal("valUlt", ex.ultPerSec > 0 ? r6(1 / ex.ultPerSec) : "-")} 秒/回`);
-    if (v.ultType === "mana" && v.aUseGainMana5) {
+    if (v.ultType === "mana" && v.aUseGainMana8) {
       html += lineHtml(`猫の魔法使い補正（スキルA由来マナ）: ${hVal("valA", r6((d.aManaPerFrame_nonUlt || 0) * F))} マナ/秒`);
     }
     if (v.ultType === "cool" && v.critABShortenUlt2s) {
@@ -1785,7 +1639,6 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     syncSegmentsFromHidden();
     syncEnvDerivedUI();
     syncNoteVisibility();
-    refreshSettingsSummaries();
   }
 
   function clearResultBars() {
@@ -1982,7 +1835,7 @@ function render() {
   }
 
   function resetAll() {
-    try { STORAGE_KEYS.forEach((key) => localStorage.removeItem(key)); SLOT_KEYS.forEach((key) => localStorage.removeItem(key)); } catch (_) {}
+    try { STORAGE_KEYS.forEach((key) => localStorage.removeItem(key)); } catch (_) {}
     seedDefaults();
     normalizeAll();
     syncUiState();
@@ -2016,7 +1869,7 @@ function render() {
     $("aPPct").value = "10.0%";
     $("aF").value = "32";
     $("aImpactF").value = "0";
-    $("aUseGainMana5").checked = false;
+    $("aUseGainMana8").checked = false;
 
     $("bType").value = "none";
     $("bMulPct").value = "1500%";
@@ -2040,9 +1893,9 @@ function render() {
   normalizeAll();
   syncUiState();
   initBindings();
+  setupCalculator();
   setupSegments();
   setupAccordions();
-  setupBottomSheetUi();
   if (!load(true)) {
     validateAndRender();
   }
