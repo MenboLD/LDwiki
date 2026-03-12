@@ -1269,7 +1269,6 @@ function calcBoundaryRange(v, res) {
     lines.push(`スキルB = ${r6(ex.bPerSec)} 回/秒 / ${ex.bPerSec > 0 ? r6(1 / ex.bPerSec) : "-"} 秒/回`);
     lines.push(`究極 = ${r6(ex.ultPerSec)} 回/秒 / ${ex.ultPerSec > 0 ? r6(1 / ex.ultPerSec) : "-"} 秒/回`);
 
-    const eff = calcEffectTimes(v, ex);
     lines.push("");
     lines.push("■ 影響時間（平均・ダメージとは別計算）");
     lines.push(`同ユニット数 = ${eff.unitCount}`);
@@ -1428,7 +1427,7 @@ function setBar(fillId, valId, pct) {
     return `${s}<br>`;
   }
 
-function buildDetailHtml(v, res, ex, tb, br) {
+function buildDetailHtml(v, res, ex, eff, tb, br) {
     const d = res.detail;
     const diffLabelMap = {
       normal: "ノーマル",
@@ -1456,7 +1455,6 @@ function buildDetailHtml(v, res, ex, tb, br) {
       html += lineHtml(`鬼神忍者補正（A/Bクリ由来クール短縮）: ${hVal("valUlt", r6((d.critAbShortenPerFrame_nonUlt || 0) * F))} 秒/秒`);
     }
 
-    const eff = calcEffectTimes(v, ex);
     html += lineHtml("");
     html += lineHtml(`<span class="sectionHead">=== 影響時間（平均・ダメージとは別計算） ===</span>`);
     html += lineHtml(`同ユニット数: ${hVal("valMix", eff.unitCount)}`);
@@ -1583,7 +1581,6 @@ function buildDetailHtml(v, res, ex, tb, br) {
     const res = calcTotal(v);
     if (res.err) return { v, res, err: res.err };
     const ex = calcRatesAndShares(v, res);
-    const eff = calcEffectTimes(v, ex);
     const tb = calcTypeBreakdown(v, ex);
     const br = calcBoundaryRange(v, res);
     return { v, res, ex, eff, tb, br, err: null };
@@ -1617,7 +1614,7 @@ function buildDetailHtml(v, res, ex, tb, br) {
     if ($("effectU")) $("effectU").textContent = `${r6(eff.u.ratePerSec)} 回/秒 / ${eff.u.ratePerSec > 0 ? r6(eff.u.secPerProc) : "-"} 秒/回 / ${v.ultImpactF}F → ${r6(eff.u.rawFPerSec)}F/秒（単体 ${r6(eff.u.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.u.multiCoveragePct)}%）`;
     if ($("effectTotal")) $("effectTotal").textContent = `${r6(eff.totalRawFPerSec)}F/秒（単体 ${r6(eff.totalSingleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.totalMultiCoveragePct)}%）`;
 
-    $("detailOut").innerHTML = buildDetailHtml(v, res, ex, tb, br);
+    $("detailOut").innerHTML = buildDetailHtml(v, res, ex, eff, tb, br);
     $("detailLegend").innerHTML = buildLegendHtml();
     $("formulaOut").innerHTML = buildFormulaHtml(v, res, ex, tb, br);
     $("formulaLegend").innerHTML = buildLegendHtml();
