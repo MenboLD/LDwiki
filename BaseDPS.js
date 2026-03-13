@@ -1,8 +1,8 @@
 (() => {
-  const APP_VERSION = "v8_9_9";
+  const APP_VERSION = "v8_9_1";
   const F = 40;
-  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_9", "LD_DPS_TOOL_V8_9_7", "LD_DPS_TOOL_V8_9_5", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
-  const SLOT_KEYS = ["LD_DPS_TOOL_SLOT1", "LD_DPS_TOOL_SLOT2", "LD_DPS_TOOL_SLOT3"];
+  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_1", "LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
+  const MANUAL_SLOT_KEYS = ["LD_DPS_TOOL_SLOT1", "LD_DPS_TOOL_SLOT2", "LD_DPS_TOOL_SLOT3"];
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
   const SUPABASE_URL = String(window.LD_SUPABASE_URL || "").trim();
@@ -76,14 +76,6 @@
     if (out) out.value = (isFinite(mul) ? mul.toFixed(2) : "1.00");
   }
 
-  function syncSpeedDerivedUI() {
-    const base = readNumber($("baseSpd") ? $("baseSpd").value : "0");
-    const bowPct = readNumber($("bowPct") ? $("bowPct").value : "0");
-    const passivePct = readNumber($("passivePct") ? $("passivePct").value : "0");
-    const finalSpd = base * (1 + bowPct / 100) * (1 + passivePct / 100);
-    if ($("aspd")) $("aspd").value = finalSpd > 0 ? toFixedTrimmed(String(finalSpd), 6) : "";
-  }
-
   const $ = (id) => document.getElementById(id);
   const r6 = (x) => (isFinite(x) ? Math.round(x * 1e6) / 1e6 : NaN);
   const rateToSecPerUse = (rate) => (rate > 0 ? r6(1 / rate) : null);
@@ -106,6 +98,12 @@
   }
 
   const addComma = (nStr) => String(nStr).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  function fmtDec(x, maxDec = 6) {
+    if (!isFinite(x)) return "";
+    const s = Number(x).toFixed(maxDec);
+    return s.replace(/\.0+$/, "").replace(/(\.\d*?[1-9])0+$/, "$1");
+  }
 
   function setErr(el, on) { if (el) el.classList.toggle("errField", !!on); }
   function setLblErr(el, on) { if (el) el.classList.toggle("errLbl", !!on); }
@@ -213,20 +211,20 @@
     return b ? `${a}.${b}%` : `${a}%`;
   }
 
-  function toProbPctDisplay(raw) {
-    const t = trimDecimals(raw, 1);
+  function toProbPctDisplay(raw, maxDec = 6) {
+    const t = trimDecimals(raw, maxDec);
     if (!t) return "";
     const x = parseFloat(t);
     const v = isFinite(x) ? x : 0;
-    return `${v.toFixed(1)}%`;
+    return `${fmtDec(v, maxDec)}%`;
   }
 
-  function toAspdDisplay(raw) {
-    const t = trimDecimals(raw, 2);
+  function toAspdDisplay(raw, maxDec = 6) {
+    const t = trimDecimals(raw, maxDec);
     if (!t) return "";
     const x = parseFloat(t);
     const v = isFinite(x) ? x : 0;
-    return v.toFixed(2);
+    return fmtDec(v, maxDec);
   }
 
   function toAtkDisplay(raw) {
@@ -240,90 +238,6 @@
     const s = trimIntDigits(raw, maxDigits);
     if (!s) return "";
     return String(parseInt(s, 10) || 0);
-  }
-
-  function toFixedTrimmed(raw, maxDec = 6) {
-    const t = trimDecimals(raw, maxDec);
-    if (!t) return "";
-    const x = parseFloat(t);
-    if (!isFinite(x)) return "";
-    return String(r6(x));
-  }
-
-  const _fieldFormatters = new Map();
-  function registerFieldFormatter(id, formatter, opts = {}) {
-    const el = $(id);
-    if (!el) return;
-    _fieldFormatters.set(id, { formatter, suffix: opts.suffix || "", title: opts.title || "数値入力" });
-    if (!el.readOnly && !el.disabled) {
-      el.readOnly = true;
-      el.inputMode = "none";
-      el.classList.add("calcField");
-    }
-  }
-
-  function safeEvalExpr(expr) {
-    const s = String(expr || "").replace(/\s+/g, "");
-    if (!s) return 0;
-    if (!/^[0-9+\-*/().]+$/.test(s)) throw new Error("bad expr");
-    const v = Function(`"use strict"; return (${s});`)();
-    if (!isFinite(v)) throw new Error("bad expr");
-    return v;
-  }
-
-  let _calcTarget = null;
-  let _calcExpr = "";
-  let _calcSuffix = "";
-  let _calcTitle = "数値入力";
-
-  function flashCalcBtn(btn) {
-    if (!btn) return;
-    btn.classList.add("flash");
-    setTimeout(() => btn.classList.remove("flash"), 120);
-  }
-  function renderCalcDisplay() {
-    const exprEl = $("calcExpr");
-    const prevEl = $("calcPreview");
-    const disp = _calcExpr || "0";
-    if (exprEl) exprEl.textContent = disp + _calcSuffix;
-    if (prevEl) {
-      try {
-        const val = safeEvalExpr(_calcExpr || "0");
-        prevEl.textContent = `= ${r6(val)}${_calcSuffix}`;
-      } catch (_) {
-        prevEl.textContent = "計算式を入力";
-      }
-    }
-    if ($("calcTitle")) $("calcTitle").textContent = _calcTitle;
-  }
-  function closeCalc() {
-    if ($("calcModal")) $("calcModal").hidden = true;
-    if ($("calcOverlay")) $("calcOverlay").hidden = true;
-    _calcTarget = null;
-  }
-  function openCalcFor(el) {
-    const meta = _fieldFormatters.get(el.id);
-    if (!meta) return;
-    _calcTarget = el;
-    _calcSuffix = meta.suffix || "";
-    _calcTitle = meta.title || "数値入力";
-    _calcExpr = String(readNumber(el.value) || 0);
-    if (_calcExpr === "0" && !String(el.value || "").trim()) _calcExpr = "";
-    if ($("calcOverlay")) $("calcOverlay").hidden = false;
-    if ($("calcModal")) $("calcModal").hidden = false;
-    renderCalcDisplay();
-  }
-  function applyCalc() {
-    if (!_calcTarget) return;
-    const meta = _fieldFormatters.get(_calcTarget.id);
-    if (!meta) return;
-    let val;
-    try { val = safeEvalExpr(_calcExpr || "0"); } catch (_) { alert("式を確認してください"); return; }
-    _calcTarget.value = meta.formatter(String(val));
-    if (_calcTarget.id === "defReduce") syncEnvDerivedUI();
-    if (_calcTarget.id === "baseSpd" || _calcTarget.id === "bowPct" || _calcTarget.id === "passivePct") syncSpeedDerivedUI();
-    validateAndRender();
-    closeCalc();
   }
 
   function readNumber(raw) {
@@ -359,12 +273,12 @@
     return ` <button type="button" class="copyBtn" data-copy="${safe}">${label}</button>`;
   }
   function toSupportAmountDisplay(type, raw){
-    if (type === "procMul") return trimDecimals(raw, 2);
-    return toPctDisplay(raw, 2, 6);
+    if (type === "procMul") return fmtDec(readNumber(trimDecimals(raw, 6) || 0), 6);
+    return toPctDisplay(raw, 6, 6);
   }
   function toSupportBaseDisplay(type, raw){
-    if (isCoverageSupportType(type)) return toPctDisplay(raw, 2, 6);
-    return trimDecimals(raw, 3);
+    if (isCoverageSupportType(type)) return toPctDisplay(raw, 6, 6);
+    return fmtDec(readNumber(trimDecimals(raw, 6) || 0), 6);
   }
   function getSupportRows(){
     const rows=[];
@@ -480,51 +394,323 @@
     }
   }
 
-  function bindField(el, onInputSanitize, onCommitFormat, opts = {}) {
-    if (!el) return;
-    const commit = () => { el.value = onCommitFormat(el.value); if (el.id === "defReduce") syncEnvDerivedUI(); if (["baseSpd","bowPct","passivePct"].includes(el.id)) syncSpeedDerivedUI(); validateAndRender(); };
-    if (!opts.calcOnly) {
-      el.addEventListener("input", () => { el.value = onInputSanitize(el.value); scheduleRender(); });
-      el.addEventListener("blur", commit);
-      el.addEventListener("change", commit);
+  function bindField(el, onInputSanitize, onCommitFormat) {
+    el.addEventListener("input", () => { el.value = onInputSanitize(el.value); scheduleRender(); });
+    const commit = () => { el.value = onCommitFormat(el.value); validateAndRender(); };
+    el.addEventListener("blur", commit);
+    el.addEventListener("change", commit);
+  }
+
+  let _calcTargetId = null;
+
+  function getCalcFieldIds() {
+    const ids = [
+      "atk", "aspd", "gaugeMax", "sameUnitCount",
+      "manaRegenPct", "defReduce", "critChancePct", "critPhysBonusPct", "critMagicBonusPct",
+      "ultMulPct", "ultF", "ultImpactF", "ultEventAmount",
+      "aMulPct", "aPPct", "aF", "aImpactF",
+      "bMulPct", "bThird", "bF", "bImpactF",
+    ];
+    for (let i = 1; i <= 6; i++) {
+      ids.push(`ext${i}Amount`, `ext${i}Base`, `ext${i}Count`);
     }
-    if (opts.calc) registerFieldFormatter(el.id, onCommitFormat, opts);
+    return ids;
+  }
+
+  function getCalcFieldLabel(input) {
+    if (!input) return "値";
+    if (input.dataset.calcLabel) return input.dataset.calcLabel;
+    const row = input.closest(".row");
+    const lbl = row && row.querySelector(".lbl");
+    const text = String(lbl ? lbl.textContent : "").replace(/\s+/g, " ").trim();
+    return text || input.id || "値";
+  }
+
+  function formatCalcValueForInput(input, rawValue) {
+    if (!input) return String(rawValue ?? "");
+    const id = input.id || "";
+    const value = String(rawValue ?? "");
+
+    if (/^ext\d+Amount$/.test(id)) {
+      const idx = id.match(/^ext(\d+)Amount$/)?.[1];
+      const type = idx && $("ext" + idx + "Type") ? $("ext" + idx + "Type").value : "none";
+      return toSupportAmountDisplay(type, value);
+    }
+    if (/^ext\d+Base$/.test(id)) {
+      const idx = id.match(/^ext(\d+)Base$/)?.[1];
+      const type = idx && $("ext" + idx + "Type") ? $("ext" + idx + "Type").value : "none";
+      return toSupportBaseDisplay(type, value);
+    }
+    if (/^ext\d+Count$/.test(id)) return toIntDisplay(value, 2);
+
+    if (id === "atk") return toAtkDisplay(value);
+    if (id === "aspd") return toAspdDisplay(value, 6);
+    if (id === "gaugeMax") return toIntDisplay(value, 3);
+    if (id === "sameUnitCount") return toIntDisplay(value, 2);
+    if (id === "manaRegenPct") return toPctDisplay(value, 6, 4);
+    if (id === "defReduce") return toIntDisplay(value, 3);
+    if (id === "critChancePct") return toPctDisplay(value, 6, 4);
+    if (id === "critPhysBonusPct") return toPctDisplay(value, 6, 4);
+    if (id === "critMagicBonusPct") return toPctDisplay(value, 6, 4);
+
+    if (id === "ultMulPct") return toPctDisplay(value, 6, 6);
+    if (id === "ultF") return toIntDisplay(value, 4);
+    if (id === "ultImpactF") return toIntDisplay(value, 4);
+    if (id === "ultEventAmount") return toPctDisplay(value, 6, 6);
+
+    if (id === "aMulPct") return toPctDisplay(value, 6, 6);
+    if (id === "aPPct") return toProbPctDisplay(value, 6);
+    if (id === "aF") return toIntDisplay(value, 4);
+    if (id === "aImpactF") return toIntDisplay(value, 4);
+
+    if (id === "bMulPct") return toPctDisplay(value, 6, 6);
+    if (id === "bF") return toIntDisplay(value, 4);
+    if (id === "bImpactF") return toIntDisplay(value, 4);
+    if (id === "bThird") {
+      const bType = $("bType") ? $("bType").value : "none";
+      return bType === "count" ? String(readInt(value)) : toProbPctDisplay(value, 6);
+    }
+
+    return fmtDec(readNumber(value), 6);
+  }
+
+  function prepareCalculatorFields() {
+    getCalcFieldIds().forEach((id) => {
+      const el = $(id);
+      if (!el || el.type !== "text") return;
+      el.classList.add("calcField");
+      el.dataset.calcTarget = id;
+      if (!el.dataset.calcLabel) el.dataset.calcLabel = getCalcFieldLabel(el);
+      el.setAttribute("readonly", "readonly");
+      el.setAttribute("inputmode", "none");
+      el.setAttribute("autocomplete", "off");
+      el.setAttribute("spellcheck", "false");
+    });
+  }
+
+  function evaluateCalcExpression(expr) {
+    const raw = String(expr || "").replace(/\s+/g, "").replace(/×/g, "*").replace(/÷/g, "/");
+    if (!raw) return null;
+    if (!/^[0-9+\-*/().]+$/.test(raw)) return null;
+    try {
+      const val = Function(`"use strict"; return (${raw});`)();
+      return (typeof val === "number" && isFinite(val)) ? val : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function openCalc(targetId) {
+    const input = $(targetId);
+    const overlay = $("calcOverlay");
+    const display = $("calcDisplay");
+    if (!input || !overlay || !display) return;
+    _calcTargetId = targetId;
+    $("calcTargetLabel").textContent = input.dataset.calcLabel || "倍率";
+    display.value = String(input.value || "").replace(/%/g, "");
+    overlay.hidden = false;
+    document.body.classList.add("calcOpen");
+    setTimeout(() => { try { display.blur(); } catch (_) {} }, 0);
+  }
+
+  function closeCalc() {
+    const overlay = $("calcOverlay");
+    if (overlay) overlay.hidden = true;
+    document.body.classList.remove("calcOpen");
+    _calcTargetId = null;
+  }
+
+  function applyCalcValue() {
+    if (!_calcTargetId) return;
+    const input = $(_calcTargetId);
+    const display = $("calcDisplay");
+    if (!input || !display) return;
+    const val = evaluateCalcExpression(display.value);
+    if (val === null) {
+      display.classList.add("errField");
+      return;
+    }
+    display.classList.remove("errField");
+    input.value = formatCalcValueForInput(input, String(val));
+    closeCalc();
+    validateAndRender();
+  }
+
+  function setupCalculator() {
+    prepareCalculatorFields();
+    document.querySelectorAll(".calcField").forEach((el) => {
+      el.addEventListener("click", () => openCalc(el.dataset.calcTarget || el.id));
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openCalc(el.dataset.calcTarget || el.id);
+        }
+      });
+    });
+    if ($("calcDisplay")) { $("calcDisplay").setAttribute("readonly", "readonly"); $("calcDisplay").setAttribute("inputmode", "none"); }
+    $("calcBackdrop")?.addEventListener("click", closeCalc);
+    $("calcCloseBtn")?.addEventListener("click", closeCalc);
+    $("calcDisplay")?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); applyCalcValue(); }
+      if (e.key === "Escape") { e.preventDefault(); closeCalc(); }
+    });
+    $("calcKeys")?.addEventListener("click", (e) => {
+      const btn = e.target.closest(".calcKey");
+      if (!btn) return;
+      btn.classList.remove("flash");
+      void btn.offsetWidth;
+      btn.classList.add("flash");
+      const display = $("calcDisplay");
+      if (!display) return;
+      const action = btn.dataset.calcAction || "";
+      const value = btn.dataset.calcValue || "";
+      display.classList.remove("errField");
+      if (action === "clear") { display.value = ""; return; }
+      if (action === "back") { display.value = display.value.slice(0, -1); return; }
+      if (action === "apply") { applyCalcValue(); return; }
+      if (value) {
+        const start = display.selectionStart ?? display.value.length;
+        const end = display.selectionEnd ?? display.value.length;
+        display.value = display.value.slice(0, start) + value + display.value.slice(end);
+        const pos = start + value.length;
+        requestAnimationFrame(() => { try { display.setSelectionRange(pos, pos); display.focus(); } catch (_) {} });
+      }
+    });
+  }
+
+
+  let _openSheetKey = null;
+
+  function setupBottomSheets() {
+    const map = { env: "envCard", basic: "basicCard", a: "aCard", b: "bCard", ult: "ultCard", ext: "extCard" };
+    Object.entries(map).forEach(([key, id]) => {
+      const card = $(id);
+      if (!card) return;
+      card.dataset.sheet = key;
+      card.classList.add("inputSheet");
+      const head = card.querySelector('.headRow');
+      if (head && !head.querySelector('[data-close-sheet]')) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'sheetClose';
+        btn.setAttribute('data-close-sheet', '');
+        btn.textContent = '×';
+        head.appendChild(btn);
+      }
+      const body = card.querySelector('.cardBody');
+      if (body) body.style.display = 'block';
+    });
+    document.querySelectorAll('[data-open-sheet]').forEach((btn) => {
+      btn.addEventListener('click', () => openSheet(btn.dataset.openSheet || ''));
+    });
+    document.querySelectorAll('[data-close-sheet]').forEach((btn) => {
+      btn.addEventListener('click', closeSheet);
+    });
+    $("sheetBackdrop")?.addEventListener("click", closeSheet);
+  }
+
+  function openSheet(key) {
+    if (!key) return;
+    _openSheetKey = key;
+    document.body.classList.add('bodySheetOpen');
+    if ($("sheetOverlay")) $("sheetOverlay").hidden = false;
+    document.querySelectorAll('.inputSheet[data-sheet]').forEach((sheet) => {
+      sheet.classList.toggle('openSheet', sheet.dataset.sheet === key);
+    });
+    updateOpenSheetButtons();
+  }
+
+  function closeSheet() {
+    _openSheetKey = null;
+    document.body.classList.remove('bodySheetOpen');
+    if ($("sheetOverlay")) $("sheetOverlay").hidden = true;
+    document.querySelectorAll('.inputSheet[data-sheet]').forEach((sheet) => sheet.classList.remove('openSheet'));
+    updateOpenSheetButtons();
+  }
+
+  function updateOpenSheetButtons() {
+    document.querySelectorAll('.bottomMenuBtn[data-open-sheet], .summaryCard[data-open-sheet]').forEach((btn) => {
+      btn.classList.toggle('active', !!_openSheetKey && btn.dataset.openSheet === _openSheetKey);
+    });
+  }
+
+  function saveSlot(idx) {
+    try {
+      const key = MANUAL_SLOT_KEYS[idx - 1];
+      if (!key) return false;
+      localStorage.setItem(key, JSON.stringify(readFormState()));
+      alert(`セーブ${idx}に保存しました`);
+      return true;
+    } catch (_) {
+      alert(`セーブ${idx}に保存できませんでした`);
+      return false;
+    }
+  }
+
+  function loadSlot(idx) {
+    try {
+      const key = MANUAL_SLOT_KEYS[idx - 1];
+      if (!key) return false;
+      const raw = localStorage.getItem(key);
+      if (!raw) { alert(`セーブ${idx}は空です`); return false; }
+      applyFormState(JSON.parse(raw));
+      normalizeAll();
+      syncUiState();
+      validateAndRender();
+      alert(`ロード${idx}を読み込みました`);
+      return true;
+    } catch (_) {
+      alert(`ロード${idx}の読み込みに失敗しました`);
+      return false;
+    }
+  }
+
+  function updateSummaryCards() {
+    const gaugeLabel = ($("ultType")?.value === "cool") ? "CT" : "マナ";
+    const envDiffText = $("envDiff")?.selectedOptions?.[0]?.textContent || "-";
+    const extUsed = Array.from({length:6}, (_,i)=> i+1).filter((i)=> $("ext"+i+"Enabled")?.checked).length;
+    const ultEventText = $("ultEventType")?.selectedOptions?.[0]?.textContent || "無し";
+    if ($("summaryEnv")) $("summaryEnv").textContent = `難易度:${envDiffText} / 防御減少:${$("defReduce")?.value || "-"} / Rege:${$("manaRegenPct")?.value || "-"}`;
+    if ($("summaryBasic")) $("summaryBasic").textContent = `攻撃力:${$("atk")?.value || "-"} / 攻速:${$("aspd")?.value || "-"} / ${gaugeLabel}:${$("gaugeMax")?.value || "-"} / 同ユニット:${$("sameUnitCount")?.value || "-"}`;
+    if ($("summaryA")) $("summaryA").textContent = `倍率:${$("aMulPct")?.value || "-"} / 確率:${$("aPPct")?.value || "-"} / F:${$("aF")?.value || "-"} / 影響F:${$("aImpactF")?.value || "0"}` + ($("aUseGainMana5")?.checked ? " / 猫ON" : "");
+    const bTypeText = $("bType")?.selectedOptions?.[0]?.textContent || "-";
+    const bThirdLabel = ($("bType")?.value === "count") ? "規定" : "確率";
+    if ($("summaryB")) $("summaryB").textContent = `タイプ:${bTypeText} / 倍率:${$("bMulPct")?.value || "-"} / ${bThirdLabel}:${$("bThird")?.value || "-"} / F:${$("bF")?.value || "-"} / 影響F:${$("bImpactF")?.value || "0"}`;
+    if ($("summaryUlt")) $("summaryUlt").textContent = `タイプ:${$("ultType")?.selectedOptions?.[0]?.textContent || "-"} / 倍率:${$("ultMulPct")?.value || "-"} / ${gaugeLabel}:${$("gaugeMax")?.value || "-"} / F:${$("ultF")?.value || "-"} / 影響F:${$("ultImpactF")?.value || "0"} / イベント:${ultEventText}`;
+    if ($("summaryExt")) $("summaryExt").textContent = extUsed > 0 ? `${extUsed}枠使用中` : "未使用";
   }
 
   function initBindings() {
-    bindField($("atk"), (v)=>sanitizeIntKeepComma(v,6), (v)=>toAtkDisplay(v), { calc:true, title:"攻撃力" });
-    bindField($("baseSpd"), (v)=>trimDecimalsLive(v,6), (v)=>toFixedTrimmed(v,6), { calc:true, title:"基礎速度" });
-    bindField($("aspd"), (v)=>trimDecimalsLive(v,6), (v)=>toFixedTrimmed(v,6));
-    if ($("aspd")) { $("aspd").readOnly = true; $("aspd").classList.add("calcReadonly"); }
-    bindField($("gaugeMax"), (v)=>sanitizeIntKeepComma(v,3), (v)=>toIntDisplay(v,3), { calc:true, title:"Maxマナ / クールタイム" });
-    bindField($("sameUnitCount"), (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2), { calc:true, title:"同ユニット数" });
+    bindField($("atk"), (v)=>sanitizeIntKeepComma(v,6), (v)=>toAtkDisplay(v));
+    bindField($("aspd"), (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6));
+    bindField($("gaugeMax"), (v)=>sanitizeIntKeepComma(v,3), (v)=>toIntDisplay(v,3));
+    bindField($("sameUnitCount"), (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2));
 
-    bindField($("manaRegenPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4), { calc:true, title:"Regeマナ毎秒", suffix:"%" });
-    bindField($("defReduce"), (v)=>sanitizeIntKeepComma(v,3), (v)=>toIntDisplay(v,3), { calc:true, title:"防御力減少値" });
-    bindField($("critChancePct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4), { calc:true, title:"クリ率", suffix:"%" });
-    bindField($("critPhysBonusPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4), { calc:true, title:"物理クリ補正", suffix:"%" });
-    bindField($("critMagicBonusPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4), { calc:true, title:"魔法クリ寄与補正", suffix:"%" });
-    bindField($("bowPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4), { calc:true, title:"妖精の弓効果", suffix:"%" });
-    bindField($("passivePct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4), { calc:true, title:"共有パッシブ効果", suffix:"%" });
+    bindField($("manaRegenPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4));
+    bindField($("defReduce"), (v)=>sanitizeIntKeepComma(v,3), (v)=>toIntDisplay(v,3));
+    bindField($("critChancePct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4));
+    bindField($("critPhysBonusPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4));
+    bindField($("critMagicBonusPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4));
 
-    bindField($("ultMulPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6), { calc:true, title:"究極倍率", suffix:"%" });
-    bindField($("ultF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4), { calc:true, title:"究極F" });
-    bindField($("ultImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4), { calc:true, title:"究極影響F" });
-    bindField($("ultEventAmount"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6), { calc:true, title:"究極イベント効果量", suffix:"%" });
+    bindField($("ultMulPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6));
+    bindField($("ultF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
+    bindField($("ultImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
+    bindField($("ultEventAmount"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6));
 
-    bindField($("aMulPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6), { calc:true, title:"スキルA倍率", suffix:"%" });
-    bindField($("aPPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6), { calc:true, title:"スキルA確率", suffix:"%" });
-    bindField($("aF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4), { calc:true, title:"スキルAF" });
-    bindField($("aImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4), { calc:true, title:"スキルA影響F" });
+    bindField($("aMulPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6));
+    bindField($("aPPct"), (v)=>trimDecimalsLive(v,6), (v)=>toProbPctDisplay(v,6));
+    bindField($("aF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
+    bindField($("aImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
 
-    bindField($("bMulPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6), { calc:true, title:"スキルB倍率", suffix:"%" });
-    bindField($("bF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4), { calc:true, title:"スキルBF" });
-    bindField($("bImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4), { calc:true, title:"スキルB影響F" });
+    bindField($("bMulPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6));
+    bindField($("bF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
+    bindField($("bImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
 
+    // 外部支援（6枠）
     for (let i = 1; i <= 6; i++) {
-      bindField($("ext" + i + "Amount"), (v)=>trimDecimalsLive(v,6), (v)=>toSupportAmountDisplay($("ext" + i + "Type").value, v), { calc:true, title:`外部支援${i} 効果量`, suffix: $("ext" + i + "Type").value === "procMul" ? "" : "%" });
-      bindField($("ext" + i + "Base"), (v)=>trimDecimalsLive(v,6), (v)=>toSupportBaseDisplay($("ext" + i + "Type").value, v), { calc:true, title:`外部支援${i} 単体値`, suffix: isCoverageSupportType($("ext" + i + "Type").value) ? "%" : "" });
-      bindField($("ext" + i + "Count"), (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2), { calc:true, title:`外部支援${i} 体数` });
+      bindField($("ext" + i + "Amount"), (v)=>trimDecimalsLive(v,6), (v)=>toSupportAmountDisplay($("ext" + i + "Type").value, v));
+      bindField($("ext" + i + "Base"), (v)=>trimDecimalsLive(v,6), (v)=>toSupportBaseDisplay($("ext" + i + "Type").value, v));
+      bindField($("ext" + i + "Count"), (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2));
       $("ext" + i + "Enabled").addEventListener("change", validateAndRender);
       $("ext" + i + "Type").addEventListener("change", () => {
         $("ext" + i + "Amount").value = toSupportAmountDisplay($("ext" + i + "Type").value, $("ext" + i + "Amount").value);
@@ -533,19 +719,21 @@
       });
     }
 
-    registerFieldFormatter("bThird", (v) => {
+    $("bThird").addEventListener("input", () => {
       const bType = $("bType").value;
-      if (bType === "prob") return toPctDisplay(v, 6, 6);
-      if (bType === "count") return String(readInt(v));
-      return "0.0%";
-    }, { title:"スキルB第3項目", suffix:"" });
-    if ($("bThird")) {
-      $("bThird").readOnly = true;
-      $("bThird").inputMode = "none";
-      $("bThird").classList.add("calcField");
-      $("bThird").addEventListener("click", () => openCalcFor($("bThird")));
-      $("bThird").addEventListener("focus", (e) => { e.target.blur(); openCalcFor($("bThird")); });
-    }
+      if (bType === "prob") $("bThird").value = trimDecimalsLive($("bThird").value, 6);
+      else if (bType === "count") $("bThird").value = sanitizeIntKeepComma($("bThird").value, 2);
+      else $("bThird").value = "0.0%";
+    });
+    const commitBThird = () => {
+      const bType = $("bType").value;
+      if (bType === "prob") $("bThird").value = toProbPctDisplay($("bThird").value, 6);
+      else if (bType === "count") $("bThird").value = String(readInt($("bThird").value));
+      else $("bThird").value = "0.0%";
+      validateAndRender();
+    };
+    $("bThird").addEventListener("blur", commitBThird);
+    $("bThird").addEventListener("change", commitBThird);
 
     $("ultType").addEventListener("change", () => { syncUltType(); validateAndRender(); });
     $("envDiff").addEventListener("change", () => { syncEnvDerivedUI(); validateAndRender(); });
@@ -583,29 +771,14 @@
     $("detailOut").addEventListener("click", onCopyBtnClick);
     if ($("effectBox")) $("effectBox").addEventListener("click", onCopyBtnClick);
 
-    if ($("calcOverlay")) $("calcOverlay").addEventListener("click", closeCalc);
-    if ($("calcClose")) $("calcClose").addEventListener("click", closeCalc);
-    if ($("calcApply")) $("calcApply").addEventListener("click", applyCalc);
-    document.querySelectorAll("[data-calc-val],[data-calc-act]").forEach(btn => btn.addEventListener("click", () => {
-      flashCalcBtn(btn);
-      const act = btn.dataset.calcAct;
-      const val = btn.dataset.calcVal;
-      if (act === "clear") _calcExpr = "";
-      else if (act === "back") _calcExpr = _calcExpr.slice(0, -1);
-      else if (act === "eq") {
-        try { _calcExpr = String(r6(safeEvalExpr(_calcExpr || "0"))); } catch (_) {}
-      } else if (val) { _calcExpr += val; }
-      renderCalcDisplay();
-    }));
-    document.querySelectorAll("input.calcField").forEach(el => {
-      el.addEventListener("click", () => openCalcFor(el));
-      el.addEventListener("focus", (e) => { e.target.blur(); openCalcFor(el); });
-    });
-    if ($("calcBtn")) $("calcBtn").addEventListener("click", () => { normalizeAll(); validateAndRender(); });
-    if ($("saveBtn")) $("saveBtn").addEventListener("click", save);
-    if ($("loadBtn")) $("loadBtn").addEventListener("click", load);
-    if ($("resetBtn")) $("resetBtn").addEventListener("click", resetAll);
-    $("showNotes").addEventListener("change", () => { syncNoteVisibility(); save(true); refreshInputSummary(); });
+    $("slotSave1")?.addEventListener("click", () => saveSlot(1));
+    $("slotLoad1")?.addEventListener("click", () => loadSlot(1));
+    $("slotSave2")?.addEventListener("click", () => saveSlot(2));
+    $("slotLoad2")?.addEventListener("click", () => loadSlot(2));
+    $("slotSave3")?.addEventListener("click", () => saveSlot(3));
+    $("slotLoad3")?.addEventListener("click", () => loadSlot(3));
+    $("resetBtn")?.addEventListener("click", resetAll);
+    $("showNotes").addEventListener("change", () => { syncNoteVisibility(); updateSummaryCards(); save(true); });
   }
 
   // ---------- 物理/魔法・単体/複数 トグル（seg） ----------
@@ -650,11 +823,14 @@
       const body = document.getElementById(`accBody_${key}`);
       if (!card || !body) return;
 
-      // 初期状態：openクラスがあれば開く
+      if (card.classList.contains("inputSheet")) {
+        body.style.display = "block";
+        return;
+      }
+
       body.style.display = card.classList.contains("open") ? "block" : "none";
 
       h.addEventListener("click", (e) => {
-        // トグル操作中はアコーディオンを開閉しない
         if (e.target && e.target.closest && e.target.closest(".seg")) return;
 
         card.classList.toggle("open");
@@ -666,10 +842,7 @@
 
   function normalizeAll() {
     $("atk").value = toAtkDisplay($("atk").value);
-    $("baseSpd").value = toFixedTrimmed($("baseSpd").value, 6);
-    $("bowPct").value = toPctDisplay($("bowPct").value, 6, 4);
-    $("passivePct").value = toPctDisplay($("passivePct").value, 6, 4);
-    syncSpeedDerivedUI();
+    $("aspd").value = toAspdDisplay($("aspd").value, 6);
     $("gaugeMax").value = toIntDisplay($("gaugeMax").value, 3);
     $("sameUnitCount").value = toIntDisplay($("sameUnitCount").value, 2);
     $("manaRegenPct").value = toPctDisplay($("manaRegenPct").value, 6, 4);
@@ -685,7 +858,7 @@
     $("ultEventAmount").value = toPctDisplay($("ultEventAmount").value, 6, 6);
 
     $("aMulPct").value = toPctDisplay($("aMulPct").value, 6, 6);
-    $("aPPct").value = toPctDisplay($("aPPct").value, 6, 6);
+    $("aPPct").value = toProbPctDisplay($("aPPct").value, 6);
     $("aF").value = toIntDisplay($("aF").value, 4);
     $("aImpactF").value = toIntDisplay($("aImpactF").value, 4);
 
@@ -696,8 +869,7 @@
     syncSkillBMode();
     syncSegmentsFromHidden();
     syncEnvDerivedUI();
-    syncSpeedDerivedUI();
-    if ($("bType").value === "prob") $("bThird").value = toPctDisplay($("bThird").value, 6, 6);
+    if ($("bType").value === "prob") $("bThird").value = toProbPctDisplay($("bThird").value, 6);
     if ($("bType").value === "count") $("bThird").value = String(readInt($("bThird").value));
 
     for (let i = 1; i <= 6; i++) {
@@ -710,10 +882,7 @@
 
   function getValInternal() {
     const atk = readInt($("atk").value);
-    const baseSpd = readNumber($("baseSpd").value);
-    const bowPct = readNumber($("bowPct").value);
-    const passivePct = readNumber($("passivePct").value);
-    const aspd = baseSpd * (1 + bowPct / 100) * (1 + passivePct / 100);
+    const aspd = readNumber($("aspd").value);
     const gaugeMax = readInt($("gaugeMax").value);
     const sameUnitCount = readInt($("sameUnitCount").value) || 1;
 
@@ -771,7 +940,7 @@
 
     const supports = getSupportRows();
 
-    const base = { atk, baseSpd, bowPct, passivePct, aspd, gaugeMax, sameUnitCount, manaPerSec, envDiff, baseDef, defReduce, realDef, physMul,
+    const base = { atk, aspd, gaugeMax, sameUnitCount, manaPerSec, envDiff, baseDef, defReduce, realDef, physMul,
       critChancePct, critPhysBonusPct, critMagicBonusPct, critChance, critPhysBonus, critMagicBonus, critPhysMul, critMagicMul,
       ultType, ultReset, ultMul, ultF, ultImpactF, ultEventType, ultEventAmount, ultStopsGauge, critABShortenUlt2s,
       aMul, aP, aF, aImpactF, aUseGainMana5, bType, bMul, bF, bImpactF, bP, bN,
@@ -781,7 +950,7 @@
   }
 
   function clearErrAll() {
-    const ids = ["atk","baseSpd","bowPct","passivePct","gaugeMax","sameUnitCount","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","ultImpactF","ultEventAmount","aMulPct","aPPct","aF","aImpactF","bMulPct","bThird","bF","bImpactF","ext1Amount","ext1Base","ext1Count","ext2Amount","ext2Base","ext2Count","ext3Amount","ext3Base","ext3Count","ext4Amount","ext4Base","ext4Count","ext5Amount","ext5Base","ext5Count","ext6Amount","ext6Base","ext6Count"];
+    const ids = ["atk","aspd","gaugeMax","sameUnitCount","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","ultImpactF","ultEventAmount","aMulPct","aPPct","aF","aImpactF","bMulPct","bThird","bF","bImpactF","ext1Amount","ext1Base","ext1Count","ext2Amount","ext2Base","ext2Count","ext3Amount","ext3Base","ext3Count","ext4Amount","ext4Base","ext4Count","ext5Amount","ext5Base","ext5Count","ext6Amount","ext6Base","ext6Count"];
     ids.forEach(id => setErr($(id), false));
     setLblErr($("regenLbl"), false);
   }
@@ -794,10 +963,8 @@
     const atk = readInt($("atk").value);
     if (atk <= 0) { setErr($("atk"), true); errors.push("攻撃力は1以上"); }
 
-    const baseSpd = readNumber($("baseSpd").value);
-    if (!(baseSpd > 0 && baseSpd <= 8)) { setErr($("baseSpd"), true); errors.push("基礎速度は0より大きく8.00以下"); }
     const aspd = readNumber($("aspd").value);
-    if (!(aspd > 0 && aspd <= 8)) { setErr($("baseSpd"), true); setErr($("bowPct"), true); setErr($("passivePct"), true); errors.push("最終速度は0より大きく8.00以下"); }
+    if (!(aspd > 0 && aspd <= 8)) { setErr($("aspd"), true); errors.push("攻撃速度は0より大きく8.00以下"); }
 
     const gaugeMax = readInt($("gaugeMax").value);
     if ($("ultType").value !== "none" && gaugeMax <= 0) { setErr($("gaugeMax"), true); errors.push($("ultType").value === "cool" ? "クールタイム秒数は1以上" : "Maxマナは1以上"); }
@@ -1352,7 +1519,7 @@ function calcBoundaryRange(v, res) {
       lines.push(`  = ${r6(v.manaPerSec)} / 40 = ${r6(d.timeManaPerFrame_nonUlt)}`);
       lines.push("基本攻撃マナ(毎フレーム)(非究極中) = 基本攻撃/フレーム × 1");
       lines.push(`  = ${r6(d.basicPerFrame)} × 1 = ${r6(d.basicManaPerFrame_nonUlt)}`);
-      lines.push("スキルAマナ(毎フレーム)(非究極中) = スキルA/フレーム × 8");
+      lines.push("スキルAマナ(毎フレーム)(非究極中) = スキルA/フレーム × 5");
       lines.push(`  = ${r6(d.aPerFrame)} × 8 = ${r6(d.aManaPerFrame_nonUlt || 0)}`);
       lines.push("マナ増加(毎フレーム)(非究極中) = 時間マナ + 基本攻撃マナ + スキルAマナ");
       lines.push(`  = ${r6(d.timeManaPerFrame_nonUlt)} + ${r6(d.basicManaPerFrame_nonUlt)} + ${r6(d.aManaPerFrame_nonUlt || 0)} = ${r6(d.manaPerFrame_nonUlt)}`);
@@ -1668,8 +1835,8 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     syncSkillBMode();
     syncSegmentsFromHidden();
     syncEnvDerivedUI();
-    syncSpeedDerivedUI();
     syncNoteVisibility();
+    updateSummaryCards();
   }
 
   function clearResultBars() {
@@ -1793,163 +1960,6 @@ function render() {
     applyResultBundle(bundle);
   }
 
-  function saveSlot(idx) {
-    try {
-      localStorage.setItem(SLOT_KEYS[idx - 1], JSON.stringify(readFormState()));
-      alert(`セーブ${idx} に保存しました`);
-      return true;
-    } catch (_) {
-      alert(`セーブ${idx} に失敗しました`);
-      return false;
-    }
-  }
-
-  function loadSlot(idx) {
-    try {
-      const raw = localStorage.getItem(SLOT_KEYS[idx - 1]);
-      if (!raw) { alert(`ロード${idx} の保存データがありません`); return false; }
-      applyFormState(JSON.parse(raw));
-      normalizeAll();
-      syncUiState();
-      validateAndRender();
-      alert(`ロード${idx} を読み込みました`);
-      return true;
-    } catch (_) {
-      alert(`ロード${idx} に失敗しました`);
-      return false;
-    }
-  }
-
-  const SHEET_LABELS = { env:"環境", basic:"基本", a:"スキルA", b:"スキルB", ult:"究極", ext:"外部支援", record:"記録" };
-  let _activeSheet = null;
-  let _activeSheetNode = null;
-  let _recordNode = null;
-  function getSheetCard(section) {
-    if (section === "record") return _recordNode;
-    const bodyId = section === "ext" ? "accBody_ext" : `accBody_${section}`;
-    const body = $(bodyId);
-    return body ? body.closest(".accordionCard") : null;
-  }
-
-  function refreshInputSummary() {
-    const box = $("inputSummary");
-    if (!box) return;
-    const g = getValInternal();
-    const extUsed = [1,2,3,4,5,6].filter(i => !!($("ext"+i+"Enabled") && $("ext"+i+"Enabled").checked && $("ext"+i+"Type") && $("ext"+i+"Type").value !== "none")).length;
-    const regenPct = readNumber($("manaRegenPct") ? $("manaRegenPct").value : 0);
-    const aMulPct = readNumber($("aMulPct") ? $("aMulPct").value : 0);
-    const aPPct = readNumber($("aPPct") ? $("aPPct").value : 0);
-    const bMulPct = readNumber($("bMulPct") ? $("bMulPct").value : 0);
-    const ultMulPct = readNumber($("ultMulPct") ? $("ultMulPct").value : 0);
-    const envText = $("envDiff") && $("envDiff").selectedOptions[0] ? $("envDiff").selectedOptions[0].textContent : "ノーマル";
-    const defReduce = Number.isFinite(g.defReduce) ? g.defReduce : readInt($("defReduce") ? $("defReduce").value : 0);
-    const baseSpd = Number.isFinite(g.baseSpd) ? g.baseSpd : readNumber($("baseSpd") ? $("baseSpd").value : 0);
-    const bowPct = Number.isFinite(g.bowPct) ? g.bowPct : readNumber($("bowPct") ? $("bowPct").value : 0);
-    const passivePct = Number.isFinite(g.passivePct) ? g.passivePct : readNumber($("passivePct") ? $("passivePct").value : 0);
-    const aspd = Number.isFinite(g.aspd) ? g.aspd : readNumber($("aspd") ? $("aspd").value : 0);
-    const aF = Number.isFinite(g.aF) ? g.aF : readInt($("aF") ? $("aF").value : 0);
-    const bF = Number.isFinite(g.bF) ? g.bF : readInt($("bF") ? $("bF").value : 0);
-    const ultF = Number.isFinite(g.ultF) ? g.ultF : readInt($("ultF") ? $("ultF").value : 0);
-    const items = [
-      ["環境", `Rege ${r6(regenPct)}% / ${envText} / 防御減少 ${defReduce}`],
-      ["基本", `攻撃力 ${g.atk} / 基礎 ${r6(baseSpd)} / 弓 ${r6(bowPct)}% / 共パ ${r6(passivePct)}% / 最終 ${r6(aspd)} / ${g.basicAttr === "phys" ? "物理" : "魔法"}`],
-      ["スキルA", `倍率 ${aMulPct}% / 確率 ${aPPct}% / F ${aF}${g.aUseGainMana5 ? " / 猫ON" : ""}`],
-      ["スキルB", `${g.bType === "none" ? "無し" : g.bType === "prob" ? "確率" : "規定回数"} / 倍率 ${bMulPct}% / F ${bF}`],
-      ["究極", `${g.ultType === "none" ? "無し" : g.ultType === "mana" ? "マナ" : "クールタイム"} / 倍率 ${ultMulPct}% / F ${ultF}`],
-      ["外部支援", extUsed ? `${extUsed}枠使用中` : "未使用"],
-      ["記録", "セーブ1〜3 / ロード1〜3 / 初期化"],
-    ];
-    box.innerHTML = items.map(([title,text], idx) => {
-      const key=["env","basic","a","b","ult","ext","record"][idx];
-      return `<div class="summaryCard"><button type="button" data-sheet-open="${key}"><div class="summaryTitle">${title}</div><div class="summaryText">${text}</div></button></div>`;
-    }).join("");
-  }
-
-
-  function convertSheetRows(root) {
-    root.querySelectorAll('.tworow').forEach(grid => {
-      if (grid.dataset.sheetRowsBuilt === '1') return;
-      const labels = Array.from(grid.querySelectorAll(':scope > .lbl'));
-      const inputs = Array.from(grid.querySelectorAll(':scope > .inp'));
-      if (!labels.length || labels.length !== inputs.length) return;
-      const frag = document.createDocumentFragment();
-      labels.forEach((lbl, idx) => {
-        const row = document.createElement('div');
-        row.className = 'sheetFieldRow';
-        const colon = document.createElement('span');
-        colon.className = 'sheetFieldColon';
-        colon.textContent = '：';
-        row.appendChild(lbl);
-        row.appendChild(colon);
-        row.appendChild(inputs[idx]);
-        frag.appendChild(row);
-      });
-      grid.innerHTML = '';
-      grid.appendChild(frag);
-      grid.dataset.sheetRowsBuilt = '1';
-    });
-  }
-
-  function closeSheet() {
-    const overlay = $("sheetOverlay");
-    const sheet = $("bottomSheet");
-    const body = $("sheetBody");
-    const stash = $("sheetStash");
-    if (_activeSheetNode && body && body.contains(_activeSheetNode)) stash.appendChild(_activeSheetNode);
-    if (body) body.innerHTML = "";
-    if (sheet) sheet.hidden = true;
-    if (overlay) overlay.hidden = true;
-    document.querySelectorAll("#bottomMenu [data-sheet]").forEach(btn => btn.classList.toggle("active", false));
-    _activeSheet = null;
-    _activeSheetNode = null;
-  }
-
-  function openSheet(section) {
-    const node = getSheetCard(section);
-    if (!node) return;
-    const overlay = $("sheetOverlay");
-    const sheet = $("bottomSheet");
-    const body = $("sheetBody");
-    const title = $("sheetTitle");
-    if (_activeSheet === section) return;
-    closeSheet();
-    _activeSheet = section;
-    _activeSheetNode = node;
-    title.textContent = SHEET_LABELS[section] || "設定";
-    body.appendChild(node);
-    node.classList.remove("inputManagedCard");
-    overlay.hidden = false;
-    sheet.hidden = false;
-    document.querySelectorAll("#bottomMenu [data-sheet]").forEach(btn => btn.classList.toggle("active", btn.dataset.sheet === section));
-  }
-
-  function setupBottomUi() {
-    const stash = $("sheetStash");
-    ["env","basic","a","b","ult","ext"].forEach(section => {
-      const card = getSheetCard(section);
-      if (!card) return;
-      convertSheetRows(card);
-      card.classList.add("inputManagedCard");
-      stash.appendChild(card);
-    });
-    _recordNode = $("recordPanelTemplate");
-    if (_recordNode) stash.appendChild(_recordNode);
-    document.querySelectorAll("#bottomMenu [data-sheet]").forEach(btn => btn.addEventListener("click", () => openSheet(btn.dataset.sheet)));
-    if ($("sheetOverlay")) $("sheetOverlay").addEventListener("click", closeSheet);
-    if ($("sheetClose")) $("sheetClose").addEventListener("click", closeSheet);
-    document.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-sheet-open]");
-      if (btn) openSheet(btn.dataset.sheetOpen);
-    });
-    [1,2,3].forEach(i => {
-      if ($("saveSlot"+i)) $("saveSlot"+i).addEventListener("click", () => saveSlot(i));
-      if ($("loadSlot"+i)) $("loadSlot"+i).addEventListener("click", () => loadSlot(i));
-    });
-    if ($("resetAllRecord")) $("resetAllRecord").addEventListener("click", resetAll);
-    closeSheet();
-    refreshInputSummary();
-  }
-
   function validateAndRender() {
     syncUiState();
 
@@ -1960,7 +1970,6 @@ function render() {
       return;
     }
     render();
-    refreshInputSummary();
     save(true);
   }
 
@@ -1975,17 +1984,12 @@ function render() {
   }
 
   function applyFormState(v) {
-    const state = { ...(v || {}) };
-    if (!("baseSpd" in state) && "aspd" in state) state.baseSpd = state.aspd;
-    if (!("bowPct" in state)) state.bowPct = "0%";
-    if (!("passivePct" in state)) state.passivePct = "0%";
-    for (const [k, val] of Object.entries(state)) {
+    for (const [k, val] of Object.entries(v || {})) {
       const el = $(k);
       if (!el) continue;
       if (el.type === "checkbox") el.checked = !!val;
       else el.value = val;
     }
-    syncSpeedDerivedUI();
   }
 
   function getStoredStateRaw() {
@@ -2021,7 +2025,6 @@ function render() {
       syncUiState();
       validateAndRender();
       if (!silent) alert("読み込みました");
-      refreshInputSummary();
       return true;
     } catch (_) {
       if (!silent) alert("読み込みに失敗しました");
@@ -2035,15 +2038,11 @@ function render() {
     normalizeAll();
     syncUiState();
     validateAndRender();
-    refreshInputSummary();
   }
 
   function seedDefaults() {
     $("atk").value = "1500";
-    $("baseSpd").value = "2.40";
-    $("bowPct").value = "0%";
-    $("passivePct").value = "0%";
-    $("aspd").value = "2.4";
+    $("aspd").value = "2.40";
     $("gaugeMax").value = "100";
     $("sameUnitCount").value = "1";
     $("manaRegenPct").value = "100%";
@@ -2092,9 +2091,10 @@ function render() {
   normalizeAll();
   syncUiState();
   initBindings();
+  setupCalculator();
   setupSegments();
+  setupBottomSheets();
   setupAccordions();
-  setupBottomUi();
   if (!load(true)) {
     validateAndRender();
   }
