@@ -1,7 +1,7 @@
 (() => {
-  const APP_VERSION = "v8_9_1";
+  const APP_VERSION = "v8_9_2";
   const F = 40;
-  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_1", "LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
+  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_2", "LD_DPS_TOOL_V8_9_1", "LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
   const MANUAL_SLOT_KEYS = ["LD_DPS_TOOL_SLOT1", "LD_DPS_TOOL_SLOT2", "LD_DPS_TOOL_SLOT3"];
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
