@@ -1,7 +1,7 @@
 (() => {
-  const APP_VERSION = "v8_9_7";
+  const APP_VERSION = "v8_9_9";
   const F = 40;
-  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_7", "LD_DPS_TOOL_V8_9_5", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
+  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_9", "LD_DPS_TOOL_V8_9_7", "LD_DPS_TOOL_V8_9_5", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
   const SLOT_KEYS = ["LD_DPS_TOOL_SLOT1", "LD_DPS_TOOL_SLOT2", "LD_DPS_TOOL_SLOT3"];
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
@@ -74,6 +74,14 @@
 
     const out = $("physMulOut");
     if (out) out.value = (isFinite(mul) ? mul.toFixed(2) : "1.00");
+  }
+
+  function syncSpeedDerivedUI() {
+    const base = readNumber($("baseSpd") ? $("baseSpd").value : "0");
+    const bowPct = readNumber($("bowPct") ? $("bowPct").value : "0");
+    const passivePct = readNumber($("passivePct") ? $("passivePct").value : "0");
+    const finalSpd = base * (1 + bowPct / 100) * (1 + passivePct / 100);
+    if ($("aspd")) $("aspd").value = finalSpd > 0 ? toFixedTrimmed(String(finalSpd), 6) : "";
   }
 
   const $ = (id) => document.getElementById(id);
@@ -234,6 +242,90 @@
     return String(parseInt(s, 10) || 0);
   }
 
+  function toFixedTrimmed(raw, maxDec = 6) {
+    const t = trimDecimals(raw, maxDec);
+    if (!t) return "";
+    const x = parseFloat(t);
+    if (!isFinite(x)) return "";
+    return String(r6(x));
+  }
+
+  const _fieldFormatters = new Map();
+  function registerFieldFormatter(id, formatter, opts = {}) {
+    const el = $(id);
+    if (!el) return;
+    _fieldFormatters.set(id, { formatter, suffix: opts.suffix || "", title: opts.title || "数値入力" });
+    if (!el.readOnly && !el.disabled) {
+      el.readOnly = true;
+      el.inputMode = "none";
+      el.classList.add("calcField");
+    }
+  }
+
+  function safeEvalExpr(expr) {
+    const s = String(expr || "").replace(/\s+/g, "");
+    if (!s) return 0;
+    if (!/^[0-9+\-*/().]+$/.test(s)) throw new Error("bad expr");
+    const v = Function(`"use strict"; return (${s});`)();
+    if (!isFinite(v)) throw new Error("bad expr");
+    return v;
+  }
+
+  let _calcTarget = null;
+  let _calcExpr = "";
+  let _calcSuffix = "";
+  let _calcTitle = "数値入力";
+
+  function flashCalcBtn(btn) {
+    if (!btn) return;
+    btn.classList.add("flash");
+    setTimeout(() => btn.classList.remove("flash"), 120);
+  }
+  function renderCalcDisplay() {
+    const exprEl = $("calcExpr");
+    const prevEl = $("calcPreview");
+    const disp = _calcExpr || "0";
+    if (exprEl) exprEl.textContent = disp + _calcSuffix;
+    if (prevEl) {
+      try {
+        const val = safeEvalExpr(_calcExpr || "0");
+        prevEl.textContent = `= ${r6(val)}${_calcSuffix}`;
+      } catch (_) {
+        prevEl.textContent = "計算式を入力";
+      }
+    }
+    if ($("calcTitle")) $("calcTitle").textContent = _calcTitle;
+  }
+  function closeCalc() {
+    if ($("calcModal")) $("calcModal").hidden = true;
+    if ($("calcOverlay")) $("calcOverlay").hidden = true;
+    _calcTarget = null;
+  }
+  function openCalcFor(el) {
+    const meta = _fieldFormatters.get(el.id);
+    if (!meta) return;
+    _calcTarget = el;
+    _calcSuffix = meta.suffix || "";
+    _calcTitle = meta.title || "数値入力";
+    _calcExpr = String(readNumber(el.value) || 0);
+    if (_calcExpr === "0" && !String(el.value || "").trim()) _calcExpr = "";
+    if ($("calcOverlay")) $("calcOverlay").hidden = false;
+    if ($("calcModal")) $("calcModal").hidden = false;
+    renderCalcDisplay();
+  }
+  function applyCalc() {
+    if (!_calcTarget) return;
+    const meta = _fieldFormatters.get(_calcTarget.id);
+    if (!meta) return;
+    let val;
+    try { val = safeEvalExpr(_calcExpr || "0"); } catch (_) { alert("式を確認してください"); return; }
+    _calcTarget.value = meta.formatter(String(val));
+    if (_calcTarget.id === "defReduce") syncEnvDerivedUI();
+    if (_calcTarget.id === "baseSpd" || _calcTarget.id === "bowPct" || _calcTarget.id === "passivePct") syncSpeedDerivedUI();
+    validateAndRender();
+    closeCalc();
+  }
+
   function readNumber(raw) {
     let t = String(raw ?? "").replace(/%/g, "");
     t = t.replace(/\s/g, "");
@@ -388,44 +480,51 @@
     }
   }
 
-  function bindField(el, onInputSanitize, onCommitFormat) {
-    el.addEventListener("input", () => { el.value = onInputSanitize(el.value); scheduleRender(); });
-    const commit = () => { el.value = onCommitFormat(el.value); validateAndRender(); };
-    el.addEventListener("blur", commit);
-    el.addEventListener("change", commit);
+  function bindField(el, onInputSanitize, onCommitFormat, opts = {}) {
+    if (!el) return;
+    const commit = () => { el.value = onCommitFormat(el.value); if (el.id === "defReduce") syncEnvDerivedUI(); if (["baseSpd","bowPct","passivePct"].includes(el.id)) syncSpeedDerivedUI(); validateAndRender(); };
+    if (!opts.calcOnly) {
+      el.addEventListener("input", () => { el.value = onInputSanitize(el.value); scheduleRender(); });
+      el.addEventListener("blur", commit);
+      el.addEventListener("change", commit);
+    }
+    if (opts.calc) registerFieldFormatter(el.id, onCommitFormat, opts);
   }
 
   function initBindings() {
-    bindField($("atk"), (v)=>sanitizeIntKeepComma(v,6), (v)=>toAtkDisplay(v));
-    bindField($("aspd"), (v)=>trimDecimalsLive(v,2), (v)=>toAspdDisplay(v));
-    bindField($("gaugeMax"), (v)=>sanitizeIntKeepComma(v,3), (v)=>toIntDisplay(v,3));
-    bindField($("sameUnitCount"), (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2));
+    bindField($("atk"), (v)=>sanitizeIntKeepComma(v,6), (v)=>toAtkDisplay(v), { calc:true, title:"攻撃力" });
+    bindField($("baseSpd"), (v)=>trimDecimalsLive(v,6), (v)=>toFixedTrimmed(v,6), { calc:true, title:"基礎速度" });
+    bindField($("aspd"), (v)=>trimDecimalsLive(v,6), (v)=>toFixedTrimmed(v,6));
+    if ($("aspd")) { $("aspd").readOnly = true; $("aspd").classList.add("calcReadonly"); }
+    bindField($("gaugeMax"), (v)=>sanitizeIntKeepComma(v,3), (v)=>toIntDisplay(v,3), { calc:true, title:"Maxマナ / クールタイム" });
+    bindField($("sameUnitCount"), (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2), { calc:true, title:"同ユニット数" });
 
-    bindField($("manaRegenPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,4));
-    bindField($("defReduce"), (v)=>sanitizeIntKeepComma(v,3), (v)=>toIntDisplay(v,3));
-    bindField($("critChancePct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,4));
-    bindField($("critPhysBonusPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,4));
-    bindField($("critMagicBonusPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,4));
+    bindField($("manaRegenPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4), { calc:true, title:"Regeマナ毎秒", suffix:"%" });
+    bindField($("defReduce"), (v)=>sanitizeIntKeepComma(v,3), (v)=>toIntDisplay(v,3), { calc:true, title:"防御力減少値" });
+    bindField($("critChancePct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4), { calc:true, title:"クリ率", suffix:"%" });
+    bindField($("critPhysBonusPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4), { calc:true, title:"物理クリ補正", suffix:"%" });
+    bindField($("critMagicBonusPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4), { calc:true, title:"魔法クリ寄与補正", suffix:"%" });
+    bindField($("bowPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4), { calc:true, title:"妖精の弓効果", suffix:"%" });
+    bindField($("passivePct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4), { calc:true, title:"共有パッシブ効果", suffix:"%" });
 
-    bindField($("ultMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
-    bindField($("ultF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
-    bindField($("ultImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
-    bindField($("ultEventAmount"), (v)=>trimDecimalsLive(v,2), (v)=>toPctDisplay(v,2,6));
+    bindField($("ultMulPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6), { calc:true, title:"究極倍率", suffix:"%" });
+    bindField($("ultF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4), { calc:true, title:"究極F" });
+    bindField($("ultImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4), { calc:true, title:"究極影響F" });
+    bindField($("ultEventAmount"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6), { calc:true, title:"究極イベント効果量", suffix:"%" });
 
-    bindField($("aMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
-    bindField($("aPPct"), (v)=>trimDecimalsLive(v,1), (v)=>toProbPctDisplay(v));
-    bindField($("aF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
-    bindField($("aImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
+    bindField($("aMulPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6), { calc:true, title:"スキルA倍率", suffix:"%" });
+    bindField($("aPPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6), { calc:true, title:"スキルA確率", suffix:"%" });
+    bindField($("aF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4), { calc:true, title:"スキルAF" });
+    bindField($("aImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4), { calc:true, title:"スキルA影響F" });
 
-    bindField($("bMulPct"), (v)=>trimDecimalsLive(v,1), (v)=>toPctDisplay(v,1,6));
-    bindField($("bF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
-    bindField($("bImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
+    bindField($("bMulPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6), { calc:true, title:"スキルB倍率", suffix:"%" });
+    bindField($("bF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4), { calc:true, title:"スキルBF" });
+    bindField($("bImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4), { calc:true, title:"スキルB影響F" });
 
-    // 外部支援（6枠）
     for (let i = 1; i <= 6; i++) {
-      bindField($("ext" + i + "Amount"), (v)=>trimDecimalsLive(v,2), (v)=>toSupportAmountDisplay($("ext" + i + "Type").value, v));
-      bindField($("ext" + i + "Base"), (v)=>trimDecimalsLive(v,2), (v)=>toSupportBaseDisplay($("ext" + i + "Type").value, v));
-      bindField($("ext" + i + "Count"), (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2));
+      bindField($("ext" + i + "Amount"), (v)=>trimDecimalsLive(v,6), (v)=>toSupportAmountDisplay($("ext" + i + "Type").value, v), { calc:true, title:`外部支援${i} 効果量`, suffix: $("ext" + i + "Type").value === "procMul" ? "" : "%" });
+      bindField($("ext" + i + "Base"), (v)=>trimDecimalsLive(v,6), (v)=>toSupportBaseDisplay($("ext" + i + "Type").value, v), { calc:true, title:`外部支援${i} 単体値`, suffix: isCoverageSupportType($("ext" + i + "Type").value) ? "%" : "" });
+      bindField($("ext" + i + "Count"), (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2), { calc:true, title:`外部支援${i} 体数` });
       $("ext" + i + "Enabled").addEventListener("change", validateAndRender);
       $("ext" + i + "Type").addEventListener("change", () => {
         $("ext" + i + "Amount").value = toSupportAmountDisplay($("ext" + i + "Type").value, $("ext" + i + "Amount").value);
@@ -434,21 +533,19 @@
       });
     }
 
-    $("bThird").addEventListener("input", () => {
+    registerFieldFormatter("bThird", (v) => {
       const bType = $("bType").value;
-      if (bType === "prob") $("bThird").value = trimDecimalsLive($("bThird").value, 1);
-      else if (bType === "count") $("bThird").value = sanitizeIntKeepComma($("bThird").value, 2);
-      else $("bThird").value = "0.0%";
-    });
-    const commitBThird = () => {
-      const bType = $("bType").value;
-      if (bType === "prob") $("bThird").value = toProbPctDisplay($("bThird").value);
-      else if (bType === "count") $("bThird").value = String(readInt($("bThird").value));
-      else $("bThird").value = "0.0%";
-      validateAndRender();
-    };
-    $("bThird").addEventListener("blur", commitBThird);
-    $("bThird").addEventListener("change", commitBThird);
+      if (bType === "prob") return toPctDisplay(v, 6, 6);
+      if (bType === "count") return String(readInt(v));
+      return "0.0%";
+    }, { title:"スキルB第3項目", suffix:"" });
+    if ($("bThird")) {
+      $("bThird").readOnly = true;
+      $("bThird").inputMode = "none";
+      $("bThird").classList.add("calcField");
+      $("bThird").addEventListener("click", () => openCalcFor($("bThird")));
+      $("bThird").addEventListener("focus", (e) => { e.target.blur(); openCalcFor($("bThird")); });
+    }
 
     $("ultType").addEventListener("change", () => { syncUltType(); validateAndRender(); });
     $("envDiff").addEventListener("change", () => { syncEnvDerivedUI(); validateAndRender(); });
@@ -486,6 +583,24 @@
     $("detailOut").addEventListener("click", onCopyBtnClick);
     if ($("effectBox")) $("effectBox").addEventListener("click", onCopyBtnClick);
 
+    if ($("calcOverlay")) $("calcOverlay").addEventListener("click", closeCalc);
+    if ($("calcClose")) $("calcClose").addEventListener("click", closeCalc);
+    if ($("calcApply")) $("calcApply").addEventListener("click", applyCalc);
+    document.querySelectorAll("[data-calc-val],[data-calc-act]").forEach(btn => btn.addEventListener("click", () => {
+      flashCalcBtn(btn);
+      const act = btn.dataset.calcAct;
+      const val = btn.dataset.calcVal;
+      if (act === "clear") _calcExpr = "";
+      else if (act === "back") _calcExpr = _calcExpr.slice(0, -1);
+      else if (act === "eq") {
+        try { _calcExpr = String(r6(safeEvalExpr(_calcExpr || "0"))); } catch (_) {}
+      } else if (val) { _calcExpr += val; }
+      renderCalcDisplay();
+    }));
+    document.querySelectorAll("input.calcField").forEach(el => {
+      el.addEventListener("click", () => openCalcFor(el));
+      el.addEventListener("focus", (e) => { e.target.blur(); openCalcFor(el); });
+    });
     if ($("calcBtn")) $("calcBtn").addEventListener("click", () => { normalizeAll(); validateAndRender(); });
     if ($("saveBtn")) $("saveBtn").addEventListener("click", save);
     if ($("loadBtn")) $("loadBtn").addEventListener("click", load);
@@ -551,34 +666,38 @@
 
   function normalizeAll() {
     $("atk").value = toAtkDisplay($("atk").value);
-    $("aspd").value = toAspdDisplay($("aspd").value);
+    $("baseSpd").value = toFixedTrimmed($("baseSpd").value, 6);
+    $("bowPct").value = toPctDisplay($("bowPct").value, 6, 4);
+    $("passivePct").value = toPctDisplay($("passivePct").value, 6, 4);
+    syncSpeedDerivedUI();
     $("gaugeMax").value = toIntDisplay($("gaugeMax").value, 3);
     $("sameUnitCount").value = toIntDisplay($("sameUnitCount").value, 2);
-    $("manaRegenPct").value = toPctDisplay($("manaRegenPct").value, 1, 4);
+    $("manaRegenPct").value = toPctDisplay($("manaRegenPct").value, 6, 4);
     $("defReduce").value = toIntDisplay($("defReduce").value, 3);
-    $("critChancePct").value = toPctDisplay($("critChancePct").value, 1, 4);
-    $("critPhysBonusPct").value = toPctDisplay($("critPhysBonusPct").value, 1, 4);
-    $("critMagicBonusPct").value = toPctDisplay($("critMagicBonusPct").value, 1, 4);
+    $("critChancePct").value = toPctDisplay($("critChancePct").value, 6, 4);
+    $("critPhysBonusPct").value = toPctDisplay($("critPhysBonusPct").value, 6, 4);
+    $("critMagicBonusPct").value = toPctDisplay($("critMagicBonusPct").value, 6, 4);
     syncEnvDerivedUI();
 
-    $("ultMulPct").value = toPctDisplay($("ultMulPct").value, 1, 6);
+    $("ultMulPct").value = toPctDisplay($("ultMulPct").value, 6, 6);
     $("ultF").value = toIntDisplay($("ultF").value, 4);
     $("ultImpactF").value = toIntDisplay($("ultImpactF").value, 4);
-    $("ultEventAmount").value = toPctDisplay($("ultEventAmount").value, 2, 6);
+    $("ultEventAmount").value = toPctDisplay($("ultEventAmount").value, 6, 6);
 
-    $("aMulPct").value = toPctDisplay($("aMulPct").value, 1, 6);
-    $("aPPct").value = toProbPctDisplay($("aPPct").value);
+    $("aMulPct").value = toPctDisplay($("aMulPct").value, 6, 6);
+    $("aPPct").value = toPctDisplay($("aPPct").value, 6, 6);
     $("aF").value = toIntDisplay($("aF").value, 4);
     $("aImpactF").value = toIntDisplay($("aImpactF").value, 4);
 
-    $("bMulPct").value = toPctDisplay($("bMulPct").value, 1, 6);
+    $("bMulPct").value = toPctDisplay($("bMulPct").value, 6, 6);
     $("bF").value = toIntDisplay($("bF").value, 4);
     $("bImpactF").value = toIntDisplay($("bImpactF").value, 4);
 
     syncSkillBMode();
     syncSegmentsFromHidden();
     syncEnvDerivedUI();
-    if ($("bType").value === "prob") $("bThird").value = toProbPctDisplay($("bThird").value);
+    syncSpeedDerivedUI();
+    if ($("bType").value === "prob") $("bThird").value = toPctDisplay($("bThird").value, 6, 6);
     if ($("bType").value === "count") $("bThird").value = String(readInt($("bThird").value));
 
     for (let i = 1; i <= 6; i++) {
@@ -591,7 +710,10 @@
 
   function getValInternal() {
     const atk = readInt($("atk").value);
-    const aspd = readNumber($("aspd").value);
+    const baseSpd = readNumber($("baseSpd").value);
+    const bowPct = readNumber($("bowPct").value);
+    const passivePct = readNumber($("passivePct").value);
+    const aspd = baseSpd * (1 + bowPct / 100) * (1 + passivePct / 100);
     const gaugeMax = readInt($("gaugeMax").value);
     const sameUnitCount = readInt($("sameUnitCount").value) || 1;
 
@@ -649,7 +771,7 @@
 
     const supports = getSupportRows();
 
-    const base = { atk, aspd, gaugeMax, sameUnitCount, manaPerSec, envDiff, baseDef, defReduce, realDef, physMul,
+    const base = { atk, baseSpd, bowPct, passivePct, aspd, gaugeMax, sameUnitCount, manaPerSec, envDiff, baseDef, defReduce, realDef, physMul,
       critChancePct, critPhysBonusPct, critMagicBonusPct, critChance, critPhysBonus, critMagicBonus, critPhysMul, critMagicMul,
       ultType, ultReset, ultMul, ultF, ultImpactF, ultEventType, ultEventAmount, ultStopsGauge, critABShortenUlt2s,
       aMul, aP, aF, aImpactF, aUseGainMana5, bType, bMul, bF, bImpactF, bP, bN,
@@ -659,7 +781,7 @@
   }
 
   function clearErrAll() {
-    const ids = ["atk","aspd","gaugeMax","sameUnitCount","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","ultImpactF","ultEventAmount","aMulPct","aPPct","aF","aImpactF","bMulPct","bThird","bF","bImpactF","ext1Amount","ext1Base","ext1Count","ext2Amount","ext2Base","ext2Count","ext3Amount","ext3Base","ext3Count","ext4Amount","ext4Base","ext4Count","ext5Amount","ext5Base","ext5Count","ext6Amount","ext6Base","ext6Count"];
+    const ids = ["atk","baseSpd","bowPct","passivePct","gaugeMax","sameUnitCount","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","ultImpactF","ultEventAmount","aMulPct","aPPct","aF","aImpactF","bMulPct","bThird","bF","bImpactF","ext1Amount","ext1Base","ext1Count","ext2Amount","ext2Base","ext2Count","ext3Amount","ext3Base","ext3Count","ext4Amount","ext4Base","ext4Count","ext5Amount","ext5Base","ext5Count","ext6Amount","ext6Base","ext6Count"];
     ids.forEach(id => setErr($(id), false));
     setLblErr($("regenLbl"), false);
   }
@@ -672,8 +794,10 @@
     const atk = readInt($("atk").value);
     if (atk <= 0) { setErr($("atk"), true); errors.push("攻撃力は1以上"); }
 
+    const baseSpd = readNumber($("baseSpd").value);
+    if (!(baseSpd > 0 && baseSpd <= 8)) { setErr($("baseSpd"), true); errors.push("基礎速度は0より大きく8.00以下"); }
     const aspd = readNumber($("aspd").value);
-    if (!(aspd > 0 && aspd <= 8)) { setErr($("aspd"), true); errors.push("攻撃速度は0より大きく8.00以下"); }
+    if (!(aspd > 0 && aspd <= 8)) { setErr($("baseSpd"), true); setErr($("bowPct"), true); setErr($("passivePct"), true); errors.push("最終速度は0より大きく8.00以下"); }
 
     const gaugeMax = readInt($("gaugeMax").value);
     if ($("ultType").value !== "none" && gaugeMax <= 0) { setErr($("gaugeMax"), true); errors.push($("ultType").value === "cool" ? "クールタイム秒数は1以上" : "Maxマナは1以上"); }
@@ -1544,6 +1668,7 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     syncSkillBMode();
     syncSegmentsFromHidden();
     syncEnvDerivedUI();
+    syncSpeedDerivedUI();
     syncNoteVisibility();
   }
 
@@ -1718,13 +1843,16 @@ function render() {
     const ultMulPct = readNumber($("ultMulPct") ? $("ultMulPct").value : 0);
     const envText = $("envDiff") && $("envDiff").selectedOptions[0] ? $("envDiff").selectedOptions[0].textContent : "ノーマル";
     const defReduce = Number.isFinite(g.defReduce) ? g.defReduce : readInt($("defReduce") ? $("defReduce").value : 0);
+    const baseSpd = Number.isFinite(g.baseSpd) ? g.baseSpd : readNumber($("baseSpd") ? $("baseSpd").value : 0);
+    const bowPct = Number.isFinite(g.bowPct) ? g.bowPct : readNumber($("bowPct") ? $("bowPct").value : 0);
+    const passivePct = Number.isFinite(g.passivePct) ? g.passivePct : readNumber($("passivePct") ? $("passivePct").value : 0);
     const aspd = Number.isFinite(g.aspd) ? g.aspd : readNumber($("aspd") ? $("aspd").value : 0);
     const aF = Number.isFinite(g.aF) ? g.aF : readInt($("aF") ? $("aF").value : 0);
     const bF = Number.isFinite(g.bF) ? g.bF : readInt($("bF") ? $("bF").value : 0);
     const ultF = Number.isFinite(g.ultF) ? g.ultF : readInt($("ultF") ? $("ultF").value : 0);
     const items = [
-      ["環境", `Rege ${regenPct}% / ${envText} / 防御減少 ${defReduce}`],
-      ["基本", `攻撃力 ${g.atk} / 速度 ${r6(aspd)} / ${g.basicAttr === "phys" ? "物理" : "魔法"}`],
+      ["環境", `Rege ${r6(regenPct)}% / ${envText} / 防御減少 ${defReduce}`],
+      ["基本", `攻撃力 ${g.atk} / 基礎 ${r6(baseSpd)} / 弓 ${r6(bowPct)}% / 共パ ${r6(passivePct)}% / 最終 ${r6(aspd)} / ${g.basicAttr === "phys" ? "物理" : "魔法"}`],
       ["スキルA", `倍率 ${aMulPct}% / 確率 ${aPPct}% / F ${aF}${g.aUseGainMana5 ? " / 猫ON" : ""}`],
       ["スキルB", `${g.bType === "none" ? "無し" : g.bType === "prob" ? "確率" : "規定回数"} / 倍率 ${bMulPct}% / F ${bF}`],
       ["究極", `${g.ultType === "none" ? "無し" : g.ultType === "mana" ? "マナ" : "クールタイム"} / 倍率 ${ultMulPct}% / F ${ultF}`],
@@ -1735,6 +1863,31 @@ function render() {
       const key=["env","basic","a","b","ult","ext","record"][idx];
       return `<div class="summaryCard"><button type="button" data-sheet-open="${key}"><div class="summaryTitle">${title}</div><div class="summaryText">${text}</div></button></div>`;
     }).join("");
+  }
+
+
+  function convertSheetRows(root) {
+    root.querySelectorAll('.tworow').forEach(grid => {
+      if (grid.dataset.sheetRowsBuilt === '1') return;
+      const labels = Array.from(grid.querySelectorAll(':scope > .lbl'));
+      const inputs = Array.from(grid.querySelectorAll(':scope > .inp'));
+      if (!labels.length || labels.length !== inputs.length) return;
+      const frag = document.createDocumentFragment();
+      labels.forEach((lbl, idx) => {
+        const row = document.createElement('div');
+        row.className = 'sheetFieldRow';
+        const colon = document.createElement('span');
+        colon.className = 'sheetFieldColon';
+        colon.textContent = '：';
+        row.appendChild(lbl);
+        row.appendChild(colon);
+        row.appendChild(inputs[idx]);
+        frag.appendChild(row);
+      });
+      grid.innerHTML = '';
+      grid.appendChild(frag);
+      grid.dataset.sheetRowsBuilt = '1';
+    });
   }
 
   function closeSheet() {
@@ -1775,6 +1928,7 @@ function render() {
     ["env","basic","a","b","ult","ext"].forEach(section => {
       const card = getSheetCard(section);
       if (!card) return;
+      convertSheetRows(card);
       card.classList.add("inputManagedCard");
       stash.appendChild(card);
     });
@@ -1821,12 +1975,17 @@ function render() {
   }
 
   function applyFormState(v) {
-    for (const [k, val] of Object.entries(v || {})) {
+    const state = { ...(v || {}) };
+    if (!("baseSpd" in state) && "aspd" in state) state.baseSpd = state.aspd;
+    if (!("bowPct" in state)) state.bowPct = "0%";
+    if (!("passivePct" in state)) state.passivePct = "0%";
+    for (const [k, val] of Object.entries(state)) {
       const el = $(k);
       if (!el) continue;
       if (el.type === "checkbox") el.checked = !!val;
       else el.value = val;
     }
+    syncSpeedDerivedUI();
   }
 
   function getStoredStateRaw() {
@@ -1881,7 +2040,10 @@ function render() {
 
   function seedDefaults() {
     $("atk").value = "1500";
-    $("aspd").value = "2.40";
+    $("baseSpd").value = "2.40";
+    $("bowPct").value = "0%";
+    $("passivePct").value = "0%";
+    $("aspd").value = "2.4";
     $("gaugeMax").value = "100";
     $("sameUnitCount").value = "1";
     $("manaRegenPct").value = "100%";
