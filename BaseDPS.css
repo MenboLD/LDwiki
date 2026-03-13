@@ -419,6 +419,40 @@ button:hover{ filter:brightness(1.07); }
 .supportGrid .lbl{ font-size:11px; }
 .extType{ font-size:12px; }
 
+/* 外部支援シート内は「項目 : 入力欄」を1行ずつ縦並びにする */
+.inputSheet[data-sheet="ext"] .supportGrid{
+  grid-template-columns: 150px minmax(0,1fr);
+  gap:8px 10px;
+  align-items:center;
+}
+.inputSheet[data-sheet="ext"] .supportGrid > .lbl,
+.inputSheet[data-sheet="ext"] .supportGrid > .inp{
+  grid-column:auto;
+  grid-row:auto;
+}
+.inputSheet[data-sheet="ext"] .supportGrid > .lbl:nth-child(1){ grid-column:1; grid-row:1; }
+.inputSheet[data-sheet="ext"] .supportGrid > .inp:nth-child(5){ grid-column:2; grid-row:1; }
+.inputSheet[data-sheet="ext"] .supportGrid > .lbl:nth-child(2){ grid-column:1; grid-row:2; }
+.inputSheet[data-sheet="ext"] .supportGrid > .inp:nth-child(6){ grid-column:2; grid-row:2; }
+.inputSheet[data-sheet="ext"] .supportGrid > .lbl:nth-child(3){ grid-column:1; grid-row:3; }
+.inputSheet[data-sheet="ext"] .supportGrid > .inp:nth-child(7){ grid-column:2; grid-row:3; }
+.inputSheet[data-sheet="ext"] .supportGrid > .lbl:nth-child(4){ grid-column:1; grid-row:4; }
+.inputSheet[data-sheet="ext"] .supportGrid > .inp:nth-child(8){ grid-column:2; grid-row:4; }
+.inputSheet[data-sheet="ext"] .supportGrid .lbl{
+  font-size:12px;
+  white-space:normal;
+  line-height:1.35;
+  align-self:center;
+}
+.inputSheet[data-sheet="ext"] .supportGrid .inp{
+  min-width:0;
+}
+@media(max-width:520px){
+  .inputSheet[data-sheet="ext"] .supportGrid{
+    grid-template-columns: 116px minmax(0,1fr);
+  }
+}
+
 .tworow.cols7{ grid-template-columns: repeat(7, minmax(0,1fr)); grid-template-rows:auto auto; }
 
 .copyBtn{
