@@ -417,12 +417,6 @@ button:hover{ filter:brightness(1.07); }
 .supportGrid{ display:grid; grid-template-columns: 1.35fr .8fr 1.1fr .55fr; gap:8px 10px; align-items:end; }
 @media(max-width:859px){ .supportGrid{ grid-template-columns: 1fr 1fr; } }
 .supportGrid .lbl{ font-size:11px; }
-.supportGridStack{ grid-template-columns:1fr; gap:10px; }
-.supportField{ display:grid; grid-template-columns: minmax(112px, 148px) minmax(0,1fr); gap:10px; align-items:center; }
-.supportField .lbl{ font-size:12px; color:rgba(255,255,255,.86); }
-.supportField .inp{ min-width:0; }
-.supportField .inp > input, .supportField .inp > select{ width:100%; }
-@media(max-width:520px){ .supportField{ grid-template-columns:1fr; gap:6px; align-items:stretch; } }
 .extType{ font-size:12px; }
 
 .tworow.cols7{ grid-template-columns: repeat(7, minmax(0,1fr)); grid-template-rows:auto auto; }
