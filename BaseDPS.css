@@ -424,9 +424,9 @@ button:hover{ filter:brightness(1.07); }
 .supportHintTop{ color:var(--mut); font-size:12px; margin:2px 0 8px; line-height:1.4; }
 .supportRow{ border:1px solid var(--line); border-radius:12px; padding:10px; background:#0e141c; margin-top:10px; }
 .supportHead{ margin-bottom:8px; }
-.supportFields{ gap:10px; }
-.supportFields .row{ grid-template-columns:132px minmax(0,1fr); }
-.extImpactRow[hidden]{ display:none !important; }
+.supportGrid{ display:grid; grid-template-columns: 1.35fr .8fr 1.1fr .55fr; gap:8px 10px; align-items:end; }
+@media(max-width:859px){ .supportGrid{ grid-template-columns: 1fr 1fr; } }
+.supportGrid .lbl{ font-size:11px; }
 .extType{ font-size:12px; }
 
 .tworow.cols7{ grid-template-columns: repeat(7, minmax(0,1fr)); grid-template-rows:auto auto; }
@@ -460,7 +460,7 @@ button:hover{ filter:brightness(1.07); }
 .calcDisplay { width: 100%; box-sizing: border-box; border-radius: 12px; border: 1px solid rgba(255,255,255,.14); background: #0f1320; color: #fff; padding: 12px 14px; font-size: 24px; margin-bottom: 8px; }
 .calcHint { font-size: 12px; color: rgba(255,255,255,.65); margin-bottom: 12px; }
 .calcKeys { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; }
-.calcKey { border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.05); color: #fff; border-radius: 12px; min-height: 48px; font-size: 18px; font-weight: 700; cursor: pointer; transition: box-shadow .12s ease, border-color .12s ease, background .12s ease, transform .06s ease; touch-action: manipulation; }
+.calcKey { border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.05); color: #fff; border-radius: 12px; min-height: 48px; font-size: 18px; font-weight: 700; cursor: pointer; transition: box-shadow .12s ease, border-color .12s ease, background .12s ease, transform .06s ease; }
 .calcKey:active { transform: scale(.98); background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.28); }
 .calcKey.flash { animation: calcFlash .18s ease-out; }
 .calcWide { grid-column: span 2; }
@@ -492,11 +492,11 @@ button:hover{ filter:brightness(1.07); }
 .bottomMenuBtn{ border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.05); color:#fff; border-radius:12px; min-height:42px; font-size:11px; font-weight:800; padding:6px 4px; cursor:pointer; }
 .bottomMenuBtn.active{ background:rgba(255,179,71,.18); border-color:rgba(255,179,71,.42); color:#ffe8c2; }
 .recordGrid{ display:grid; gap:10px; }
-.recordRow{ display:flex; flex-direction:column; align-items:stretch; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.08); }
+.recordRow{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.08); }
 .recordRowLast{ border-bottom:none; }
 .recordLabel{ font-weight:800; color:#ffe3b0; min-width:56px; }
-.recordBtns{ display:flex; flex-direction:column; gap:8px; align-items:stretch; }
-.recordBtns button{ width:100%; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#fff; border-radius:10px; padding:9px 12px; font-weight:700; }
+.recordBtns{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.recordBtns button{ border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#fff; border-radius:10px; padding:9px 12px; font-weight:700; }
 @media (max-width: 420px){ .summaryDeck{ grid-template-columns:1fr; } .bottomMenuBtn{ font-size:10px; } }
 
 

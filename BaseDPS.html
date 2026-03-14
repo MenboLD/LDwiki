@@ -47,7 +47,7 @@
           <div class="row"><div class="lbl" id="regenLbl">Regeマナ毎秒</div><div class="inp" id="regenGroup"><input id="manaRegenPct" type="text" inputmode="decimal" autocomplete="off" placeholder="100%"></div></div>
           <div class="row"><div class="lbl">難易度/80w防御力</div><div class="inp"><div class="envDiffWrap"><select id="envDiff" class="envDiffSelect"><option value="normal">ノーマル</option><option value="hard">ハード</option><option value="hell">地獄</option><option value="god" selected>神</option><option value="prime">太初</option></select></div></div></div>
           <div class="row"><div class="lbl">防御力減少値</div><div class="inp"><input id="defReduce" type="text" inputmode="numeric" autocomplete="off" placeholder="0" value="250"></div></div>
-          <div class="row"><div class="lbl">物理補正倍率</div><div class="inp"><input id="physMulOut" class="computedField" type="text" inputmode="decimal" autocomplete="off" readonly value="1.00"></div></div>
+          <div class="row"><div class="lbl">物理補正倍率</div><div class="inp"><input id="physMulOut" type="text" inputmode="decimal" autocomplete="off" readonly value="1.00"></div></div>
           <div class="row"><div class="lbl">クリ率</div><div class="inp"><input id="critChancePct" type="text" inputmode="decimal" autocomplete="off" placeholder="0%" value="0%"></div></div>
           <div class="row"><div class="lbl">物理クリ補正</div><div class="inp"><input id="critPhysBonusPct" type="text" inputmode="decimal" autocomplete="off" placeholder="150%" value="150%"></div></div>
           <div class="row"><div class="lbl">魔法クリ寄与補正</div><div class="inp"><input id="critMagicBonusPct" type="text" inputmode="decimal" autocomplete="off" placeholder="170%" value="170%"></div></div>
@@ -91,7 +91,7 @@
         <div class="row"><div class="lbl">基礎速度</div><div class="inp"><input id="baseSpd" type="text" inputmode="decimal" autocomplete="off" placeholder="2.40"></div></div>
         <div class="row"><div class="lbl">弓の速度</div><div class="inp"><input id="bowSpd" type="text" inputmode="decimal" autocomplete="off" placeholder="1.00"></div></div>
         <div class="row"><div class="lbl">共有速度</div><div class="inp"><input id="shareSpd" type="text" inputmode="decimal" autocomplete="off" placeholder="1.00"></div></div>
-        <div class="row"><div class="lbl">現在の攻撃速度</div><div class="inp"><input id="aspd" class="computedField" type="text" inputmode="none" autocomplete="off" placeholder="2.40" readonly></div></div>
+        <div class="row"><div class="lbl">現在の攻撃速度</div><div class="inp"><input id="aspd" type="text" inputmode="none" autocomplete="off" placeholder="2.40" readonly></div></div>
         <div class="row"><div class="lbl" id="gaugeMaxLbl">Maxマナ</div><div class="inp"><input id="gaugeMax" type="text" inputmode="numeric" autocomplete="off" placeholder="100"></div></div>
       </div>
 <div class="hint annotation">
@@ -170,7 +170,6 @@
       <div class="cardBody" id="accBody_a">
 
       <div class="fieldRows">
-        <div class="row"><div class="lbl">タイプ</div><div class="inp"><select id="aType"><option value="use" selected>使用</option><option value="none">無し</option></select></div></div>
         <div class="row"><div class="lbl">倍率</div><div class="inp"><input id="aMulPct" class="calcField" data-calc-target="aMulPct" data-calc-label="スキルA倍率" type="text" inputmode="none" autocomplete="off" placeholder="600%" readonly></div></div>
         <div class="row"><div class="lbl">確率</div><div class="inp"><input id="aPPct" type="text" inputmode="decimal" autocomplete="off" placeholder="10.0%"></div></div>
         <div class="row"><div class="lbl">Ｆ数</div><div class="inp"><input id="aF" type="text" inputmode="numeric" autocomplete="off" placeholder="32"></div></div>
@@ -183,7 +182,6 @@
       </div>
 
       <div class="hint annotation">
-        ・タイプ：使用 / 無し。無しでも入力値は保持し、計算上は未使用として除外します。<br>
         ・倍率：最大6桁%（小数1桁まで可）。<br>
         ・確率：最大90.0%（小数第1位まで）。<br>
         ・Ｆ数：最大4桁整数。<br>
@@ -240,8 +238,12 @@
         <div class="supportHead">
           <label class="chk"><input id="ext1Enabled" type="checkbox"><span>外部支援1</span></label>
         </div>
-        <div class="fieldRows supportFields">
-          <div class="row"><div class="lbl">効果種類</div><div class="inp"><select id="ext1Type" class="extType">
+        <div class="supportGrid">
+          <div class="lbl">効果種類</div>
+          <div class="lbl">効果量</div>
+          <div class="lbl">単体被覆率 / 単体発動回数/秒</div>
+          <div class="lbl">体数</div>
+          <div class="inp"><select id="ext1Type" class="extType">
             <option value="none">無し</option>
             <option value="physPct">物理ダメージ増加</option>
             <option value="magicPct">魔法ダメージ増加</option>
@@ -250,20 +252,22 @@
             <option value="finalPct">最終ダメージ増加</option>
             <option value="manaPct">最大マナ割合獲得</option>
             <option value="coolRemainPct">残りクールタイム割合減少</option>
-            <option value="tempSpdPct">一時速度増加</option>
-          </select></div></div>
-          <div class="row"><div class="lbl">効果量</div><div class="inp"><input id="ext1Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div></div>
-          <div class="row"><div class="lbl" id="ext1BaseLbl">単体被覆率 / 単体発動回数/秒</div><div class="inp"><input id="ext1Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div></div>
-          <div class="row extImpactRow" id="ext1ImpactRow" hidden><div class="lbl">影響F</div><div class="inp"><input id="ext1ImpactF" type="text" inputmode="numeric" autocomplete="off" value="0"></div></div>
-          <div class="row"><div class="lbl">体数</div><div class="inp"><input id="ext1Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div></div>
+          </select></div>
+          <div class="inp"><input id="ext1Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div>
+          <div class="inp"><input id="ext1Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div>
+          <div class="inp"><input id="ext1Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div>
         </div>
       </div>
       <div class="supportRow" id="supportRow2">
         <div class="supportHead">
           <label class="chk"><input id="ext2Enabled" type="checkbox"><span>外部支援2</span></label>
         </div>
-        <div class="fieldRows supportFields">
-          <div class="row"><div class="lbl">効果種類</div><div class="inp"><select id="ext2Type" class="extType">
+        <div class="supportGrid">
+          <div class="lbl">効果種類</div>
+          <div class="lbl">効果量</div>
+          <div class="lbl">単体被覆率 / 単体発動回数/秒</div>
+          <div class="lbl">体数</div>
+          <div class="inp"><select id="ext2Type" class="extType">
             <option value="none">無し</option>
             <option value="physPct">物理ダメージ増加</option>
             <option value="magicPct">魔法ダメージ増加</option>
@@ -272,20 +276,22 @@
             <option value="finalPct">最終ダメージ増加</option>
             <option value="manaPct">最大マナ割合獲得</option>
             <option value="coolRemainPct">残りクールタイム割合減少</option>
-            <option value="tempSpdPct">一時速度増加</option>
-          </select></div></div>
-          <div class="row"><div class="lbl">効果量</div><div class="inp"><input id="ext2Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div></div>
-          <div class="row"><div class="lbl" id="ext2BaseLbl">単体被覆率 / 単体発動回数/秒</div><div class="inp"><input id="ext2Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div></div>
-          <div class="row extImpactRow" id="ext2ImpactRow" hidden><div class="lbl">影響F</div><div class="inp"><input id="ext2ImpactF" type="text" inputmode="numeric" autocomplete="off" value="0"></div></div>
-          <div class="row"><div class="lbl">体数</div><div class="inp"><input id="ext2Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div></div>
+          </select></div>
+          <div class="inp"><input id="ext2Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div>
+          <div class="inp"><input id="ext2Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div>
+          <div class="inp"><input id="ext2Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div>
         </div>
       </div>
       <div class="supportRow" id="supportRow3">
         <div class="supportHead">
           <label class="chk"><input id="ext3Enabled" type="checkbox"><span>外部支援3</span></label>
         </div>
-        <div class="fieldRows supportFields">
-          <div class="row"><div class="lbl">効果種類</div><div class="inp"><select id="ext3Type" class="extType">
+        <div class="supportGrid">
+          <div class="lbl">効果種類</div>
+          <div class="lbl">効果量</div>
+          <div class="lbl">単体被覆率 / 単体発動回数/秒</div>
+          <div class="lbl">体数</div>
+          <div class="inp"><select id="ext3Type" class="extType">
             <option value="none">無し</option>
             <option value="physPct">物理ダメージ増加</option>
             <option value="magicPct">魔法ダメージ増加</option>
@@ -294,20 +300,22 @@
             <option value="finalPct">最終ダメージ増加</option>
             <option value="manaPct">最大マナ割合獲得</option>
             <option value="coolRemainPct">残りクールタイム割合減少</option>
-            <option value="tempSpdPct">一時速度増加</option>
-          </select></div></div>
-          <div class="row"><div class="lbl">効果量</div><div class="inp"><input id="ext3Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div></div>
-          <div class="row"><div class="lbl" id="ext3BaseLbl">単体被覆率 / 単体発動回数/秒</div><div class="inp"><input id="ext3Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div></div>
-          <div class="row extImpactRow" id="ext3ImpactRow" hidden><div class="lbl">影響F</div><div class="inp"><input id="ext3ImpactF" type="text" inputmode="numeric" autocomplete="off" value="0"></div></div>
-          <div class="row"><div class="lbl">体数</div><div class="inp"><input id="ext3Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div></div>
+          </select></div>
+          <div class="inp"><input id="ext3Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div>
+          <div class="inp"><input id="ext3Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div>
+          <div class="inp"><input id="ext3Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div>
         </div>
       </div>
       <div class="supportRow" id="supportRow4">
         <div class="supportHead">
           <label class="chk"><input id="ext4Enabled" type="checkbox"><span>外部支援4</span></label>
         </div>
-        <div class="fieldRows supportFields">
-          <div class="row"><div class="lbl">効果種類</div><div class="inp"><select id="ext4Type" class="extType">
+        <div class="supportGrid">
+          <div class="lbl">効果種類</div>
+          <div class="lbl">効果量</div>
+          <div class="lbl">単体被覆率 / 単体発動回数/秒</div>
+          <div class="lbl">体数</div>
+          <div class="inp"><select id="ext4Type" class="extType">
             <option value="none">無し</option>
             <option value="physPct">物理ダメージ増加</option>
             <option value="magicPct">魔法ダメージ増加</option>
@@ -316,20 +324,22 @@
             <option value="finalPct">最終ダメージ増加</option>
             <option value="manaPct">最大マナ割合獲得</option>
             <option value="coolRemainPct">残りクールタイム割合減少</option>
-            <option value="tempSpdPct">一時速度増加</option>
-          </select></div></div>
-          <div class="row"><div class="lbl">効果量</div><div class="inp"><input id="ext4Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div></div>
-          <div class="row"><div class="lbl" id="ext4BaseLbl">単体被覆率 / 単体発動回数/秒</div><div class="inp"><input id="ext4Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div></div>
-          <div class="row extImpactRow" id="ext4ImpactRow" hidden><div class="lbl">影響F</div><div class="inp"><input id="ext4ImpactF" type="text" inputmode="numeric" autocomplete="off" value="0"></div></div>
-          <div class="row"><div class="lbl">体数</div><div class="inp"><input id="ext4Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div></div>
+          </select></div>
+          <div class="inp"><input id="ext4Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div>
+          <div class="inp"><input id="ext4Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div>
+          <div class="inp"><input id="ext4Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div>
         </div>
       </div>
       <div class="supportRow" id="supportRow5">
         <div class="supportHead">
           <label class="chk"><input id="ext5Enabled" type="checkbox"><span>外部支援5</span></label>
         </div>
-        <div class="fieldRows supportFields">
-          <div class="row"><div class="lbl">効果種類</div><div class="inp"><select id="ext5Type" class="extType">
+        <div class="supportGrid">
+          <div class="lbl">効果種類</div>
+          <div class="lbl">効果量</div>
+          <div class="lbl">単体被覆率 / 単体発動回数/秒</div>
+          <div class="lbl">体数</div>
+          <div class="inp"><select id="ext5Type" class="extType">
             <option value="none">無し</option>
             <option value="physPct">物理ダメージ増加</option>
             <option value="magicPct">魔法ダメージ増加</option>
@@ -338,20 +348,22 @@
             <option value="finalPct">最終ダメージ増加</option>
             <option value="manaPct">最大マナ割合獲得</option>
             <option value="coolRemainPct">残りクールタイム割合減少</option>
-            <option value="tempSpdPct">一時速度増加</option>
-          </select></div></div>
-          <div class="row"><div class="lbl">効果量</div><div class="inp"><input id="ext5Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div></div>
-          <div class="row"><div class="lbl" id="ext5BaseLbl">単体被覆率 / 単体発動回数/秒</div><div class="inp"><input id="ext5Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div></div>
-          <div class="row extImpactRow" id="ext5ImpactRow" hidden><div class="lbl">影響F</div><div class="inp"><input id="ext5ImpactF" type="text" inputmode="numeric" autocomplete="off" value="0"></div></div>
-          <div class="row"><div class="lbl">体数</div><div class="inp"><input id="ext5Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div></div>
+          </select></div>
+          <div class="inp"><input id="ext5Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div>
+          <div class="inp"><input id="ext5Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div>
+          <div class="inp"><input id="ext5Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div>
         </div>
       </div>
       <div class="supportRow" id="supportRow6">
         <div class="supportHead">
           <label class="chk"><input id="ext6Enabled" type="checkbox"><span>外部支援6</span></label>
         </div>
-        <div class="fieldRows supportFields">
-          <div class="row"><div class="lbl">効果種類</div><div class="inp"><select id="ext6Type" class="extType">
+        <div class="supportGrid">
+          <div class="lbl">効果種類</div>
+          <div class="lbl">効果量</div>
+          <div class="lbl">単体被覆率 / 単体発動回数/秒</div>
+          <div class="lbl">体数</div>
+          <div class="inp"><select id="ext6Type" class="extType">
             <option value="none">無し</option>
             <option value="physPct">物理ダメージ増加</option>
             <option value="magicPct">魔法ダメージ増加</option>
@@ -360,17 +372,15 @@
             <option value="finalPct">最終ダメージ増加</option>
             <option value="manaPct">最大マナ割合獲得</option>
             <option value="coolRemainPct">残りクールタイム割合減少</option>
-            <option value="tempSpdPct">一時速度増加</option>
-          </select></div></div>
-          <div class="row"><div class="lbl">効果量</div><div class="inp"><input id="ext6Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div></div>
-          <div class="row"><div class="lbl" id="ext6BaseLbl">単体被覆率 / 単体発動回数/秒</div><div class="inp"><input id="ext6Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div></div>
-          <div class="row extImpactRow" id="ext6ImpactRow" hidden><div class="lbl">影響F</div><div class="inp"><input id="ext6ImpactF" type="text" inputmode="numeric" autocomplete="off" value="0"></div></div>
-          <div class="row"><div class="lbl">体数</div><div class="inp"><input id="ext6Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div></div>
+          </select></div>
+          <div class="inp"><input id="ext6Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div>
+          <div class="inp"><input id="ext6Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div>
+          <div class="inp"><input id="ext6Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div>
         </div>
       </div>
-
+      <div class="hint annotation">
+        ・被覆率型：物理/魔法/基本攻撃/最終ダメ増加、発動率倍率。<br>
         ・発動レート型：最大マナ割合獲得、残りクールタイム割合減少。<br>
-        ・一時速度増加：単体発動回数/秒 と 影響F から平均被覆率を算出し、平均攻撃速度へ反映します。<br>
         ・同種ダメ増加は乗算ではなく増加量を加算して平均化します。<br>
         ・発動率倍率は同時に1種類のみ想定です（複数設定はエラー表示）。<br>
         ・残りクールタイム割合減少は平均残量50%近似で処理します。
