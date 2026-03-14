@@ -43,60 +43,15 @@
         <h2 class="accTitle"><span class="accIcon" aria-hidden="true">▼</span>入力：環境</h2>
       </div>
       <div class="cardBody" id="accBody_env">
-        <div class="tworow cols4" id="envGrid">
-          <div class="lbl" id="regenLbl" style="grid-column:1;">Regeマナ毎秒</div>
-          <div class="lbl" style="grid-column:2;">難易度/80w防御力</div>
-          <div class="lbl" style="grid-column:3;">防御力減少値</div>
-          <div class="lbl" style="grid-column:4;">物理補正倍率</div>
-
-          <div class="inp" style="grid-column:1;" id="regenGroup">
-            <input id="manaRegenPct" type="text" inputmode="decimal" autocomplete="off" placeholder="100%">
-          </div>
-
-          <div class="inp" style="grid-column:2;">
-            <div class="envDiffWrap">
-              <select id="envDiff" class="envDiffSelect">
-                <option value="normal">ノーマル</option>
-                <option value="hard">ハード</option>
-                <option value="hell">地獄</option>
-                <option value="god" selected>神</option>
-                <option value="prime">太初</option>
-              </select></div>
-          </div>
-
-          <div class="inp" style="grid-column:3;">
-            <input id="defReduce" type="text" inputmode="numeric" autocomplete="off" placeholder="0" value="250">
-          </div>
-
-          <div class="inp" style="grid-column:4;">
-            <input id="physMulOut" type="text" inputmode="decimal" autocomplete="off" readonly value="1.00">
-          </div>
-        </div>
-
-
-        <div class="tworow cols3" id="critGrid" style="margin-top:10px;">
-          <div class="lbl" style="grid-column:1;">クリ率</div>
-          <div class="lbl" style="grid-column:2;">物理クリ補正</div>
-          <div class="lbl" style="grid-column:3;">魔法クリ寄与補正</div>
-
-          <div class="inp" style="grid-column:1;">
-            <input id="critChancePct" type="text" inputmode="decimal" autocomplete="off" placeholder="0%" value="0%">
-          </div>
-          <div class="inp" style="grid-column:2;">
-            <input id="critPhysBonusPct" type="text" inputmode="decimal" autocomplete="off" placeholder="150%" value="150%">
-          </div>
-          <div class="inp" style="grid-column:3;">
-            <input id="critMagicBonusPct" type="text" inputmode="decimal" autocomplete="off" placeholder="170%" value="170%">
-          </div>
-        </div>
-
-        </div>
-
-        <div class="tworow cols1" id="unitCountGrid" style="margin-top:10px;">
-          <div class="lbl" style="grid-column:1;">同ユニット数</div>
-          <div class="inp" style="grid-column:1;">
-            <input id="sameUnitCount" type="text" inputmode="numeric" autocomplete="off" placeholder="1" value="1">
-          </div>
+        <div class="fieldRows" id="envGrid">
+          <div class="row"><div class="lbl" id="regenLbl">Regeマナ毎秒</div><div class="inp" id="regenGroup"><input id="manaRegenPct" type="text" inputmode="decimal" autocomplete="off" placeholder="100%"></div></div>
+          <div class="row"><div class="lbl">難易度/80w防御力</div><div class="inp"><div class="envDiffWrap"><select id="envDiff" class="envDiffSelect"><option value="normal">ノーマル</option><option value="hard">ハード</option><option value="hell">地獄</option><option value="god" selected>神</option><option value="prime">太初</option></select></div></div></div>
+          <div class="row"><div class="lbl">防御力減少値</div><div class="inp"><input id="defReduce" type="text" inputmode="numeric" autocomplete="off" placeholder="0" value="250"></div></div>
+          <div class="row"><div class="lbl">物理補正倍率</div><div class="inp"><input id="physMulOut" type="text" inputmode="decimal" autocomplete="off" readonly value="1.00"></div></div>
+          <div class="row"><div class="lbl">クリ率</div><div class="inp"><input id="critChancePct" type="text" inputmode="decimal" autocomplete="off" placeholder="0%" value="0%"></div></div>
+          <div class="row"><div class="lbl">物理クリ補正</div><div class="inp"><input id="critPhysBonusPct" type="text" inputmode="decimal" autocomplete="off" placeholder="150%" value="150%"></div></div>
+          <div class="row"><div class="lbl">魔法クリ寄与補正</div><div class="inp"><input id="critMagicBonusPct" type="text" inputmode="decimal" autocomplete="off" placeholder="170%" value="170%"></div></div>
+          <div class="row"><div class="lbl">同ユニット数</div><div class="inp"><input id="sameUnitCount" type="text" inputmode="numeric" autocomplete="off" placeholder="1" value="1"></div></div>
         </div>
 
         <div class="hint annotation">・同ユニット数：1〜36体。影響Fの複数体参考稼働率で使用します。同種効果は加算されず、重複分は被覆率として扱います。</div>
@@ -131,23 +86,18 @@
 
       <div class="cardBody" id="accBody_basic">
 
-      <div class="tworow cols3" id="basicGrid">
-        <div class="lbl" style="grid-column:1;">攻撃力</div>
-        <div class="lbl" style="grid-column:2;">攻撃速度</div>
-        <div class="lbl" style="grid-column:3;" id="gaugeMaxLbl">Maxマナ</div>
-<div class="inp" style="grid-column:1;">
-          <input id="atk" type="text" inputmode="numeric" autocomplete="off" placeholder="1500">
-        </div>
-        <div class="inp" style="grid-column:2;">
-          <input id="aspd" type="text" inputmode="decimal" autocomplete="off" placeholder="2.40">
-        </div>
-        <div class="inp" style="grid-column:3;">
-          <input id="gaugeMax" type="text" inputmode="numeric" autocomplete="off" placeholder="100">
-        </div>
+      <div class="fieldRows" id="basicGrid">
+        <div class="row"><div class="lbl">攻撃力</div><div class="inp"><input id="atk" type="text" inputmode="numeric" autocomplete="off" placeholder="1500"></div></div>
+        <div class="row"><div class="lbl">基礎速度</div><div class="inp"><input id="baseSpd" type="text" inputmode="decimal" autocomplete="off" placeholder="2.40"></div></div>
+        <div class="row"><div class="lbl">弓の速度</div><div class="inp"><input id="bowSpd" type="text" inputmode="decimal" autocomplete="off" placeholder="1.00"></div></div>
+        <div class="row"><div class="lbl">共有速度</div><div class="inp"><input id="shareSpd" type="text" inputmode="decimal" autocomplete="off" placeholder="1.00"></div></div>
+        <div class="row"><div class="lbl">現在の攻撃速度</div><div class="inp"><input id="aspd" type="text" inputmode="none" autocomplete="off" placeholder="2.40" readonly></div></div>
+        <div class="row"><div class="lbl" id="gaugeMaxLbl">Maxマナ</div><div class="inp"><input id="gaugeMax" type="text" inputmode="numeric" autocomplete="off" placeholder="100"></div></div>
       </div>
 <div class="hint annotation">
         ・攻撃力：整数（最大6桁）、4桁以上はカンマ表示。<br>
-        ・攻撃速度：小数第2位まで表示、0より大きく最大 8.00。<br>
+        ・基礎速度 / 弓の速度 / 共有速度：小数第6位まで表示。<br>
+        ・現在の攻撃速度：基礎速度 × 弓の速度 × 共有速度 を自動表示。0より大きく最大 8.00。<br>
         <span id="gaugeMaxHint">・Maxマナ：整数（最大3桁）。</span><br>
               </div>      </div>
 
@@ -172,47 +122,14 @@
 
       <div class="cardBody" id="accBody_ult">
 
-      <div class="tworow cols7">
-        <div class="lbl" style="grid-column:1;">タイプ</div>
-        <div class="lbl" style="grid-column:2;">リセット</div>
-        <div class="lbl" style="grid-column:3;">倍率</div>
-        <div class="lbl" style="grid-column:4;">Ｆ数</div>
-        <div class="lbl" style="grid-column:5;">影響F</div>
-        <div class="lbl" style="grid-column:6;">影響イベント</div>
-        <div class="lbl" style="grid-column:7;">効果量</div>
-
-        <div class="inp" style="grid-column:1;">
-          <select id="ultType">
-            <option value="none">無し</option>
-            <option value="mana" selected>マナ</option>
-            <option value="cool">クールタイム</option>
-          </select>
-        </div>
-        <div class="inp" style="grid-column:2;">
-          <select id="ultReset">
-            <option value="end" selected>終了時</option>
-            <option value="start">開始時</option>
-          </select>
-        </div>
-        <div class="inp" style="grid-column:3;">
-          <input id="ultMulPct" class="calcField" data-calc-target="ultMulPct" data-calc-label="究極倍率" type="text" inputmode="none" autocomplete="off" placeholder="1500%" readonly>
-        </div>
-        <div class="inp" style="grid-column:4;">
-          <input id="ultF" type="text" inputmode="numeric" autocomplete="off" placeholder="44">
-        </div>
-        <div class="inp" style="grid-column:5;">
-          <input id="ultImpactF" type="text" inputmode="numeric" autocomplete="off" placeholder="0">
-        </div>
-        <div class="inp" style="grid-column:6;">
-          <select id="ultEventType">
-            <option value="none" selected>無し</option>
-            <option value="manaPct">最大マナ割合獲得</option>
-            <option value="coolRemainPct">残りクールタイム割合減少</option>
-          </select>
-        </div>
-        <div class="inp" style="grid-column:7;">
-          <input id="ultEventAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="20%">
-        </div>
+      <div class="fieldRows">
+        <div class="row"><div class="lbl">タイプ</div><div class="inp"><select id="ultType"><option value="none">無し</option><option value="mana" selected>マナ</option><option value="cool">クールタイム</option></select></div></div>
+        <div class="row"><div class="lbl">リセット</div><div class="inp"><select id="ultReset"><option value="end" selected>終了時</option><option value="start">開始時</option></select></div></div>
+        <div class="row"><div class="lbl">倍率</div><div class="inp"><input id="ultMulPct" class="calcField" data-calc-target="ultMulPct" data-calc-label="究極倍率" type="text" inputmode="none" autocomplete="off" placeholder="1500%" readonly></div></div>
+        <div class="row"><div class="lbl">Ｆ数</div><div class="inp"><input id="ultF" type="text" inputmode="numeric" autocomplete="off" placeholder="44"></div></div>
+        <div class="row"><div class="lbl">影響F</div><div class="inp"><input id="ultImpactF" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div></div>
+        <div class="row"><div class="lbl">影響イベント</div><div class="inp"><select id="ultEventType"><option value="none" selected>無し</option><option value="manaPct">最大マナ割合獲得</option><option value="coolRemainPct">残りクールタイム割合減少</option></select></div></div>
+        <div class="row"><div class="lbl">効果量</div><div class="inp"><input id="ultEventAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="20%"></div></div>
       </div>
 
       <div class="chk">
@@ -252,24 +169,11 @@
 
       <div class="cardBody" id="accBody_a">
 
-      <div class="tworow cols4">
-        <div class="lbl" style="grid-column:1;">倍率</div>
-        <div class="lbl" style="grid-column:2;">確率</div>
-        <div class="lbl" style="grid-column:3;">Ｆ数</div>
-        <div class="lbl" style="grid-column:4;">影響F</div>
-
-        <div class="inp" style="grid-column:1;">
-          <input id="aMulPct" class="calcField" data-calc-target="aMulPct" data-calc-label="スキルA倍率" type="text" inputmode="none" autocomplete="off" placeholder="600%" readonly>
-        </div>
-        <div class="inp" style="grid-column:2;">
-          <input id="aPPct" type="text" inputmode="decimal" autocomplete="off" placeholder="10.0%">
-        </div>
-        <div class="inp" style="grid-column:3;">
-          <input id="aF" type="text" inputmode="numeric" autocomplete="off" placeholder="32">
-        </div>
-        <div class="inp" style="grid-column:4;">
-          <input id="aImpactF" type="text" inputmode="numeric" autocomplete="off" placeholder="0">
-        </div>
+      <div class="fieldRows">
+        <div class="row"><div class="lbl">倍率</div><div class="inp"><input id="aMulPct" class="calcField" data-calc-target="aMulPct" data-calc-label="スキルA倍率" type="text" inputmode="none" autocomplete="off" placeholder="600%" readonly></div></div>
+        <div class="row"><div class="lbl">確率</div><div class="inp"><input id="aPPct" type="text" inputmode="decimal" autocomplete="off" placeholder="10.0%"></div></div>
+        <div class="row"><div class="lbl">Ｆ数</div><div class="inp"><input id="aF" type="text" inputmode="numeric" autocomplete="off" placeholder="32"></div></div>
+        <div class="row"><div class="lbl">影響F</div><div class="inp"><input id="aImpactF" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div></div>
       </div>
 
       <div class="chk">
@@ -306,32 +210,12 @@
 
       <div class="cardBody" id="accBody_b">
 
-      <div class="tworow cols5" id="skillBGrid">
-        <div class="lbl" style="grid-column:1;">タイプ</div>
-        <div class="lbl" style="grid-column:2;">倍率</div>
-        <div class="lbl" style="grid-column:3;" id="bThirdLbl">確率</div>
-        <div class="lbl" style="grid-column:4;">Ｆ数</div>
-        <div class="lbl" style="grid-column:5;">影響F</div>
-
-        <div class="inp" style="grid-column:1;">
-          <select id="bType">
-            <option value="none" selected>無し</option>
-            <option value="prob">確率</option>
-            <option value="count">基本攻撃規定回数</option>
-          </select>
-        </div>
-        <div class="inp" style="grid-column:2;">
-          <input id="bMulPct" class="calcField" data-calc-target="bMulPct" data-calc-label="スキルB倍率" type="text" inputmode="none" autocomplete="off" placeholder="1500%" readonly>
-        </div>
-        <div class="inp" style="grid-column:3;">
-          <input id="bThird" type="text" inputmode="decimal" autocomplete="off" placeholder="12.0%">
-        </div>
-        <div class="inp" style="grid-column:4;">
-          <input id="bF" type="text" inputmode="numeric" autocomplete="off" placeholder="40">
-        </div>
-        <div class="inp" style="grid-column:5;">
-          <input id="bImpactF" type="text" inputmode="numeric" autocomplete="off" placeholder="0">
-        </div>
+      <div class="fieldRows" id="skillBGrid">
+        <div class="row"><div class="lbl">タイプ</div><div class="inp"><select id="bType"><option value="none" selected>無し</option><option value="prob">確率</option><option value="count">基本攻撃規定回数</option></select></div></div>
+        <div class="row"><div class="lbl">倍率</div><div class="inp"><input id="bMulPct" class="calcField" data-calc-target="bMulPct" data-calc-label="スキルB倍率" type="text" inputmode="none" autocomplete="off" placeholder="1500%" readonly></div></div>
+        <div class="row"><div class="lbl" id="bThirdLbl">確率</div><div class="inp"><input id="bThird" type="text" inputmode="decimal" autocomplete="off" placeholder="12.0%"></div></div>
+        <div class="row"><div class="lbl">Ｆ数</div><div class="inp"><input id="bF" type="text" inputmode="numeric" autocomplete="off" placeholder="40"></div></div>
+        <div class="row"><div class="lbl">影響F</div><div class="inp"><input id="bImpactF" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div></div>
       </div>
 
       <div class="hint annotation">

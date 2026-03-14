@@ -1,7 +1,7 @@
 (() => {
   const APP_VERSION = "v8_9_10";
   const F = 40;
-  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_10", "LD_DPS_TOOL_V8_9_9", "LD_DPS_TOOL_V8_9_8", "LD_DPS_TOOL_V8_9_7", "LD_DPS_TOOL_V8_9_6", "LD_DPS_TOOL_V8_9_5", "LD_DPS_TOOL_V8_9_4", "LD_DPS_TOOL_V8_9_3", "LD_DPS_TOOL_V8_9_2", "LD_DPS_TOOL_V8_9_1", "LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
+  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_12", "LD_DPS_TOOL_V8_9_10", "LD_DPS_TOOL_V8_9_9", "LD_DPS_TOOL_V8_9_8", "LD_DPS_TOOL_V8_9_7", "LD_DPS_TOOL_V8_9_6", "LD_DPS_TOOL_V8_9_5", "LD_DPS_TOOL_V8_9_4", "LD_DPS_TOOL_V8_9_3", "LD_DPS_TOOL_V8_9_2", "LD_DPS_TOOL_V8_9_1", "LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
   const MANUAL_SLOT_KEYS = ["LD_DPS_TOOL_SLOT1", "LD_DPS_TOOL_SLOT2", "LD_DPS_TOOL_SLOT3"];
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
@@ -225,6 +225,28 @@
     const x = parseFloat(t);
     const v = isFinite(x) ? x : 0;
     return fmtDec(v, maxDec);
+  }
+
+  function computeCurrentAspd(baseSpd, bowSpd, shareSpd) {
+    const base = Math.max(0, Number(baseSpd) || 0);
+    const bow = Math.max(0, Number(bowSpd) || 0);
+    const share = Math.max(0, Number(shareSpd) || 0);
+    return clampAspd(base * bow * share);
+  }
+
+  function computeStateAspd(baseSpd, bowSpd, shareSpd, bonusPct) {
+    const base = Math.max(0, Number(baseSpd) || 0);
+    const bow = Math.max(0, Number(bowSpd) || 0);
+    const share = Math.max(0, Number(shareSpd) || 0);
+    const bonus = Math.max(0, Number(bonusPct) || 0) / 100;
+    return clampAspd(base * (bow + bonus) * share);
+  }
+
+  function syncAttackSpeedInputs() {
+    const out = $("aspd");
+    if (!out) return;
+    const aspd = computeCurrentAspd(readNumber($("baseSpd")?.value || '0'), readNumber($("bowSpd")?.value || '0'), readNumber($("shareSpd")?.value || '0'));
+    out.value = fmtDec(aspd, 6);
   }
 
   function computeAssistCurrentAspd(baseSpd, bowSpd, shareSpd) {
@@ -700,7 +722,7 @@
     const extUsed = Array.from({length:6}, (_,i)=> i+1).filter((i)=> $("ext"+i+"Enabled")?.checked).length;
     const ultEventText = $("ultEventType")?.selectedOptions?.[0]?.textContent || "無し";
     if ($("summaryEnv")) $("summaryEnv").textContent = `難易度:${envDiffText} / 防御減少:${$("defReduce")?.value || "-"} / Rege:${$("manaRegenPct")?.value || "-"}`;
-    if ($("summaryBasic")) $("summaryBasic").textContent = `攻撃力:${$("atk")?.value || "-"} / 攻速:${$("aspd")?.value || "-"} / ${gaugeLabel}:${$("gaugeMax")?.value || "-"} / 同ユニット:${$("sameUnitCount")?.value || "-"}`;
+    if ($("summaryBasic")) $("summaryBasic").textContent = `攻撃力:${$("atk")?.value || "-"} / 基礎:${$("baseSpd")?.value || "-"} / 弓:${$("bowSpd")?.value || "-"} / 共有:${$("shareSpd")?.value || "-"} / 攻速:${$("aspd")?.value || "-"}`;
     if ($("summaryA")) $("summaryA").textContent = `倍率:${$("aMulPct")?.value || "-"} / 確率:${$("aPPct")?.value || "-"} / F:${$("aF")?.value || "-"} / 影響F:${$("aImpactF")?.value || "0"}` + ($("aUseGainMana5")?.checked ? " / 猫ON" : "");
     const bTypeText = $("bType")?.selectedOptions?.[0]?.textContent || "-";
     const bThirdLabel = ($("bType")?.value === "count") ? "規定" : "確率";
@@ -713,7 +735,9 @@
 
   function initBindings() {
     bindField($("atk"), (v)=>sanitizeIntKeepComma(v,6), (v)=>toAtkDisplay(v));
-    bindField($("aspd"), (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6));
+    bindField($("baseSpd"), (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6));
+    bindField($("bowSpd"), (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6));
+    bindField($("shareSpd"), (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6));
     bindField($("gaugeMax"), (v)=>sanitizeIntKeepComma(v,3), (v)=>toIntDisplay(v,3));
     bindField($("sameUnitCount"), (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2));
 
@@ -898,7 +922,10 @@
 
   function normalizeAll() {
     $("atk").value = toAtkDisplay($("atk").value);
-    $("aspd").value = toAspdDisplay($("aspd").value, 6);
+    $("baseSpd").value = toAspdDisplay($("baseSpd").value, 6);
+    $("bowSpd").value = toAspdDisplay($("bowSpd").value, 6);
+    $("shareSpd").value = toAspdDisplay($("shareSpd").value, 6);
+    syncAttackSpeedInputs();
     $("gaugeMax").value = toIntDisplay($("gaugeMax").value, 3);
     $("sameUnitCount").value = toIntDisplay($("sameUnitCount").value, 2);
     $("manaRegenPct").value = toPctDisplay($("manaRegenPct").value, 6, 4);
@@ -957,7 +984,10 @@
 
   function getValInternal() {
     const atk = readInt($("atk").value);
-    const aspd = readNumber($("aspd").value);
+    const baseSpd = readNumber($("baseSpd").value);
+    const bowSpd = readNumber($("bowSpd").value);
+    const shareSpd = readNumber($("shareSpd").value);
+    const aspd = computeCurrentAspd(baseSpd, bowSpd, shareSpd);
     const gaugeMax = readInt($("gaugeMax").value);
     const sameUnitCount = readInt($("sameUnitCount").value) || 1;
 
@@ -1015,7 +1045,7 @@
 
     const supports = getSupportRows();
 
-    const base = { atk, aspd, gaugeMax, sameUnitCount, manaPerSec, envDiff, baseDef, defReduce, realDef, physMul,
+    const base = { atk, baseSpd, bowSpd, shareSpd, aspd, gaugeMax, sameUnitCount, manaPerSec, envDiff, baseDef, defReduce, realDef, physMul,
       critChancePct, critPhysBonusPct, critMagicBonusPct, critChance, critPhysBonus, critMagicBonus, critPhysMul, critMagicMul,
       ultType, ultReset, ultMul, ultF, ultImpactF, ultEventType, ultEventAmount, ultStopsGauge, critABShortenUlt2s,
       aMul, aP, aF, aImpactF, aUseGainMana5, bType, bMul, bF, bImpactF, bP, bN,
@@ -1025,7 +1055,7 @@
   }
 
   function clearErrAll() {
-    const ids = ["atk","aspd","gaugeMax","sameUnitCount","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","ultImpactF","ultEventAmount","aMulPct","aPPct","aF","aImpactF","bMulPct","bThird","bF","bImpactF","ext1Amount","ext1Base","ext1Count","ext2Amount","ext2Base","ext2Count","ext3Amount","ext3Base","ext3Count","ext4Amount","ext4Base","ext4Count","ext5Amount","ext5Base","ext5Count","ext6Amount","ext6Base","ext6Count"];
+    const ids = ["atk","baseSpd","bowSpd","shareSpd","aspd","gaugeMax","sameUnitCount","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","ultImpactF","ultEventAmount","aMulPct","aPPct","aF","aImpactF","bMulPct","bThird","bF","bImpactF","ext1Amount","ext1Base","ext1Count","ext2Amount","ext2Base","ext2Count","ext3Amount","ext3Base","ext3Count","ext4Amount","ext4Base","ext4Count","ext5Amount","ext5Base","ext5Count","ext6Amount","ext6Base","ext6Count"];
     ids.forEach(id => setErr($(id), false));
     setLblErr($("regenLbl"), false);
   }
@@ -1038,8 +1068,14 @@
     const atk = readInt($("atk").value);
     if (atk <= 0) { setErr($("atk"), true); errors.push("攻撃力は1以上"); }
 
-    const aspd = readNumber($("aspd").value);
-    if (!(aspd > 0 && aspd <= 8)) { setErr($("aspd"), true); errors.push("攻撃速度は0より大きく8.00以下"); }
+    const baseSpd = readNumber($("baseSpd").value);
+    const bowSpd = readNumber($("bowSpd").value);
+    const shareSpd = readNumber($("shareSpd").value);
+    if (!(baseSpd > 0 && baseSpd <= 8)) { setErr($("baseSpd"), true); errors.push("基礎速度は0より大きく8.00以下"); }
+    if (!(bowSpd > 0 && bowSpd <= 8)) { setErr($("bowSpd"), true); errors.push("弓の速度は0より大きく8.00以下"); }
+    if (!(shareSpd > 0 && shareSpd <= 8)) { setErr($("shareSpd"), true); errors.push("共有速度は0より大きく8.00以下"); }
+    const aspd = computeCurrentAspd(baseSpd, bowSpd, shareSpd);
+    if (!(aspd > 0 && aspd <= 8)) { setErr($("baseSpd"), true); setErr($("bowSpd"), true); setErr($("shareSpd"), true); errors.push("現在の攻撃速度は0より大きく8.00以下"); }
 
     const gaugeMax = readInt($("gaugeMax").value);
     if ($("ultType").value !== "none" && gaugeMax <= 0) { setErr($("gaugeMax"), true); errors.push($("ultType").value === "cool" ? "クールタイム秒数は1以上" : "Maxマナは1以上"); }
@@ -2258,6 +2294,7 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     syncSkillBMode();
     syncSegmentsFromHidden();
     syncEnvDerivedUI();
+    syncAttackSpeedInputs();
     syncAssistAttackSpeedInputs();
     syncNoteVisibility();
     updateAssistOutputs(calcMutualSpeedAssist());
@@ -2296,13 +2333,13 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     if (assist.enabled) {
       if (assist.err) return { v, err: assist.err, assistMode: true, assist };
       const states = [
-        { label: '0%帯', prob: assist.p0, bonusPct: 0, speedMul: 1 },
-        { label: '20%帯', prob: assist.p20, bonusPct: 20, speedMul: 1.2 },
-        { label: '40%帯', prob: assist.p40, bonusPct: 40, speedMul: 1.4 },
+        { label: '0%帯', prob: assist.p0, bonusPct: 0 },
+        { label: '20%帯', prob: assist.p20, bonusPct: 20 },
+        { label: '40%帯', prob: assist.p40, bonusPct: 40 },
       ].filter((s) => s.prob > 0);
       const stateBundles = [];
       for (const state of states) {
-        const stateV = { ...v, aspd: clampAspd(v.aspd * state.speedMul) };
+        const stateV = { ...v, aspd: computeStateAspd(v.baseSpd, v.bowSpd, v.shareSpd, state.bonusPct) };
         const single = collectResultBundleSingle(stateV);
         if (single.err) return { v, err: single.err, assistMode: true, assist };
         stateBundles.push({ ...state, aspd: stateV.aspd, bundle: single });
@@ -2414,6 +2451,11 @@ function render() {
       state.assistPengBowSpd = state.assistPengBowSpd ?? "1";
       state.assistPengShareSpd = state.assistPengShareSpd ?? "1";
     }
+    if ((state.baseSpd == null || state.baseSpd === "") && state.aspd != null) {
+      state.baseSpd = state.aspd;
+      state.bowSpd = state.bowSpd ?? "1";
+      state.shareSpd = state.shareSpd ?? "1";
+    }
     if ((state.assistTigerBaseSpd == null || state.assistTigerBaseSpd === "") && state.assistTigerAspd != null) {
       state.assistTigerBaseSpd = state.assistTigerAspd;
       state.assistTigerBowSpd = state.assistTigerBowSpd ?? "1";
@@ -2478,6 +2520,9 @@ function render() {
 
   function seedDefaults() {
     $("atk").value = "1500";
+    $("baseSpd").value = "2.40";
+    $("bowSpd").value = "1.00";
+    $("shareSpd").value = "1.00";
     $("aspd").value = "2.40";
     $("gaugeMax").value = "100";
     $("sameUnitCount").value = "1";
