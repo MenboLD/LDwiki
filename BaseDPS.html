@@ -33,6 +33,7 @@
     <button type="button" class="summaryCard" data-open-sheet="b"><span class="summaryTitle">スキルB</span><span class="summaryText" id="summaryB">-</span></button>
     <button type="button" class="summaryCard" data-open-sheet="ult"><span class="summaryTitle">究極</span><span class="summaryText" id="summaryUlt">-</span></button>
     <button type="button" class="summaryCard" data-open-sheet="ext"><span class="summaryTitle">外部支援</span><span class="summaryText" id="summaryExt">-</span></button>
+    <button type="button" class="summaryCard" data-open-sheet="assist"><span class="summaryTitle">補助</span><span class="summaryText" id="summaryAssist">-</span></button>
   </div>
 
   <div class="grid">
@@ -96,12 +97,9 @@
           <div class="inp" style="grid-column:1;">
             <input id="sameUnitCount" type="text" inputmode="numeric" autocomplete="off" placeholder="1" value="1">
           </div>
-                <div class="supportImpactRow" id="ext6ImpactRow" hidden>
-          <div class="lbl">影響F</div>
-          <div class="inp"><input id="ext6ImpactF" type="text" inputmode="numeric" autocomplete="off" value="0"></div>
         </div>
-      </div>
-<div class="hint annotation">・同ユニット数：1〜36体。影響Fの複数体参考稼働率で使用します。同種効果は加算されず、重複分は被覆率として扱います。</div>
+
+        <div class="hint annotation">・同ユニット数：1〜36体。影響Fの複数体参考稼働率で使用します。同種効果は加算されず、重複分は被覆率として扱います。</div>
 
         <div class="hint annotation">
           ・Regeマナ毎秒：最大4桁%（小数1桁まで可）。「100%」= 時間マナ1.0/秒。マナタイプ以外は未使用表示。<br>
@@ -133,37 +131,23 @@
 
       <div class="cardBody" id="accBody_basic">
 
-      <div class="fieldRows" id="basicGrid">
-        <div class="row">
-          <div class="lbl">攻撃力</div>
-          <div class="inp"><input id="atk" type="text" inputmode="numeric" autocomplete="off" placeholder="1500"></div>
+      <div class="tworow cols3" id="basicGrid">
+        <div class="lbl" style="grid-column:1;">攻撃力</div>
+        <div class="lbl" style="grid-column:2;">攻撃速度</div>
+        <div class="lbl" style="grid-column:3;" id="gaugeMaxLbl">Maxマナ</div>
+<div class="inp" style="grid-column:1;">
+          <input id="atk" type="text" inputmode="numeric" autocomplete="off" placeholder="1500">
         </div>
-        <div class="row">
-          <div class="lbl">基礎速度</div>
-          <div class="inp"><input id="baseSpeed" type="text" inputmode="decimal" autocomplete="off" placeholder="2.40" value="2.40"></div>
+        <div class="inp" style="grid-column:2;">
+          <input id="aspd" type="text" inputmode="decimal" autocomplete="off" placeholder="2.40">
         </div>
-        <div class="row">
-          <div class="lbl">弓の速度</div>
-          <div class="inp"><input id="bowSpeed" type="text" inputmode="decimal" autocomplete="off" placeholder="1.00" value="1.00"></div>
-        </div>
-        <div class="row">
-          <div class="lbl">共有速度</div>
-          <div class="inp"><input id="shareSpeed" type="text" inputmode="decimal" autocomplete="off" placeholder="1.00" value="1.00"></div>
-        </div>
-        <div class="row">
-          <div class="lbl">現在の攻速</div>
-          <div class="inp"><input id="aspd" class="computedField" type="text" inputmode="none" autocomplete="off" placeholder="2.40" readonly></div>
-        </div>
-        <div class="row">
-          <div class="lbl" id="gaugeMaxLbl">Maxマナ</div>
-          <div class="inp"><input id="gaugeMax" type="text" inputmode="numeric" autocomplete="off" placeholder="100"></div>
+        <div class="inp" style="grid-column:3;">
+          <input id="gaugeMax" type="text" inputmode="numeric" autocomplete="off" placeholder="100">
         </div>
       </div>
 <div class="hint annotation">
         ・攻撃力：整数（最大6桁）、4桁以上はカンマ表示。<br>
-        ・現在の攻速 = 基礎速度 × 弓の速度 × 共有速度。外部支援の一時速度増加がある場合は、その平均加算分を弓の速度へ加えて計算します。<br>
-        ・基礎速度 / 弓の速度 / 共有速度：0より大きい値を入力してください。<br>
-        ・現在の攻速：自動計算表示。0より大きく最大 8.00。<br>
+        ・攻撃速度：小数第2位まで表示、0より大きく最大 8.00。<br>
         <span id="gaugeMaxHint">・Maxマナ：整数（最大3桁）。</span><br>
               </div>      </div>
 
@@ -359,12 +343,13 @@
       </div>
     </div>
   </div>
-  <div class="card accordionCard open inputSheet" id="extCard" data-sheet="ext">
+  <div class="card accordionCard open" id="extCard">
     <div class="headRow accHeader" data-acc="ext">
       <h2 class="accTitle"><span class="accIcon" aria-hidden="true">▼</span>入力：外部支援（別ユニット由来）</h2>
     </div>
     <div class="cardBody" id="accBody_ext">
       <div class="supportHintTop">被覆率型は「単体被覆率」→体数で実効被覆率へ換算、発動レート型は「単体発動回数/秒」×体数で換算します。</div>
+      <div class="assistLaunchRow"><button type="button" class="assistLaunchBtn" data-open-sheet="assist">楽師/師父 速度支援補助を開く</button></div>
       <div class="supportRow" id="supportRow1">
         <div class="supportHead">
           <label class="chk"><input id="ext1Enabled" type="checkbox"><span>外部支援1</span></label>
@@ -381,17 +366,12 @@
             <option value="basicPct">基本攻撃ダメージ増加</option>
             <option value="procMul">スキルA/確率型B 発動率倍率</option>
             <option value="finalPct">最終ダメージ増加</option>
-            <option value="tempSpeedPct">一時速度増加</option>
             <option value="manaPct">最大マナ割合獲得</option>
             <option value="coolRemainPct">残りクールタイム割合減少</option>
           </select></div>
           <div class="inp"><input id="ext1Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div>
           <div class="inp"><input id="ext1Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div>
           <div class="inp"><input id="ext1Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div>
-        </div>
-        <div class="supportImpactRow" id="ext1ImpactRow" hidden>
-          <div class="lbl">影響F</div>
-          <div class="inp"><input id="ext1ImpactF" type="text" inputmode="numeric" autocomplete="off" value="0"></div>
         </div>
       </div>
       <div class="supportRow" id="supportRow2">
@@ -410,17 +390,12 @@
             <option value="basicPct">基本攻撃ダメージ増加</option>
             <option value="procMul">スキルA/確率型B 発動率倍率</option>
             <option value="finalPct">最終ダメージ増加</option>
-            <option value="tempSpeedPct">一時速度増加</option>
             <option value="manaPct">最大マナ割合獲得</option>
             <option value="coolRemainPct">残りクールタイム割合減少</option>
           </select></div>
           <div class="inp"><input id="ext2Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div>
           <div class="inp"><input id="ext2Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div>
           <div class="inp"><input id="ext2Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div>
-        </div>
-        <div class="supportImpactRow" id="ext2ImpactRow" hidden>
-          <div class="lbl">影響F</div>
-          <div class="inp"><input id="ext2ImpactF" type="text" inputmode="numeric" autocomplete="off" value="0"></div>
         </div>
       </div>
       <div class="supportRow" id="supportRow3">
@@ -439,17 +414,12 @@
             <option value="basicPct">基本攻撃ダメージ増加</option>
             <option value="procMul">スキルA/確率型B 発動率倍率</option>
             <option value="finalPct">最終ダメージ増加</option>
-            <option value="tempSpeedPct">一時速度増加</option>
             <option value="manaPct">最大マナ割合獲得</option>
             <option value="coolRemainPct">残りクールタイム割合減少</option>
           </select></div>
           <div class="inp"><input id="ext3Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div>
           <div class="inp"><input id="ext3Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div>
           <div class="inp"><input id="ext3Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div>
-        </div>
-        <div class="supportImpactRow" id="ext3ImpactRow" hidden>
-          <div class="lbl">影響F</div>
-          <div class="inp"><input id="ext3ImpactF" type="text" inputmode="numeric" autocomplete="off" value="0"></div>
         </div>
       </div>
       <div class="supportRow" id="supportRow4">
@@ -468,17 +438,12 @@
             <option value="basicPct">基本攻撃ダメージ増加</option>
             <option value="procMul">スキルA/確率型B 発動率倍率</option>
             <option value="finalPct">最終ダメージ増加</option>
-            <option value="tempSpeedPct">一時速度増加</option>
             <option value="manaPct">最大マナ割合獲得</option>
             <option value="coolRemainPct">残りクールタイム割合減少</option>
           </select></div>
           <div class="inp"><input id="ext4Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div>
           <div class="inp"><input id="ext4Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div>
           <div class="inp"><input id="ext4Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div>
-        </div>
-        <div class="supportImpactRow" id="ext4ImpactRow" hidden>
-          <div class="lbl">影響F</div>
-          <div class="inp"><input id="ext4ImpactF" type="text" inputmode="numeric" autocomplete="off" value="0"></div>
         </div>
       </div>
       <div class="supportRow" id="supportRow5">
@@ -497,17 +462,12 @@
             <option value="basicPct">基本攻撃ダメージ増加</option>
             <option value="procMul">スキルA/確率型B 発動率倍率</option>
             <option value="finalPct">最終ダメージ増加</option>
-            <option value="tempSpeedPct">一時速度増加</option>
             <option value="manaPct">最大マナ割合獲得</option>
             <option value="coolRemainPct">残りクールタイム割合減少</option>
           </select></div>
           <div class="inp"><input id="ext5Amount" type="text" inputmode="decimal" autocomplete="off" placeholder="15% / 1.1"></div>
           <div class="inp"><input id="ext5Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div>
           <div class="inp"><input id="ext5Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div>
-        </div>
-        <div class="supportImpactRow" id="ext5ImpactRow" hidden>
-          <div class="lbl">影響F</div>
-          <div class="inp"><input id="ext5ImpactF" type="text" inputmode="numeric" autocomplete="off" value="0"></div>
         </div>
       </div>
       <div class="supportRow" id="supportRow6">
@@ -526,7 +486,6 @@
             <option value="basicPct">基本攻撃ダメージ増加</option>
             <option value="procMul">スキルA/確率型B 発動率倍率</option>
             <option value="finalPct">最終ダメージ増加</option>
-            <option value="tempSpeedPct">一時速度増加</option>
             <option value="manaPct">最大マナ割合獲得</option>
             <option value="coolRemainPct">残りクールタイム割合減少</option>
           </select></div>
@@ -534,15 +493,10 @@
           <div class="inp"><input id="ext6Base" type="text" inputmode="decimal" autocomplete="off" placeholder="35% / 0.18"></div>
           <div class="inp"><input id="ext6Count" type="text" inputmode="numeric" autocomplete="off" value="1"></div>
         </div>
-        <div class="supportImpactRow" id="ext6ImpactRow" hidden>
-          <div class="lbl">影響F</div>
-          <div class="inp"><input id="ext6ImpactF" type="text" inputmode="numeric" autocomplete="off" value="0"></div>
-        </div>
       </div>
       <div class="hint annotation">
         ・被覆率型：物理/魔法/基本攻撃/最終ダメ増加、発動率倍率。<br>
         ・発動レート型：最大マナ割合獲得、残りクールタイム割合減少。<br>
-        ・一時速度増加：効果量=スキル速度(%) / 単体発動回数/秒 / 体数 / 影響F から平均寄与を算出。<br>
         ・同種ダメ増加は乗算ではなく増加量を加算して平均化します。<br>
         ・発動率倍率は同時に1種類のみ想定です（複数設定はエラー表示）。<br>
         ・残りクールタイム割合減少は平均残量50%近似で処理します。
@@ -654,6 +608,64 @@
 
 <div class="sheetOverlay" id="sheetOverlay" hidden><div class="sheetBackdrop" id="sheetBackdrop"></div></div>
 
+
+<div class="card inputSheet assistSheet" id="assistSheet" data-sheet="assist">
+  <div class="headRow">
+    <h2 class="accTitle">補助：楽師 / 師父 速度支援</h2>
+    <button type="button" class="sheetClose" data-close-sheet>×</button>
+  </div>
+  <div class="cardBody">
+    <label class="chk"><input id="assistEnabled" type="checkbox"><span>この補助をメインDPSへ反映する</span></label>
+    <div class="assistTopNote">ペンギン楽師と虎の師父が互いに攻撃速度を支援し合う前提で収束計算し、対象ユニットZの 0% / 20% / 40% 帯を自動算出します。</div>
+
+    <div class="assistUnitCard">
+      <div class="assistUnitTitle">ペンギン楽師 <span class="assistUnitMeta">固定: スキルA +20% / 影響120F / スキルB=確率型 / 究極なし</span></div>
+      <div class="fieldRows">
+        <div class="row"><div class="lbl">体数</div><div class="inp"><input id="assistPengCount" type="text" inputmode="numeric" autocomplete="off" value="1"></div></div>
+        <div class="row"><div class="lbl">Regeマナ毎秒</div><div class="inp"><input id="assistPengRegenPct" type="text" inputmode="decimal" autocomplete="off" value="100%"></div></div>
+        <div class="row"><div class="lbl">攻撃速度</div><div class="inp"><input id="assistPengAspd" type="text" inputmode="decimal" autocomplete="off" value="2.40"></div></div>
+        <div class="row"><div class="lbl">スキルA確率</div><div class="inp"><input id="assistPengAPct" type="text" inputmode="decimal" autocomplete="off" value="10.0%"></div></div>
+        <div class="row"><div class="lbl">スキルA F数</div><div class="inp"><input id="assistPengAF" type="text" inputmode="numeric" autocomplete="off" value="32"></div></div>
+        <div class="row"><div class="lbl">スキルAでマナ+8</div><div class="inp"><label class="chk"><input id="assistPengAUseGainMana8" type="checkbox"><span>使用する</span></label></div></div>
+        <div class="row"><div class="lbl">スキルB確率</div><div class="inp"><input id="assistPengBProb" type="text" inputmode="decimal" autocomplete="off" value="0.0%"></div></div>
+        <div class="row"><div class="lbl">スキルB F数</div><div class="inp"><input id="assistPengBF" type="text" inputmode="numeric" autocomplete="off" value="40"></div></div>
+      </div>
+    </div>
+
+    <div class="assistUnitCard">
+      <div class="assistUnitTitle">虎の師父 <span class="assistUnitMeta">固定: スキルA +20% / 影響80F / スキルBなし / 究極=マナ型</span></div>
+      <div class="fieldRows">
+        <div class="row"><div class="lbl">体数</div><div class="inp"><input id="assistTigerCount" type="text" inputmode="numeric" autocomplete="off" value="1"></div></div>
+        <div class="row"><div class="lbl">Regeマナ毎秒</div><div class="inp"><input id="assistTigerRegenPct" type="text" inputmode="decimal" autocomplete="off" value="100%"></div></div>
+        <div class="row"><div class="lbl">攻撃速度</div><div class="inp"><input id="assistTigerAspd" type="text" inputmode="decimal" autocomplete="off" value="2.40"></div></div>
+        <div class="row"><div class="lbl">Maxマナ</div><div class="inp"><input id="assistTigerGaugeMax" type="text" inputmode="numeric" autocomplete="off" value="100"></div></div>
+        <div class="row"><div class="lbl">スキルA確率</div><div class="inp"><input id="assistTigerAPct" type="text" inputmode="decimal" autocomplete="off" value="10.0%"></div></div>
+        <div class="row"><div class="lbl">スキルA F数</div><div class="inp"><input id="assistTigerAF" type="text" inputmode="numeric" autocomplete="off" value="32"></div></div>
+        <div class="row"><div class="lbl">スキルAでマナ+8</div><div class="inp"><label class="chk"><input id="assistTigerAUseGainMana8" type="checkbox"><span>使用する</span></label></div></div>
+        <div class="row"><div class="lbl">究極リセット</div><div class="inp"><select id="assistTigerUltReset"><option value="end" selected>終了時</option><option value="start">開始時</option></select></div></div>
+        <div class="row"><div class="lbl">究極 F数</div><div class="inp"><input id="assistTigerUltF" type="text" inputmode="numeric" autocomplete="off" value="44"></div></div>
+        <div class="row"><div class="lbl">究極中ゲージ停止</div><div class="inp"><label class="chk"><input id="assistTigerUltStopsGauge" type="checkbox" checked><span>停止する</span></label></div></div>
+        <div class="row"><div class="lbl">究極イベント</div><div class="inp"><select id="assistTigerUltEventType"><option value="none" selected>無し</option><option value="manaPct">最大マナ割合獲得</option><option value="coolRemainPct">残りクールタイム割合減少</option></select></div></div>
+        <div class="row"><div class="lbl">究極効果量</div><div class="inp"><input id="assistTigerUltEventAmount" type="text" inputmode="decimal" autocomplete="off" value="0%"></div></div>
+      </div>
+    </div>
+
+    <div class="assistUnitCard assistResultCard">
+      <div class="assistUnitTitle">補助計算結果</div>
+      <div class="fieldRows">
+        <div class="row"><div class="lbl">楽師 最終攻速</div><div class="inp"><input id="assistPengFinalAspd" class="computedField" type="text" readonly value="-"></div></div>
+        <div class="row"><div class="lbl">師父 最終攻速</div><div class="inp"><input id="assistTigerFinalAspd" class="computedField" type="text" readonly value="-"></div></div>
+        <div class="row"><div class="lbl">楽師→Z 被覆率</div><div class="inp"><input id="assistCA" class="computedField" type="text" readonly value="-"></div></div>
+        <div class="row"><div class="lbl">師父→Z 被覆率</div><div class="inp"><input id="assistCB" class="computedField" type="text" readonly value="-"></div></div>
+        <div class="row"><div class="lbl">0%帯</div><div class="inp"><input id="assistP0" class="computedField" type="text" readonly value="-"></div></div>
+        <div class="row"><div class="lbl">20%帯</div><div class="inp"><input id="assistP20" class="computedField" type="text" readonly value="-"></div></div>
+        <div class="row"><div class="lbl">40%帯</div><div class="inp"><input id="assistP40" class="computedField" type="text" readonly value="-"></div></div>
+      </div>
+    </div>
+    <div class="hint annotation">・独立近似で P0=(1-cA)(1-cB), P20=cA(1-cB)+(1-cA)cB, P40=cA×cB を用います。<br>・攻速上限は 8.00 として扱います。</div>
+  </div>
+</div>
+
 <div class="card inputSheet recordSheet" id="recordSheet" data-sheet="record">
   <div class="headRow">
     <h2 class="accTitle">記録</h2>
@@ -677,6 +689,7 @@
   <button type="button" class="bottomMenuBtn" data-open-sheet="b">B</button>
   <button type="button" class="bottomMenuBtn" data-open-sheet="ult">究極</button>
   <button type="button" class="bottomMenuBtn" data-open-sheet="ext">外部支援</button>
+  <button type="button" class="bottomMenuBtn" data-open-sheet="assist">補助</button>
   <button type="button" class="bottomMenuBtn" data-open-sheet="record">記録</button>
 </nav>
 
