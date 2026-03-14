@@ -1,7 +1,7 @@
 (() => {
-  const APP_VERSION = "v8_9_9";
+  const APP_VERSION = "v8_9_10";
   const F = 40;
-  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_9", "LD_DPS_TOOL_V8_9_8", "LD_DPS_TOOL_V8_9_7", "LD_DPS_TOOL_V8_9_6", "LD_DPS_TOOL_V8_9_5", "LD_DPS_TOOL_V8_9_4", "LD_DPS_TOOL_V8_9_3", "LD_DPS_TOOL_V8_9_2", "LD_DPS_TOOL_V8_9_1", "LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
+  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_10", "LD_DPS_TOOL_V8_9_9", "LD_DPS_TOOL_V8_9_8", "LD_DPS_TOOL_V8_9_7", "LD_DPS_TOOL_V8_9_6", "LD_DPS_TOOL_V8_9_5", "LD_DPS_TOOL_V8_9_4", "LD_DPS_TOOL_V8_9_3", "LD_DPS_TOOL_V8_9_2", "LD_DPS_TOOL_V8_9_1", "LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
   const MANUAL_SLOT_KEYS = ["LD_DPS_TOOL_SLOT1", "LD_DPS_TOOL_SLOT2", "LD_DPS_TOOL_SLOT3"];
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
@@ -225,6 +225,34 @@
     const x = parseFloat(t);
     const v = isFinite(x) ? x : 0;
     return fmtDec(v, maxDec);
+  }
+
+  function computeAssistCurrentAspd(baseSpd, bowSpd, shareSpd) {
+    const base = Math.max(0, Number(baseSpd) || 0);
+    const bow = Math.max(0, Number(bowSpd) || 0);
+    const share = Math.max(0, Number(shareSpd) || 0);
+    return clampAspd(base * bow * share);
+  }
+
+  function computeAssistFinalAspd(baseSpd, bowSpd, shareSpd, incomingCoverageSec) {
+    const base = Math.max(0, Number(baseSpd) || 0);
+    const bow = Math.max(0, Number(bowSpd) || 0);
+    const share = Math.max(0, Number(shareSpd) || 0);
+    const bonus = 0.2 * clamp01(incomingCoverageSec || 0);
+    return clampAspd(base * (bow + bonus) * share);
+  }
+
+  function syncAssistAttackSpeedInputs() {
+    const pairs = [
+      ['assistPengBaseSpd', 'assistPengBowSpd', 'assistPengShareSpd', 'assistPengAspd'],
+      ['assistTigerBaseSpd', 'assistTigerBowSpd', 'assistTigerShareSpd', 'assistTigerAspd'],
+    ];
+    pairs.forEach(([baseId, bowId, shareId, outId]) => {
+      const out = $(outId);
+      if (!out) return;
+      const aspd = computeAssistCurrentAspd(readNumber($(baseId)?.value || '0'), readNumber($(bowId)?.value || '0'), readNumber($(shareId)?.value || '0'));
+      out.value = fmtDec(aspd, 6);
+    });
   }
 
   function toAtkDisplay(raw) {
@@ -756,8 +784,12 @@
       ["assistPengBF", (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4)],
       ["assistTigerAF", (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4)],
       ["assistTigerUltF", (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4)],
-      ["assistPengAspd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
-      ["assistTigerAspd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistPengBaseSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistPengBowSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistPengShareSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistTigerBaseSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistTigerBowSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistTigerShareSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
       ["assistPengRegenPct", (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4)],
       ["assistTigerRegenPct", (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4)],
       ["assistPengAPct", (v)=>trimDecimalsLive(v,6), (v)=>toProbPctDisplay(v,6)],
@@ -765,7 +797,7 @@
       ["assistPengBProb", (v)=>trimDecimalsLive(v,6), (v)=>toProbPctDisplay(v,6)],
       ["assistTigerUltEventAmount", (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6)],
     ].forEach(([id, onInput, onCommit]) => { const el = $(id); if (el) bindField(el, onInput, onCommit); });
-    ["assistEnabled","assistPengAUseGainMana8","assistTigerAUseGainMana8","assistTigerUltStopsGauge"].forEach((id) => $(id)?.addEventListener("change", validateAndRender));
+    ["assistEnabled","assistTigerUltStopsGauge"].forEach((id) => $(id)?.addEventListener("change", validateAndRender));
     ["assistTigerUltReset","assistTigerUltEventType"].forEach((id) => $(id)?.addEventListener("change", validateAndRender));
 
 
@@ -906,8 +938,12 @@
     $("assistTigerCount").value = toIntDisplay($("assistTigerCount").value, 2);
     $("assistPengRegenPct").value = toPctDisplay($("assistPengRegenPct").value, 6, 4);
     $("assistTigerRegenPct").value = toPctDisplay($("assistTigerRegenPct").value, 6, 4);
-    $("assistPengAspd").value = toAspdDisplay($("assistPengAspd").value, 6);
-    $("assistTigerAspd").value = toAspdDisplay($("assistTigerAspd").value, 6);
+    $("assistPengBaseSpd").value = toAspdDisplay($("assistPengBaseSpd").value, 6);
+    $("assistPengBowSpd").value = toAspdDisplay($("assistPengBowSpd").value, 6);
+    $("assistPengShareSpd").value = toAspdDisplay($("assistPengShareSpd").value, 6);
+    $("assistTigerBaseSpd").value = toAspdDisplay($("assistTigerBaseSpd").value, 6);
+    $("assistTigerBowSpd").value = toAspdDisplay($("assistTigerBowSpd").value, 6);
+    $("assistTigerShareSpd").value = toAspdDisplay($("assistTigerShareSpd").value, 6);
     $("assistPengAPct").value = toProbPctDisplay($("assistPengAPct").value, 6);
     $("assistTigerAPct").value = toProbPctDisplay($("assistTigerAPct").value, 6);
     $("assistPengAF").value = toIntDisplay($("assistPengAF").value, 4);
@@ -1877,21 +1913,23 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
       peng: {
         count: readInt($("assistPengCount")?.value || "1"),
         manaRegenPct: readNumber($("assistPengRegenPct")?.value || "0"),
-        aspd: readNumber($("assistPengAspd")?.value || "0"),
+        baseSpd: readNumber($("assistPengBaseSpd")?.value || "0"),
+        bowSpd: readNumber($("assistPengBowSpd")?.value || "0"),
+        shareSpd: readNumber($("assistPengShareSpd")?.value || "0"),
         aPct: readNumber($("assistPengAPct")?.value || "0"),
         aF: readInt($("assistPengAF")?.value || "0"),
-        aUseGainMana8: !!($("assistPengAUseGainMana8") && $("assistPengAUseGainMana8").checked),
         bProb: readNumber($("assistPengBProb")?.value || "0"),
         bF: readInt($("assistPengBF")?.value || "0"),
       },
       tiger: {
         count: readInt($("assistTigerCount")?.value || "1"),
         manaRegenPct: readNumber($("assistTigerRegenPct")?.value || "0"),
-        aspd: readNumber($("assistTigerAspd")?.value || "0"),
+        baseSpd: readNumber($("assistTigerBaseSpd")?.value || "0"),
+        bowSpd: readNumber($("assistTigerBowSpd")?.value || "0"),
+        shareSpd: readNumber($("assistTigerShareSpd")?.value || "0"),
         gaugeMax: readInt($("assistTigerGaugeMax")?.value || "100"),
         aPct: readNumber($("assistTigerAPct")?.value || "0"),
         aF: readInt($("assistTigerAF")?.value || "0"),
-        aUseGainMana8: !!($("assistTigerAUseGainMana8") && $("assistTigerAUseGainMana8").checked),
         ultReset: $("assistTigerUltReset")?.value || "end",
         ultF: readInt($("assistTigerUltF")?.value || "44"),
         ultStopsGauge: !!($("assistTigerUltStopsGauge") && $("assistTigerUltStopsGauge").checked),
@@ -1906,13 +1944,19 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     if (!cfg.enabled) return [];
     const errs = [];
     const chkCount = (v, label) => { if (!(v >= 1 && v <= 36)) errs.push(`${label}の体数は1〜36`); };
-    const chkAspd = (v, label) => { if (!(v > 0 && v <= 8)) errs.push(`${label}の攻撃速度は0より大きく8.00以下`); };
+    const chkRate = (v, label) => { if (!(v > 0 && v <= 8)) errs.push(`${label}は0より大きく8.00以下`); };
     const chkPct90 = (v, label) => { if (v < 0 || v > 90) errs.push(`${label}は0〜90.0%`); };
     const chkF = (v, label) => { if (!(v > 0 && v <= 9999)) errs.push(`${label}は1〜9999`); };
     chkCount(cfg.peng.count, 'ペンギン楽師');
     chkCount(cfg.tiger.count, '虎の師父');
-    chkAspd(cfg.peng.aspd, 'ペンギン楽師');
-    chkAspd(cfg.tiger.aspd, '虎の師父');
+    chkRate(cfg.peng.baseSpd, 'ペンギン楽師の基礎速度');
+    chkRate(cfg.peng.bowSpd, 'ペンギン楽師の弓の速度');
+    chkRate(cfg.peng.shareSpd, 'ペンギン楽師の共有速度');
+    chkRate(cfg.tiger.baseSpd, '虎の師父の基礎速度');
+    chkRate(cfg.tiger.bowSpd, '虎の師父の弓の速度');
+    chkRate(cfg.tiger.shareSpd, '虎の師父の共有速度');
+    if (!(computeAssistCurrentAspd(cfg.peng.baseSpd, cfg.peng.bowSpd, cfg.peng.shareSpd) > 0 && computeAssistCurrentAspd(cfg.peng.baseSpd, cfg.peng.bowSpd, cfg.peng.shareSpd) <= 8)) errs.push('ペンギン楽師の攻撃速度は0より大きく8.00以下');
+    if (!(computeAssistCurrentAspd(cfg.tiger.baseSpd, cfg.tiger.bowSpd, cfg.tiger.shareSpd) > 0 && computeAssistCurrentAspd(cfg.tiger.baseSpd, cfg.tiger.bowSpd, cfg.tiger.shareSpd) <= 8)) errs.push('虎の師父の攻撃速度は0より大きく8.00以下');
     chkPct90(cfg.peng.aPct, 'ペンギン楽師スキルA確率');
     chkPct90(cfg.peng.bProb, 'ペンギン楽師スキルB確率');
     if (cfg.peng.aPct + cfg.peng.bProb > 100) errs.push('ペンギン楽師のスキルA確率 + スキルB確率 が100%を超えています');
@@ -1928,8 +1972,7 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
   }
 
   function buildAssistSimUnit(kind, conf, incomingCoverageSec) {
-    const speedMul = 1 + 0.2 * clamp01(incomingCoverageSec || 0);
-    const aspd = clampAspd((conf.aspd || 0) * speedMul);
+    const aspd = computeAssistFinalAspd(conf.baseSpd || 0, conf.bowSpd || 0, conf.shareSpd || 0, incomingCoverageSec);
     const sameUnitCount = Math.max(1, Math.min(36, conf.count || 1));
     const v = {
       atk: 1,
@@ -1963,7 +2006,7 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
       aP: Math.max(0, conf.aPct || 0) / 100,
       aF: Math.max(1, conf.aF || 32),
       aImpactF: kind === 'peng' ? 120 : 80,
-      aUseGainMana5: !!conf.aUseGainMana8,
+      aUseGainMana5: false,
       bType: kind === 'peng' ? 'prob' : 'none',
       bMul: 1,
       bF: kind === 'peng' ? Math.max(1, conf.bF || 40) : 40,
@@ -2215,6 +2258,7 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     syncSkillBMode();
     syncSegmentsFromHidden();
     syncEnvDerivedUI();
+    syncAssistAttackSpeedInputs();
     syncNoteVisibility();
     updateAssistOutputs(calcMutualSpeedAssist());
     updateSummaryCards();
@@ -2364,12 +2408,24 @@ function render() {
   }
 
   function applyFormState(v) {
-    for (const [k, val] of Object.entries(v || {})) {
+    const state = { ...(v || {}) };
+    if ((state.assistPengBaseSpd == null || state.assistPengBaseSpd === "") && state.assistPengAspd != null) {
+      state.assistPengBaseSpd = state.assistPengAspd;
+      state.assistPengBowSpd = state.assistPengBowSpd ?? "1";
+      state.assistPengShareSpd = state.assistPengShareSpd ?? "1";
+    }
+    if ((state.assistTigerBaseSpd == null || state.assistTigerBaseSpd === "") && state.assistTigerAspd != null) {
+      state.assistTigerBaseSpd = state.assistTigerAspd;
+      state.assistTigerBowSpd = state.assistTigerBowSpd ?? "1";
+      state.assistTigerShareSpd = state.assistTigerShareSpd ?? "1";
+    }
+    for (const [k, val] of Object.entries(state)) {
       const el = $(k);
       if (!el) continue;
       if (el.type === "checkbox") el.checked = !!val;
       else el.value = val;
     }
+    syncAssistAttackSpeedInputs();
   }
 
   function getStoredStateRaw() {
@@ -2466,19 +2522,23 @@ function render() {
     $("assistEnabled").checked = false;
     $("assistPengCount").value = "1";
     $("assistPengRegenPct").value = "100%";
+    $("assistPengBaseSpd").value = "2.40";
+    $("assistPengBowSpd").value = "1.00";
+    $("assistPengShareSpd").value = "1.00";
     $("assistPengAspd").value = "2.40";
     $("assistPengAPct").value = "10.0%";
     $("assistPengAF").value = "32";
-    $("assistPengAUseGainMana8").checked = false;
     $("assistPengBProb").value = "0.0%";
     $("assistPengBF").value = "40";
     $("assistTigerCount").value = "1";
     $("assistTigerRegenPct").value = "100%";
+    $("assistTigerBaseSpd").value = "2.40";
+    $("assistTigerBowSpd").value = "1.00";
+    $("assistTigerShareSpd").value = "1.00";
     $("assistTigerAspd").value = "2.40";
     $("assistTigerGaugeMax").value = "100";
     $("assistTigerAPct").value = "10.0%";
     $("assistTigerAF").value = "32";
-    $("assistTigerAUseGainMana8").checked = false;
     $("assistTigerUltReset").value = "end";
     $("assistTigerUltF").value = "44";
     $("assistTigerUltStopsGauge").checked = true;

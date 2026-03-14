@@ -623,10 +623,12 @@
       <div class="fieldRows">
         <div class="row"><div class="lbl">体数</div><div class="inp"><input id="assistPengCount" type="text" inputmode="numeric" autocomplete="off" value="1"></div></div>
         <div class="row"><div class="lbl">Regeマナ毎秒</div><div class="inp"><input id="assistPengRegenPct" type="text" inputmode="decimal" autocomplete="off" value="100%"></div></div>
-        <div class="row"><div class="lbl">攻撃速度</div><div class="inp"><input id="assistPengAspd" type="text" inputmode="decimal" autocomplete="off" value="2.40"></div></div>
+        <div class="row"><div class="lbl">基礎速度</div><div class="inp"><input id="assistPengBaseSpd" type="text" inputmode="decimal" autocomplete="off" value="2.40"></div></div>
+        <div class="row"><div class="lbl">弓の速度</div><div class="inp"><input id="assistPengBowSpd" type="text" inputmode="decimal" autocomplete="off" value="1.00"></div></div>
+        <div class="row"><div class="lbl">共有速度</div><div class="inp"><input id="assistPengShareSpd" type="text" inputmode="decimal" autocomplete="off" value="1.00"></div></div>
+        <div class="row"><div class="lbl">攻撃速度</div><div class="inp"><input id="assistPengAspd" class="computedField" type="text" readonly value="2.40"></div></div>
         <div class="row"><div class="lbl">スキルA確率</div><div class="inp"><input id="assistPengAPct" type="text" inputmode="decimal" autocomplete="off" value="10.0%"></div></div>
         <div class="row"><div class="lbl">スキルA F数</div><div class="inp"><input id="assistPengAF" type="text" inputmode="numeric" autocomplete="off" value="32"></div></div>
-        <div class="row"><div class="lbl">スキルAでマナ+8</div><div class="inp"><label class="chk"><input id="assistPengAUseGainMana8" type="checkbox"><span>使用する</span></label></div></div>
         <div class="row"><div class="lbl">スキルB確率</div><div class="inp"><input id="assistPengBProb" type="text" inputmode="decimal" autocomplete="off" value="0.0%"></div></div>
         <div class="row"><div class="lbl">スキルB F数</div><div class="inp"><input id="assistPengBF" type="text" inputmode="numeric" autocomplete="off" value="40"></div></div>
       </div>
@@ -637,11 +639,13 @@
       <div class="fieldRows">
         <div class="row"><div class="lbl">体数</div><div class="inp"><input id="assistTigerCount" type="text" inputmode="numeric" autocomplete="off" value="1"></div></div>
         <div class="row"><div class="lbl">Regeマナ毎秒</div><div class="inp"><input id="assistTigerRegenPct" type="text" inputmode="decimal" autocomplete="off" value="100%"></div></div>
-        <div class="row"><div class="lbl">攻撃速度</div><div class="inp"><input id="assistTigerAspd" type="text" inputmode="decimal" autocomplete="off" value="2.40"></div></div>
+        <div class="row"><div class="lbl">基礎速度</div><div class="inp"><input id="assistTigerBaseSpd" type="text" inputmode="decimal" autocomplete="off" value="2.40"></div></div>
+        <div class="row"><div class="lbl">弓の速度</div><div class="inp"><input id="assistTigerBowSpd" type="text" inputmode="decimal" autocomplete="off" value="1.00"></div></div>
+        <div class="row"><div class="lbl">共有速度</div><div class="inp"><input id="assistTigerShareSpd" type="text" inputmode="decimal" autocomplete="off" value="1.00"></div></div>
+        <div class="row"><div class="lbl">攻撃速度</div><div class="inp"><input id="assistTigerAspd" class="computedField" type="text" readonly value="2.40"></div></div>
         <div class="row"><div class="lbl">Maxマナ</div><div class="inp"><input id="assistTigerGaugeMax" type="text" inputmode="numeric" autocomplete="off" value="100"></div></div>
         <div class="row"><div class="lbl">スキルA確率</div><div class="inp"><input id="assistTigerAPct" type="text" inputmode="decimal" autocomplete="off" value="10.0%"></div></div>
         <div class="row"><div class="lbl">スキルA F数</div><div class="inp"><input id="assistTigerAF" type="text" inputmode="numeric" autocomplete="off" value="32"></div></div>
-        <div class="row"><div class="lbl">スキルAでマナ+8</div><div class="inp"><label class="chk"><input id="assistTigerAUseGainMana8" type="checkbox"><span>使用する</span></label></div></div>
         <div class="row"><div class="lbl">究極リセット</div><div class="inp"><select id="assistTigerUltReset"><option value="end" selected>終了時</option><option value="start">開始時</option></select></div></div>
         <div class="row"><div class="lbl">究極 F数</div><div class="inp"><input id="assistTigerUltF" type="text" inputmode="numeric" autocomplete="off" value="44"></div></div>
         <div class="row"><div class="lbl">究極中ゲージ停止</div><div class="inp"><label class="chk"><input id="assistTigerUltStopsGauge" type="checkbox" checked><span>停止する</span></label></div></div>
@@ -662,7 +666,7 @@
         <div class="row"><div class="lbl">40%帯</div><div class="inp"><input id="assistP40" class="computedField" type="text" readonly value="-"></div></div>
       </div>
     </div>
-    <div class="hint annotation">・独立近似で P0=(1-cA)(1-cB), P20=cA(1-cB)+(1-cA)cB, P40=cA×cB を用います。<br>・攻速上限は 8.00 として扱います。</div>
+    <div class="hint annotation">・補助モーダル内の攻撃速度は 基礎速度 × 弓の速度 × 共有速度 で自動計算表示します。<br>・相互支援反映時は 基礎速度 × (弓の速度 + 0.2×被覆率) × 共有速度 で攻速を更新します。<br>・独立近似で P0=(1-cA)(1-cB), P20=cA(1-cB)+(1-cA)cB, P40=cA×cB を用います。<br>・攻速上限は 8.00 として扱います。</div>
   </div>
 </div>
 
