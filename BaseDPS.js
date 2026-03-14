@@ -1,7 +1,7 @@
 (() => {
-  const APP_VERSION = "v8_9_1";
+  const APP_VERSION = "v8_9_13";
   const F = 40;
-  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_1", "LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
+  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_13", "LD_DPS_TOOL_V8_9_12", "LD_DPS_TOOL_V8_9_10", "LD_DPS_TOOL_V8_9_9", "LD_DPS_TOOL_V8_9_8", "LD_DPS_TOOL_V8_9_7", "LD_DPS_TOOL_V8_9_6", "LD_DPS_TOOL_V8_9_5", "LD_DPS_TOOL_V8_9_4", "LD_DPS_TOOL_V8_9_3", "LD_DPS_TOOL_V8_9_2", "LD_DPS_TOOL_V8_9_1", "LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
   const MANUAL_SLOT_KEYS = ["LD_DPS_TOOL_SLOT1", "LD_DPS_TOOL_SLOT2", "LD_DPS_TOOL_SLOT3"];
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
@@ -25,6 +25,10 @@
   function pvCountOnce() {
     try {
       if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+      const sentKey = `pv_sent_${PV_SITE_NAME}_${location.pathname}`;
+      try {
+        if (sessionStorage.getItem(sentKey) === "1") return;
+      } catch (_) {}
       const url = SUPABASE_URL + "/rest/v1/pageviews";
       const payload = {
         site: PV_SITE_NAME,
@@ -43,7 +47,12 @@
         },
         body: JSON.stringify(payload),
         keepalive: true,
-      }).then((res) => { if (!res.ok) return null; return null; }).catch(() => {});
+      }).then((res) => {
+        if (res.ok) {
+          try { sessionStorage.setItem(sentKey, "1"); } catch (_) {}
+        }
+        return null;
+      }).catch(() => {});
     } catch (_) {}
   }
 
@@ -227,6 +236,56 @@
     return fmtDec(v, maxDec);
   }
 
+  function computeCurrentAspd(baseSpd, bowSpd, shareSpd) {
+    const base = Math.max(0, Number(baseSpd) || 0);
+    const bow = Math.max(0, Number(bowSpd) || 0);
+    const share = Math.max(0, Number(shareSpd) || 0);
+    return clampAspd(base * bow * share);
+  }
+
+  function computeStateAspd(baseSpd, bowSpd, shareSpd, bonusPct) {
+    const base = Math.max(0, Number(baseSpd) || 0);
+    const bow = Math.max(0, Number(bowSpd) || 0);
+    const share = Math.max(0, Number(shareSpd) || 0);
+    const bonus = Math.max(0, Number(bonusPct) || 0) / 100;
+    return clampAspd(base * (bow + bonus) * share);
+  }
+
+  function syncAttackSpeedInputs() {
+    const out = $("aspd");
+    if (!out) return;
+    const aspd = computeCurrentAspd(readNumber($("baseSpd")?.value || '0'), readNumber($("bowSpd")?.value || '0'), readNumber($("shareSpd")?.value || '0'));
+    out.value = fmtDec(aspd, 6);
+  }
+
+  function computeAssistCurrentAspd(baseSpd, bowSpd, shareSpd) {
+    const base = Math.max(0, Number(baseSpd) || 0);
+    const bow = Math.max(0, Number(bowSpd) || 0);
+    const share = Math.max(0, Number(shareSpd) || 0);
+    return clampAspd(base * bow * share);
+  }
+
+  function computeAssistFinalAspd(baseSpd, bowSpd, shareSpd, incomingCoverageSec) {
+    const base = Math.max(0, Number(baseSpd) || 0);
+    const bow = Math.max(0, Number(bowSpd) || 0);
+    const share = Math.max(0, Number(shareSpd) || 0);
+    const bonus = 0.2 * clamp01(incomingCoverageSec || 0);
+    return clampAspd(base * (bow + bonus) * share);
+  }
+
+  function syncAssistAttackSpeedInputs() {
+    const pairs = [
+      ['assistPengBaseSpd', 'assistPengBowSpd', 'assistPengShareSpd', 'assistPengAspd'],
+      ['assistTigerBaseSpd', 'assistTigerBowSpd', 'assistTigerShareSpd', 'assistTigerAspd'],
+    ];
+    pairs.forEach(([baseId, bowId, shareId, outId]) => {
+      const out = $(outId);
+      if (!out) return;
+      const aspd = computeAssistCurrentAspd(readNumber($(baseId)?.value || '0'), readNumber($(bowId)?.value || '0'), readNumber($(shareId)?.value || '0'));
+      out.value = fmtDec(aspd, 6);
+    });
+  }
+
   function toAtkDisplay(raw) {
     const s = trimIntDigits(raw, 6);
     if (!s) return "";
@@ -264,11 +323,13 @@
   }
 
   function clamp01(x) { return Math.max(0, Math.min(1, x)); }
+  function clampAspd(x) { return Math.max(0.000001, Math.min(8, Number(x) || 0)); }
 
   // ---------- 外部支援（別ユニット由来） ----------
   function isCoverageSupportType(type){ return ["physPct","magicPct","basicPct","procMul","finalPct"].includes(type); }
-  function supportTypeLabel(type){ return { none:"無し", physPct:"物理ダメージ増加", magicPct:"魔法ダメージ増加", basicPct:"基本攻撃ダメージ増加", procMul:"発動率倍率", finalPct:"最終ダメージ増加", manaPct:"最大マナ割合獲得", coolRemainPct:"残りクールタイム割合減少", tempSpeedPct:"一時速度増加" }[type] || type; }
-  function isPercentLikeRaw(raw){ return /%/.test(String(raw ?? "")); }
+  function isRateSupportType(type){ return ["manaPct","coolRemainPct"].includes(type); }
+  function isTempSpeedSupportType(type){ return type === "tempSpdPct"; }
+  function supportTypeLabel(type){ return { none:"無し", physPct:"物理ダメージ増加", magicPct:"魔法ダメージ増加", basicPct:"基本攻撃ダメージ増加", procMul:"発動率倍率", finalPct:"最終ダメージ増加", manaPct:"最大マナ割合獲得", coolRemainPct:"残りクールタイム割合減少", tempSpdPct:"一時速度増加" }[type] || type; }
   function copyBtn(text, label = "コピー") {
     const safe = encodeURIComponent(String(text ?? ""));
     return ` <button type="button" class="copyBtn" data-copy="${safe}">${label}</button>`;
@@ -278,7 +339,6 @@
     return toPctDisplay(raw, 6, 6);
   }
   function toSupportBaseDisplay(type, raw){
-    if (type === "tempSpeedPct") return isPercentLikeRaw(raw) ? toPctDisplay(raw, 6, 6) : fmtDec(readNumber(trimDecimals(raw, 6) || 0), 6);
     if (isCoverageSupportType(type)) return toPctDisplay(raw, 6, 6);
     return fmtDec(readNumber(trimDecimals(raw, 6) || 0), 6);
   }
@@ -299,12 +359,13 @@
   }
   function calcExternalSupportAgg(vLike){
     const supports=vLike.supports||[];
-    const agg={ physPct:0, magicPct:0, basicPct:0, finalPct:0, tempSpeedPct:0, procCoverage:0, procMult:1, addManaPerSec:0, addCoolPerSec:0, rows:[] };
+    const agg={ physPct:0, magicPct:0, basicPct:0, finalPct:0, procCoverage:0, procMult:1, addManaPerSec:0, addCoolPerSec:0, tempSpdPct:0, rows:[] };
     for (const s of supports){
       if(!s.enabled||s.type==="none") continue;
       const count=Math.max(1, Math.min(36, readInt(s.countRaw||1)));
       const amountNum=readNumber(s.amountRaw||0);
       const baseNum=readNumber(s.baseRaw||0);
+      const impactF=readInt(s.impactRaw||0);
       if (isCoverageSupportType(s.type)) {
         const unitCov=clamp01(baseNum/100);
         const effective=clamp01(1-Math.pow(1-unitCov,count));
@@ -315,23 +376,7 @@
         else if (s.type==="basicPct") agg.basicPct += effectValue*effective;
         else if (s.type==="finalPct") agg.finalPct += effectValue*effective;
         else if (s.type==="procMul") { agg.procCoverage=effective; agg.procMult=effectValue; }
-      } else if (s.type === "tempSpeedPct") {
-        const effectValue = amountNum / 100;
-        const impactF = Math.max(0, readInt(s.impactRaw || 0));
-        let effective = 0;
-        let mode = "rate";
-        if (isPercentLikeRaw(s.baseRaw)) {
-          const unitCov = clamp01(baseNum / 100);
-          effective = clamp01(1 - Math.pow(1 - unitCov, count));
-          mode = "coverage";
-          agg.rows.push({ idx:s.idx, type:s.type, count, mode, unitCov, effectiveCoverage:effective, amountNum:effectValue, impactF });
-        } else {
-          const rate = Math.max(0, baseNum) * count;
-          effective = clamp01(rate * impactF / F);
-          agg.rows.push({ idx:s.idx, type:s.type, count, mode, unitRate:Math.max(0, baseNum), totalRate:rate, effectiveCoverage:effective, amountNum:effectValue, impactF });
-        }
-        agg.tempSpeedPct += effectValue * effective;
-      } else {
+      } else if (isRateSupportType(s.type)) {
         const rate=Math.max(0, baseNum)*count;
         const effectValue=amountNum/100;
         const addManaPerSec=(s.type==="manaPct") ? (rate * vLike.gaugeMax * effectValue) : 0;
@@ -339,12 +384,20 @@
         agg.rows.push({ idx:s.idx, type:s.type, count, mode:"rate", unitRate:Math.max(0, baseNum), totalRate:rate, amountNum:effectValue, addManaPerSec, addCoolPerSec });
         agg.addManaPerSec += addManaPerSec;
         agg.addCoolPerSec += addCoolPerSec;
+      } else if (isTempSpeedSupportType(s.type)) {
+        const unitRate = Math.max(0, baseNum);
+        const unitCoverage = clamp01(unitRate * Math.max(0, impactF) / F);
+        const effective = clamp01(1 - Math.pow(1 - unitCoverage, count));
+        const effectValue = amountNum / 100;
+        agg.rows.push({ idx:s.idx, type:s.type, count, mode:"tempSpeed", unitRate, impactF, unitCoverage, effectiveCoverage:effective, amountNum:effectValue });
+        agg.tempSpdPct += effectValue * effective;
       }
     }
     agg.physMul=1+agg.physPct;
     agg.magicMul=1+agg.magicPct;
     agg.basicMul=1+agg.basicPct;
     agg.finalMul=1+agg.finalPct;
+    agg.tempSpdMul=1+agg.tempSpdPct;
     return agg;
   }
 
@@ -386,27 +439,6 @@
     }
   }
 
-  function syncSkillAMode() {
-    const aType = $("aType")?.value || "use";
-    const disabled = aType === "none";
-    ["aMulPct", "aPPct", "aF", "aImpactF"].forEach((id) => {
-      const el = $(id);
-      const wrap = el?.parentElement;
-      if (el) el.disabled = false;
-      if (wrap) wrap.classList.toggle("disabledGroup", disabled);
-    });
-    const cat = $("aUseGainMana5");
-    if (cat) cat.disabled = disabled;
-  }
-
-  function syncExternalSupportRows() {
-    for (let i = 1; i <= 6; i++) {
-      const row = $(`ext${i}ImpactRow`);
-      const show = $(`ext${i}Type`)?.value === 'tempSpeedPct';
-      if (row) row.hidden = !show;
-    }
-  }
-
   function syncSkillBMode() {
     const bType = $("bType").value;
     const lbl = $("bThirdLbl");
@@ -434,6 +466,27 @@
     }
   }
 
+
+  function syncSkillAType() {
+    updateSummaryCards();
+  }
+
+  function syncExtSupportUi(idx) {
+    const type = $("ext" + idx + "Type") ? $("ext" + idx + "Type").value : "none";
+    const baseLbl = $("ext" + idx + "BaseLbl");
+    const impactRow = $("ext" + idx + "ImpactRow");
+    const amount = $("ext" + idx + "Amount");
+    const base = $("ext" + idx + "Base");
+    if (baseLbl) {
+      if (isCoverageSupportType(type)) baseLbl.textContent = "単体被覆率";
+      else if (type === "none") baseLbl.textContent = "単体被覆率 / 単体発動回数/秒";
+      else baseLbl.textContent = "単体発動回数/秒";
+    }
+    if (impactRow) impactRow.hidden = !isTempSpeedSupportType(type);
+    if (amount) amount.placeholder = (type === "procMul") ? "1.1" : "15%";
+    if (base) base.placeholder = isCoverageSupportType(type) ? "35%" : "0.18";
+  }
+
   function bindField(el, onInputSanitize, onCommitFormat) {
     el.addEventListener("input", () => { el.value = onInputSanitize(el.value); scheduleRender(); });
     const commit = () => { el.value = onCommitFormat(el.value); validateAndRender(); };
@@ -444,13 +497,9 @@
   let _calcTargetId = null;
 
   function getCalcFieldIds() {
-    return Array.from(document.querySelectorAll('input[type="text"]')).filter((el) => {
-      if (!el.id) return false;
-      if (el.readOnly || el.classList.contains('computedField')) return false;
-      const mode = (el.getAttribute('inputmode') || '').toLowerCase();
-      if (mode === 'none') return false;
-      return true;
-    }).map((el) => el.id);
+    return Array.from(document.querySelectorAll('input[type="text"][id]:not(.computedField)'))
+      .filter((el) => el.id !== "calcDisplay" && !el.closest("#calcOverlay"))
+      .map((el) => el.id);
   }
 
   function getCalcFieldLabel(input) {
@@ -478,13 +527,17 @@
       return toSupportBaseDisplay(type, value);
     }
     if (/^ext\d+Count$/.test(id)) return toIntDisplay(value, 2);
+    if (/^ext\d+ImpactF$/.test(id)) return toIntDisplay(value, 4);
 
     if (id === "atk") return toAtkDisplay(value);
-    if (id === "baseSpd" || id === "bowSpd" || id === "shareSpd") return toAspdDisplay(value, 6);
-    if (id === "assistPengBaseSpd" || id === "assistPengBowSpd" || id === "assistPengShareSpd" || id === "assistTigerBaseSpd" || id === "assistTigerBowSpd" || id === "assistTigerShareSpd") return toAspdDisplay(value, 6);
+    if (["baseSpd", "bowSpd", "shareSpd", "assistPengBaseSpd", "assistPengBowSpd", "assistPengShareSpd", "assistTigerBaseSpd", "assistTigerBowSpd", "assistTigerShareSpd"].includes(id)) return toAspdDisplay(value, 6);
+    if (id === "aspd") return toAspdDisplay(value, 6);
     if (id === "gaugeMax") return toIntDisplay(value, 3);
+    if (id === "assistTigerGaugeMax") return toIntDisplay(value, 3);
     if (id === "sameUnitCount") return toIntDisplay(value, 2);
+    if (["assistPengCount", "assistTigerCount"].includes(id)) return toIntDisplay(value, 2);
     if (id === "manaRegenPct") return toPctDisplay(value, 6, 4);
+    if (["assistPengRegenPct", "assistTigerRegenPct"].includes(id)) return toPctDisplay(value, 6, 4);
     if (id === "defReduce") return toIntDisplay(value, 3);
     if (id === "critChancePct") return toPctDisplay(value, 6, 4);
     if (id === "critPhysBonusPct") return toPctDisplay(value, 6, 4);
@@ -494,16 +547,18 @@
     if (id === "ultF") return toIntDisplay(value, 4);
     if (id === "ultImpactF") return toIntDisplay(value, 4);
     if (id === "ultEventAmount") return toPctDisplay(value, 6, 6);
+    if (id === "assistTigerUltEventAmount") return toPctDisplay(value, 6, 6);
 
     if (id === "aMulPct") return toPctDisplay(value, 6, 6);
     if (id === "aPPct") return toProbPctDisplay(value, 6);
+    if (["assistPengAPct", "assistTigerAPct", "assistPengBProb"].includes(id)) return toProbPctDisplay(value, 6);
     if (id === "aF") return toIntDisplay(value, 4);
+    if (["assistPengAF", "assistPengBF", "assistTigerAF", "assistTigerUltF"].includes(id)) return toIntDisplay(value, 4);
     if (id === "aImpactF") return toIntDisplay(value, 4);
 
     if (id === "bMulPct") return toPctDisplay(value, 6, 6);
     if (id === "bF") return toIntDisplay(value, 4);
     if (id === "bImpactF") return toIntDisplay(value, 4);
-    if (/^ext\d+ImpactF$/.test(id)) return toIntDisplay(value, 4);
     if (id === "bThird") {
       const bType = $("bType") ? $("bType").value : "none";
       return bType === "count" ? String(readInt(value)) : toProbPctDisplay(value, 6);
@@ -586,17 +641,16 @@
       });
     });
     if ($("calcDisplay")) { $("calcDisplay").setAttribute("readonly", "readonly"); $("calcDisplay").setAttribute("inputmode", "none"); }
-    let lastTouchEndAt = 0;
-    const suppressZoom = (e) => {
-      e.preventDefault();
-    };
-    $("calcOverlay")?.addEventListener("dblclick", suppressZoom, { passive:false });
-    $("calcModal")?.addEventListener("dblclick", suppressZoom, { passive:false });
-    $("calcOverlay")?.addEventListener("touchend", (e) => {
-      const now = Date.now();
-      if (now - lastTouchEndAt < 350) e.preventDefault();
-      lastTouchEndAt = now;
-    }, { passive:false });
+    let _calcTouchStamp = 0;
+    [$("calcOverlay"), $("calcModal"), $("calcKeys")].filter(Boolean).forEach((el) => {
+      el.addEventListener("dblclick", (e) => { if (document.body.classList.contains("calcOpen")) e.preventDefault(); }, { passive: false });
+      el.addEventListener("touchend", (e) => {
+        if (!document.body.classList.contains("calcOpen")) return;
+        const now = Date.now();
+        if (now - _calcTouchStamp < 350) e.preventDefault();
+        _calcTouchStamp = now;
+      }, { passive: false });
+    });
     $("calcBackdrop")?.addEventListener("click", closeCalc);
     $("calcCloseBtn")?.addEventListener("click", closeCalc);
     $("calcDisplay")?.addEventListener("keydown", (e) => {
@@ -721,12 +775,15 @@
     const ultEventText = $("ultEventType")?.selectedOptions?.[0]?.textContent || "無し";
     if ($("summaryEnv")) $("summaryEnv").textContent = `難易度:${envDiffText} / 防御減少:${$("defReduce")?.value || "-"} / Rege:${$("manaRegenPct")?.value || "-"}`;
     if ($("summaryBasic")) $("summaryBasic").textContent = `攻撃力:${$("atk")?.value || "-"} / 基礎:${$("baseSpd")?.value || "-"} / 弓:${$("bowSpd")?.value || "-"} / 共有:${$("shareSpd")?.value || "-"} / 攻速:${$("aspd")?.value || "-"}`;
-    if ($("summaryA")) $("summaryA").textContent = `タイプ:${$("aType")?.selectedOptions?.[0]?.textContent || "-"} / 倍率:${$("aMulPct")?.value || "-"} / 確率:${$("aPPct")?.value || "-"} / F:${$("aF")?.value || "-"} / 影響F:${$("aImpactF")?.value || "0"}` + ($("aUseGainMana5")?.checked ? " / 猫ON" : "");
+    const aTypeText = $("aType")?.selectedOptions?.[0]?.textContent || "-";
+    if ($("summaryA")) $("summaryA").textContent = `タイプ:${aTypeText} / 倍率:${$("aMulPct")?.value || "-"} / 確率:${$("aPPct")?.value || "-"} / F:${$("aF")?.value || "-"} / 影響F:${$("aImpactF")?.value || "0"}` + (($("aType")?.value !== "none" && $("aUseGainMana5")?.checked) ? " / 猫ON" : "");
     const bTypeText = $("bType")?.selectedOptions?.[0]?.textContent || "-";
     const bThirdLabel = ($("bType")?.value === "count") ? "規定" : "確率";
     if ($("summaryB")) $("summaryB").textContent = `タイプ:${bTypeText} / 倍率:${$("bMulPct")?.value || "-"} / ${bThirdLabel}:${$("bThird")?.value || "-"} / F:${$("bF")?.value || "-"} / 影響F:${$("bImpactF")?.value || "0"}`;
     if ($("summaryUlt")) $("summaryUlt").textContent = `タイプ:${$("ultType")?.selectedOptions?.[0]?.textContent || "-"} / 倍率:${$("ultMulPct")?.value || "-"} / ${gaugeLabel}:${$("gaugeMax")?.value || "-"} / F:${$("ultF")?.value || "-"} / 影響F:${$("ultImpactF")?.value || "0"} / イベント:${ultEventText}`;
     if ($("summaryExt")) $("summaryExt").textContent = extUsed > 0 ? `${extUsed}枠使用中` : "未使用";
+    const assist = calcMutualSpeedAssist();
+    if ($("summaryAssist")) $("summaryAssist").textContent = assist.enabled ? `ON / 20帯 ${r6((assist.p20 || 0) * 100)}% / 40帯 ${r6((assist.p40 || 0) * 100)}%` : "OFF";
   }
 
   function initBindings() {
@@ -767,9 +824,10 @@
       $("ext" + i + "Type").addEventListener("change", () => {
         $("ext" + i + "Amount").value = toSupportAmountDisplay($("ext" + i + "Type").value, $("ext" + i + "Amount").value);
         $("ext" + i + "Base").value = toSupportBaseDisplay($("ext" + i + "Type").value, $("ext" + i + "Base").value);
-        syncExternalSupportRows();
+        syncExtSupportUi(i);
         validateAndRender();
       });
+      syncExtSupportUi(i);
     }
 
     $("bThird").addEventListener("input", () => {
@@ -794,10 +852,35 @@
     $("ultReset").addEventListener("change", validateAndRender);
     $("ultStopsGauge").addEventListener("change", validateAndRender);
     $("aUseGainMana5").addEventListener("change", validateAndRender);
-    $("aType").addEventListener("change", () => { syncSkillAMode(); validateAndRender(); });
+    $("aType").addEventListener("change", () => { syncSkillAType(); validateAndRender(); });
     $("critABShortenUlt2s").addEventListener("change", validateAndRender);
     $("ultEventType").addEventListener("change", validateAndRender);
     $("bType").addEventListener("change", () => { syncSkillBMode(); validateAndRender(); });
+
+    [
+      ["assistPengCount", (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2)],
+      ["assistTigerCount", (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2)],
+      ["assistTigerGaugeMax", (v)=>sanitizeIntKeepComma(v,3), (v)=>toIntDisplay(v,3)],
+      ["assistPengAF", (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4)],
+      ["assistPengBF", (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4)],
+      ["assistTigerAF", (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4)],
+      ["assistTigerUltF", (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4)],
+      ["assistPengBaseSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistPengBowSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistPengShareSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistTigerBaseSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistTigerBowSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistTigerShareSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistPengRegenPct", (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4)],
+      ["assistTigerRegenPct", (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4)],
+      ["assistPengAPct", (v)=>trimDecimalsLive(v,6), (v)=>toProbPctDisplay(v,6)],
+      ["assistTigerAPct", (v)=>trimDecimalsLive(v,6), (v)=>toProbPctDisplay(v,6)],
+      ["assistPengBProb", (v)=>trimDecimalsLive(v,6), (v)=>toProbPctDisplay(v,6)],
+      ["assistTigerUltEventAmount", (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6)],
+    ].forEach(([id, onInput, onCommit]) => { const el = $(id); if (el) bindField(el, onInput, onCommit); });
+    ["assistEnabled","assistTigerUltStopsGauge"].forEach((id) => $(id)?.addEventListener("change", validateAndRender));
+    ["assistTigerUltReset","assistTigerUltEventType"].forEach((id) => $(id)?.addEventListener("change", validateAndRender));
+
 
     const onCopyBtnClick = async (e) => {
       const btn = e.target.closest(".copyBtn[data-copy]");
@@ -899,6 +982,7 @@
     $("baseSpd").value = toAspdDisplay($("baseSpd").value, 6);
     $("bowSpd").value = toAspdDisplay($("bowSpd").value, 6);
     $("shareSpd").value = toAspdDisplay($("shareSpd").value, 6);
+    syncAttackSpeedInputs();
     $("gaugeMax").value = toIntDisplay($("gaugeMax").value, 3);
     $("sameUnitCount").value = toIntDisplay($("sameUnitCount").value, 2);
     $("manaRegenPct").value = toPctDisplay($("manaRegenPct").value, 6, 4);
@@ -917,15 +1001,13 @@
     $("aPPct").value = toProbPctDisplay($("aPPct").value, 6);
     $("aF").value = toIntDisplay($("aF").value, 4);
     $("aImpactF").value = toIntDisplay($("aImpactF").value, 4);
+    syncSkillAType();
 
     $("bMulPct").value = toPctDisplay($("bMulPct").value, 6, 6);
     $("bF").value = toIntDisplay($("bF").value, 4);
     $("bImpactF").value = toIntDisplay($("bImpactF").value, 4);
 
-    syncSkillAMode();
     syncSkillBMode();
-    syncExternalSupportRows();
-    syncAttackSpeedInputs();
     syncSegmentsFromHidden();
     syncEnvDerivedUI();
     if ($("bType").value === "prob") $("bThird").value = toProbPctDisplay($("bThird").value, 6);
@@ -936,8 +1018,28 @@
       $("ext" + i + "Amount").value = toSupportAmountDisplay(type, $("ext" + i + "Amount").value);
       $("ext" + i + "Base").value = toSupportBaseDisplay(type, $("ext" + i + "Base").value);
       $("ext" + i + "Count").value = toIntDisplay($("ext" + i + "Count").value, 2);
-      if ($("ext" + i + "ImpactF")) $("ext" + i + "ImpactF").value = toIntDisplay($("ext" + i + "ImpactF").value, 4);
+      $("ext" + i + "ImpactF").value = toIntDisplay($("ext" + i + "ImpactF").value, 4);
+      syncExtSupportUi(i);
     }
+    $("assistPengCount").value = toIntDisplay($("assistPengCount").value, 2);
+    $("assistTigerCount").value = toIntDisplay($("assistTigerCount").value, 2);
+    $("assistPengRegenPct").value = toPctDisplay($("assistPengRegenPct").value, 6, 4);
+    $("assistTigerRegenPct").value = toPctDisplay($("assistTigerRegenPct").value, 6, 4);
+    $("assistPengBaseSpd").value = toAspdDisplay($("assistPengBaseSpd").value, 6);
+    $("assistPengBowSpd").value = toAspdDisplay($("assistPengBowSpd").value, 6);
+    $("assistPengShareSpd").value = toAspdDisplay($("assistPengShareSpd").value, 6);
+    $("assistTigerBaseSpd").value = toAspdDisplay($("assistTigerBaseSpd").value, 6);
+    $("assistTigerBowSpd").value = toAspdDisplay($("assistTigerBowSpd").value, 6);
+    $("assistTigerShareSpd").value = toAspdDisplay($("assistTigerShareSpd").value, 6);
+    $("assistPengAPct").value = toProbPctDisplay($("assistPengAPct").value, 6);
+    $("assistTigerAPct").value = toProbPctDisplay($("assistTigerAPct").value, 6);
+    $("assistPengAF").value = toIntDisplay($("assistPengAF").value, 4);
+    $("assistTigerAF").value = toIntDisplay($("assistTigerAF").value, 4);
+    $("assistPengBProb").value = toProbPctDisplay($("assistPengBProb").value, 6);
+    $("assistPengBF").value = toIntDisplay($("assistPengBF").value, 4);
+    $("assistTigerGaugeMax").value = toIntDisplay($("assistTigerGaugeMax").value, 3);
+    $("assistTigerUltF").value = toIntDisplay($("assistTigerUltF").value, 4);
+    $("assistTigerUltEventAmount").value = toPctDisplay($("assistTigerUltEventAmount").value, 6, 6);
   }
 
   function getValInternal() {
@@ -978,11 +1080,12 @@
     const critABShortenUlt2s = $("critABShortenUlt2s").checked;
 
     const aType = $("aType").value;
-    const aMul = readNumber($("aMulPct").value) / 100;
-    const aP = (aType === "none") ? 0 : (readNumber($("aPPct").value) / 100);
-    const aF = readInt($("aF").value);
-    const aImpactF = readInt($("aImpactF").value);
-    const aUseGainMana5 = (aType === "none") ? false : $("aUseGainMana5").checked;
+    const aEnabled = aType !== "none";
+    const aMul = aEnabled ? (readNumber($("aMulPct").value) / 100) : 0;
+    const aP = aEnabled ? (readNumber($("aPPct").value) / 100) : 0;
+    const aF = aEnabled ? readInt($("aF").value) : 0;
+    const aImpactF = aEnabled ? readInt($("aImpactF").value) : 0;
+    const aUseGainMana5 = aEnabled && $("aUseGainMana5").checked;
 
     const bType = $("bType").value;
     const bMul = readNumber($("bMulPct").value) / 100;
@@ -1010,12 +1113,12 @@
       aType, aMul, aP, aF, aImpactF, aUseGainMana5, bType, bMul, bF, bImpactF, bP, bN,
       basicAttr, basicTarget, aAttr, aTarget, bAttr, bTarget, uAttr, uTarget, supports };
     base.ext = calcExternalSupportAgg(base);
-    if (base.ext && base.ext.tempSpeedPct > 0) base.aspd = computeStateAspd(base.baseSpd, base.bowSpd, base.shareSpd, base.ext.tempSpeedPct * 100);
+    base.combatAspd = clampAspd(base.aspd * (base.ext.tempSpdMul || 1));
     return base;
   }
 
   function clearErrAll() {
-    const ids = ["atk","baseSpd","bowSpd","shareSpd","gaugeMax","sameUnitCount","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","ultImpactF","ultEventAmount","aMulPct","aPPct","aF","aImpactF","bMulPct","bThird","bF","bImpactF","ext1Amount","ext1Base","ext1Count","ext1ImpactF","ext2Amount","ext2Base","ext2Count","ext2ImpactF","ext3Amount","ext3Base","ext3Count","ext3ImpactF","ext4Amount","ext4Base","ext4Count","ext4ImpactF","ext5Amount","ext5Base","ext5Count","ext5ImpactF","ext6Amount","ext6Base","ext6Count","ext6ImpactF"];
+    const ids = ["atk","baseSpd","bowSpd","shareSpd","aspd","gaugeMax","sameUnitCount","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","ultImpactF","ultEventAmount","aMulPct","aPPct","aF","aImpactF","bMulPct","bThird","bF","bImpactF","ext1Amount","ext1Base","ext1ImpactF","ext1Count","ext2Amount","ext2Base","ext2ImpactF","ext2Count","ext3Amount","ext3Base","ext3ImpactF","ext3Count","ext4Amount","ext4Base","ext4ImpactF","ext4Count","ext5Amount","ext5Base","ext5ImpactF","ext5Count","ext6Amount","ext6Base","ext6ImpactF","ext6Count"];
     ids.forEach(id => setErr($(id), false));
     setLblErr($("regenLbl"), false);
   }
@@ -1066,10 +1169,12 @@
       }
     }
 
-    const aPpct = readNumber($("aPPct").value);
-    if ($("aType").value !== "none" && (aPpct < 0 || aPpct > 90)) { setErr($("aPPct"), true); errors.push("スキルA確率は0〜90.0%"); }
-    const aImpactF = readInt($("aImpactF").value);
-    if (aImpactF < 0 || aImpactF > 9999) { setErr($("aImpactF"), true); errors.push("スキルA影響Fは0〜9999"); }
+    const aPpct = ($("aType").value !== "none") ? readNumber($("aPPct").value) : 0;
+    if ($("aType").value !== "none") {
+      if (aPpct < 0 || aPpct > 90) { setErr($("aPPct"), true); errors.push("スキルA確率は0〜90.0%"); }
+      const aImpactF = readInt($("aImpactF").value);
+      if (aImpactF < 0 || aImpactF > 9999) { setErr($("aImpactF"), true); errors.push("スキルA影響Fは0〜9999"); }
+    }
 
     const bType = $("bType").value;
     const bImpactF = readInt($("bImpactF").value);
@@ -1106,24 +1211,20 @@
       const amount = readNumber($("ext" + i + "Amount").value);
       const base = readNumber($("ext" + i + "Base").value);
       const count = readInt($("ext" + i + "Count").value);
+      const impactF = readInt($("ext" + i + "ImpactF").value);
       if (!(count >= 1 && count <= 36)) { setErr($("ext" + i + "Count"), true); errors.push("外部支援の体数は1〜36"); }
-      if (type === "tempSpeedPct") {
-        const impactF = readInt($("ext" + i + "ImpactF").value);
-        if (amount < 0) { setErr($("ext" + i + "Amount"), true); errors.push("一時速度増加の効果量は0%以上"); }
-        if (isPercentLikeRaw($("ext" + i + "Base").value)) {
-          if (base < 0 || base > 100) { setErr($("ext" + i + "Base"), true); errors.push("一時速度増加の単体被覆率は0〜100%"); }
-        } else {
-          if (base < 0) { setErr($("ext" + i + "Base"), true); errors.push("一時速度増加の単体発動回数/秒は0以上"); }
-          if (impactF < 0 || impactF > 9999) { setErr($("ext" + i + "ImpactF"), true); errors.push("一時速度増加の影響Fは0〜9999"); }
-        }
-      } else if (isCoverageSupportType(type)) {
+      if (isCoverageSupportType(type)) {
         if (type === "procMul") {
           if (!(amount > 0)) { setErr($("ext" + i + "Amount"), true); errors.push("発動率倍率は0より大きくしてください"); }
         } else if (amount < 0) { setErr($("ext" + i + "Amount"), true); errors.push("外部支援の効果量は0%以上"); }
         if (base < 0 || base > 100) { setErr($("ext" + i + "Base"), true); errors.push("被覆率は0〜100%"); }
-      } else {
+      } else if (isRateSupportType(type)) {
         if (amount < 0) { setErr($("ext" + i + "Amount"), true); errors.push("発動レート型の効果量は0%以上"); }
         if (base < 0) { setErr($("ext" + i + "Base"), true); errors.push("単体発動回数/秒は0以上"); }
+      } else if (isTempSpeedSupportType(type)) {
+        if (amount < 0) { setErr($("ext" + i + "Amount"), true); errors.push("一時速度増加の効果量は0%以上"); }
+        if (base < 0) { setErr($("ext" + i + "Base"), true); errors.push("一時速度増加の単体発動回数/秒は0以上"); }
+        if (impactF < 0 || impactF > 9999) { setErr($("ext" + i + "ImpactF"), true); errors.push("一時速度増加の影響Fは0〜9999"); }
       }
     }
 
@@ -1131,11 +1232,13 @@
       errors.push("外部支援の発動率倍率は同時に1種類のみ設定してください");
     }
 
+    errors.push(...validateAssistInputs());
     return errors;
   }
 
   function calcNonUlt(v) {
-    const T0 = F / v.aspd;
+    const effectiveAspd = clampAspd(v.combatAspd || v.aspd);
+    const T0 = F / effectiveAspd;
     const ext = v.ext || calcExternalSupportAgg(v);
     let pA = clamp01(v.aP);
     let pBsrc = (v.bType === "prob") ? clamp01(v.bP) : 0;
@@ -1818,6 +1921,9 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     html += lineHtml(`スキルA: ${hVal("valA", r6(ex.aPerSec))} 回/秒 / ${hVal("valA", ex.aPerSec > 0 ? r6(1 / ex.aPerSec) : "-")} 秒/回`);
     html += lineHtml(`スキルB: ${hVal("valB", r6(ex.bPerSec))} 回/秒 / ${hVal("valB", ex.bPerSec > 0 ? r6(1 / ex.bPerSec) : "-")} 秒/回`);
     html += lineHtml(`究極: ${hVal("valUlt", r6(ex.ultPerSec))} 回/秒 / ${hVal("valUlt", ex.ultPerSec > 0 ? r6(1 / ex.ultPerSec) : "-")} 秒/回`);
+    if ((v.ext?.tempSpdPct || 0) > 0) {
+      html += lineHtml(`外部支援 一時速度増加（平均）: +${hVal("valSpd", r6((v.ext.tempSpdPct || 0) * 100))}% / 計算攻撃速度=${hVal("valSpd", r6(v.combatAspd || v.aspd))}`);
+    }
     if (v.ultType === "mana" && v.aUseGainMana5) {
       html += lineHtml(`猫の魔法使い補正（スキルA由来マナ）: ${hVal("valA", r6((d.aManaPerFrame_nonUlt || 0) * F))} マナ/秒`);
     }
@@ -1910,15 +2016,362 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     return html;
   }
 
+
+  function getMutualSpeedAssistConfig() {
+    return {
+      enabled: !!($("assistEnabled") && $("assistEnabled").checked),
+      peng: {
+        count: readInt($("assistPengCount")?.value || "1"),
+        manaRegenPct: readNumber($("assistPengRegenPct")?.value || "0"),
+        baseSpd: readNumber($("assistPengBaseSpd")?.value || "0"),
+        bowSpd: readNumber($("assistPengBowSpd")?.value || "0"),
+        shareSpd: readNumber($("assistPengShareSpd")?.value || "0"),
+        aPct: readNumber($("assistPengAPct")?.value || "0"),
+        aF: readInt($("assistPengAF")?.value || "0"),
+        bProb: readNumber($("assistPengBProb")?.value || "0"),
+        bF: readInt($("assistPengBF")?.value || "0"),
+      },
+      tiger: {
+        count: readInt($("assistTigerCount")?.value || "1"),
+        manaRegenPct: readNumber($("assistTigerRegenPct")?.value || "0"),
+        baseSpd: readNumber($("assistTigerBaseSpd")?.value || "0"),
+        bowSpd: readNumber($("assistTigerBowSpd")?.value || "0"),
+        shareSpd: readNumber($("assistTigerShareSpd")?.value || "0"),
+        gaugeMax: readInt($("assistTigerGaugeMax")?.value || "100"),
+        aPct: readNumber($("assistTigerAPct")?.value || "0"),
+        aF: readInt($("assistTigerAF")?.value || "0"),
+        ultReset: $("assistTigerUltReset")?.value || "end",
+        ultF: readInt($("assistTigerUltF")?.value || "44"),
+        ultStopsGauge: !!($("assistTigerUltStopsGauge") && $("assistTigerUltStopsGauge").checked),
+        ultEventType: $("assistTigerUltEventType")?.value || "none",
+        ultEventAmount: readNumber($("assistTigerUltEventAmount")?.value || "0"),
+      }
+    };
+  }
+
+  function validateAssistInputs() {
+    const cfg = getMutualSpeedAssistConfig();
+    if (!cfg.enabled) return [];
+    const errs = [];
+    const chkCount = (v, label) => { if (!(v >= 1 && v <= 36)) errs.push(`${label}の体数は1〜36`); };
+    const chkRate = (v, label) => { if (!(v > 0 && v <= 8)) errs.push(`${label}は0より大きく8.00以下`); };
+    const chkPct90 = (v, label) => { if (v < 0 || v > 90) errs.push(`${label}は0〜90.0%`); };
+    const chkF = (v, label) => { if (!(v > 0 && v <= 9999)) errs.push(`${label}は1〜9999`); };
+    chkCount(cfg.peng.count, 'ペンギン楽師');
+    chkCount(cfg.tiger.count, '虎の師父');
+    chkRate(cfg.peng.baseSpd, 'ペンギン楽師の基礎速度');
+    chkRate(cfg.peng.bowSpd, 'ペンギン楽師の弓の速度');
+    chkRate(cfg.peng.shareSpd, 'ペンギン楽師の共有速度');
+    chkRate(cfg.tiger.baseSpd, '虎の師父の基礎速度');
+    chkRate(cfg.tiger.bowSpd, '虎の師父の弓の速度');
+    chkRate(cfg.tiger.shareSpd, '虎の師父の共有速度');
+    if (!(computeAssistCurrentAspd(cfg.peng.baseSpd, cfg.peng.bowSpd, cfg.peng.shareSpd) > 0 && computeAssistCurrentAspd(cfg.peng.baseSpd, cfg.peng.bowSpd, cfg.peng.shareSpd) <= 8)) errs.push('ペンギン楽師の攻撃速度は0より大きく8.00以下');
+    if (!(computeAssistCurrentAspd(cfg.tiger.baseSpd, cfg.tiger.bowSpd, cfg.tiger.shareSpd) > 0 && computeAssistCurrentAspd(cfg.tiger.baseSpd, cfg.tiger.bowSpd, cfg.tiger.shareSpd) <= 8)) errs.push('虎の師父の攻撃速度は0より大きく8.00以下');
+    chkPct90(cfg.peng.aPct, 'ペンギン楽師スキルA確率');
+    chkPct90(cfg.peng.bProb, 'ペンギン楽師スキルB確率');
+    if (cfg.peng.aPct + cfg.peng.bProb > 100) errs.push('ペンギン楽師のスキルA確率 + スキルB確率 が100%を超えています');
+    chkPct90(cfg.tiger.aPct, '虎の師父スキルA確率');
+    chkF(cfg.peng.aF, 'ペンギン楽師スキルA F数');
+    chkF(cfg.peng.bF, 'ペンギン楽師スキルB F数');
+    chkF(cfg.tiger.aF, '虎の師父スキルA F数');
+    chkF(cfg.tiger.ultF, '虎の師父究極 F数');
+    if (!(cfg.tiger.gaugeMax > 0 && cfg.tiger.gaugeMax <= 999)) errs.push('虎の師父Maxマナは1〜999');
+    if (cfg.peng.manaRegenPct < 0) errs.push('ペンギン楽師Regeマナ毎秒は0%以上');
+    if (cfg.tiger.manaRegenPct < 0) errs.push('虎の師父Regeマナ毎秒は0%以上');
+    return errs;
+  }
+
+  function buildAssistSimUnit(kind, conf, incomingCoverageSec) {
+    const aspd = computeAssistFinalAspd(conf.baseSpd || 0, conf.bowSpd || 0, conf.shareSpd || 0, incomingCoverageSec);
+    const sameUnitCount = Math.max(1, Math.min(36, conf.count || 1));
+    const v = {
+      atk: 1,
+      aspd,
+      gaugeMax: kind === 'tiger' ? Math.max(1, conf.gaugeMax || 100) : 100,
+      sameUnitCount,
+      manaPerSec: Math.max(0, conf.manaRegenPct || 0) / 100,
+      envDiff: 'god',
+      baseDef: DIFF_DEF.god,
+      defReduce: 250,
+      realDef: 250 - DIFF_DEF.god,
+      physMul: computePhysMul(250 - DIFF_DEF.god),
+      critChancePct: 0,
+      critPhysBonusPct: 150,
+      critMagicBonusPct: 170,
+      critChance: 0,
+      critPhysBonus: 1.5,
+      critMagicBonus: 1.7,
+      critPhysMul: 1,
+      critMagicMul: 1,
+      ultType: kind === 'tiger' ? 'mana' : 'none',
+      ultReset: kind === 'tiger' ? (conf.ultReset || 'end') : 'end',
+      ultMul: 1,
+      ultF: kind === 'tiger' ? Math.max(1, conf.ultF || 44) : 44,
+      ultImpactF: 0,
+      ultEventType: kind === 'tiger' ? (conf.ultEventType || 'none') : 'none',
+      ultEventAmount: kind === 'tiger' ? (Math.max(0, conf.ultEventAmount || 0) / 100) : 0,
+      ultStopsGauge: kind === 'tiger' ? !!conf.ultStopsGauge : true,
+      critABShortenUlt2s: false,
+      aMul: 1,
+      aP: Math.max(0, conf.aPct || 0) / 100,
+      aF: Math.max(1, conf.aF || 32),
+      aImpactF: kind === 'peng' ? 120 : 80,
+      aUseGainMana5: false,
+      bType: kind === 'peng' ? 'prob' : 'none',
+      bMul: 1,
+      bF: kind === 'peng' ? Math.max(1, conf.bF || 40) : 40,
+      bImpactF: 0,
+      bP: kind === 'peng' ? (Math.max(0, conf.bProb || 0) / 100) : 0,
+      bN: 0,
+      basicAttr: 'phys', basicTarget: 'single',
+      aAttr: 'phys', aTarget: 'single',
+      bAttr: 'phys', bTarget: 'single',
+      uAttr: 'phys', uTarget: 'single',
+      supports: []
+    };
+    v.ext = calcExternalSupportAgg(v);
+    return v;
+  }
+
+  function collectResultBundleSingle(v) {
+    const res = calcTotal(v);
+    if (res.err) return { v, res, err: res.err };
+    const ex = calcRatesAndShares(v, res);
+    const effBase = calcEffectTimes(v, ex);
+    const eff = {
+      ...effBase,
+      ultEvent: {
+        type: v.ultEventType || 'none',
+        typeLabel: supportTypeLabel(v.ultEventType || 'none'),
+        amount: Math.max(0, v.ultEventAmount || 0),
+        unitRate: (v.ultType === 'none') ? 0 : Math.max(0, ex.ultPerSec || 0),
+        count: Math.max(1, Math.min(36, v.sameUnitCount || 1)),
+        totalRate: 0,
+        addManaPerSec: 0,
+        addCoolPerSec: 0,
+      }
+    };
+    eff.ultEvent.totalRate = eff.ultEvent.unitRate * eff.ultEvent.count;
+    if (eff.ultEvent.type === 'manaPct') {
+      eff.ultEvent.addManaPerSec = eff.ultEvent.totalRate * Math.max(0, v.gaugeMax || 0) * eff.ultEvent.amount;
+    } else if (eff.ultEvent.type === 'coolRemainPct') {
+      eff.ultEvent.addCoolPerSec = eff.ultEvent.totalRate * Math.max(0, v.gaugeMax || 0) * eff.ultEvent.amount * 0.5;
+    }
+    const tb = calcTypeBreakdown(v, ex);
+    const br = calcBoundaryRange(v, res);
+    return { v, res, ex, eff, tb, br, err: null };
+  }
+
+  function calcMutualSpeedAssist() {
+    const cfg = getMutualSpeedAssistConfig();
+    const empty = { enabled: false, cfg, cA: 0, cB: 0, p0: 1, p20: 0, p40: 0 };
+    if (!cfg.enabled) return empty;
+    let covAtoB = 0;
+    let covBtoA = 0;
+    let finalPeng = null;
+    let finalTiger = null;
+    for (let i = 0; i < 24; i++) {
+      const pengBundle = collectResultBundleSingle(buildAssistSimUnit('peng', cfg.peng, covBtoA));
+      const tigerBundle = collectResultBundleSingle(buildAssistSimUnit('tiger', cfg.tiger, covAtoB));
+      if (pengBundle.err || tigerBundle.err) {
+        return { ...empty, enabled: true, err: pengBundle.err || tigerBundle.err };
+      }
+      const nextAtoB = clamp01(pengBundle.eff.a.multiCoverageSecPerSec);
+      const nextBtoA = clamp01(tigerBundle.eff.a.multiCoverageSecPerSec);
+      finalPeng = pengBundle;
+      finalTiger = tigerBundle;
+      if (Math.abs(nextAtoB - covAtoB) < 1e-9 && Math.abs(nextBtoA - covBtoA) < 1e-9) {
+        covAtoB = nextAtoB;
+        covBtoA = nextBtoA;
+        break;
+      }
+      covAtoB = nextAtoB;
+      covBtoA = nextBtoA;
+    }
+    if (!finalPeng || !finalTiger) return empty;
+    const cA = clamp01(finalPeng.eff.a.multiCoverageSecPerSec);
+    const cB = clamp01(finalTiger.eff.a.multiCoverageSecPerSec);
+    const p0 = (1 - cA) * (1 - cB);
+    const p20 = cA * (1 - cB) + (1 - cA) * cB;
+    const p40 = cA * cB;
+    return {
+      enabled: true,
+      cfg,
+      cA, cB, p0, p20, p40,
+      pengFinalAspd: finalPeng.v.aspd,
+      tigerFinalAspd: finalTiger.v.aspd,
+      pengBundle: finalPeng,
+      tigerBundle: finalTiger,
+    };
+  }
+
+  function updateAssistOutputs(assist) {
+    const setVal = (id, text) => { if ($(id)) $(id).value = text; };
+    if (!assist || !assist.enabled || assist.err) {
+      setVal('assistPengFinalAspd', assist && assist.err ? 'エラー' : '-');
+      setVal('assistTigerFinalAspd', assist && assist.err ? 'エラー' : '-');
+      setVal('assistCA', '-');
+      setVal('assistCB', '-');
+      setVal('assistP0', '-');
+      setVal('assistP20', '-');
+      setVal('assistP40', '-');
+      return;
+    }
+    setVal('assistPengFinalAspd', fmtDec(assist.pengFinalAspd, 6));
+    setVal('assistTigerFinalAspd', fmtDec(assist.tigerFinalAspd, 6));
+    setVal('assistCA', `${fmtDec((assist.cA || 0) * 100, 6)}%`);
+    setVal('assistCB', `${fmtDec((assist.cB || 0) * 100, 6)}%`);
+    setVal('assistP0', `${fmtDec((assist.p0 || 0) * 100, 6)}%`);
+    setVal('assistP20', `${fmtDec((assist.p20 || 0) * 100, 6)}%`);
+    setVal('assistP40', `${fmtDec((assist.p40 || 0) * 100, 6)}%`);
+  }
+
+  function mergeAssistBundles(v, assist, stateBundles) {
+    const weighted = (getter) => stateBundles.reduce((sum, s) => sum + s.prob * getter(s.bundle), 0);
+    const totalDPS = weighted((b) => b.res.dps);
+    const basicDPS = weighted((b) => b.ex.basicDPS);
+    const aDPS = weighted((b) => b.ex.aDPS);
+    const bDPS = weighted((b) => b.ex.bDPS);
+    const ultDPS = weighted((b) => b.ex.ultDPS);
+    const pctOf = (x) => totalDPS > 0 ? (100 * x / totalDPS) : 0;
+    const phys = weighted((b) => b.tb.phys);
+    const magic = weighted((b) => b.tb.magic);
+    const single = weighted((b) => b.tb.single);
+    const multi = weighted((b) => b.tb.multi);
+    const physCritGainDPS = weighted((b) => b.ex.physCritGainDPS);
+    const magicCritGainDPS = weighted((b) => b.ex.magicCritGainDPS);
+    const ex = {
+      basicPerSec: weighted((b) => b.ex.basicPerSec),
+      aPerSec: weighted((b) => b.ex.aPerSec),
+      bPerSec: weighted((b) => b.ex.bPerSec),
+      ultPerSec: weighted((b) => b.ex.ultPerSec),
+      actPerSec: weighted((b) => b.ex.actPerSec),
+      basicDPS, aDPS, bDPS, ultDPS,
+      basicPct: pctOf(basicDPS), aPct: pctOf(aDPS), bPct: pctOf(bDPS), ultPct: pctOf(ultDPS),
+      physCritGainDPS, magicCritGainDPS,
+      physCritGainPct: pctOf(physCritGainDPS), magicCritGainPct: pctOf(magicCritGainDPS),
+      totalCritGainDPS: physCritGainDPS + magicCritGainDPS,
+      totalCritGainPct: pctOf(physCritGainDPS + magicCritGainDPS),
+      checkTotalDPS: basicDPS + aDPS + bDPS + ultDPS,
+    };
+    const eff = {
+      unitCount: Math.max(1, Math.min(36, v.sameUnitCount || 1)),
+      a: {
+        ratePerSec: weighted((b) => b.eff.a.ratePerSec),
+        secPerProc: 0,
+        rawFPerSec: weighted((b) => b.eff.a.rawFPerSec),
+        singleCoveragePct: weighted((b) => b.eff.a.singleCoveragePct),
+        multiCoveragePct: weighted((b) => b.eff.a.multiCoveragePct),
+      },
+      b: {
+        ratePerSec: weighted((b) => b.eff.b.ratePerSec),
+        secPerProc: 0,
+        rawFPerSec: weighted((b) => b.eff.b.rawFPerSec),
+        singleCoveragePct: weighted((b) => b.eff.b.singleCoveragePct),
+        multiCoveragePct: weighted((b) => b.eff.b.multiCoveragePct),
+      },
+      u: {
+        ratePerSec: weighted((b) => b.eff.u.ratePerSec),
+        secPerProc: 0,
+        rawFPerSec: weighted((b) => b.eff.u.rawFPerSec),
+        singleCoveragePct: weighted((b) => b.eff.u.singleCoveragePct),
+        multiCoveragePct: weighted((b) => b.eff.u.multiCoveragePct),
+      },
+      ultEvent: { type: 'none', amount: 0, unitRate: 0, count: 0, totalRate: 0, addManaPerSec: 0, addCoolPerSec: 0, typeLabel: supportTypeLabel('none') }
+    };
+    for (const key of ['a','b','u']) {
+      eff[key].secPerProc = eff[key].ratePerSec > 0 ? (1 / eff[key].ratePerSec) : 0;
+      eff[key].singleCoverageSecPerSec = clamp01((eff[key].singleCoveragePct || 0) / 100);
+      eff[key].multiCoverageSecPerSec = clamp01((eff[key].multiCoveragePct || 0) / 100);
+    }
+    const tb = {
+      phys, magic, single, multi,
+      physPct: pctOf(phys), magicPct: pctOf(magic), singlePct: pctOf(single), multiPct: pctOf(multi)
+    };
+    let br = null;
+    if (stateBundles.some((s) => !!s.bundle.br)) {
+      br = {
+        minTick: '-',
+        maxTick: '-',
+        lo: weighted((b) => b.br ? b.br.lo : b.res.dps),
+        hi: weighted((b) => b.br ? b.br.hi : b.res.dps),
+      };
+    }
+    return {
+      v,
+      res: { dps: totalDPS, detail: { mode: 'assistStates' } },
+      ex,
+      eff,
+      tb,
+      br,
+      err: null,
+      assistMode: true,
+      assist,
+      assistStates: stateBundles.map((s) => ({
+        label: s.label,
+        prob: s.prob,
+        bonusPct: s.bonusPct,
+        aspd: s.aspd,
+        dps: s.bundle.res.dps,
+      })),
+    };
+  }
+
+  function buildAssistDetailHtml(bundle) {
+    const { assist, assistStates, ex } = bundle;
+    const line = (text='') => `<div>${text || '&nbsp;'}</div>`;
+    let html = '';
+    html += line('<span class="sectionHead">=== 楽師 / 師父 速度支援補助 ===</span>');
+    html += line(`楽師 最終攻速: <span class="hlVal valSpd">${r6(assist.pengFinalAspd)}</span> / 師父 最終攻速: <span class="hlVal valSpd">${r6(assist.tigerFinalAspd)}</span>`);
+    html += line(`楽師→Z 被覆率: <span class="hlVal valA">${r6(assist.cA * 100)}%</span> / 師父→Z 被覆率: <span class="hlVal valB">${r6(assist.cB * 100)}%</span>`);
+    html += line(`0%帯: <span class="hlVal valMix">${r6(assist.p0 * 100)}%</span> / 20%帯: <span class="hlVal valMix">${r6(assist.p20 * 100)}%</span> / 40%帯: <span class="hlVal valMix">${r6(assist.p40 * 100)}%</span>`);
+    html += line('');
+    html += line('<span class="sectionHead">=== 状態別DPS ===</span>');
+    assistStates.forEach((state) => {
+      html += line(`${state.label}: 攻速 <span class="hlVal valSpd">${r6(state.aspd)}</span> / DPS <span class="hlVal valMix">${r6(state.dps)}</span> / 割合 <span class="hlVal valMix">${r6(state.prob * 100)}%</span>`);
+    });
+    html += line('');
+    html += line('<span class="sectionHead">=== 加重平均後の行動レート ===</span>');
+    html += line(`基本攻撃: <span class="hlVal valSpd">${r6(ex.basicPerSec)}</span> 回/秒 / <span class="hlVal valSpd">${ex.basicPerSec > 0 ? r6(1 / ex.basicPerSec) : '-'}</span> 秒/回`);
+    html += line(`スキルA: <span class="hlVal valA">${r6(ex.aPerSec)}</span> 回/秒 / <span class="hlVal valA">${ex.aPerSec > 0 ? r6(1 / ex.aPerSec) : '-'}</span> 秒/回`);
+    html += line(`スキルB: <span class="hlVal valB">${r6(ex.bPerSec)}</span> 回/秒 / <span class="hlVal valB">${ex.bPerSec > 0 ? r6(1 / ex.bPerSec) : '-'}</span> 秒/回`);
+    html += line(`究極: <span class="hlVal valUlt">${r6(ex.ultPerSec)}</span> 回/秒 / <span class="hlVal valUlt">${ex.ultPerSec > 0 ? r6(1 / ex.ultPerSec) : '-'}</span> 秒/回`);
+    html += line('');
+    html += line('<span class="sectionHead">=== 期待DPS ===</span>');
+    html += line(`期待DPS: <span class="hlVal valMix">${r6(bundle.res.dps)}</span>`);
+    return html;
+  }
+
+  function buildAssistFormulaHtml(bundle) {
+    const { assist, assistStates } = bundle;
+    const lines = [];
+    lines.push('=== 楽師 / 師父 速度支援補助の式 ===');
+    lines.push(`cA = 楽師→Z 被覆率 = ${r6(assist.cA)}`);
+    lines.push(`cB = 師父→Z 被覆率 = ${r6(assist.cB)}`);
+    lines.push(`P0 = (1-cA)(1-cB) = (1-${r6(assist.cA)})(1-${r6(assist.cB)}) = ${r6(assist.p0)}`);
+    lines.push(`P20 = cA(1-cB) + (1-cA)cB = ${r6(assist.p20)}`);
+    lines.push(`P40 = cA×cB = ${r6(assist.cA)}×${r6(assist.cB)} = ${r6(assist.p40)}`);
+    assistStates.forEach((state) => {
+      lines.push(`${state.label}時攻速 = ${r6(state.aspd)} / DPS = ${r6(state.dps)}`);
+    });
+    const state0 = assistStates.find((s) => s.label === '0%帯');
+    const state20 = assistStates.find((s) => s.label === '20%帯');
+    const state40 = assistStates.find((s) => s.label === '40%帯');
+    lines.push(`期待DPS = P0×DPS0 + P20×DPS20 + P40×DPS40`);
+    lines.push(`  = ${r6(assist.p0)}×${r6(state0 ? state0.dps : 0)} + ${r6(assist.p20)}×${r6(state20 ? state20.dps : 0)} + ${r6(assist.p40)}×${r6(state40 ? state40.dps : 0)}`);
+    lines.push(`  = ${r6(bundle.res.dps)}`);
+    return highlightFormulaHtml(lines.join('\n'), bundle.v, bundle.ex);
+  }
+
   function syncUiState() {
     syncUltType();
-    syncSkillAMode();
     syncSkillBMode();
-    syncExternalSupportRows();
-    syncAttackSpeedInputs();
     syncSegmentsFromHidden();
     syncEnvDerivedUI();
+    syncAttackSpeedInputs();
+    syncAssistAttackSpeedInputs();
     syncNoteVisibility();
+    updateAssistOutputs(calcMutualSpeedAssist());
     updateSummaryCards();
   }
 
@@ -1950,32 +2403,29 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
   }
 
   function collectResultBundle(v) {
-    const res = calcTotal(v);
-    if (res.err) return { v, res, err: res.err };
-    const ex = calcRatesAndShares(v, res);
-    const effBase = calcEffectTimes(v, ex);
-    const eff = {
-      ...effBase,
-      ultEvent: {
-        type: v.ultEventType || "none",
-        typeLabel: supportTypeLabel(v.ultEventType || "none"),
-        amount: Math.max(0, v.ultEventAmount || 0),
-        unitRate: (v.ultType === "none") ? 0 : Math.max(0, ex.ultPerSec || 0),
-        count: Math.max(1, Math.min(36, v.sameUnitCount || 1)),
-        totalRate: 0,
-        addManaPerSec: 0,
-        addCoolPerSec: 0,
+    const assist = calcMutualSpeedAssist();
+    if (assist.enabled) {
+      if (assist.err) return { v, err: assist.err, assistMode: true, assist };
+      const states = [
+        { label: '0%帯', prob: assist.p0, bonusPct: 0 },
+        { label: '20%帯', prob: assist.p20, bonusPct: 20 },
+        { label: '40%帯', prob: assist.p40, bonusPct: 40 },
+      ].filter((s) => s.prob > 0);
+      const stateBundles = [];
+      for (const state of states) {
+        const stateAspd = computeStateAspd(v.baseSpd, v.bowSpd, v.shareSpd, state.bonusPct);
+        const stateV = {
+          ...v,
+          aspd: stateAspd,
+          combatAspd: clampAspd(stateAspd * (((v.ext && v.ext.tempSpdMul) ? v.ext.tempSpdMul : 1))),
+        };
+        const single = collectResultBundleSingle(stateV);
+        if (single.err) return { v, err: single.err, assistMode: true, assist };
+        stateBundles.push({ ...state, aspd: stateV.aspd, bundle: single });
       }
-    };
-    eff.ultEvent.totalRate = eff.ultEvent.unitRate * eff.ultEvent.count;
-    if (eff.ultEvent.type === "manaPct") {
-      eff.ultEvent.addManaPerSec = eff.ultEvent.totalRate * Math.max(0, v.gaugeMax || 0) * eff.ultEvent.amount;
-    } else if (eff.ultEvent.type === "coolRemainPct") {
-      eff.ultEvent.addCoolPerSec = eff.ultEvent.totalRate * Math.max(0, v.gaugeMax || 0) * eff.ultEvent.amount * 0.5;
+      return mergeAssistBundles(v, assist, stateBundles);
     }
-    const tb = calcTypeBreakdown(v, ex);
-    const br = calcBoundaryRange(v, res);
-    return { v, res, ex, eff, tb, br, err: null };
+    return collectResultBundleSingle(v);
   }
 
   function applyResultBundle(bundle) {
@@ -1983,7 +2433,9 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     $("dpsOut").textContent = `${r6(res.dps)}`;
     $("dpsSub").textContent = "（小数第6位まで = 第7位四捨五入）";
 
-    if (br) {
+    if (bundle.assistMode) {
+      $("boundaryOut").textContent = br ? `速度補助3状態の期待レンジ: ${r6(br.lo)}〜${r6(br.hi)}` : "速度補助3状態の期待レンジ: -";
+    } else if (br) {
       $("boundaryOut").textContent = `究極中tick数: ${br.minTick}〜${br.maxTick} / DPSレンジ: ${r6(br.lo)}〜${r6(br.hi)}`;
     } else {
       $("boundaryOut").textContent = "究極中tick数: - / DPSレンジ: -";
@@ -2014,9 +2466,14 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     if ($("effectB")) $("effectB").innerHTML = `${r6(eff.b.ratePerSec)} 回/秒 / ${eff.b.ratePerSec > 0 ? r6(eff.b.secPerProc) : "-"} 秒/回 / ${v.bImpactF}F → ${r6(eff.b.rawFPerSec)}F/秒（単体 ${r6(eff.b.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.b.multiCoveragePct)}%）${copyBtn(copyBCoverMini, "コピー")}`;
     if ($("effectU")) $("effectU").innerHTML = `${r6(eff.u.ratePerSec)} 回/秒 / ${eff.u.ratePerSec > 0 ? r6(eff.u.secPerProc) : "-"} 秒/回 / ${v.ultImpactF}F → ${r6(eff.u.rawFPerSec)}F/秒（単体 ${r6(eff.u.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.u.multiCoveragePct)}%）${copyBtn(copyUCoverMini, "コピー")}${ultEventMini}`;
 
-    $("detailOut").innerHTML = buildDetailHtml(v, res, ex, eff, tb, br);
+    if (bundle.assistMode) {
+      $("detailOut").innerHTML = buildAssistDetailHtml(bundle);
+      $("formulaOut").innerHTML = buildAssistFormulaHtml(bundle);
+    } else {
+      $("detailOut").innerHTML = buildDetailHtml(v, res, ex, eff, tb, br);
+      $("formulaOut").innerHTML = buildFormulaHtml(v, res, ex, eff, tb, br);
+    }
     $("detailLegend").innerHTML = buildLegendHtml();
-    $("formulaOut").innerHTML = buildFormulaHtml(v, res, ex, eff, tb, br);
     $("formulaLegend").innerHTML = buildLegendHtml();
   }
 
@@ -2067,19 +2524,29 @@ function render() {
   }
 
   function applyFormState(v) {
-    const obj = { ...(v || {}) };
-    if ((obj.baseSpd == null || obj.baseSpd === "") && obj.aspd != null && obj.aspd !== "") {
-      obj.baseSpd = obj.aspd;
-      if (obj.bowSpd == null || obj.bowSpd === "") obj.bowSpd = "1";
-      if (obj.shareSpd == null || obj.shareSpd === "") obj.shareSpd = "1";
+    const state = { ...(v || {}) };
+    if ((state.assistPengBaseSpd == null || state.assistPengBaseSpd === "") && state.assistPengAspd != null) {
+      state.assistPengBaseSpd = state.assistPengAspd;
+      state.assistPengBowSpd = state.assistPengBowSpd ?? "1";
+      state.assistPengShareSpd = state.assistPengShareSpd ?? "1";
     }
-    for (const [k, val] of Object.entries(obj)) {
+    if ((state.baseSpd == null || state.baseSpd === "") && state.aspd != null) {
+      state.baseSpd = state.aspd;
+      state.bowSpd = state.bowSpd ?? "1";
+      state.shareSpd = state.shareSpd ?? "1";
+    }
+    if ((state.assistTigerBaseSpd == null || state.assistTigerBaseSpd === "") && state.assistTigerAspd != null) {
+      state.assistTigerBaseSpd = state.assistTigerAspd;
+      state.assistTigerBowSpd = state.assistTigerBowSpd ?? "1";
+      state.assistTigerShareSpd = state.assistTigerShareSpd ?? "1";
+    }
+    for (const [k, val] of Object.entries(state)) {
       const el = $(k);
       if (!el) continue;
       if (el.type === "checkbox") el.checked = !!val;
-      else if (!el.readOnly) el.value = val;
+      else el.value = val;
     }
-    syncAttackSpeedInputs();
+    syncAssistAttackSpeedInputs();
   }
 
   function getStoredStateRaw() {
@@ -2175,8 +2642,34 @@ function render() {
       $("ext" + i + "Amount").value = "";
       $("ext" + i + "Base").value = "";
       $("ext" + i + "Count").value = "1";
-      if ($("ext" + i + "ImpactF")) $("ext" + i + "ImpactF").value = "0";
+      $("ext" + i + "ImpactF").value = "0";
     }
+
+    $("assistEnabled").checked = false;
+    $("assistPengCount").value = "1";
+    $("assistPengRegenPct").value = "100%";
+    $("assistPengBaseSpd").value = "2.40";
+    $("assistPengBowSpd").value = "1.00";
+    $("assistPengShareSpd").value = "1.00";
+    $("assistPengAspd").value = "2.40";
+    $("assistPengAPct").value = "10.0%";
+    $("assistPengAF").value = "32";
+    $("assistPengBProb").value = "0.0%";
+    $("assistPengBF").value = "40";
+    $("assistTigerCount").value = "1";
+    $("assistTigerRegenPct").value = "100%";
+    $("assistTigerBaseSpd").value = "2.40";
+    $("assistTigerBowSpd").value = "1.00";
+    $("assistTigerShareSpd").value = "1.00";
+    $("assistTigerAspd").value = "2.40";
+    $("assistTigerGaugeMax").value = "100";
+    $("assistTigerAPct").value = "10.0%";
+    $("assistTigerAF").value = "32";
+    $("assistTigerUltReset").value = "end";
+    $("assistTigerUltF").value = "44";
+    $("assistTigerUltStopsGauge").checked = true;
+    $("assistTigerUltEventType").value = "none";
+    $("assistTigerUltEventAmount").value = "0%";
 
     $("showNotes").checked = false;
   }
