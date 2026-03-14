@@ -375,16 +375,6 @@ button:hover{ filter:brightness(1.07); }
 .tworow.cols1 > .lbl{ grid-row:1; }
 .tworow.cols1 > .inp{ grid-row:2; }
 
-.fieldRows{ display:flex; flex-direction:column; gap:10px; }
-.row{ display:grid; grid-template-columns:112px minmax(0,1fr); gap:10px; align-items:center; }
-.row .lbl{ padding-left:0; white-space:normal; line-height:1.35; }
-.row .inp{ min-width:0; }
-.row .chk{ margin-top:0; }
-@media(max-width:720px){
-  .row{ grid-template-columns:96px minmax(0,1fr); gap:8px; }
-}
-.computedField, input[data-auto-calc="true"]{ background:#111823 !important; color:#cfe3ff !important; }
-
 .effectMeta{
   margin:0 0 8px;
   color:var(--mut);
@@ -424,13 +414,10 @@ button:hover{ filter:brightness(1.07); }
 .supportHintTop{ color:var(--mut); font-size:12px; margin:2px 0 8px; line-height:1.4; }
 .supportRow{ border:1px solid var(--line); border-radius:12px; padding:10px; background:#0e141c; margin-top:10px; }
 .supportHead{ margin-bottom:8px; }
-.supportGrid{ display:flex; flex-direction:column; gap:8px; }
-.supportGrid .lbl{ font-size:11px; }
+.supportGrid{ display:flex; flex-direction:column; gap:10px; }
+.supportGrid .lbl{ font-size:12px; }
+.supportImpactRow[hidden]{ display:none !important; }
 .extType{ font-size:12px; }
-.supportLine{ display:grid; grid-template-columns:112px minmax(0,1fr); gap:10px; align-items:center; }
-.supportLine .lbl{ padding-left:0; white-space:normal; line-height:1.35; }
-.supportLine .inp{ min-width:0; }
-@media(max-width:720px){ .supportLine{ grid-template-columns:96px minmax(0,1fr); gap:8px; } }
 
 .tworow.cols7{ grid-template-columns: repeat(7, minmax(0,1fr)); grid-template-rows:auto auto; }
 
@@ -453,9 +440,9 @@ button:hover{ filter:brightness(1.07); }
 .calcField { cursor: pointer; }
 .calcOpen { overflow: hidden; }
 .calcOverlay[hidden] { display: none; }
-.calcOverlay { position: fixed; inset: 0; z-index: 2000; touch-action: manipulation; }
-.calcBackdrop { position: absolute; inset: 0; background: rgba(0,0,0,.55); }
-.calcModal { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(92vw, 420px); background: #1a1d28; border: 1px solid rgba(255,255,255,.12); border-radius: 18px; box-shadow: 0 16px 48px rgba(0,0,0,.45); padding: 14px; touch-action: manipulation; }
+.calcOverlay { position: fixed; inset: 0; z-index: 2000; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+.calcBackdrop { position: absolute; inset: 0; background: rgba(0,0,0,.55); touch-action: manipulation; }
+.calcModal { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(92vw, 420px); background: #1a1d28; border: 1px solid rgba(255,255,255,.12); border-radius: 18px; box-shadow: 0 16px 48px rgba(0,0,0,.45); padding: 14px; touch-action: manipulation; overscroll-behavior: contain; }
 .calcHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
 .calcTitle { font-weight: 800; font-size: 18px; }
 .calcClose { border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color: #fff; border-radius: 10px; width: 38px; height: 38px; font-size: 20px; cursor: pointer; }
@@ -463,7 +450,7 @@ button:hover{ filter:brightness(1.07); }
 .calcDisplay { width: 100%; box-sizing: border-box; border-radius: 12px; border: 1px solid rgba(255,255,255,.14); background: #0f1320; color: #fff; padding: 12px 14px; font-size: 24px; margin-bottom: 8px; }
 .calcHint { font-size: 12px; color: rgba(255,255,255,.65); margin-bottom: 12px; }
 .calcKeys { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; }
-.calcKey { border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.05); color: #fff; border-radius: 12px; min-height: 48px; font-size: 18px; font-weight: 700; cursor: pointer; transition: box-shadow .12s ease, border-color .12s ease, background .12s ease, transform .06s ease; touch-action: manipulation; }
+.calcKey { border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.05); color: #fff; border-radius: 12px; min-height: 48px; font-size: 18px; font-weight: 700; cursor: pointer; transition: box-shadow .12s ease, border-color .12s ease, background .12s ease, transform .06s ease; }
 .calcKey:active { transform: scale(.98); background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.28); }
 .calcKey.flash { animation: calcFlash .18s ease-out; }
 .calcWide { grid-column: span 2; }
@@ -501,3 +488,6 @@ button:hover{ filter:brightness(1.07); }
 .recordBtns{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
 .recordBtns button{ border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#fff; border-radius:10px; padding:9px 12px; font-weight:700; }
 @media (max-width: 420px){ .summaryDeck{ grid-template-columns:1fr; } .bottomMenuBtn{ font-size:10px; } }
+
+.calcOverlay *{ touch-action: manipulation; }
+.computedField{ background:#0c1016; color:var(--mut); }

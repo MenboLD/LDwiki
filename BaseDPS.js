@@ -1,7 +1,7 @@
 (() => {
-  const APP_VERSION = "v8_9_15";
+  const APP_VERSION = "v8_9_16";
   const F = 40;
-  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_15", "LD_DPS_TOOL_V8_9_14", "LD_DPS_TOOL_V8_9_13", "LD_DPS_TOOL_V8_9_12", "LD_DPS_TOOL_V8_9_11", "LD_DPS_TOOL_V8_9_10", "LD_DPS_TOOL_V8_9_1", "LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
+  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_16", "LD_DPS_TOOL_V8_9_12", "LD_DPS_TOOL_V8_9_1", "LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
   const MANUAL_SLOT_KEYS = ["LD_DPS_TOOL_SLOT1", "LD_DPS_TOOL_SLOT2", "LD_DPS_TOOL_SLOT3"];
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
@@ -269,19 +269,45 @@
     const base = Math.max(0, Number(baseSpd) || 0);
     const bow = Math.max(0, Number(bowSpd) || 0);
     const share = Math.max(0, Number(shareSpd) || 0);
-    if (!(base > 0) || !(bow > 0) || !(share > 0)) return 0;
     return clampAspd(base * bow * share);
+  }
+  function computeStateAspd(baseSpd, bowSpd, shareSpd, bonusPct) {
+    const base = Math.max(0, Number(baseSpd) || 0);
+    const bow = Math.max(0, Number(bowSpd) || 0);
+    const share = Math.max(0, Number(shareSpd) || 0);
+    const bonus = Math.max(0, Number(bonusPct) || 0) / 100;
+    return clampAspd(base * (bow + bonus) * share);
   }
   function syncAttackSpeedInputs() {
     const out = $("aspd");
     if (!out) return;
-    const aspd = computeCurrentAspd(readNumber($("baseSpd")?.value || "0"), readNumber($("bowSpd")?.value || "0"), readNumber($("shareSpd")?.value || "0"));
-    out.value = fmtDec(aspd, 6);
+    out.value = fmtDec(computeCurrentAspd(readNumber($("baseSpd")?.value || "0"), readNumber($("bowSpd")?.value || "0"), readNumber($("shareSpd")?.value || "0")), 6);
+  }
+  function computeAssistCurrentAspd(baseSpd, bowSpd, shareSpd) {
+    return computeCurrentAspd(baseSpd, bowSpd, shareSpd);
+  }
+  function computeAssistFinalAspd(baseSpd, bowSpd, shareSpd, incomingCoverageSec) {
+    const base = Math.max(0, Number(baseSpd) || 0);
+    const bow = Math.max(0, Number(bowSpd) || 0);
+    const share = Math.max(0, Number(shareSpd) || 0);
+    const bonus = 0.2 * clamp01(incomingCoverageSec || 0);
+    return clampAspd(base * (bow + bonus) * share);
+  }
+  function syncAssistAttackSpeedInputs() {
+    const pairs = [
+      ['assistPengBaseSpd', 'assistPengBowSpd', 'assistPengShareSpd', 'assistPengAspd'],
+      ['assistTigerBaseSpd', 'assistTigerBowSpd', 'assistTigerShareSpd', 'assistTigerAspd'],
+    ];
+    pairs.forEach(([baseId, bowId, shareId, outId]) => {
+      const out = $(outId);
+      if (!out) return;
+      out.value = fmtDec(computeAssistCurrentAspd(readNumber($(baseId)?.value || '0'), readNumber($(bowId)?.value || '0'), readNumber($(shareId)?.value || '0')), 6);
+    });
   }
 
   // ---------- 外部支援（別ユニット由来） ----------
   function isCoverageSupportType(type){ return ["physPct","magicPct","basicPct","procMul","finalPct"].includes(type); }
-  function supportTypeLabel(type){ return { none:"無し", physPct:"物理ダメージ増加", magicPct:"魔法ダメージ増加", basicPct:"基本攻撃ダメージ増加", procMul:"発動率倍率", finalPct:"最終ダメージ増加", tempSpeedPct:"一時速度増加", manaPct:"最大マナ割合獲得", coolRemainPct:"残りクールタイム割合減少" }[type] || type; }
+  function supportTypeLabel(type){ return { none:"無し", physPct:"物理ダメージ増加", magicPct:"魔法ダメージ増加", basicPct:"基本攻撃ダメージ増加", procMul:"発動率倍率", finalPct:"最終ダメージ増加", manaPct:"最大マナ割合獲得", coolRemainPct:"残りクールタイム割合減少", tempAspd:"一時速度増加" }[type] || type; }
   function copyBtn(text, label = "コピー") {
     const safe = encodeURIComponent(String(text ?? ""));
     return ` <button type="button" class="copyBtn" data-copy="${safe}">${label}</button>`;
@@ -303,15 +329,16 @@
         type: $("ext"+i+"Type") ? $("ext"+i+"Type").value : "none",
         amountRaw: $("ext"+i+"Amount") ? $("ext"+i+"Amount").value : "",
         baseRaw: $("ext"+i+"Base") ? $("ext"+i+"Base").value : "",
+        impactRaw: $("ext"+i+"ImpactF") ? $("ext"+i+"ImpactF").value : "",
         countRaw: $("ext"+i+"Count") ? $("ext"+i+"Count").value : "1",
-        impactRaw: $("ext"+i+"ImpactF") ? $("ext"+i+"ImpactF").value : "0",
       });
     }
     return rows;
   }
+
   function calcExternalSupportAgg(vLike){
     const supports=vLike.supports||[];
-    const agg={ physPct:0, magicPct:0, basicPct:0, finalPct:0, procCoverage:0, procMult:1, addManaPerSec:0, addCoolPerSec:0, tempSpeedPct:0, rows:[] };
+    const agg={ physPct:0, magicPct:0, basicPct:0, finalPct:0, procCoverage:0, procMult:1, addManaPerSec:0, addCoolPerSec:0, tempSpeedBowAdd:0, rows:[] };
     for (const s of supports){
       if(!s.enabled||s.type==="none") continue;
       const count=Math.max(1, Math.min(36, readInt(s.countRaw||1)));
@@ -327,15 +354,19 @@
         else if (s.type==="basicPct") agg.basicPct += effectValue*effective;
         else if (s.type==="finalPct") agg.finalPct += effectValue*effective;
         else if (s.type==="procMul") { agg.procCoverage=effective; agg.procMult=effectValue; }
+      } else if (s.type === "tempAspd") {
+        const rate=Math.max(0, baseNum)*count;
+        const impactF=Math.max(0, readInt(s.impactRaw || 0));
+        const coverage=clamp01((rate * impactF) / F);
+        const effectValue=amountNum/100;
+        agg.rows.push({ idx:s.idx, type:s.type, count, mode:"tempAspd", unitRate:Math.max(0, baseNum), totalRate:rate, impactF, effectiveCoverage:coverage, amountNum:effectValue });
+        agg.tempSpeedBowAdd += effectValue * coverage;
       } else {
         const rate=Math.max(0, baseNum)*count;
         const effectValue=amountNum/100;
-        const impactF=Math.max(0, readInt(s.impactRaw||0));
-        const tempCoverage=(s.type==="tempSpeedPct") ? clamp01((rate * impactF) / F) : 0;
         const addManaPerSec=(s.type==="manaPct") ? (rate * vLike.gaugeMax * effectValue) : 0;
         const addCoolPerSec=(s.type==="coolRemainPct") ? (rate * vLike.gaugeMax * effectValue * 0.5) : 0;
-        agg.rows.push({ idx:s.idx, type:s.type, count, mode:"rate", unitRate:Math.max(0, baseNum), totalRate:rate, amountNum:effectValue, impactF, tempCoverage, addManaPerSec, addCoolPerSec });
-        if (s.type==="tempSpeedPct") agg.tempSpeedPct += effectValue * tempCoverage;
+        agg.rows.push({ idx:s.idx, type:s.type, count, mode:"rate", unitRate:Math.max(0, baseNum), totalRate:rate, amountNum:effectValue, addManaPerSec, addCoolPerSec });
         agg.addManaPerSec += addManaPerSec;
         agg.addCoolPerSec += addCoolPerSec;
       }
@@ -346,6 +377,7 @@
     agg.finalMul=1+agg.finalPct;
     return agg;
   }
+
 
   function syncNoteVisibility() {
     const show = !!($("showNotes") && $("showNotes").checked);
@@ -385,24 +417,6 @@
     }
   }
 
-  function syncSkillAMode() {
-    const aType = $("aType") ? $("aType").value : "use";
-    ["aMulPct","aPPct","aF","aImpactF"].forEach((id) => {
-      const el = $(id);
-      const wrap = el && el.parentElement;
-      if (!el || !wrap) return;
-      el.disabled = aType === "none";
-      wrap.classList.toggle("disabledGroup", aType === "none");
-    });
-    if ($("aUseGainMana5")) $("aUseGainMana5").disabled = (aType === "none");
-  }
-
-  function syncSupportTypeUi(idx) {
-    const type = $("ext" + idx + "Type") ? $("ext" + idx + "Type").value : "none";
-    const impactLine = $("ext" + idx + "ImpactLine");
-    if (impactLine) impactLine.hidden = (type !== "tempSpeedPct");
-  }
-
   function syncSkillBMode() {
     const bType = $("bType").value;
     const lbl = $("bThirdLbl");
@@ -420,7 +434,6 @@
       third.disabled = false;
       thirdWrap.classList.remove("disabledGroup");
       third.setAttribute("inputmode", "decimal");
-      // 空入力はそのまま許可
     } else {
       lbl.textContent = "基本攻撃規定回数";
       third.disabled = false;
@@ -429,6 +442,26 @@
       third.value = String(readInt(third.value));
     }
   }
+
+  function syncSkillAMode() {
+    const aType = $("aType") ? $("aType").value : "use";
+    ["aMulPct","aPPct","aF","aImpactF","aUseGainMana5"].forEach((id) => {
+      const el = $(id);
+      if (!el) return;
+      el.disabled = (aType === 'none');
+      const wrap = el.closest('.inp') || el.parentElement;
+      if (wrap) wrap.classList.toggle('disabledGroup', aType === 'none');
+    });
+  }
+
+  function syncExternalSupportRows() {
+    for (let i = 1; i <= 6; i++) {
+      const type = $("ext" + i + "Type")?.value || 'none';
+      const impactRow = $("ext" + i + "ImpactRow");
+      if (impactRow) impactRow.hidden = (type !== 'tempAspd');
+    }
+  }
+
 
   function bindField(el, onInputSanitize, onCommitFormat) {
     el.addEventListener("input", () => { el.value = onInputSanitize(el.value); scheduleRender(); });
@@ -439,27 +472,15 @@
 
   let _calcTargetId = null;
 
-  function prepareCalculatorFields() {
-    document.querySelectorAll('input[type="text"]').forEach((el) => {
-      if (!el.id) return;
-      if (el.classList.contains('computedField')) return;
-      if (el.dataset.autoCalc === 'true') return;
-      if (el.id === 'physMulOut') return;
-      if (el.readOnly && !el.classList.contains('calcField')) return;
-      el.classList.add('calcField');
-      el.dataset.calcTarget = el.id;
-      if (!el.dataset.calcLabel) el.dataset.calcLabel = getCalcFieldLabel(el);
-      el.setAttribute('readonly', 'readonly');
-      el.setAttribute('inputmode', 'none');
-      el.setAttribute('autocomplete', 'off');
-      el.setAttribute('spellcheck', 'false');
-    });
+  function getCalcFieldIds() {
+    return Array.from(document.querySelectorAll('input[type="text"]')).map((el) => el.id).filter(Boolean);
   }
+
 
   function getCalcFieldLabel(input) {
     if (!input) return "値";
     if (input.dataset.calcLabel) return input.dataset.calcLabel;
-    const row = input.closest(".row") || input.closest(".supportLine");
+    const row = input.closest(".row");
     const lbl = row && row.querySelector(".lbl");
     const text = String(lbl ? lbl.textContent : "").replace(/\s+/g, " ").trim();
     return text || input.id || "値";
@@ -480,42 +501,40 @@
       const type = idx && $("ext" + idx + "Type") ? $("ext" + idx + "Type").value : "none";
       return toSupportBaseDisplay(type, value);
     }
-    if (/^ext\d+Count$/.test(id)) return toIntDisplay(value, 2);
     if (/^ext\d+ImpactF$/.test(id)) return toIntDisplay(value, 4);
-
+    if (/^ext\d+Count$/.test(id)) return toIntDisplay(value, 2);
     if (id === "atk") return toAtkDisplay(value);
-    if (id === "baseSpd") return toAspdDisplay(value, 6);
-    if (id === "bowSpd") return toAspdDisplay(value, 6);
-    if (id === "shareSpd") return toAspdDisplay(value, 6);
-    if (id === "aspd") return toAspdDisplay(value, 6);
-    if (id === "gaugeMax") return toIntDisplay(value, 3);
-    if (id === "sameUnitCount") return toIntDisplay(value, 2);
-    if (id === "manaRegenPct") return toPctDisplay(value, 6, 4);
+    if (["gaugeMax","assistTigerGaugeMax"].includes(id)) return toIntDisplay(value, 3);
+    if (["sameUnitCount","assistPengCount","assistTigerCount"].includes(id)) return toIntDisplay(value, 2);
     if (id === "defReduce") return toIntDisplay(value, 3);
-    if (id === "critChancePct") return toPctDisplay(value, 6, 4);
-    if (id === "critPhysBonusPct") return toPctDisplay(value, 6, 4);
-    if (id === "critMagicBonusPct") return toPctDisplay(value, 6, 4);
-
-    if (id === "ultMulPct") return toPctDisplay(value, 6, 6);
-    if (id === "ultF") return toIntDisplay(value, 4);
-    if (id === "ultImpactF") return toIntDisplay(value, 4);
-    if (id === "ultEventAmount") return toPctDisplay(value, 6, 6);
-
-    if (id === "aMulPct") return toPctDisplay(value, 6, 6);
-    if (id === "aPPct") return toProbPctDisplay(value, 6);
-    if (id === "aF") return toIntDisplay(value, 4);
-    if (id === "aImpactF") return toIntDisplay(value, 4);
-
-    if (id === "bMulPct") return toPctDisplay(value, 6, 6);
-    if (id === "bF") return toIntDisplay(value, 4);
-    if (id === "bImpactF") return toIntDisplay(value, 4);
+    if (["baseSpd","bowSpd","shareSpd","assistPengBaseSpd","assistPengBowSpd","assistPengShareSpd","assistTigerBaseSpd","assistTigerBowSpd","assistTigerShareSpd"].includes(id)) return toAspdDisplay(value, 6);
+    if (["manaRegenPct","critChancePct","critPhysBonusPct","critMagicBonusPct","ultEventAmount","assistPengRegenPct","assistTigerRegenPct","assistTigerUltEventAmount"].includes(id)) return toPctDisplay(value, 6, 6);
+    if (["aPPct","assistPengAPct","assistTigerAPct","assistPengBProb"].includes(id)) return toProbPctDisplay(value, 6);
+    if (["aMulPct","bMulPct","ultMulPct"].includes(id)) return toPctDisplay(value, 6, 6);
+    if (["aF","aImpactF","bF","bImpactF","ultF","ultImpactF","assistPengAF","assistPengBF","assistTigerAF","assistTigerUltF"].includes(id)) return toIntDisplay(value, 4);
     if (id === "bThird") {
       const bType = $("bType") ? $("bType").value : "none";
       return bType === "count" ? String(readInt(value)) : toProbPctDisplay(value, 6);
     }
-
     return fmtDec(readNumber(value), 6);
   }
+
+
+  function prepareCalculatorFields() {
+    document.querySelectorAll('input[type="text"]').forEach((el) => {
+      if (!el.id || el.id === 'calcDisplay') return;
+      if (el.classList.contains('computedField')) return;
+      if (el.dataset.noCalc === '1') return;
+      el.classList.add('calcField');
+      el.dataset.calcTarget = el.id;
+      if (!el.dataset.calcLabel) el.dataset.calcLabel = getCalcFieldLabel(el);
+      el.setAttribute('readonly', 'readonly');
+      el.setAttribute('inputmode', 'none');
+      el.setAttribute('autocomplete', 'off');
+      el.setAttribute('spellcheck', 'false');
+    });
+  }
+
 
   function evaluateCalcExpression(expr) {
     const raw = String(expr || "").replace(/\s+/g, "").replace(/×/g, "*").replace(/÷/g, "/");
@@ -577,15 +596,22 @@
       });
     });
     if ($("calcDisplay")) { $("calcDisplay").setAttribute("readonly", "readonly"); $("calcDisplay").setAttribute("inputmode", "none"); }
-    let lastTouchEnd = 0;
-    $("calcOverlay")?.addEventListener("touchend", (e) => {
-      const now = Date.now();
-      if (now - lastTouchEnd < 350) e.preventDefault();
-      lastTouchEnd = now;
-    }, { passive: false });
-    $("calcOverlay")?.addEventListener("dblclick", (e) => e.preventDefault());
     $("calcBackdrop")?.addEventListener("click", closeCalc);
     $("calcCloseBtn")?.addEventListener("click", closeCalc);
+    let lastTouchTime = 0;
+    const blockDoubleTap = (e) => {
+      const now = Date.now();
+      if (e.type === 'dblclick') {
+        e.preventDefault();
+        return;
+      }
+      if (e.type === 'touchend') {
+        if (now - lastTouchTime < 320) e.preventDefault();
+        lastTouchTime = now;
+      }
+    };
+    $("calcOverlay")?.addEventListener('dblclick', blockDoubleTap, { passive: false });
+    $("calcOverlay")?.addEventListener('touchend', blockDoubleTap, { passive: false });
     $("calcDisplay")?.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); applyCalcValue(); }
       if (e.key === "Escape") { e.preventDefault(); closeCalc(); }
@@ -615,10 +641,11 @@
   }
 
 
+
   let _openSheetKey = null;
 
   function setupBottomSheets() {
-    const map = { env: "envCard", basic: "basicCard", a: "aCard", b: "bCard", ult: "ultCard", ext: "extCard" };
+    const map = { env: "envCard", basic: "basicCard", a: "aCard", b: "bCard", ult: "ultCard", ext: "extCard", assist: "assistSheet", record: "recordSheet" };
     Object.entries(map).forEach(([key, id]) => {
       const card = $(id);
       if (!card) return;
@@ -689,7 +716,7 @@
       if (!key) return false;
       const raw = localStorage.getItem(key);
       if (!raw) { alert(`セーブ${idx}は空です`); return false; }
-      applyFormState(migrateLegacyState(JSON.parse(raw)));
+      applyFormState(JSON.parse(raw));
       normalizeAll();
       syncUiState();
       validateAndRender();
@@ -714,6 +741,8 @@
     if ($("summaryB")) $("summaryB").textContent = `タイプ:${bTypeText} / 倍率:${$("bMulPct")?.value || "-"} / ${bThirdLabel}:${$("bThird")?.value || "-"} / F:${$("bF")?.value || "-"} / 影響F:${$("bImpactF")?.value || "0"}`;
     if ($("summaryUlt")) $("summaryUlt").textContent = `タイプ:${$("ultType")?.selectedOptions?.[0]?.textContent || "-"} / 倍率:${$("ultMulPct")?.value || "-"} / ${gaugeLabel}:${$("gaugeMax")?.value || "-"} / F:${$("ultF")?.value || "-"} / 影響F:${$("ultImpactF")?.value || "0"} / イベント:${ultEventText}`;
     if ($("summaryExt")) $("summaryExt").textContent = extUsed > 0 ? `${extUsed}枠使用中` : "未使用";
+    const assist = calcMutualSpeedAssist();
+    if ($("summaryAssist")) $("summaryAssist").textContent = assist.enabled ? `ON / 20帯 ${r6((assist.p20 || 0) * 100)}% / 40帯 ${r6((assist.p40 || 0) * 100)}%` : "OFF";
   }
 
   function initBindings() {
@@ -744,28 +773,6 @@
     bindField($("bF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
     bindField($("bImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
 
-    // 外部支援（6枠）
-    for (let i = 1; i <= 6; i++) {
-      bindField($("ext" + i + "Amount"), (v)=>trimDecimalsLive(v,6), (v)=>toSupportAmountDisplay($("ext" + i + "Type").value, v));
-      bindField($("ext" + i + "Base"), (v)=>trimDecimalsLive(v,6), (v)=>toSupportBaseDisplay($("ext" + i + "Type").value, v));
-      bindField($("ext" + i + "Count"), (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2));
-      bindField($("ext" + i + "ImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
-      $("ext" + i + "Enabled").addEventListener("change", validateAndRender);
-      $("ext" + i + "Type").addEventListener("change", () => {
-        $("ext" + i + "Amount").value = toSupportAmountDisplay($("ext" + i + "Type").value, $("ext" + i + "Amount").value);
-        $("ext" + i + "Base").value = toSupportBaseDisplay($("ext" + i + "Type").value, $("ext" + i + "Base").value);
-        syncSupportTypeUi(i);
-        validateAndRender();
-      });
-      syncSupportTypeUi(i);
-    }
-
-    $("bThird").addEventListener("input", () => {
-      const bType = $("bType").value;
-      if (bType === "prob") $("bThird").value = trimDecimalsLive($("bThird").value, 6);
-      else if (bType === "count") $("bThird").value = sanitizeIntKeepComma($("bThird").value, 2);
-      else $("bThird").value = "0.0%";
-    });
     const commitBThird = () => {
       const bType = $("bType").value;
       if (bType === "prob") $("bThird").value = toProbPctDisplay($("bThird").value, 6);
@@ -776,16 +783,54 @@
     $("bThird").addEventListener("blur", commitBThird);
     $("bThird").addEventListener("change", commitBThird);
 
+    for (let i = 1; i <= 6; i++) {
+      bindField($("ext" + i + "Amount"), (v)=>trimDecimalsLive(v,6), (v)=>toSupportAmountDisplay($("ext" + i + "Type").value, v));
+      bindField($("ext" + i + "Base"), (v)=>trimDecimalsLive(v,6), (v)=>toSupportBaseDisplay($("ext" + i + "Type").value, v));
+      bindField($("ext" + i + "ImpactF"), (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4));
+      bindField($("ext" + i + "Count"), (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2));
+      $("ext" + i + "Type").addEventListener("change", () => {
+        $("ext" + i + "Amount").value = toSupportAmountDisplay($("ext" + i + "Type").value, $("ext" + i + "Amount").value);
+        $("ext" + i + "Base").value = toSupportBaseDisplay($("ext" + i + "Type").value, $("ext" + i + "Base").value);
+        syncExternalSupportRows();
+        validateAndRender();
+      });
+      $("ext" + i + "Enabled").addEventListener("change", validateAndRender);
+    }
+
+    [
+      ["assistPengCount", (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2)],
+      ["assistTigerCount", (v)=>sanitizeIntKeepComma(v,2), (v)=>toIntDisplay(v,2)],
+      ["assistTigerGaugeMax", (v)=>sanitizeIntKeepComma(v,3), (v)=>toIntDisplay(v,3)],
+      ["assistPengAF", (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4)],
+      ["assistPengBF", (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4)],
+      ["assistTigerAF", (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4)],
+      ["assistTigerUltF", (v)=>sanitizeIntKeepComma(v,4), (v)=>toIntDisplay(v,4)],
+      ["assistPengBaseSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistPengBowSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistPengShareSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistTigerBaseSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistTigerBowSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistTigerShareSpd", (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6)],
+      ["assistPengRegenPct", (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4)],
+      ["assistTigerRegenPct", (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,4)],
+      ["assistPengAPct", (v)=>trimDecimalsLive(v,6), (v)=>toProbPctDisplay(v,6)],
+      ["assistTigerAPct", (v)=>trimDecimalsLive(v,6), (v)=>toProbPctDisplay(v,6)],
+      ["assistPengBProb", (v)=>trimDecimalsLive(v,6), (v)=>toProbPctDisplay(v,6)],
+      ["assistTigerUltEventAmount", (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6)],
+    ].forEach(([id, onInput, onCommit]) => { if ($(id)) bindField($(id), onInput, onCommit); });
+
     $("ultType").addEventListener("change", () => { syncUltType(); validateAndRender(); });
-    $("aType").addEventListener("change", () => { syncSkillAMode(); validateAndRender(); });
     $("envDiff").addEventListener("change", () => { syncEnvDerivedUI(); validateAndRender(); });
     $("defReduce").addEventListener("input", () => { syncEnvDerivedUI(); validateAndRender(); });
     $("ultReset").addEventListener("change", validateAndRender);
     $("ultStopsGauge").addEventListener("change", validateAndRender);
+    $("aType").addEventListener("change", () => { syncSkillAMode(); validateAndRender(); });
     $("aUseGainMana5").addEventListener("change", validateAndRender);
     $("critABShortenUlt2s").addEventListener("change", validateAndRender);
     $("ultEventType").addEventListener("change", validateAndRender);
     $("bType").addEventListener("change", () => { syncSkillBMode(); validateAndRender(); });
+    ["assistEnabled","assistTigerUltStopsGauge"].forEach((id) => $(id)?.addEventListener("change", validateAndRender));
+    ["assistTigerUltReset","assistTigerUltEventType"].forEach((id) => $(id)?.addEventListener("change", validateAndRender));
 
     const onCopyBtnClick = async (e) => {
       const btn = e.target.closest(".copyBtn[data-copy]");
@@ -811,17 +856,19 @@
       }
     };
     $("detailOut").addEventListener("click", onCopyBtnClick);
-    if ($("effectBox")) $("effectBox").addEventListener("click", onCopyBtnClick);
+    $("formulaOut").addEventListener("click", onCopyBtnClick);
+    $("effectBox").addEventListener("click", onCopyBtnClick);
 
     $("slotSave1")?.addEventListener("click", () => saveSlot(1));
-    $("slotLoad1")?.addEventListener("click", () => loadSlot(1));
     $("slotSave2")?.addEventListener("click", () => saveSlot(2));
-    $("slotLoad2")?.addEventListener("click", () => loadSlot(2));
     $("slotSave3")?.addEventListener("click", () => saveSlot(3));
+    $("slotLoad1")?.addEventListener("click", () => loadSlot(1));
+    $("slotLoad2")?.addEventListener("click", () => loadSlot(2));
     $("slotLoad3")?.addEventListener("click", () => loadSlot(3));
     $("resetBtn")?.addEventListener("click", resetAll);
     $("showNotes").addEventListener("change", () => { syncNoteVisibility(); updateSummaryCards(); save(true); });
   }
+
 
   // ---------- 物理/魔法・単体/複数 トグル（seg） ----------
   function applySegActive(segEl, value) {
@@ -911,7 +958,9 @@
     $("bF").value = toIntDisplay($("bF").value, 4);
     $("bImpactF").value = toIntDisplay($("bImpactF").value, 4);
 
+    syncSkillAMode();
     syncSkillBMode();
+    syncExternalSupportRows();
     syncSegmentsFromHidden();
     syncEnvDerivedUI();
     if ($("bType").value === "prob") $("bThird").value = toProbPctDisplay($("bThird").value, 6);
@@ -921,18 +970,27 @@
       const type = $("ext" + i + "Type").value;
       $("ext" + i + "Amount").value = toSupportAmountDisplay(type, $("ext" + i + "Amount").value);
       $("ext" + i + "Base").value = toSupportBaseDisplay(type, $("ext" + i + "Base").value);
-      $("ext" + i + "Count").value = toIntDisplay($("ext" + i + "Count").value, 2);
       $("ext" + i + "ImpactF").value = toIntDisplay($("ext" + i + "ImpactF").value, 4);
-      syncSupportTypeUi(i);
+      $("ext" + i + "Count").value = toIntDisplay($("ext" + i + "Count").value, 2);
     }
+
+    ["assistPengCount","assistTigerCount"].forEach((id) => $(id) && ($(id).value = toIntDisplay($(id).value, 2)));
+    ["assistPengRegenPct","assistTigerRegenPct"].forEach((id) => $(id) && ($(id).value = toPctDisplay($(id).value, 6, 4)));
+    ["assistPengBaseSpd","assistPengBowSpd","assistPengShareSpd","assistTigerBaseSpd","assistTigerBowSpd","assistTigerShareSpd"].forEach((id) => $(id) && ($(id).value = toAspdDisplay($(id).value, 6)));
+    ["assistPengAPct","assistTigerAPct","assistPengBProb"].forEach((id) => $(id) && ($(id).value = toProbPctDisplay($(id).value, 6)));
+    ["assistPengAF","assistPengBF","assistTigerAF","assistTigerUltF"].forEach((id) => $(id) && ($(id).value = toIntDisplay($(id).value, 4)));
+    if ($("assistTigerGaugeMax")) $("assistTigerGaugeMax").value = toIntDisplay($("assistTigerGaugeMax").value, 3);
+    if ($("assistTigerUltEventAmount")) $("assistTigerUltEventAmount").value = toPctDisplay($("assistTigerUltEventAmount").value, 6, 6);
+    syncAssistAttackSpeedInputs();
   }
+
 
   function getValInternal() {
     const atk = readInt($("atk").value);
-    const baseSpeed = readNumber($("baseSpd").value);
-    const bowSpeed = readNumber($("bowSpd").value);
-    const shareSpeed = readNumber($("shareSpd").value);
-    const aspd = computeCurrentAspd(baseSpeed, bowSpeed, shareSpeed);
+    const baseSpd = readNumber($("baseSpd").value);
+    const bowSpd = readNumber($("bowSpd").value);
+    const shareSpd = readNumber($("shareSpd").value);
+    const aspdCurrent = computeCurrentAspd(baseSpd, bowSpd, shareSpd);
     const gaugeMax = readInt($("gaugeMax").value);
     const sameUnitCount = readInt($("sameUnitCount").value) || 1;
 
@@ -966,10 +1024,10 @@
 
     const aType = $("aType").value;
     const aMul = readNumber($("aMulPct").value) / 100;
-    const aP = (aType === "none") ? 0 : (readNumber($("aPPct").value) / 100);
+    const aP = aType === 'use' ? (readNumber($("aPPct").value) / 100) : 0;
     const aF = readInt($("aF").value);
-    const aImpactF = (aType === "none") ? 0 : readInt($("aImpactF").value);
-    const aUseGainMana5 = (aType !== "none") && $("aUseGainMana5").checked;
+    const aImpactF = readInt($("aImpactF").value);
+    const aUseGainMana5 = aType === 'use' && $("aUseGainMana5").checked;
 
     const bType = $("bType").value;
     const bMul = readNumber($("bMulPct").value) / 100;
@@ -991,20 +1049,26 @@
 
     const supports = getSupportRows();
 
-    const base = { atk, aspd, gaugeMax, sameUnitCount, manaPerSec, envDiff, baseDef, defReduce, realDef, physMul,
+    const base = { atk, baseSpd, bowSpd, shareSpd, aspd: aspdCurrent, aspdCurrent, gaugeMax, sameUnitCount, manaPerSec, envDiff, baseDef, defReduce, realDef, physMul,
       critChancePct, critPhysBonusPct, critMagicBonusPct, critChance, critPhysBonus, critMagicBonus, critPhysMul, critMagicMul,
       ultType, ultReset, ultMul, ultF, ultImpactF, ultEventType, ultEventAmount, ultStopsGauge, critABShortenUlt2s,
       aType, aMul, aP, aF, aImpactF, aUseGainMana5, bType, bMul, bF, bImpactF, bP, bN,
-      basicAttr, basicTarget, aAttr, aTarget, bAttr, bTarget, uAttr, uTarget, supports, baseSpeed, bowSpeed, shareSpeed };
+      basicAttr, basicTarget, aAttr, aTarget, bAttr, bTarget, uAttr, uTarget, supports };
     base.ext = calcExternalSupportAgg(base);
+    if (base.ext.tempSpeedBowAdd > 0) {
+      base.aspd = clampAspd(base.baseSpd * (base.bowSpd + base.ext.tempSpeedBowAdd) * base.shareSpd);
+    }
     return base;
   }
 
+
   function clearErrAll() {
-    const ids = ["atk","baseSpd","bowSpd","shareSpd","aspd","gaugeMax","sameUnitCount","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","ultImpactF","ultEventAmount","aMulPct","aPPct","aF","aImpactF","bMulPct","bThird","bF","bImpactF","ext1Amount","ext1Base","ext1Count","ext2Amount","ext2Base","ext2Count","ext3Amount","ext3Base","ext3Count","ext4Amount","ext4Base","ext4Count","ext5Amount","ext5Base","ext5Count","ext6Amount","ext6Base","ext6Count","ext1ImpactF","ext2ImpactF","ext3ImpactF","ext4ImpactF","ext5ImpactF","ext6ImpactF"];
+    const ids = ["atk","baseSpd","bowSpd","shareSpd","gaugeMax","sameUnitCount","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","ultImpactF","ultEventAmount","aMulPct","aPPct","aF","aImpactF","bMulPct","bThird","bF","bImpactF",
+      "ext1Amount","ext1Base","ext1ImpactF","ext1Count","ext2Amount","ext2Base","ext2ImpactF","ext2Count","ext3Amount","ext3Base","ext3ImpactF","ext3Count","ext4Amount","ext4Base","ext4ImpactF","ext4Count","ext5Amount","ext5Base","ext5ImpactF","ext5Count","ext6Amount","ext6Base","ext6ImpactF","ext6Count"];
     ids.forEach(id => setErr($(id), false));
     setLblErr($("regenLbl"), false);
   }
+
 
   function validateInputs() {
     clearErrAll();
@@ -1014,14 +1078,14 @@
     const atk = readInt($("atk").value);
     if (atk <= 0) { setErr($("atk"), true); errors.push("攻撃力は1以上"); }
 
-    const baseSpeed = readNumber($("baseSpd").value);
-    const bowSpeed = readNumber($("bowSpd").value);
-    const shareSpeed = readNumber($("shareSpd").value);
-    if (!(baseSpeed > 0)) { setErr($("baseSpd"), true); errors.push("基礎速度は0より大きくしてください"); }
-    if (!(bowSpeed > 0)) { setErr($("bowSpd"), true); errors.push("弓の速度は0より大きくしてください"); }
-    if (!(shareSpeed > 0)) { setErr($("shareSpd"), true); errors.push("共有速度は0より大きくしてください"); }
-    const aspd = readNumber($("aspd").value);
-    if (!(aspd > 0 && aspd <= 8)) { setErr($("aspd"), true); errors.push("現在の攻速は0より大きく8.00以下"); }
+    const baseSpd = readNumber($("baseSpd").value);
+    const bowSpd = readNumber($("bowSpd").value);
+    const shareSpd = readNumber($("shareSpd").value);
+    if (!(baseSpd > 0 && baseSpd <= 8)) { setErr($("baseSpd"), true); errors.push("基礎速度は0より大きく8.00以下"); }
+    if (!(bowSpd > 0 && bowSpd <= 8)) { setErr($("bowSpd"), true); errors.push("弓の速度は0より大きく8.00以下"); }
+    if (!(shareSpd > 0 && shareSpd <= 8)) { setErr($("shareSpd"), true); errors.push("共有速度は0より大きく8.00以下"); }
+    const aspd = computeCurrentAspd(baseSpd, bowSpd, shareSpd);
+    if (!(aspd > 0 && aspd <= 8)) { setErr($("baseSpd"), true); setErr($("bowSpd"), true); setErr($("shareSpd"), true); errors.push("現在の攻撃速度は0より大きく8.00以下"); }
 
     const gaugeMax = readInt($("gaugeMax").value);
     if ($("ultType").value !== "none" && gaugeMax <= 0) { setErr($("gaugeMax"), true); errors.push($("ultType").value === "cool" ? "クールタイム秒数は1以上" : "Maxマナは1以上"); }
@@ -1033,10 +1097,8 @@
 
     const critChancePct = readNumber($("critChancePct").value);
     if (critChancePct < 0 || critChancePct > 100) { setErr($("critChancePct"), true); errors.push("クリ率は0〜100.0%"); }
-
     const critPhysBonusPct = readNumber($("critPhysBonusPct").value);
     if (critPhysBonusPct < 0 || critPhysBonusPct > 9999.9) { setErr($("critPhysBonusPct"), true); errors.push("物理クリ補正は0〜9999.9%"); }
-
     const critMagicBonusPct = readNumber($("critMagicBonusPct").value);
     if (critMagicBonusPct < 0 || critMagicBonusPct > 9999.9) { setErr($("critMagicBonusPct"), true); errors.push("魔法クリ補正は0〜9999.9%"); }
 
@@ -1053,854 +1115,262 @@
     }
 
     const aType = $("aType").value;
-    const aPpct = readNumber($("aPPct").value);
-    if (aType !== "none" && (aPpct < 0 || aPpct > 90)) { setErr($("aPPct"), true); errors.push("スキルA確率は0〜90.0%"); }
+    const aMul = readNumber($("aMulPct").value);
+    const aP = readNumber($("aPPct").value);
+    const aF = readInt($("aF").value);
     const aImpactF = readInt($("aImpactF").value);
-    if (aType !== "none" && (aImpactF < 0 || aImpactF > 9999)) { setErr($("aImpactF"), true); errors.push("スキルA影響Fは0〜9999"); }
+    if (aType === 'use') {
+      if (aMul < 0 || aMul > 999999.9) { setErr($("aMulPct"), true); errors.push("スキルA倍率は0〜999999.9%"); }
+      if (aP < 0 || aP > 90) { setErr($("aPPct"), true); errors.push("スキルA確率は0〜90.0%"); }
+      if (aF <= 0 || aF > 9999) { setErr($("aF"), true); errors.push("スキルAのＦ数は1〜9999"); }
+      if (aImpactF < 0 || aImpactF > 9999) { setErr($("aImpactF"), true); errors.push("スキルAの影響Fは0〜9999"); }
+    }
 
     const bType = $("bType").value;
+    const bMul = readNumber($("bMulPct").value);
+    const bF = readInt($("bF").value);
     const bImpactF = readInt($("bImpactF").value);
-    if (bImpactF < 0 || bImpactF > 9999) { setErr($("bImpactF"), true); errors.push("スキルB影響Fは0〜9999"); }
+    if (bMul < 0 || bMul > 999999.9) { setErr($("bMulPct"), true); errors.push("スキルB倍率は0〜999999.9%"); }
     if (bType === "prob") {
-      const bPpct = readNumber($("bThird").value);
-      if (bPpct < 0 || bPpct > 90) { setErr($("bThird"), true); errors.push("スキルB確率は0〜90.0%"); }
-
-      const activeAPct = (aType === "none") ? 0 : aPpct;
-      if (activeAPct + bPpct > 100) {
-        errors.push("スキルA確率 + スキルB確率 が100%を超えています");
-        if (activeAPct > bPpct) setErr($("aPPct"), true);
-        else if (bPpct > activeAPct) setErr($("bThird"), true);
-        else { setErr($("aPPct"), true); setErr($("bThird"), true); }
-      }
+      const bP = readNumber($("bThird").value);
+      if (bP < 0 || bP > 90) { setErr($("bThird"), true); errors.push("スキルB確率は0〜90.0%"); }
+    } else if (bType === "count") {
+      const bN = readInt($("bThird").value);
+      if (!(bN >= 1 && bN <= 99)) { setErr($("bThird"), true); errors.push("スキルBの規定回数は1〜99"); }
     }
-    if (bType === "count") {
-      const n = readInt($("bThird").value);
-      if (!(n >= 1 && n <= 99)) { setErr($("bThird"), true); errors.push("スキルB規定回数は1〜99"); }
-      const bF = readInt($("bF").value);
-      if (bF <= 0) { setErr($("bF"), true); errors.push("スキルBのＦ数は1以上"); }
-    }
-
-    if (ultType === "mana") {
-      const regen = readNumber($("manaRegenPct").value);
-      if (regen < 0) { setErr($("manaRegenPct"), true); setLblErr($("regenLbl"), true); errors.push("Regeマナ毎秒は0%以上"); }
+    if (bType !== "none") {
+      if (bF <= 0 || bF > 9999) { setErr($("bF"), true); errors.push("スキルBのＦ数は1〜9999"); }
+      if (bImpactF < 0 || bImpactF > 9999) { setErr($("bImpactF"), true); errors.push("スキルBの影響Fは0〜9999"); }
     }
 
     for (let i = 1; i <= 6; i++) {
-      const enabled = $("ext" + i + "Enabled") ? $("ext" + i + "Enabled").checked : false;
+      if (!$("ext" + i + "Enabled").checked) continue;
       const type = $("ext" + i + "Type") ? $("ext" + i + "Type").value : "none";
-      if (!enabled || type === "none") continue;
-      if (type === "procMul") procMulEnabledCount += 1;
-
       const amount = readNumber($("ext" + i + "Amount").value);
       const base = readNumber($("ext" + i + "Base").value);
-      const count = readInt($("ext" + i + "Count").value);
       const impactF = readInt($("ext" + i + "ImpactF").value);
+      const count = readInt($("ext" + i + "Count").value);
       if (!(count >= 1 && count <= 36)) { setErr($("ext" + i + "Count"), true); errors.push("外部支援の体数は1〜36"); }
+      if (type === "procMul") procMulEnabledCount += 1;
       if (isCoverageSupportType(type)) {
         if (type === "procMul") {
-          if (!(amount > 0)) { setErr($("ext" + i + "Amount"), true); errors.push("発動率倍率は0より大きくしてください"); }
-        } else if (amount < 0) { setErr($("ext" + i + "Amount"), true); errors.push("外部支援の効果量は0%以上"); }
+          if (!(amount >= 0 && amount <= 999999.9)) { setErr($("ext" + i + "Amount"), true); errors.push("発動率倍率は0以上"); }
+        } else {
+          if (amount < 0 || amount > 9999) { setErr($("ext" + i + "Amount"), true); errors.push("外部支援の効果量は0〜9999%"); }
+        }
         if (base < 0 || base > 100) { setErr($("ext" + i + "Base"), true); errors.push("被覆率は0〜100%"); }
-      } else {
-        if (amount < 0) { setErr($("ext" + i + "Amount"), true); errors.push("発動レート型の効果量は0%以上"); }
+      } else if (type === 'tempAspd') {
+        if (amount < 0 || amount > 9999) { setErr($("ext" + i + "Amount"), true); errors.push("一時速度増加の効果量は0〜9999%"); }
+        if (base < 0) { setErr($("ext" + i + "Base"), true); errors.push("一時速度増加の単体発動回数/秒は0以上"); }
+        if (!(impactF > 0 && impactF <= 9999)) { setErr($("ext" + i + "ImpactF"), true); errors.push("一時速度増加の影響Fは1〜9999"); }
+      } else if (type !== "none") {
+        if (amount < 0 || amount > 9999) { setErr($("ext" + i + "Amount"), true); errors.push("外部支援の効果量は0〜9999%"); }
         if (base < 0) { setErr($("ext" + i + "Base"), true); errors.push("単体発動回数/秒は0以上"); }
-        if (type === "tempSpeedPct" && (impactF < 0 || impactF > 9999)) { setErr($("ext" + i + "ImpactF"), true); errors.push("一時速度増加の影響Fは0〜9999"); }
       }
     }
 
-    if (procMulEnabledCount > 1) {
-      errors.push("外部支援の発動率倍率は同時に1種類のみ設定してください");
-    }
-
+    if (procMulEnabledCount > 1) errors.push("発動率倍率の外部支援は同時に1種類のみ想定です");
+    errors.push(...validateAssistInputs());
     return errors;
   }
 
-  function calcNonUlt(v) {
-    const T0 = F / v.aspd;
-    const ext = v.ext || calcExternalSupportAgg(v);
-    let pA = clamp01(v.aP);
-    let pBsrc = (v.bType === "prob") ? clamp01(v.bP) : 0;
-    if (ext.procCoverage > 0 && ext.procMult > 0) {
-      pA = (1 - ext.procCoverage) * pA + ext.procCoverage * Math.min(1, pA * ext.procMult);
-      pBsrc = (1 - ext.procCoverage) * pBsrc + ext.procCoverage * Math.min(1, pBsrc * ext.procMult);
-    }
-    const mA = v.aMul;
-    const fA = v.aF;
 
-    if (v.bType === "count") {
-      const N = v.bN;
-      const mB = v.bMul;
-      const fB = v.bF;
-
-      if (!(N > 0)) return { err: "スキルB（基本攻撃規定回数）の規定回数が0以下です" };
-      if (pA >= 1) return { err: "スキルA確率が1以上です（基本攻撃規定回数型は未定義）" };
-
-      const EA = N * pA / (1 - pA);
-      const expBasicCount = N;
-      const expACount = EA;
-      const expBCount = 1;
-      const expFrames = T0 * expBasicCount + fA * expACount + fB * expBCount;
-      const expDamage = v.atk * (expBasicCount * 1 + mA * expACount + mB * expBCount);
-      const nonUltDPS = expDamage / (expFrames / F);
-      const basicPerFrame = expBasicCount / expFrames;
-      const aPerFrame = expACount / expFrames;
-      const bPerFrame = expBCount / expFrames;
-      const actPerFrame = (expBasicCount + expACount + expBCount) / expFrames;
-
-      return {
-        mode: "countBasic",
-        T0, pA, EA,
-        expBasicCount, expACount, expBCount,
-        expFrames, expDamage, nonUltDPS, basicPerFrame, aPerFrame, bPerFrame, actPerFrame,
-      };
-    }
-
-
-
-
-    const pB = (v.bType === "prob") ? pBsrc : 0;
-    const mB = (v.bType === "prob") ? v.bMul : 0;
-    const fB = (v.bType === "prob") ? v.bF : 0;
-
-    const p0 = clamp01(1 - pA - pB);
-    const avgFrames = T0 * p0 + fA * pA + fB * pB;
-    const avgMul = 1 * p0 + mA * pA + mB * pB;
-    const nonUltDPS = (v.atk * avgMul) / (avgFrames / F);
-    const basicPerFrame = p0 / avgFrames;
-    const aPerFrame = pA / avgFrames;
-    const bPerFrame = pB / avgFrames;
-    const actPerFrame = 1 / avgFrames;
-
-    return { mode: "prob", T0, pA, pB, p0, avgFrames, avgMul, nonUltDPS, basicPerFrame, aPerFrame, bPerFrame, actPerFrame };
+  function collectResultBundleSingle(v) {
+    const res = calcTotal(v);
+    if (res.err) return { v, res, err: res.err };
+    const ex = calcRatesAndShares(v, res);
+    const effBase = calcEffectTimes(v, ex);
+    const eff = { ...effBase };
+    const tb = calcTypeBreakdown(v, ex);
+    const br = calcBoundaryRange(v, res);
+    return { v, res, ex, eff, tb, br, err: null };
   }
 
-  function calcTotal(v) {
-    const nu = calcNonUlt(v);
-    if (nu.err) return { err: nu.err };
-
-    const ext = v.ext || calcExternalSupportAgg(v);
-    const pm = (isFinite(v.physMul) ? v.physMul : 1);
-    const physCritMul = (isFinite(v.critPhysMul) ? v.critPhysMul : 1);
-    const magicCritMul = (isFinite(v.critMagicMul) ? v.critMagicMul : 1);
-
-    // --- non-ult action rates (per second) ---
-    let basicPerSec_nonUlt = 0, aPerSec_nonUlt = 0, bPerSec_nonUlt = 0;
-    if (nu.mode === "prob") {
-      const actPerSec = F / nu.avgFrames;
-      basicPerSec_nonUlt = actPerSec * nu.p0;
-      aPerSec_nonUlt = actPerSec * nu.pA;
-      bPerSec_nonUlt = actPerSec * nu.pB;
-    } else {
-      const secPerUnit = nu.expFrames / F;
-      basicPerSec_nonUlt = nu.expBasicCount / secPerUnit;
-      aPerSec_nonUlt = nu.expACount / secPerUnit;
-      bPerSec_nonUlt = nu.expBCount / secPerUnit;
-    }
-
-    function componentNonUltDps(kind, rate, attr, mul) {
-      if (!(rate > 0) || !(mul > 0)) return 0;
-      const attrSupport = (attr === "phys") ? ext.physMul : ext.magicMul;
-      const envMul = (attr === "phys") ? pm : 1;
-      const critMul = (attr === "phys") ? physCritMul : magicCritMul;
-      const basicMul = (kind === "basic") ? ext.basicMul : 1;
-      return rate * v.atk * mul * basicMul * attrSupport * envMul * critMul * ext.finalMul;
-    }
-
-    const basicNonUltDPS = componentNonUltDps("basic", basicPerSec_nonUlt, v.basicAttr, 1);
-    const aNonUltDPS = componentNonUltDps("a", aPerSec_nonUlt, v.aAttr, v.aMul);
-    const bNonUltDPS = componentNonUltDps("b", bPerSec_nonUlt, v.bAttr, (v.bType === "none" ? 0 : v.bMul));
-    const nonUltDPS_adj = basicNonUltDPS + aNonUltDPS + bNonUltDPS;
-
-    if (v.ultType === "none") {
-      return { dps: nonUltDPS_adj, detail: { ...nu, nonUltDPS_adj, cycleFrames: NaN, cycleDamage: NaN, framesNonUltToReady: NaN, ext } };
-    }
-
-    const ultAttrSupport = (v.uAttr === "phys") ? ext.physMul : ext.magicMul;
-    const ultEnvMul = (v.uAttr === "phys") ? pm : 1;
-    const ultCritMul = (v.uAttr === "phys") ? physCritMul : magicCritMul;
-    const ultDamage = v.atk * v.ultMul * ultAttrSupport * ultEnvMul * ultCritMul * ext.finalMul;
-
-    if (v.ultType === "mana") {
-      const timeManaPerFrame_nonUlt = v.manaPerSec / F;
-      const basicManaPerFrame_nonUlt = nu.basicPerFrame * 1;
-      const aManaPerFrame_nonUlt = v.aUseGainMana5 ? (nu.aPerFrame * 8) : 0;
-      const extManaPerFrame = ext.addManaPerSec / F;
-      const manaPerFrame_nonUlt = timeManaPerFrame_nonUlt + basicManaPerFrame_nonUlt + aManaPerFrame_nonUlt + extManaPerFrame;
-
-      if (!(manaPerFrame_nonUlt > 0)) {
-        return { err: "マナが増加しないため、究極に到達しません（Regeと基本攻撃率を確認）" };
-      }
-
-      let framesNonUltToReady, cycleFrames, cycleDamage;
-
-      if (v.ultReset === "end") {
-        framesNonUltToReady = v.gaugeMax / manaPerFrame_nonUlt;
-        cycleFrames = framesNonUltToReady + v.ultF;
-        cycleDamage = nonUltDPS_adj * (framesNonUltToReady / F) + ultDamage;
-      } else {
-        const timeManaPerFrame_ult = (v.ultStopsGauge ? 0 : (v.manaPerSec / F)) + extManaPerFrame;
-        const manaGainDuringUlt = timeManaPerFrame_ult * v.ultF;
-        const remain = Math.max(0, v.gaugeMax - manaGainDuringUlt);
-        framesNonUltToReady = remain / manaPerFrame_nonUlt;
-        cycleFrames = v.ultF + framesNonUltToReady;
-        cycleDamage = ultDamage + nonUltDPS_adj * (framesNonUltToReady / F);
-      }
-
-      const dps = cycleDamage / (cycleFrames / F);
-      return { dps, detail: { ...nu, timeManaPerFrame_nonUlt, basicManaPerFrame_nonUlt, aManaPerFrame_nonUlt, extManaPerFrame, manaPerFrame_nonUlt, nonUltDPS_adj, framesNonUltToReady, cycleFrames, cycleDamage, ext } };
-    }
-
-    if (v.ultType === "cool") {
-      const baseCoolPerFrame_nonUlt = 1 / F; // 秒/フレーム
-      const critAbShortenPerFrame_nonUlt = v.critABShortenUlt2s
-        ? (2 * v.critChance * (nu.aPerFrame + nu.bPerFrame))
-        : 0;
-      const extCoolPerFrame = ext.addCoolPerSec / F;
-      const coolPerFrame_nonUlt = baseCoolPerFrame_nonUlt + critAbShortenPerFrame_nonUlt + extCoolPerFrame;
-
-      let framesNonUltToReady, cycleFrames, cycleDamage;
-
-      if (v.ultReset === "end") {
-        framesNonUltToReady = v.gaugeMax / coolPerFrame_nonUlt;
-        cycleFrames = framesNonUltToReady + v.ultF;
-        cycleDamage = nonUltDPS_adj * (framesNonUltToReady / F) + ultDamage;
-      } else {
-        const coolPerFrame_ult = (v.ultStopsGauge ? 0 : (1 / F)) + extCoolPerFrame;
-        const coolGainDuringUlt = coolPerFrame_ult * v.ultF;
-        const remain = Math.max(0, v.gaugeMax - coolGainDuringUlt);
-        framesNonUltToReady = remain / coolPerFrame_nonUlt;
-        cycleFrames = v.ultF + framesNonUltToReady;
-        cycleDamage = ultDamage + nonUltDPS_adj * (framesNonUltToReady / F);
-      }
-
-      const dps = cycleDamage / (cycleFrames / F);
-      return { dps, detail: { ...nu, baseCoolPerFrame_nonUlt, critAbShortenPerFrame_nonUlt, extCoolPerFrame, coolPerFrame_nonUlt, nonUltDPS_adj, framesNonUltToReady, cycleFrames, cycleDamage, ext } };
-    }
-
-    return { err: "未知の究極タイプです" };
-  }
-
-  function calcRatesAndShares(v, res) {
-    const d = res.detail;
-    const hasUlt = (v.ultType !== "none");
-    const nonUltFrac = hasUlt ? (d.framesNonUltToReady / d.cycleFrames) : 1;
-    const ultPerSec = hasUlt ? (F / d.cycleFrames) : 0;
-
-    let basicPerSec_nonUlt = 0, aPerSec_nonUlt = 0, bPerSec_nonUlt = 0, actPerSec_nonUlt = 0;
-
-    if (d.mode === "prob") {
-      const actPerSec = F / d.avgFrames;
-      actPerSec_nonUlt = actPerSec;
-      basicPerSec_nonUlt = actPerSec * d.p0;
-      aPerSec_nonUlt = actPerSec * d.pA;
-      bPerSec_nonUlt = actPerSec * d.pB;
-    } else {
-      const secPerUnit = d.expFrames / F;
-      basicPerSec_nonUlt = d.expBasicCount / secPerUnit;
-      aPerSec_nonUlt = d.expACount / secPerUnit;
-      bPerSec_nonUlt = d.expBCount / secPerUnit;
-      actPerSec_nonUlt = (d.expBasicCount + d.expACount + d.expBCount) / secPerUnit;
-    }
-
-    const basicPerSec = basicPerSec_nonUlt * nonUltFrac;
-    const aPerSec = aPerSec_nonUlt * nonUltFrac;
-    const bPerSec = bPerSec_nonUlt * nonUltFrac;
-    const actPerSec = actPerSec_nonUlt * nonUltFrac + ultPerSec;
-
-    const mA = v.aMul;
-    const mB = (v.bType === "none") ? 0 : v.bMul;
-
-    const basicDPS0 = basicPerSec * v.atk * 1;
-    const aDPS0 = aPerSec * v.atk * mA;
-    const bDPS0 = bPerSec * v.atk * mB;
-    const ultDPS0 = ultPerSec * v.atk * (hasUlt ? v.ultMul : 0);
-
-    const pm = (isFinite(v.physMul) ? v.physMul : 1);
-    const physCritMul = (isFinite(v.critPhysMul) ? v.critPhysMul : 1);
-    const magicCritMul = (isFinite(v.critMagicMul) ? v.critMagicMul : 1);
-    const ext = v.ext || calcExternalSupportAgg(v);
-
-    const basicAttrSupport = (v.basicAttr === "phys") ? ext.physMul : ext.magicMul;
-    const aAttrSupport = (v.aAttr === "phys") ? ext.physMul : ext.magicMul;
-    const bAttrSupport = (v.bAttr === "phys") ? ext.physMul : ext.magicMul;
-    const uAttrSupport = (v.uAttr === "phys") ? ext.physMul : ext.magicMul;
-
-    const basicBaseMul = ((v.basicAttr === "phys") ? pm : 1) * basicAttrSupport * ext.basicMul;
-    const aBaseMul = ((v.aAttr === "phys") ? pm : 1) * aAttrSupport;
-    const bBaseMul = ((v.bAttr === "phys") ? pm : 1) * bAttrSupport;
-    const uBaseMul = ((v.uAttr === "phys") ? pm : 1) * uAttrSupport;
-
-    const basicCritMul = ((v.basicAttr === "phys") ? physCritMul : magicCritMul) * ext.finalMul;
-    const aCritMul = ((v.aAttr === "phys") ? physCritMul : magicCritMul) * ext.finalMul;
-    const bCritMul = ((v.bAttr === "phys") ? physCritMul : magicCritMul) * ext.finalMul;
-    const uCritMul = ((v.uAttr === "phys") ? physCritMul : magicCritMul) * ext.finalMul;
-
-    const basicNoCritDPS = basicDPS0 * basicBaseMul;
-    const aNoCritDPS = aDPS0 * aBaseMul;
-    const bNoCritDPS = bDPS0 * bBaseMul;
-    const ultNoCritDPS = ultDPS0 * uBaseMul;
-
-    const basicDPS = basicNoCritDPS * basicCritMul;
-    const aDPS = aNoCritDPS * aCritMul;
-    const bDPS = bNoCritDPS * bCritMul;
-    const ultDPS = ultNoCritDPS * uCritMul;
-
-    const physCritGainDPS =
-      (v.basicAttr === "phys" ? basicNoCritDPS * (physCritMul - 1) : 0) +
-      (v.aAttr === "phys" ? aNoCritDPS * (physCritMul - 1) : 0) +
-      (v.bAttr === "phys" ? bNoCritDPS * (physCritMul - 1) : 0) +
-      (v.uAttr === "phys" ? ultNoCritDPS * (physCritMul - 1) : 0);
-
-    const magicCritGainDPS =
-      (v.basicAttr === "magic" ? basicNoCritDPS * (magicCritMul - 1) : 0) +
-      (v.aAttr === "magic" ? aNoCritDPS * (magicCritMul - 1) : 0) +
-      (v.bAttr === "magic" ? bNoCritDPS * (magicCritMul - 1) : 0) +
-      (v.uAttr === "magic" ? ultNoCritDPS * (magicCritMul - 1) : 0);
-
-    const totalCritGainDPS = physCritGainDPS + magicCritGainDPS;
-
-    const sum = basicDPS + aDPS + bDPS + ultDPS;
-    const pct = (x) => (sum > 0 ? (100 * x / sum) : 0);
-
+  function getMutualSpeedAssistConfig() {
     return {
-      nonUltFrac,
-      actPerSec, basicPerSec, aPerSec, bPerSec, ultPerSec,
-      basicDPS0, aDPS0, bDPS0, ultDPS0,
-      basicNoCritDPS, aNoCritDPS, bNoCritDPS, ultNoCritDPS,
-      basicDPS, aDPS, bDPS, ultDPS,
-      basicBaseMul, aBaseMul, bBaseMul, uBaseMul,
-      basicCritMul, aCritMul, bCritMul, uCritMul,
-      physCritGainDPS, magicCritGainDPS, totalCritGainDPS,
-      physCritGainPct: pct(physCritGainDPS),
-      magicCritGainPct: pct(magicCritGainDPS),
-      totalCritGainPct: pct(totalCritGainDPS),
-      basicPct: pct(basicDPS), aPct: pct(aDPS), bPct: pct(bDPS), ultPct: pct(ultDPS),
-      checkTotalDPS: sum,
-      ext,
-    };
-  }
-
-  function calcNonUltDpsSplit(v, d) {
-    const mA = v.aMul;
-    const mB = (v.bType === "none") ? 0 : v.bMul;
-
-    if (d.mode === "prob") {
-      const denom = (d.avgFrames / 40);
-      const physW = (v.basicAttr === "phys" ? d.p0 * 1 : 0)
-                  + (v.aAttr === "phys" ? d.pA * mA : 0)
-                  + (v.bAttr === "phys" ? d.pB * mB : 0);
-      const magW  = (v.basicAttr === "magic" ? d.p0 * 1 : 0)
-                  + (v.aAttr === "magic" ? d.pA * mA : 0)
-                  + (v.bAttr === "magic" ? d.pB * mB : 0);
-      return { phys: v.atk * physW / denom, magic: v.atk * magW / denom };
-    }
-
-    const denom = d.expFrames / 40;
-    const physW = (v.basicAttr === "phys" ? d.expBasicCount * 1 : 0)
-                + (v.aAttr === "phys" ? d.expACount * mA : 0)
-                + (v.bAttr === "phys" ? d.expBCount * mB : 0);
-    const magW  = (v.basicAttr === "magic" ? d.expBasicCount * 1 : 0)
-                + (v.aAttr === "magic" ? d.expACount * mA : 0)
-                + (v.bAttr === "magic" ? d.expBCount * mB : 0);
-    return { phys: v.atk * physW / denom, magic: v.atk * magW / denom };
-  }
-
-function calcBoundaryRange(v, res) {
-    if (v.ultType === "none") return null;
-    if (v.ultReset !== "start") return null;
-    if (v.ultStopsGauge) return null;
-
-    const d = res.detail;
-    const minTick = Math.floor(v.ultF / 40);
-    const maxTick = Math.ceil(v.ultF / 40);
-    if (minTick === maxTick) return null;
-
-    const ext = v.ext || calcExternalSupportAgg(v);
-    const perTick = (v.ultType === "mana") ? v.manaPerSec : 1;
-    const fixedGainDuringUlt = (v.ultType === "mana")
-      ? (ext.addManaPerSec * (v.ultF / 40))
-      : (ext.addCoolPerSec * (v.ultF / 40));
-
-    const pm = (isFinite(v.physMul) ? v.physMul : 1);
-    const physCritMul = (isFinite(v.critPhysMul) ? v.critPhysMul : 1);
-    const magicCritMul = (isFinite(v.critMagicMul) ? v.critMagicMul : 1);
-
-    const ultAttrSupport = (v.uAttr === "phys") ? ext.physMul : ext.magicMul;
-    const ultEnvMul = (v.uAttr === "phys") ? pm : 1;
-    const ultCritMul = (v.uAttr === "phys") ? physCritMul : magicCritMul;
-    const ultDamage = v.atk * v.ultMul * ultAttrSupport * ultEnvMul * ultCritMul * ext.finalMul;
-
-    const nonUltDPS_adj = d.nonUltDPS_adj;
-
-    function dpsFromTick(ticks) {
-      const gain = ticks * perTick + fixedGainDuringUlt;
-      const remain = Math.max(0, v.gaugeMax - gain);
-
-      let framesNonUltToReady;
-      if (v.ultType === "mana") {
-        const manaPerFrame_nonUlt = d.manaPerFrame_nonUlt;
-        if (!(manaPerFrame_nonUlt > 0)) return NaN;
-        framesNonUltToReady = remain / manaPerFrame_nonUlt;
-      } else {
-        const coolPerFrame_nonUlt = d.coolPerFrame_nonUlt;
-        if (!(coolPerFrame_nonUlt > 0)) return NaN;
-        framesNonUltToReady = remain / coolPerFrame_nonUlt;
+      enabled: !!($("assistEnabled") && $("assistEnabled").checked),
+      peng: {
+        count: readInt($("assistPengCount")?.value || "1"),
+        manaRegenPct: readNumber($("assistPengRegenPct")?.value || "0"),
+        baseSpd: readNumber($("assistPengBaseSpd")?.value || "0"),
+        bowSpd: readNumber($("assistPengBowSpd")?.value || "0"),
+        shareSpd: readNumber($("assistPengShareSpd")?.value || "0"),
+        aPct: readNumber($("assistPengAPct")?.value || "0"),
+        aF: readInt($("assistPengAF")?.value || "0"),
+        bProb: readNumber($("assistPengBProb")?.value || "0"),
+        bF: readInt($("assistPengBF")?.value || "0"),
+      },
+      tiger: {
+        count: readInt($("assistTigerCount")?.value || "1"),
+        manaRegenPct: readNumber($("assistTigerRegenPct")?.value || "0"),
+        baseSpd: readNumber($("assistTigerBaseSpd")?.value || "0"),
+        bowSpd: readNumber($("assistTigerBowSpd")?.value || "0"),
+        shareSpd: readNumber($("assistTigerShareSpd")?.value || "0"),
+        gaugeMax: readInt($("assistTigerGaugeMax")?.value || "100"),
+        aPct: readNumber($("assistTigerAPct")?.value || "0"),
+        aF: readInt($("assistTigerAF")?.value || "0"),
+        ultReset: $("assistTigerUltReset")?.value || "end",
+        ultF: readInt($("assistTigerUltF")?.value || "44"),
+        ultStopsGauge: !!($("assistTigerUltStopsGauge") && $("assistTigerUltStopsGauge").checked),
+        ultEventType: $("assistTigerUltEventType")?.value || "none",
+        ultEventAmount: readNumber($("assistTigerUltEventAmount")?.value || "0"),
       }
+    };
+  }
 
-      const cycleFrames = v.ultF + framesNonUltToReady;
-      const cycleDamage = ultDamage + nonUltDPS_adj * (framesNonUltToReady / 40);
-      return cycleDamage / (cycleFrames / 40);
+  function validateAssistInputs() {
+    const cfg = getMutualSpeedAssistConfig();
+    if (!cfg.enabled) return [];
+    const errs = [];
+    const chkCount = (v, label) => { if (!(v >= 1 && v <= 36)) errs.push(`${label}の体数は1〜36`); };
+    const chkRate = (v, label) => { if (!(v > 0 && v <= 8)) errs.push(`${label}は0より大きく8.00以下`); };
+    const chkPct90 = (v, label) => { if (v < 0 || v > 90) errs.push(`${label}は0〜90.0%`); };
+    const chkF = (v, label) => { if (!(v > 0 && v <= 9999)) errs.push(`${label}は1〜9999`); };
+    chkCount(cfg.peng.count, 'ペンギン楽師');
+    chkCount(cfg.tiger.count, '虎の師父');
+    chkRate(cfg.peng.baseSpd, 'ペンギン楽師の基礎速度');
+    chkRate(cfg.peng.bowSpd, 'ペンギン楽師の弓の速度');
+    chkRate(cfg.peng.shareSpd, 'ペンギン楽師の共有速度');
+    chkRate(cfg.tiger.baseSpd, '虎の師父の基礎速度');
+    chkRate(cfg.tiger.bowSpd, '虎の師父の弓の速度');
+    chkRate(cfg.tiger.shareSpd, '虎の師父の共有速度');
+    chkPct90(cfg.peng.aPct, 'ペンギン楽師スキルA確率');
+    chkPct90(cfg.peng.bProb, 'ペンギン楽師スキルB確率');
+    chkPct90(cfg.tiger.aPct, '虎の師父スキルA確率');
+    if (cfg.peng.aPct + cfg.peng.bProb > 100) errs.push('ペンギン楽師のスキルA確率 + スキルB確率 が100%を超えています');
+    chkF(cfg.peng.aF, 'ペンギン楽師スキルA F数');
+    chkF(cfg.peng.bF, 'ペンギン楽師スキルB F数');
+    chkF(cfg.tiger.aF, '虎の師父スキルA F数');
+    chkF(cfg.tiger.ultF, '虎の師父究極 F数');
+    if (!(cfg.tiger.gaugeMax > 0 && cfg.tiger.gaugeMax <= 999)) errs.push('虎の師父Maxマナは1〜999');
+    return errs;
+  }
+
+  function buildAssistSimUnit(kind, conf, incomingCoverageSec) {
+    const aspd = computeAssistFinalAspd(conf.baseSpd || 0, conf.bowSpd || 0, conf.shareSpd || 0, incomingCoverageSec);
+    const sameUnitCount = Math.max(1, Math.min(36, conf.count || 1));
+    const v = {
+      atk: 1,
+      baseSpd: conf.baseSpd || 0,
+      bowSpd: conf.bowSpd || 0,
+      shareSpd: conf.shareSpd || 0,
+      aspd,
+      aspdCurrent: computeAssistCurrentAspd(conf.baseSpd || 0, conf.bowSpd || 0, conf.shareSpd || 0),
+      gaugeMax: kind === 'tiger' ? Math.max(1, conf.gaugeMax || 100) : 100,
+      sameUnitCount,
+      manaPerSec: Math.max(0, conf.manaRegenPct || 0) / 100,
+      envDiff: 'god', baseDef: DIFF_DEF.god, defReduce: 250, realDef: 250 - DIFF_DEF.god, physMul: computePhysMul(250 - DIFF_DEF.god),
+      critChancePct: 0, critPhysBonusPct: 150, critMagicBonusPct: 170, critChance: 0, critPhysBonus: 1.5, critMagicBonus: 1.7, critPhysMul: 1, critMagicMul: 1,
+      ultType: kind === 'tiger' ? 'mana' : 'none', ultReset: kind === 'tiger' ? (conf.ultReset || 'end') : 'end', ultMul: 1, ultF: kind === 'tiger' ? Math.max(1, conf.ultF || 44) : 44, ultImpactF: 0,
+      ultEventType: kind === 'tiger' ? (conf.ultEventType || 'none') : 'none', ultEventAmount: kind === 'tiger' ? (Math.max(0, conf.ultEventAmount || 0) / 100) : 0, ultStopsGauge: kind === 'tiger' ? !!conf.ultStopsGauge : true, critABShortenUlt2s: false,
+      aType:'use', aMul: 1, aP: Math.max(0, conf.aPct || 0) / 100, aF: Math.max(1, conf.aF || 32), aImpactF: kind === 'peng' ? 120 : 80, aUseGainMana5: false,
+      bType: kind === 'peng' ? 'prob' : 'none', bMul: 1, bF: kind === 'peng' ? Math.max(1, conf.bF || 40) : 40, bImpactF: 0, bP: kind === 'peng' ? (Math.max(0, conf.bProb || 0) / 100) : 0, bN: 0,
+      basicAttr:'phys', basicTarget:'single', aAttr:'phys', aTarget:'single', bAttr:'phys', bTarget:'single', uAttr:'phys', uTarget:'single', supports:[]
+    };
+    v.ext = calcExternalSupportAgg(v);
+    return v;
+  }
+
+  function calcMutualSpeedAssist() {
+    const cfg = getMutualSpeedAssistConfig();
+    const empty = { enabled: false, cfg, cA: 0, cB: 0, p0: 1, p20: 0, p40: 0 };
+    if (!cfg.enabled) return empty;
+    let covAtoB = 0;
+    let covBtoA = 0;
+    let finalPeng = null;
+    let finalTiger = null;
+    for (let i = 0; i < 24; i++) {
+      const pengBundle = collectResultBundleSingle(buildAssistSimUnit('peng', cfg.peng, covBtoA));
+      const tigerBundle = collectResultBundleSingle(buildAssistSimUnit('tiger', cfg.tiger, covAtoB));
+      if (pengBundle.err || tigerBundle.err) return { ...empty, enabled: true, err: pengBundle.err || tigerBundle.err };
+      const nextAtoB = clamp01(pengBundle.eff.a.multiCoverageSecPerSec);
+      const nextBtoA = clamp01(tigerBundle.eff.a.multiCoverageSecPerSec);
+      finalPeng = pengBundle; finalTiger = tigerBundle;
+      if (Math.abs(nextAtoB - covAtoB) < 1e-9 && Math.abs(nextBtoA - covBtoA) < 1e-9) { covAtoB = nextAtoB; covBtoA = nextBtoA; break; }
+      covAtoB = nextAtoB; covBtoA = nextBtoA;
     }
-
-    const dps1 = dpsFromTick(minTick);
-    const dps2 = dpsFromTick(maxTick);
-    if (!isFinite(dps1) || !isFinite(dps2)) return null;
-
-    return { minTick, maxTick, lo: Math.min(dps1, dps2), hi: Math.max(dps1, dps2), perTick, fixedGainDuringUlt };
+    if (!finalPeng || !finalTiger) return empty;
+    const cA = clamp01(finalPeng.eff.a.multiCoverageSecPerSec);
+    const cB = clamp01(finalTiger.eff.a.multiCoverageSecPerSec);
+    return { enabled: true, cfg, cA, cB, p0: (1-cA)*(1-cB), p20: cA*(1-cB)+(1-cA)*cB, p40: cA*cB, pengFinalAspd: finalPeng.v.aspd, tigerFinalAspd: finalTiger.v.aspd };
   }
 
-
-  function calcEffectTimes(v, ex) {
-    const unitCount = Math.max(1, Math.min(36, v.sameUnitCount || 1));
-    const build = (label, ratePerSec, impactF) => {
-      const safeRate = Math.max(0, ratePerSec || 0);
-      const safeImpactF = Math.max(0, impactF || 0);
-      const rawFPerSec = safeRate * safeImpactF;
-      const rawSecPerSec = rawFPerSec / F;
-      const singleCoverageSecPerSec = Math.min(1, rawSecPerSec);
-      const singleCoveragePct = singleCoverageSecPerSec * 100;
-      const multiCoverageSecPerSec = 1 - Math.pow(1 - singleCoverageSecPerSec, unitCount);
-      const multiCoveragePct = multiCoverageSecPerSec * 100;
-      return {
-        label, ratePerSec: safeRate, secPerProc: safeRate > 0 ? 1 / safeRate : 0, impactF: safeImpactF,
-        rawFPerSec, rawSecPerSec,
-        singleCoverageSecPerSec, singleCoveragePct,
-        multiCoverageSecPerSec, multiCoveragePct
-      };
-    };
-
-    const a = build("スキルA", ex.aPerSec, v.aImpactF);
-    const bRate = (v.bType === "none") ? 0 : ex.bPerSec;
-    const b = build("スキルB", bRate, v.bImpactF);
-    const uRate = (v.ultType === "none") ? 0 : ex.ultPerSec;
-    const u = build("究極", uRate, v.ultImpactF);
-
-    const totalRawFPerSec = a.rawFPerSec + b.rawFPerSec + u.rawFPerSec;
-    const totalRawSecPerSec = totalRawFPerSec / F;
-    const totalSingleCoverageSecPerSec = Math.min(1, totalRawSecPerSec);
-    const totalSingleCoveragePct = totalSingleCoverageSecPerSec * 100;
-    const totalMultiCoverageSecPerSec = 1 - Math.pow(1 - totalSingleCoverageSecPerSec, unitCount);
-    const totalMultiCoveragePct = totalMultiCoverageSecPerSec * 100;
-    return {
-      unitCount,
-      a, b, u,
-      totalRawFPerSec, totalRawSecPerSec,
-      totalSingleCoverageSecPerSec, totalSingleCoveragePct,
-      totalMultiCoverageSecPerSec, totalMultiCoveragePct
-    };
+  function updateAssistOutputs(assist) {
+    const setVal = (id, text) => { if ($(id)) $(id).value = text; };
+    if (!assist || !assist.enabled || assist.err) {
+      setVal('assistPengFinalAspd', assist && assist.err ? 'エラー' : '-');
+      setVal('assistTigerFinalAspd', assist && assist.err ? 'エラー' : '-');
+      setVal('assistCA', '-'); setVal('assistCB', '-'); setVal('assistP0', '-'); setVal('assistP20', '-'); setVal('assistP40', '-');
+      return;
+    }
+    setVal('assistPengFinalAspd', fmtDec(assist.pengFinalAspd, 6));
+    setVal('assistTigerFinalAspd', fmtDec(assist.tigerFinalAspd, 6));
+    setVal('assistCA', `${fmtDec((assist.cA || 0) * 100, 6)}%`);
+    setVal('assistCB', `${fmtDec((assist.cB || 0) * 100, 6)}%`);
+    setVal('assistP0', `${fmtDec((assist.p0 || 0) * 100, 6)}%`);
+    setVal('assistP20', `${fmtDec((assist.p20 || 0) * 100, 6)}%`);
+    setVal('assistP40', `${fmtDec((assist.p40 || 0) * 100, 6)}%`);
   }
 
-  function calcTypeBreakdown(v, ex) {
-    const sum = ex.checkTotalDPS;
-    const pct = (x) => (sum > 0 ? (100 * x / sum) : 0);
-
-    const phys = (v.basicAttr === "phys" ? ex.basicDPS : 0)
-               + (v.aAttr === "phys" ? ex.aDPS : 0)
-               + (v.bAttr === "phys" ? ex.bDPS : 0)
-               + (v.uAttr === "phys" ? ex.ultDPS : 0);
-
-    const magic = (v.basicAttr === "magic" ? ex.basicDPS : 0)
-                + (v.aAttr === "magic" ? ex.aDPS : 0)
-                + (v.bAttr === "magic" ? ex.bDPS : 0)
-                + (v.uAttr === "magic" ? ex.ultDPS : 0);
-
-    const single = (v.basicTarget === "single" ? ex.basicDPS : 0)
-                 + (v.aTarget === "single" ? ex.aDPS : 0)
-                 + (v.bTarget === "single" ? ex.bDPS : 0)
-                 + (v.uTarget === "single" ? ex.ultDPS : 0);
-
-    const multi = (v.basicTarget === "multi" ? ex.basicDPS : 0)
-                + (v.aTarget === "multi" ? ex.aDPS : 0)
-                + (v.bTarget === "multi" ? ex.bDPS : 0)
-                + (v.uTarget === "multi" ? ex.ultDPS : 0);
-
-    return { phys, magic, single, multi,
-      physPct: pct(phys), magicPct: pct(magic),
-      singlePct: pct(single), multiPct: pct(multi)
-    };
+  function mergeAssistBundles(v, assist, stateBundles) {
+    const weighted = (getter) => stateBundles.reduce((sum, s) => sum + s.prob * getter(s.bundle), 0);
+    const totalDPS = weighted((b) => b.res.dps);
+    const basicDPS = weighted((b) => b.ex.basicDPS);
+    const aDPS = weighted((b) => b.ex.aDPS);
+    const bDPS = weighted((b) => b.ex.bDPS);
+    const ultDPS = weighted((b) => b.ex.ultDPS);
+    const pctOf = (x) => totalDPS > 0 ? (100 * x / totalDPS) : 0;
+    const phys = weighted((b) => b.tb.phys);
+    const magic = weighted((b) => b.tb.magic);
+    const single = weighted((b) => b.tb.single);
+    const multi = weighted((b) => b.tb.multi);
+    const eff = { unitCount: v.sameUnitCount, a: { ratePerSec: weighted((b) => b.eff.a.ratePerSec), secPerProc: weighted((b) => b.eff.a.secPerProc), rawFPerSec: weighted((b) => b.eff.a.rawFPerSec), singleCoveragePct: weighted((b) => b.eff.a.singleCoveragePct), multiCoveragePct: weighted((b) => b.eff.a.multiCoveragePct) }, b: { ratePerSec: weighted((b) => b.eff.b.ratePerSec), secPerProc: weighted((b) => b.eff.b.secPerProc), rawFPerSec: weighted((b) => b.eff.b.rawFPerSec), singleCoveragePct: weighted((b) => b.eff.b.singleCoveragePct), multiCoveragePct: weighted((b) => b.eff.b.multiCoveragePct) }, u: { ratePerSec: weighted((b) => b.eff.u.ratePerSec), secPerProc: weighted((b) => b.eff.u.secPerProc), rawFPerSec: weighted((b) => b.eff.u.rawFPerSec), singleCoveragePct: weighted((b) => b.eff.u.singleCoveragePct), multiCoveragePct: weighted((b) => b.eff.u.multiCoveragePct) } };
+    return { v, res: { dps: totalDPS, detail: { mode:'assistStates' } }, ex: { basicDPS, aDPS, bDPS, ultDPS, basicPct: pctOf(basicDPS), aPct: pctOf(aDPS), bPct: pctOf(bDPS), ultPct: pctOf(ultDPS), basicPerSec: weighted((b) => b.ex.basicPerSec), aPerSec: weighted((b) => b.ex.aPerSec), bPerSec: weighted((b) => b.ex.bPerSec), ultPerSec: weighted((b) => b.ex.ultPerSec), physCritGainPct:0, magicCritGainPct:0, checkTotalDPS: totalDPS }, eff, tb: { phys, magic, single, multi, physPct: pctOf(phys), magicPct: pctOf(magic), singlePct: pctOf(single), multiPct: pctOf(multi) }, br: null, assistMode: true, assist, assistStates: stateBundles.map((s) => ({ label:s.label, prob:s.prob, dps:s.bundle.res.dps, aspd:s.bundle.v.aspd })) };
   }
 
-  function buildFormulaText(v, res, ex, eff, tb, br) {
-    const d = res.detail;
-    const pm = (isFinite(v.physMul) ? v.physMul : 1);
-    const baseDef = DIFF_DEF[v.envDiff] ?? 175;
-    const realDef = v.defReduce - baseDef;
-    const hasUlt = (v.ultType !== "none");
-    const gaugeLabel = (v.ultType === "mana") ? "マナ" : "クールタイム";
+  function buildAssistDetailHtml(bundle) {
+    const { assist, assistStates, ex } = bundle;
+    const line = (t) => `<div>${t}</div>`;
+    let html = '';
+    html += line(`楽師 最終攻速: <span class="hlVal valSpd">${r6(assist.pengFinalAspd)}</span> / 師父 最終攻速: <span class="hlVal valSpd">${r6(assist.tigerFinalAspd)}</span>`);
+    html += line(`楽師→Z 被覆率: <span class="hlVal valA">${r6(assist.cA * 100)}%</span> / 師父→Z 被覆率: <span class="hlVal valB">${r6(assist.cB * 100)}%</span>`);
+    html += line(`0%帯: <span class="hlVal valMix">${r6(assist.p0 * 100)}%</span> / 20%帯: <span class="hlVal valMix">${r6(assist.p20 * 100)}%</span> / 40%帯: <span class="hlVal valMix">${r6(assist.p40 * 100)}%</span>`);
+    assistStates.forEach((state) => { html += line(`${state.label}: 攻速 <span class="hlVal valSpd">${r6(state.aspd)}</span> / DPS <span class="hlVal valMix">${r6(state.dps)}</span> / 割合 <span class="hlVal valMix">${r6(state.prob * 100)}%</span>`); });
+    html += line(`期待DPS = <span class="hlVal valMix">${r6(bundle.res.dps)}</span>`);
+    html += line(`内訳: 基本 ${r6(ex.basicPct)}% / A ${r6(ex.aPct)}% / B ${r6(ex.bPct)}% / 究極 ${r6(ex.ultPct)}%`);
+    return html;
+  }
+
+  function buildAssistFormulaHtml(bundle) {
+    const { assist, assistStates } = bundle;
     const lines = [];
-
-    lines.push("=== 行動レート～検算 の算出式 ===");
-    lines.push("基本攻撃モーションF = 40 / 攻撃速度");
-    lines.push(`  = 40 / ${r6(v.aspd)} = ${r6(d.T0)}`);
-
-    if (d.mode === "prob") {
-      lines.push("■ 行動レート（確率型）");
-      lines.push("基本攻撃確率 = 1 − スキルA確率 − スキルB確率");
-      lines.push(`  = 1 − ${r6(d.pA)} − ${r6(d.pB)} = ${r6(d.p0)}`);
-      lines.push("平均行動F = 基本攻撃確率×基本攻撃F + スキルA確率×スキルA_F + スキルB確率×スキルB_F");
-      lines.push(`  = ${r6(d.p0)}×${r6(d.T0)} + ${r6(d.pA)}×${v.aF} + ${r6(d.pB)}×${v.bF} = ${r6(d.avgFrames)}`);
-      lines.push("平均倍率 = 基本攻撃確率×100% + スキルA確率×スキルA倍率 + スキルB確率×スキルB倍率");
-      lines.push(`  = ${r6(d.p0)}×1 + ${r6(d.pA)}×${r6(v.aMul)} + ${r6(d.pB)}×${r6(v.bMul)} = ${r6(d.avgMul)}`);
-      lines.push("非究極DPS = 攻撃力 × 平均倍率 / (平均行動F / 40)");
-      lines.push(`  = ${r6(v.atk)} × ${r6(d.avgMul)} / (${r6(d.avgFrames)} / 40) = ${r6(d.nonUltDPS)}`);
-    } else if (d.mode === "countBasic") {
-      const secPerUnit = d.expFrames / 40;
-      lines.push("■ 行動レート（スキルB=基本攻撃規定回数型）");
-      lines.push("期待スキルA回数 EA = 規定回数 × pA / (1 − pA)");
-      lines.push(`  = ${v.bN} × ${r6(d.pA)} / (1 − ${r6(d.pA)}) = ${r6(d.EA)}`);
-      lines.push("非究極周期F = 基本攻撃F×基本攻撃回数 + スキルA_F×期待スキルA回数 + スキルB_F");
-      lines.push(`  = ${r6(d.T0)}×${r6(d.expBasicCount)} + ${v.aF}×${r6(d.expACount)} + ${v.bF} = ${r6(d.expFrames)}`);
-      lines.push("非究極周期秒 = 非究極周期F / 40");
-      lines.push(`  = ${r6(d.expFrames)} / 40 = ${r6(secPerUnit)}`);
-      lines.push("非究極周期ダメージ = 攻撃力 × (基本攻撃回数×100% + 期待スキルA回数×スキルA倍率 + スキルB倍率)");
-      lines.push(`  = ${r6(v.atk)} × (${r6(d.expBasicCount)}×1 + ${r6(d.expACount)}×${r6(v.aMul)} + ${r6(v.bMul)}) = ${r6(d.expDamage)}`);
-      lines.push("非究極DPS = 非究極周期ダメージ / (非究極周期F / 40)");
-      lines.push(`  = ${r6(d.expDamage)} / (${r6(d.expFrames)} / 40) = ${r6(d.nonUltDPS)}`);
-      lines.push("※ 既存仕様どおり、期待回数ベースの平均周期近似です。");
-    }
-
-    lines.push("");
-    lines.push("■ 究極 / ゲージ");
-    if (v.ultType === "none") {
-      lines.push("究極：無し");
-    } else if (v.ultType === "mana") {
-      lines.push("時間マナ(毎秒) = Regeマナ毎秒 / 100");
-      lines.push(`  = ${r6(readNumber($("manaRegenPct").value))} / 100 = ${r6(v.manaPerSec)}`);
-      lines.push("時間マナ(毎フレーム)(非究極中) = 時間マナ(毎秒) / 40");
-      lines.push(`  = ${r6(v.manaPerSec)} / 40 = ${r6(d.timeManaPerFrame_nonUlt)}`);
-      lines.push("基本攻撃マナ(毎フレーム)(非究極中) = 基本攻撃/フレーム × 1");
-      lines.push(`  = ${r6(d.basicPerFrame)} × 1 = ${r6(d.basicManaPerFrame_nonUlt)}`);
-      lines.push("スキルAマナ(毎フレーム)(非究極中) = スキルA/フレーム × 5");
-      lines.push(`  = ${r6(d.aPerFrame)} × 8 = ${r6(d.aManaPerFrame_nonUlt || 0)}`);
-      lines.push("マナ増加(毎フレーム)(非究極中) = 時間マナ + 基本攻撃マナ + スキルAマナ");
-      lines.push(`  = ${r6(d.timeManaPerFrame_nonUlt)} + ${r6(d.basicManaPerFrame_nonUlt)} + ${r6(d.aManaPerFrame_nonUlt || 0)} = ${r6(d.manaPerFrame_nonUlt)}`);
-    } else {
-      lines.push("通常クールタイム進行(毎フレーム)(非究極中) = 1 / 40 秒");
-      lines.push(`  = 1 / 40 = ${r6(d.baseCoolPerFrame_nonUlt || (1 / 40))} 秒`);
-      lines.push("A/Bクリ由来クールタイム短縮(毎フレーム)(非究極中) = (スキルA/フレーム + スキルB/フレーム) × クリ率 × 2秒");
-      lines.push(`  = (${r6(d.aPerFrame)} + ${r6(d.bPerFrame)}) × ${r6(v.critChance)} × 2 = ${r6(d.critAbShortenPerFrame_nonUlt || 0)} 秒`);
-      lines.push("クールタイム進行(毎フレーム)(非究極中) = 通常進行 + A/Bクリ由来短縮");
-      lines.push(`  = ${r6(d.baseCoolPerFrame_nonUlt || (1 / 40))} + ${r6(d.critAbShortenPerFrame_nonUlt || 0)} = ${r6(d.coolPerFrame_nonUlt)} 秒`);
-    }
-    if (hasUlt) {
-      if (v.ultType === "cool") {
-        if (v.ultReset === "end") {
-          lines.push("究極到達までの非究極F = クールタイム秒数 / クールタイム進行(毎フレーム)(非究極中)");
-          lines.push(`  = ${r6(v.gaugeMax)} / ${r6(d.coolPerFrame_nonUlt)} = ${r6(d.framesNonUltToReady)}`);
-        } else {
-          const coolGainDuringUlt = v.ultStopsGauge ? 0 : (v.ultF / 40);
-          const remain = Math.max(0, v.gaugeMax - coolGainDuringUlt);
-          lines.push("究極中クールタイム進行 = 究極F / 40 秒");
-          lines.push(`  = ${r6(v.ultF)} / 40 = ${r6(coolGainDuringUlt)} 秒`);
-          lines.push("残クールタイム秒数 = max(0, クールタイム秒数 − 究極中クールタイム進行)");
-          lines.push(`  = max(0, ${r6(v.gaugeMax)} − ${r6(coolGainDuringUlt)}) = ${r6(remain)}`);
-          lines.push("残クールタイム到達F = 残クールタイム秒数 / クールタイム進行(毎フレーム)(非究極中)");
-          lines.push(`  = ${r6(remain)} / ${r6(d.coolPerFrame_nonUlt)} = ${r6(d.framesNonUltToReady)}`);
-        }
-      }
-      lines.push("非究極時間比率 = 非究極F / 周期F");
-      lines.push(`  = ${r6(d.framesNonUltToReady)} / ${r6(d.cycleFrames)} = ${r6(ex.nonUltFrac)}`);
-      lines.push("表示DPS（周期合成） = 周期ダメージ / (周期F / 40)");
-      lines.push(`  = ${r6(d.cycleDamage)} / (${r6(d.cycleFrames)} / 40) = ${r6(res.dps)}`);
-    } else {
-      lines.push(`表示DPS（周期合成） = ${r6(res.dps)}`);
-    }
-
-    lines.push("");
-    lines.push("■ 行動レート（回/秒 / 秒/回）");
-    lines.push(`行動合計 = ${r6(ex.actPerSec)} 回/秒 / ${ex.actPerSec > 0 ? r6(1 / ex.actPerSec) : "-"} 秒/回`);
-    lines.push(`基本攻撃 = ${r6(ex.basicPerSec)} 回/秒 / ${ex.basicPerSec > 0 ? r6(1 / ex.basicPerSec) : "-"} 秒/回`);
-    lines.push(`スキルA = ${r6(ex.aPerSec)} 回/秒 / ${ex.aPerSec > 0 ? r6(1 / ex.aPerSec) : "-"} 秒/回`);
-    lines.push(`スキルB = ${r6(ex.bPerSec)} 回/秒 / ${ex.bPerSec > 0 ? r6(1 / ex.bPerSec) : "-"} 秒/回`);
-    lines.push(`究極 = ${r6(ex.ultPerSec)} 回/秒 / ${ex.ultPerSec > 0 ? r6(1 / ex.ultPerSec) : "-"} 秒/回`);
-
-    lines.push("");
-    lines.push("■ 影響時間（平均・ダメージとは別計算）");
-    lines.push(`同ユニット数 = ${eff.unitCount}`);
-    lines.push("スキルA影響F/秒 = スキルA/秒 × スキルA影響F");
-    lines.push(`  = ${r6(ex.aPerSec)} × ${r6(v.aImpactF)} = ${r6(eff.a.rawFPerSec)}`);
-    lines.push("スキルA単体稼働率 = min(100%, スキルA影響F/秒 / 40 × 100)");
-    lines.push(`  = min(100%, ${r6(eff.a.rawFPerSec)} / 40 × 100) = ${r6(eff.a.singleCoveragePct)}%`);
-    lines.push(`スキルA ${eff.unitCount}体参考稼働率 = 1 − (1 − 単体稼働率)^${eff.unitCount}`);
-    lines.push(`  = 1 − (1 − ${r6(eff.a.singleCoverageSecPerSec)})^${eff.unitCount} = ${r6(eff.a.multiCoveragePct)}%`);
-    lines.push("スキルB影響F/秒 = スキルB/秒 × スキルB影響F");
-    lines.push(`  = ${r6(ex.bPerSec)} × ${r6(v.bImpactF)} = ${r6(eff.b.rawFPerSec)}`);
-    lines.push("スキルB単体稼働率 = min(100%, スキルB影響F/秒 / 40 × 100)");
-    lines.push(`  = min(100%, ${r6(eff.b.rawFPerSec)} / 40 × 100) = ${r6(eff.b.singleCoveragePct)}%`);
-    lines.push(`スキルB ${eff.unitCount}体参考稼働率 = 1 − (1 − 単体稼働率)^${eff.unitCount}`);
-    lines.push(`  = 1 − (1 − ${r6(eff.b.singleCoverageSecPerSec)})^${eff.unitCount} = ${r6(eff.b.multiCoveragePct)}%`);
-    lines.push("究極影響F/秒 = 究極/秒 × 究極影響F");
-    lines.push(`  = ${r6(ex.ultPerSec)} × ${r6(v.ultImpactF)} = ${r6(eff.u.rawFPerSec)}`);
-    lines.push("究極単体稼働率 = min(100%, 究極影響F/秒 / 40 × 100)");
-    lines.push(`  = min(100%, ${r6(eff.u.rawFPerSec)} / 40 × 100) = ${r6(eff.u.singleCoveragePct)}%`);
-    lines.push(`究極 ${eff.unitCount}体参考稼働率 = 1 − (1 − 単体稼働率)^${eff.unitCount}`);
-    lines.push(`  = 1 − (1 − ${r6(eff.u.singleCoverageSecPerSec)})^${eff.unitCount} = ${r6(eff.u.multiCoveragePct)}%`);
-    lines.push(`  = min(100%, ${r6(eff.totalRawFPerSec)} / 40 × 100) = ${r6(eff.totalSingleCoveragePct)}%`);
-    lines.push(`  = 1 − (1 − ${r6(eff.totalSingleCoverageSecPerSec)})^${eff.unitCount} = ${r6(eff.totalMultiCoveragePct)}%`);
-    if (eff.ultEvent.type !== "none" && eff.ultEvent.amount > 0) {
-      lines.push(`究極イベント支援種別 = ${eff.ultEvent.typeLabel}`);
-      lines.push(`究極イベント支援 効果量 = ${r6(eff.ultEvent.amount * 100)}%`);
-      lines.push(`究極イベント支援 単体発動回数/秒 = 究極/秒 = ${r6(eff.ultEvent.unitRate)}`);
-      lines.push(`究極イベント支援 ${eff.ultEvent.count}体合計発動回数/秒 = ${r6(eff.ultEvent.unitRate)} × ${eff.ultEvent.count} = ${r6(eff.ultEvent.totalRate)}`);
-      if (eff.ultEvent.type === "manaPct") {
-        lines.push(`参考マナ増加/秒 = 合計発動回数/秒 × 最大マナ × 効果量`);
-        lines.push(`  = ${r6(eff.ultEvent.totalRate)} × ${r6(v.gaugeMax)} × ${r6(eff.ultEvent.amount)} = ${r6(eff.ultEvent.addManaPerSec)}`);
-      } else if (eff.ultEvent.type === "coolRemainPct") {
-        lines.push(`参考クール短縮 秒/秒 ≒ 合計発動回数/秒 × クールタイム × 効果量 × 0.5`);
-        lines.push(`  = ${r6(eff.ultEvent.totalRate)} × ${r6(v.gaugeMax)} × ${r6(eff.ultEvent.amount)} × 0.5 = ${r6(eff.ultEvent.addCoolPerSec)}`);
-      }
-    }
-
-    lines.push("");
-    lines.push("■ 環境（物理補正・クリティカル）");
-    lines.push("実防御力 = 防御力減少値 − 80w防御力");
-    lines.push(`  = ${v.defReduce} − ${baseDef} = ${realDef}`);
-    lines.push("物理補正倍率(raw) = 1 × (1 + (SIGN(実防御力) × (1 − 50 / (3×ABS(実防御力)+50))))");
-    lines.push(`  = 1 × (1 + (${Math.sign(realDef)} × (1 − 50 / (3×${Math.abs(realDef)}+50)))) = ${r6(1 * (1 + (Math.sign(realDef) * (1 - 50 / (3 * Math.abs(realDef) + 50)))))}`);
-    lines.push(`物理補正倍率 = ${pm.toFixed(2)}`);
-    lines.push(`期待クリ倍率(物理) = ${r6(v.critPhysMul)}`);
-    lines.push(`期待クリ倍率(魔法) = ${r6(v.critMagicMul)}`);
-
-    lines.push("");
-    lines.push("■ ダメージ内訳（DPS成分）");
-    lines.push(`基本DPS成分 = ${r6(ex.basicPerSec)} × ${r6(v.atk)} × 1 × ${r6(ex.basicBaseMul)} × ${r6(ex.basicCritMul)} = ${r6(ex.basicDPS)}`);
-    lines.push(`スキルA DPS成分 = ${r6(ex.aPerSec)} × ${r6(v.atk)} × ${r6(v.aMul)} × ${r6(ex.aBaseMul)} × ${r6(ex.aCritMul)} = ${r6(ex.aDPS)}`);
-    lines.push(`スキルB DPS成分 = ${r6(ex.bPerSec)} × ${r6(v.atk)} × ${r6((v.bType === "none") ? 0 : v.bMul)} × ${r6(ex.bBaseMul)} × ${r6(ex.bCritMul)} = ${r6(ex.bDPS)}`);
-    lines.push(`究極DPS成分 = ${r6(ex.ultPerSec)} × ${r6(v.atk)} × ${r6(hasUlt ? v.ultMul : 0)} × ${r6(ex.uBaseMul)} × ${r6(ex.uCritMul)} = ${r6(ex.ultDPS)}`);
-
-    lines.push("");
-    lines.push("■ 属性 / 特性 / クリ寄与");
-    lines.push(`物理DPS / 割合 = ${r6(tb.phys)} / ${r6(tb.physPct)}%`);
-    lines.push(`魔法DPS / 割合 = ${r6(tb.magic)} / ${r6(tb.magicPct)}%`);
-    lines.push(`単体DPS / 割合 = ${r6(tb.single)} / ${r6(tb.singlePct)}%`);
-    lines.push(`複数DPS / 割合 = ${r6(tb.multi)} / ${r6(tb.multiPct)}%`);
-    lines.push(`物理クリ寄与DPS / 割合 = ${r6(ex.physCritGainDPS)} / ${r6(ex.physCritGainPct)}%`);
-    lines.push(`魔法クリ寄与DPS / 割合 = ${r6(ex.magicCritGainDPS)} / ${r6(ex.magicCritGainPct)}%`);
-    lines.push(`合計クリ寄与DPS / 割合 = ${r6(ex.totalCritGainDPS)} / ${r6(ex.totalCritGainPct)}%`);
-
-    if (br) {
-      lines.push("");
-      lines.push("■ 40F境界の厳密レンジ");
-      lines.push(`minTick = floor(究極F / 40) = ${br.minTick}`);
-      lines.push(`maxTick = ceil(究極F / 40) = ${br.maxTick}`);
-      lines.push(`1tickあたり増える${gaugeLabel}: ${r6(br.perTick)}`);
-      lines.push(`DPSレンジ = ${r6(br.lo)} ～ ${r6(br.hi)}`);
-    }
-
-    lines.push("");
-    lines.push("■ 検算");
-    lines.push(`内訳合計DPS = ${r6(ex.basicDPS)} + ${r6(ex.aDPS)} + ${r6(ex.bDPS)} + ${r6(ex.ultDPS)} = ${r6(ex.checkTotalDPS)}`);
-    lines.push(`表示DPS（周期合成） = ${r6(res.dps)}`);
-    return lines.join("\n");
-  }
-
-function setBar(fillId, valId, pct) {
-    const p = Math.max(0, Math.min(100, pct));
-    $(fillId).style.width = `${p}%`;
-    $(valId).textContent = `${r6(p)}%`;
-  }
-
-  
-  function highlightFormulaHtml(text, v, ex) {
-    let s = escHtml(text);
-
-    const buckets = {
-      atk: { cls: "valAtk", vals: [] },
-      spd: { cls: "valSpd", vals: [] },
-      gauge: { cls: "valGauge", vals: [] },
-      a: { cls: "valA", vals: [] },
-      b: { cls: "valB", vals: [] },
-      ult: { cls: "valUlt", vals: [] },
-      env: { cls: "valEnv", vals: [] },
-      crit: { cls: "valCrit", vals: [] },
-    };
-
-    function addVals(bucket, arr) {
-      for (const x of arr) {
-        if (x === undefined || x === null || x === "" || x === "NaN") continue;
-        bucket.vals.push(String(x));
-      }
-    }
-
-    addVals(buckets.atk, [v.atk, r6(v.atk)]);
-    addVals(buckets.spd, [v.aspd, r6(v.aspd), Number(v.aspd).toFixed ? Number(v.aspd).toFixed(2) : ""]);
-    addVals(buckets.gauge, [v.gaugeMax, r6(v.gaugeMax), v.manaPerSec, r6(v.manaPerSec), $("manaRegenPct") ? readNumber($("manaRegenPct").value) : ""]);
-    addVals(buckets.a, [v.aP, r6(v.aP), v.aP * 100, r6(v.aP * 100), v.aF, v.aMul, r6(v.aMul)]);
-    addVals(buckets.b, [v.bP, r6(v.bP), v.bP * 100, r6(v.bP * 100), v.bN, v.bF, v.bMul, r6(v.bMul)]);
-    addVals(buckets.ult, [v.ultMul, r6(v.ultMul), v.ultF, r6(v.ultF)]);
-    addVals(buckets.env, [v.defReduce, v.physMul, r6(v.physMul), $("physMulOut") ? $("physMulOut").value : "", DIFF_DEF[v.envDiff] ?? ""]);
-    addVals(buckets.crit, [v.critChancePct, v.critPhysBonusPct, v.critMagicBonusPct, v.critChance, r6(v.critChance), v.critPhysBonus, r6(v.critPhysBonus), v.critMagicBonus, r6(v.critMagicBonus), v.critPhysMul, r6(v.critPhysMul), v.critMagicMul, r6(v.critMagicMul), ex.physCritGainDPS, r6(ex.physCritGainDPS), ex.magicCritGainDPS, r6(ex.magicCritGainDPS), ex.totalCritGainDPS, r6(ex.totalCritGainDPS)]);
-
-    const items = Object.values(buckets).flatMap(o => {
-      const uniq = [...new Set(o.vals.filter(x => x !== "undefined"))];
-      uniq.sort((a,b) => b.length - a.length);
-      return uniq.map(val => ({cls:o.cls, val}));
-    });
-
-    for (const it of items) {
-      const esc = it.val.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      s = s.replace(new RegExp(`(^|[^\\d.])(${esc})(?![\\d.])`, "g"), `$1<span class="hlVal ${it.cls}">$2</span>`);
-    }
-
-    return s.replace(/\n/g, "<br>");
-  }
-
-  function buildFormulaHtml(v, res, ex, eff, tb, br) {
-    return highlightFormulaHtml(buildFormulaText(v, res, ex, eff, tb, br), v, ex);
-  }
-
-
-  
-  function escHtml(s) {
-    return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-  }
-
-
-  function hVal(cls, val) {
-    return `<span class="hlVal ${cls}">${escHtml(val)}</span>`;
-  }
-
-
-  function lineHtml(s) {
-    return `${s}<br>`;
-  }
-
-function buildDetailHtml(v, res, ex, eff, tb, br) {
-    const d = res.detail;
-    const diffLabelMap = {
-      normal: "ノーマル",
-      hard: "ハード",
-      hell: "地獄",
-      god: "神",
-      prime: "太初",
-    };
-    const diffLabel = diffLabelMap[v.envDiff] || v.envDiff;
-    const baseDef = DIFF_DEF[v.envDiff] ?? 175;
-    const realDef = v.defReduce - baseDef;
-
-    let html = "";
-    html += lineHtml(`<span class="sectionHead">=== 行動レート（回/秒 / 秒/回）※究極時間込み平均 ===</span>`);
-    html += lineHtml(`非究極時間比率（=非究極F/周期F）: ${hVal("valMix", r6(ex.nonUltFrac))}`);
-    html += lineHtml(`行動合計（究極も1行動扱い）: ${hVal("valMix", r6(ex.actPerSec))} 回/秒 / ${hVal("valMix", ex.actPerSec > 0 ? r6(1 / ex.actPerSec) : "-")} 秒/回`);
-    html += lineHtml(`基本攻撃: ${hVal("valSpd", r6(ex.basicPerSec))} 回/秒 / ${hVal("valSpd", ex.basicPerSec > 0 ? r6(1 / ex.basicPerSec) : "-")} 秒/回`);
-    html += lineHtml(`スキルA: ${hVal("valA", r6(ex.aPerSec))} 回/秒 / ${hVal("valA", ex.aPerSec > 0 ? r6(1 / ex.aPerSec) : "-")} 秒/回`);
-    html += lineHtml(`スキルB: ${hVal("valB", r6(ex.bPerSec))} 回/秒 / ${hVal("valB", ex.bPerSec > 0 ? r6(1 / ex.bPerSec) : "-")} 秒/回`);
-    html += lineHtml(`究極: ${hVal("valUlt", r6(ex.ultPerSec))} 回/秒 / ${hVal("valUlt", ex.ultPerSec > 0 ? r6(1 / ex.ultPerSec) : "-")} 秒/回`);
-    if (v.ultType === "mana" && v.aUseGainMana5) {
-      html += lineHtml(`猫の魔法使い補正（スキルA由来マナ）: ${hVal("valA", r6((d.aManaPerFrame_nonUlt || 0) * F))} マナ/秒`);
-    }
-    if (v.ultType === "cool" && v.critABShortenUlt2s) {
-      html += lineHtml(`鬼神忍者補正（A/Bクリ由来クール短縮）: ${hVal("valUlt", r6((d.critAbShortenPerFrame_nonUlt || 0) * F))} 秒/秒`);
-    }
-
-    html += lineHtml("");
-    html += lineHtml(`<span class="sectionHead">=== 影響時間（平均・ダメージとは別計算） ===</span>`);
-    html += lineHtml(`同ユニット数: ${hVal("valMix", eff.unitCount)}`);
-    const copyACover = `${r6(eff.a.singleCoveragePct)}`;
-    const copyBCover = `${r6(eff.b.singleCoveragePct)}`;
-    const copyUCover = `${r6(eff.u.singleCoveragePct)}`;
-    const copyTotalCover = `${r6(eff.totalSingleCoveragePct)}`;
-    html += lineHtml(`スキルA: 回/秒=${hVal("valA", r6(eff.a.ratePerSec))} / 秒/回=${hVal("valA", eff.a.ratePerSec > 0 ? r6(eff.a.secPerProc) : "-")} / 影響F/秒=${hVal("valA", r6(eff.a.rawFPerSec))} / 単体稼働率=${hVal("valA", r6(eff.a.singleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valA", r6(eff.a.multiCoveragePct))}%${copyBtn(copyACover, "外部支援用コピー")}`);
-    html += lineHtml(`スキルB: 回/秒=${hVal("valB", r6(eff.b.ratePerSec))} / 秒/回=${hVal("valB", eff.b.ratePerSec > 0 ? r6(eff.b.secPerProc) : "-")} / 影響F/秒=${hVal("valB", r6(eff.b.rawFPerSec))} / 単体稼働率=${hVal("valB", r6(eff.b.singleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valB", r6(eff.b.multiCoveragePct))}%${copyBtn(copyBCover, "外部支援用コピー")}`);
-    html += lineHtml(`究極: 回/秒=${hVal("valUlt", r6(eff.u.ratePerSec))} / 秒/回=${hVal("valUlt", eff.u.ratePerSec > 0 ? r6(eff.u.secPerProc) : "-")} / 影響F/秒=${hVal("valUlt", r6(eff.u.rawFPerSec))} / 単体稼働率=${hVal("valUlt", r6(eff.u.singleCoveragePct))}% / ${eff.unitCount}体参考稼働率=${hVal("valUlt", r6(eff.u.multiCoveragePct))}%${copyBtn(copyUCover, "外部支援用コピー")}`);
-    if (eff.ultEvent.type !== "none" && eff.ultEvent.amount > 0) {
-      const ultEventText = eff.ultEvent.type === "manaPct"
-        ? `究極イベント支援: ${hVal("valUlt", eff.ultEvent.typeLabel)} / 効果量=${hVal("valUlt", r6(eff.ultEvent.amount * 100))}% / 単体発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.unitRate))} / ${eff.ultEvent.count}体合計発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.totalRate))} / 参考マナ増加=${hVal("valUlt", r6(eff.ultEvent.addManaPerSec))} /秒${copyBtn(`${r6(eff.ultEvent.unitRate)}`, "外部支援用コピー")}`
-        : `究極イベント支援: ${hVal("valUlt", eff.ultEvent.typeLabel)} / 効果量=${hVal("valUlt", r6(eff.ultEvent.amount * 100))}% / 単体発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.unitRate))} / ${eff.ultEvent.count}体合計発動回数/秒=${hVal("valUlt", r6(eff.ultEvent.totalRate))} / 参考クール短縮=${hVal("valUlt", r6(eff.ultEvent.addCoolPerSec))} 秒/秒${copyBtn(`${r6(eff.ultEvent.unitRate)}`, "外部支援用コピー")}`;
-      html += lineHtml(ultEventText);
-    }
-
-    html += lineHtml("");
-    html += lineHtml(`<span class="sectionHead">=== 環境（物理補正） ===</span>`);
-    html += lineHtml(`難易度: ${hVal("valEnv", diffLabel)}（80w防御力は難易度に応じて内部適用）`);
-    html += lineHtml(`防御力減少値: ${hVal("valEnv", v.defReduce)} / 実防御力=${hVal("valEnv", realDef)}`);
-    html += lineHtml(`物理補正倍率（小数第2位まで）: ${hVal("valMixEnvPhys", $("physMulOut").value)}`);
-    html += lineHtml(`クリ率: ${hVal("valCrit", $("critChancePct").value)} / 物理クリ補正: ${hVal("valCrit", $("critPhysBonusPct").value)} / 魔法クリ寄与補正: ${hVal("valCrit", $("critMagicBonusPct").value)}`);
-    html += lineHtml(`期待クリ倍率（物理/魔法）: ${hVal("valCrit", r6(v.critPhysMul))} / ${hVal("valCrit", r6(v.critMagicMul))}`);
-
-    html += lineHtml("");
-    html += lineHtml(`<span class="sectionHead">=== ダメージ内訳（DPS成分）と割合（合計=100%） ===</span>`);
-    html += lineHtml(`基本DPS成分: ${hVal(v.basicAttr === "phys" ? "valMixEnvPhys" : "valSpd", r6(ex.basicDPS))} / 基本割合(%): ${hVal("valSpd", r6(ex.basicPct))}`);
-    html += lineHtml(`スキルA DPS成分: ${hVal(v.aAttr === "phys" ? "valMixEnvPhys" : "valA", r6(ex.aDPS))} / スキルA割合(%): ${hVal("valA", r6(ex.aPct))}`);
-    html += lineHtml(`スキルB DPS成分: ${hVal(v.bAttr === "phys" ? "valMixEnvPhys" : "valB", r6(ex.bDPS))} / スキルB割合(%): ${hVal("valB", r6(ex.bPct))}`);
-    html += lineHtml(`究極DPS成分: ${hVal(v.uAttr === "phys" ? "valMixEnvPhys" : "valUlt", r6(ex.ultDPS))} / 究極割合(%): ${hVal("valUlt", r6(ex.ultPct))}`);
-
-    html += lineHtml("");
-    html += lineHtml(`<span class="sectionHead">=== 属性内訳（物理/魔法） ===</span>`);
-    html += lineHtml(`物理DPS: ${hVal("valMixEnvPhys", r6(tb.phys))} / 物理割合(%): ${hVal("valEnv", r6(tb.physPct))}`);
-    html += lineHtml(`魔法DPS: ${hVal("valMixAB", r6(tb.magic))} / 魔法割合(%): ${hVal("valMixAB", r6(tb.magicPct))}`);
-
-    html += lineHtml("");
-    html += lineHtml(`<span class="sectionHead">=== 特性内訳（単体/複数） ===</span>`);
-    html += lineHtml(`単体DPS: ${hVal("valMix", r6(tb.single))} / 単体割合(%): ${hVal("valMix", r6(tb.singlePct))}`);
-    html += lineHtml(`複数DPS: ${hVal("valMix", r6(tb.multi))} / 複数割合(%): ${hVal("valMix", r6(tb.multiPct))}`);
-
-    html += lineHtml("");
-    html += lineHtml(`<span class="sectionHead">=== クリティカル寄与内訳 ===</span>`);
-    html += lineHtml(`物理クリ寄与DPS: ${hVal("valCrit", r6(ex.physCritGainDPS))} / 割合(%): ${hVal("valCrit", r6(ex.physCritGainPct))}`);
-    html += lineHtml(`魔法クリ寄与DPS: ${hVal("valCrit", r6(ex.magicCritGainDPS))} / 割合(%): ${hVal("valCrit", r6(ex.magicCritGainPct))}`);
-    html += lineHtml(`合計クリ寄与DPS: ${hVal("valCrit", r6(ex.totalCritGainDPS))} / 割合(%): ${hVal("valCrit", r6(ex.totalCritGainPct))}`);
-
-    if (br) {
-      html += lineHtml("");
-      html += lineHtml(`<span class="sectionHead">=== 境界(40F)による厳密レンジ（開始位相で±1tickの差） ===</span>`);
-      html += lineHtml(`究極中のtick数: ${hVal("valUlt", br.minTick)}〜${hVal("valUlt", br.maxTick)} （1tickあたり+${hVal("valGauge", br.perTick)} ${v.ultType === "mana" ? "マナ" : "クールタイム"}${br.fixedGainDuringUlt > 0 ? ` / 外部支援固定+${hVal("valGauge", r6(br.fixedGainDuringUlt))}` : ""}）`);
-      html += lineHtml(`DPSレンジ: ${hVal("valMix", r6(br.lo))} 〜 ${hVal("valMix", r6(br.hi))}`);
-    }
-
-    html += lineHtml("");
-    html += lineHtml(`<span class="sectionHead">--- 検算（丸めで微差が出る場合あり） ---</span>`);
-    html += lineHtml(`内訳合計DPS（基本+スキルA+スキルB+究極）: ${hVal("valMix", r6(ex.checkTotalDPS))}`);
-    html += lineHtml(`表示DPS（周期合成）: ${hVal("valMix", r6(res.dps))}`);
-    return html;
-  }
-
-
-  function buildLegendHtml() {
-    const items = [
-      ["valAtk", "攻撃力"],
-      ["valSpd", "攻撃速度 / 基本攻撃系"],
-      ["valGauge", "マナ・クールタイム・ゲージ系"],
-      ["valA", "スキルA系"],
-      ["valB", "スキルB系"],
-      ["valUlt", "究極系"],
-      ["valEnv", "環境・防御系"],
-      ["valCrit", "クリティカル系"],
-      ["valMix", "複合・最終結果"],
-      ["valMixAB", "魔法寄り複合"],
-      ["valMixEnvPhys", "物理補正込み複合"],
-    ];
-    let html = '<div class="legendTitle">色凡例</div><div class="legendItems">';
-    for (const [cls, label] of items) {
-      html += `<span class="legendItem"><span class="hlVal legendSwatch ${cls}">${label}</span></span>`;
-    }
-    html += '</div>';
-    return html;
+    lines.push(`cA = 楽師→Z 被覆率 = ${r6(assist.cA)}`);
+    lines.push(`cB = 師父→Z 被覆率 = ${r6(assist.cB)}`);
+    lines.push(`P0 = (1-cA)(1-cB) = ${r6(assist.p0)}`);
+    lines.push(`P20 = cA(1-cB) + (1-cA)cB = ${r6(assist.p20)}`);
+    lines.push(`P40 = cA×cB = ${r6(assist.p40)}`);
+    assistStates.forEach((state) => lines.push(`${state.label} DPS = ${r6(state.dps)}（攻速 ${r6(state.aspd)}）`));
+    const s0 = assistStates.find((s) => s.label === '0%帯');
+    const s20 = assistStates.find((s) => s.label === '20%帯');
+    const s40 = assistStates.find((s) => s.label === '40%帯');
+    lines.push(`期待DPS = ${r6(assist.p0)}×${r6(s0 ? s0.dps : 0)} + ${r6(assist.p20)}×${r6(s20 ? s20.dps : 0)} + ${r6(assist.p40)}×${r6(s40 ? s40.dps : 0)}`);
+    lines.push(`= ${r6(bundle.res.dps)}`);
+    return lines.join('<br>');
   }
 
   function syncUiState() {
     syncUltType();
-    syncAttackSpeedInputs();
     syncSkillAMode();
     syncSkillBMode();
+    syncExternalSupportRows();
     syncSegmentsFromHidden();
     syncEnvDerivedUI();
+    syncAttackSpeedInputs();
+    syncAssistAttackSpeedInputs();
     syncNoteVisibility();
     updateSummaryCards();
   }
+
 
   function clearResultBars() {
     RESULT_BAR_IDS.forEach(([fillId, valId]) => setBar(fillId, valId, 0));
@@ -1930,33 +1400,24 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
   }
 
   function collectResultBundle(v) {
-    const res = calcTotal(v);
-    if (res.err) return { v, res, err: res.err };
-    const ex = calcRatesAndShares(v, res);
-    const effBase = calcEffectTimes(v, ex);
-    const eff = {
-      ...effBase,
-      ultEvent: {
-        type: v.ultEventType || "none",
-        typeLabel: supportTypeLabel(v.ultEventType || "none"),
-        amount: Math.max(0, v.ultEventAmount || 0),
-        unitRate: (v.ultType === "none") ? 0 : Math.max(0, ex.ultPerSec || 0),
-        count: Math.max(1, Math.min(36, v.sameUnitCount || 1)),
-        totalRate: 0,
-        addManaPerSec: 0,
-        addCoolPerSec: 0,
-      }
-    };
-    eff.ultEvent.totalRate = eff.ultEvent.unitRate * eff.ultEvent.count;
-    if (eff.ultEvent.type === "manaPct") {
-      eff.ultEvent.addManaPerSec = eff.ultEvent.totalRate * Math.max(0, v.gaugeMax || 0) * eff.ultEvent.amount;
-    } else if (eff.ultEvent.type === "coolRemainPct") {
-      eff.ultEvent.addCoolPerSec = eff.ultEvent.totalRate * Math.max(0, v.gaugeMax || 0) * eff.ultEvent.amount * 0.5;
+    const assist = calcMutualSpeedAssist();
+    updateAssistOutputs(assist);
+    if (assist.enabled) {
+      if (assist.err) return { v, err: assist.err, assistMode: true, assist };
+      const stateBundles = [
+        { label: '0%帯', prob: assist.p0, bonusPct: 0 },
+        { label: '20%帯', prob: assist.p20, bonusPct: 20 },
+        { label: '40%帯', prob: assist.p40, bonusPct: 40 },
+      ].map((state) => {
+        const stateV = { ...v, aspd: clampAspd(v.baseSpd * (v.bowSpd + (v.ext?.tempSpeedBowAdd || 0) + (state.bonusPct / 100)) * v.shareSpd) };
+        return { ...state, bundle: collectResultBundleSingle(stateV) };
+      });
+      for (const s of stateBundles) if (s.bundle.err) return { v, err: s.bundle.err, assistMode: true, assist };
+      return mergeAssistBundles(v, assist, stateBundles);
     }
-    const tb = calcTypeBreakdown(v, ex);
-    const br = calcBoundaryRange(v, res);
-    return { v, res, ex, eff, tb, br, err: null };
+    return collectResultBundleSingle(v);
   }
+
 
   function applyResultBundle(bundle) {
     const { v, res, ex, eff, tb, br } = bundle;
@@ -1994,14 +1455,20 @@ function buildDetailHtml(v, res, ex, eff, tb, br) {
     if ($("effectB")) $("effectB").innerHTML = `${r6(eff.b.ratePerSec)} 回/秒 / ${eff.b.ratePerSec > 0 ? r6(eff.b.secPerProc) : "-"} 秒/回 / ${v.bImpactF}F → ${r6(eff.b.rawFPerSec)}F/秒（単体 ${r6(eff.b.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.b.multiCoveragePct)}%）${copyBtn(copyBCoverMini, "コピー")}`;
     if ($("effectU")) $("effectU").innerHTML = `${r6(eff.u.ratePerSec)} 回/秒 / ${eff.u.ratePerSec > 0 ? r6(eff.u.secPerProc) : "-"} 秒/回 / ${v.ultImpactF}F → ${r6(eff.u.rawFPerSec)}F/秒（単体 ${r6(eff.u.singleCoveragePct)}%, ${eff.unitCount}体 ${r6(eff.u.multiCoveragePct)}%）${copyBtn(copyUCoverMini, "コピー")}${ultEventMini}`;
 
-    $("detailOut").innerHTML = buildDetailHtml(v, res, ex, eff, tb, br);
-    $("detailLegend").innerHTML = buildLegendHtml();
-    $("formulaOut").innerHTML = buildFormulaHtml(v, res, ex, eff, tb, br);
-    $("formulaLegend").innerHTML = buildLegendHtml();
+    if (bundle.assistMode) {
+      $("detailOut").innerHTML = buildAssistDetailHtml(bundle);
+      $("detailLegend").innerHTML = buildLegendHtml();
+      $("formulaOut").innerHTML = buildAssistFormulaHtml(bundle);
+      $("formulaLegend").innerHTML = buildLegendHtml();
+    } else {
+      $("detailOut").innerHTML = buildDetailHtml(v, res, ex, eff, tb, br);
+      $("detailLegend").innerHTML = buildLegendHtml();
+      $("formulaOut").innerHTML = buildFormulaHtml(v, res, ex, eff, tb, br);
+      $("formulaLegend").innerHTML = buildLegendHtml();
+    }
   }
 
 function render() {
-    syncAttackSpeedInputs();
     syncUiState();
 
     const v = getValInternal();
@@ -2048,28 +1515,33 @@ function render() {
   }
 
   function applyFormState(v) {
-    for (const [k, val] of Object.entries(v || {})) {
+    const state = { ...(v || {}) };
+    if ((state.baseSpd == null || state.baseSpd === "") && state.aspd != null) {
+      state.baseSpd = state.aspd;
+      state.bowSpd = state.bowSpd ?? "1";
+      state.shareSpd = state.shareSpd ?? "1";
+    }
+    if ((state.assistPengBaseSpd == null || state.assistPengBaseSpd === "") && state.assistPengAspd != null) {
+      state.assistPengBaseSpd = state.assistPengAspd;
+      state.assistPengBowSpd = state.assistPengBowSpd ?? "1";
+      state.assistPengShareSpd = state.assistPengShareSpd ?? "1";
+    }
+    if ((state.assistTigerBaseSpd == null || state.assistTigerBaseSpd === "") && state.assistTigerAspd != null) {
+      state.assistTigerBaseSpd = state.assistTigerAspd;
+      state.assistTigerBowSpd = state.assistTigerBowSpd ?? "1";
+      state.assistTigerShareSpd = state.assistTigerShareSpd ?? "1";
+    }
+    if (state.aType == null || state.aType === "") state.aType = "use";
+    for (const [k, val] of Object.entries(state)) {
       const el = $(k);
       if (!el) continue;
       if (el.type === "checkbox") el.checked = !!val;
       else el.value = val;
     }
+    syncAttackSpeedInputs();
+    syncAssistAttackSpeedInputs();
   }
 
-  function migrateLegacyState(state) {
-    state = Object.assign({}, state || {});
-    if ((state.baseSpd == null || state.baseSpd === '') && state.aspd != null && state.aspd !== '') {
-      state.baseSpd = state.aspd;
-      state.bowSpd = state.bowSpd ?? '1';
-      state.shareSpd = state.shareSpd ?? '1';
-    }
-    if (state.aType == null || state.aType === '') state.aType = 'use';
-    for (let i = 1; i <= 6; i++) {
-      const impactKey = 'ext' + i + 'ImpactF';
-      if (state[impactKey] == null || state[impactKey] === '') state[impactKey] = '0';
-    }
-    return state;
-  }
 
   function getStoredStateRaw() {
     for (const key of STORAGE_KEYS) {
@@ -2099,7 +1571,7 @@ function render() {
         if (!silent) alert("保存データがありません");
         return false;
       }
-      applyFormState(migrateLegacyState(JSON.parse(found.raw)));
+      applyFormState(JSON.parse(found.raw));
       normalizeAll();
       syncUiState();
       validateAndRender();
@@ -2163,12 +1635,40 @@ function render() {
       $("ext" + i + "Type").value = "none";
       $("ext" + i + "Amount").value = "";
       $("ext" + i + "Base").value = "";
+      $("ext" + i + "ImpactF").value = "";
       $("ext" + i + "Count").value = "1";
-      $("ext" + i + "ImpactF").value = "0";
     }
+
+    if ($("assistEnabled")) $("assistEnabled").checked = false;
+    if ($("assistPengCount")) $("assistPengCount").value = "1";
+    if ($("assistPengRegenPct")) $("assistPengRegenPct").value = "100%";
+    if ($("assistPengBaseSpd")) $("assistPengBaseSpd").value = "2.40";
+    if ($("assistPengBowSpd")) $("assistPengBowSpd").value = "1.00";
+    if ($("assistPengShareSpd")) $("assistPengShareSpd").value = "1.00";
+    if ($("assistPengAspd")) $("assistPengAspd").value = "2.40";
+    if ($("assistPengAPct")) $("assistPengAPct").value = "10.0%";
+    if ($("assistPengAF")) $("assistPengAF").value = "32";
+    if ($("assistPengBProb")) $("assistPengBProb").value = "0.0%";
+    if ($("assistPengBF")) $("assistPengBF").value = "40";
+    if ($("assistTigerCount")) $("assistTigerCount").value = "1";
+    if ($("assistTigerRegenPct")) $("assistTigerRegenPct").value = "100%";
+    if ($("assistTigerBaseSpd")) $("assistTigerBaseSpd").value = "2.40";
+    if ($("assistTigerBowSpd")) $("assistTigerBowSpd").value = "1.00";
+    if ($("assistTigerShareSpd")) $("assistTigerShareSpd").value = "1.00";
+    if ($("assistTigerAspd")) $("assistTigerAspd").value = "2.40";
+    if ($("assistTigerGaugeMax")) $("assistTigerGaugeMax").value = "100";
+    if ($("assistTigerAPct")) $("assistTigerAPct").value = "10.0%";
+    if ($("assistTigerAF")) $("assistTigerAF").value = "32";
+    if ($("assistTigerUltReset")) $("assistTigerUltReset").value = "end";
+    if ($("assistTigerUltF")) $("assistTigerUltF").value = "44";
+    if ($("assistTigerUltStopsGauge")) $("assistTigerUltStopsGauge").checked = true;
+    if ($("assistTigerUltEventType")) $("assistTigerUltEventType").value = "none";
+    if ($("assistTigerUltEventAmount")) $("assistTigerUltEventAmount").value = "0%";
 
     $("showNotes").checked = false;
   }
+
+  syncUiState();
 
   syncUiState();
   seedDefaults();
