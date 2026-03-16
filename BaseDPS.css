@@ -424,6 +424,7 @@ button:hover{ filter:brightness(1.07); }
 .supportHintTop{ color:var(--mut); font-size:12px; margin:2px 0 8px; line-height:1.4; }
 .supportRow{ border:1px solid var(--line); border-radius:12px; padding:10px; background:#0e141c; margin-top:10px; }
 .supportHead{ margin-bottom:8px; }
+.supportFields{ display:flex; flex-direction:column; gap:10px; }
 .supportGrid{ display:grid; grid-template-columns: 1.35fr .8fr 1.1fr .55fr; gap:8px 10px; align-items:end; }
 @media(max-width:859px){ .supportGrid{ grid-template-columns: 1fr 1fr; } }
 .supportGrid .lbl{ font-size:11px; }
@@ -452,7 +453,7 @@ button:hover{ filter:brightness(1.07); }
 .calcOverlay[hidden] { display: none; }
 .calcOverlay { position: fixed; inset: 0; z-index: 2000; touch-action: manipulation; }
 .calcBackdrop { position: absolute; inset: 0; background: rgba(0,0,0,.55); }
-.calcModal { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(92vw, 420px); background: #1a1d28; border: 1px solid rgba(255,255,255,.12); border-radius: 18px; box-shadow: 0 16px 48px rgba(0,0,0,.45); padding: 14px; touch-action: manipulation; }
+.calcModal { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(92vw, 420px); background: #1a1d28; border: 1px solid rgba(255,255,255,.12); border-radius: 18px; box-shadow: 0 16px 48px rgba(0,0,0,.45); padding: 14px; }
 .calcHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
 .calcTitle { font-weight: 800; font-size: 18px; }
 .calcClose { border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color: #fff; border-radius: 10px; width: 38px; height: 38px; font-size: 20px; cursor: pointer; }

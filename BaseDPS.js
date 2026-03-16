@@ -1,7 +1,7 @@
 (() => {
-  const APP_VERSION = "v8_9_16";
+  const APP_VERSION = "v8_9_17";
   const F = 40;
-  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_16", "LD_DPS_TOOL_V8_9_15", "LD_DPS_TOOL_V8_9_14", "LD_DPS_TOOL_V8_9_13", "LD_DPS_TOOL_V8_9_12", "LD_DPS_TOOL_V8_9_10", "LD_DPS_TOOL_V8_9_9", "LD_DPS_TOOL_V8_9_8", "LD_DPS_TOOL_V8_9_7", "LD_DPS_TOOL_V8_9_6", "LD_DPS_TOOL_V8_9_5", "LD_DPS_TOOL_V8_9_4", "LD_DPS_TOOL_V8_9_3", "LD_DPS_TOOL_V8_9_2", "LD_DPS_TOOL_V8_9_1", "LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
+  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_17", "LD_DPS_TOOL_V8_9_12", "LD_DPS_TOOL_V8_9_10", "LD_DPS_TOOL_V8_9_9", "LD_DPS_TOOL_V8_9_8", "LD_DPS_TOOL_V8_9_7", "LD_DPS_TOOL_V8_9_6", "LD_DPS_TOOL_V8_9_5", "LD_DPS_TOOL_V8_9_4", "LD_DPS_TOOL_V8_9_3", "LD_DPS_TOOL_V8_9_2", "LD_DPS_TOOL_V8_9_1", "LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
   const MANUAL_SLOT_KEYS = ["LD_DPS_TOOL_SLOT1", "LD_DPS_TOOL_SLOT2", "LD_DPS_TOOL_SLOT3"];
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
@@ -454,22 +454,18 @@
 
   let _calcTargetId = null;
 
-  function isCalculatorEligibleInput(el) {
-    if (!el || el.tagName !== "INPUT") return false;
-    if ((el.type || "text") !== "text") return false;
-    if (el.id === "calcDisplay") return false;
-    if (el.classList.contains("computedField")) return false;
-    if (el.dataset.calcIgnore === "true") return false;
-    if (el.readOnly) return false;
-    if (el.closest("#detailBody") || el.closest("#resultCard")) return false;
-    return true;
-  }
-
   function getCalcFieldIds() {
-    return Array.from(document.querySelectorAll('input[type="text"]'))
-      .filter(isCalculatorEligibleInput)
-      .map((el) => el.id)
-      .filter(Boolean);
+    const ids = [
+      "atk", "basicMulPct", "aspd", "gaugeMax", "sameUnitCount",
+      "manaRegenPct", "defReduce", "critChancePct", "critPhysBonusPct", "critMagicBonusPct",
+      "ultMulPct", "ultF", "ultImpactF", "ultEventAmount",
+      "aMulPct", "aPPct", "aF", "aImpactF",
+      "bMulPct", "bThird", "bF", "bImpactF",
+    ];
+    for (let i = 1; i <= 6; i++) {
+      ids.push(`ext${i}Amount`, `ext${i}Base`, `ext${i}Count`);
+    }
+    return ids;
   }
 
   function getCalcFieldLabel(input) {
@@ -501,6 +497,7 @@
     if (id === "atk") return toAtkDisplay(value);
     if (id === "aspd") return toAspdDisplay(value, 6);
     if (id === "gaugeMax") return toIntDisplay(value, 3);
+    if (id === "basicMulPct") return toPctDisplay(value, 6, 6);
     if (id === "sameUnitCount") return toIntDisplay(value, 2);
     if (id === "manaRegenPct") return toPctDisplay(value, 6, 4);
     if (id === "defReduce") return toIntDisplay(value, 3);
@@ -532,7 +529,7 @@
   function prepareCalculatorFields() {
     getCalcFieldIds().forEach((id) => {
       const el = $(id);
-      if (!isCalculatorEligibleInput(el)) return;
+      if (!el || el.type !== "text") return;
       el.classList.add("calcField");
       el.dataset.calcTarget = id;
       if (!el.dataset.calcLabel) el.dataset.calcLabel = getCalcFieldLabel(el);
@@ -540,23 +537,6 @@
       el.setAttribute("inputmode", "none");
       el.setAttribute("autocomplete", "off");
       el.setAttribute("spellcheck", "false");
-      el.setAttribute("tabindex", "0");
-      el.setAttribute("role", "button");
-      if (el.dataset.calcBound === "true") return;
-      const openSelf = (e) => {
-        if (e) { e.preventDefault(); e.stopPropagation(); }
-        openCalc(el.dataset.calcTarget || el.id);
-      };
-      el.addEventListener("click", openSelf);
-      el.addEventListener("pointerup", openSelf);
-      el.addEventListener("touchend", openSelf, { passive: false });
-      el.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          openCalc(el.dataset.calcTarget || el.id);
-        }
-      });
-      el.dataset.calcBound = "true";
     });
   }
 
@@ -610,10 +590,26 @@
 
   function setupCalculator() {
     prepareCalculatorFields();
+    document.querySelectorAll(".calcField").forEach((el) => {
+      if (el.dataset.calcBound === "true") return;
+      const openSelf = (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        openCalc(el.dataset.calcTarget || el.id);
+      };
+      el.addEventListener("click", openSelf);
+      el.addEventListener("pointerup", openSelf);
+      el.addEventListener("touchend", openSelf, { passive: false });
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openCalc(el.dataset.calcTarget || el.id);
+        }
+      });
+      el.dataset.calcBound = "true";
+    });
     if ($("calcDisplay")) { $("calcDisplay").setAttribute("readonly", "readonly"); $("calcDisplay").setAttribute("inputmode", "none"); }
     $("calcBackdrop")?.addEventListener("click", closeCalc);
     $("calcCloseBtn")?.addEventListener("click", closeCalc);
-
     const overlay = $("calcOverlay");
     const modal = overlay ? overlay.querySelector('.calcModal') : null;
     const eatZoomTap = (e) => {
@@ -631,7 +627,6 @@
       }
       lastTouchEndAt = now;
     }, { passive: false });
-
     $("calcDisplay")?.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); applyCalcValue(); }
       if (e.key === "Escape") { e.preventDefault(); closeCalc(); }
@@ -753,8 +748,9 @@
     const extUsed = Array.from({length:6}, (_,i)=> i+1).filter((i)=> $("ext"+i+"Enabled")?.checked).length;
     const ultEventText = $("ultEventType")?.selectedOptions?.[0]?.textContent || "無し";
     if ($("summaryEnv")) $("summaryEnv").textContent = `難易度:${envDiffText} / 防御減少:${$("defReduce")?.value || "-"} / Rege:${$("manaRegenPct")?.value || "-"}`;
-    if ($("summaryBasic")) $("summaryBasic").textContent = `攻撃力:${$("atk")?.value || "-"} / 基礎:${$("baseSpd")?.value || "-"} / 弓:${$("bowSpd")?.value || "-"} / 共有:${$("shareSpd")?.value || "-"} / 攻速:${$("aspd")?.value || "-"}`;
-    if ($("summaryA")) $("summaryA").textContent = `倍率:${$("aMulPct")?.value || "-"} / 確率:${$("aPPct")?.value || "-"} / F:${$("aF")?.value || "-"} / 影響F:${$("aImpactF")?.value || "0"}` + ($("aUseGainMana5")?.checked ? " / 猫ON" : "");
+    if ($("summaryBasic")) $("summaryBasic").textContent = `攻撃力:${$("atk")?.value || "-"} / 基本倍率:${$("basicMulPct")?.value || "-"} / 基礎:${$("baseSpd")?.value || "-"} / 弓:${$("bowSpd")?.value || "-"} / 共有:${$("shareSpd")?.value || "-"} / 攻速:${$("aspd")?.value || "-"}`;
+    const aTypeText = $("aType")?.selectedOptions?.[0]?.textContent || "-";
+    if ($("summaryA")) $("summaryA").textContent = `タイプ:${aTypeText} / 倍率:${$("aMulPct")?.value || "-"} / 確率:${$("aPPct")?.value || "-"} / F:${$("aF")?.value || "-"} / 影響F:${$("aImpactF")?.value || "0"}` + ($("aUseGainMana5")?.checked ? " / 猫ON" : "");
     const bTypeText = $("bType")?.selectedOptions?.[0]?.textContent || "-";
     const bThirdLabel = ($("bType")?.value === "count") ? "規定" : "確率";
     if ($("summaryB")) $("summaryB").textContent = `タイプ:${bTypeText} / 倍率:${$("bMulPct")?.value || "-"} / ${bThirdLabel}:${$("bThird")?.value || "-"} / F:${$("bF")?.value || "-"} / 影響F:${$("bImpactF")?.value || "0"}`;
@@ -766,6 +762,7 @@
 
   function initBindings() {
     bindField($("atk"), (v)=>sanitizeIntKeepComma(v,6), (v)=>toAtkDisplay(v));
+    bindField($("basicMulPct"), (v)=>trimDecimalsLive(v,6), (v)=>toPctDisplay(v,6,6));
     bindField($("baseSpd"), (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6));
     bindField($("bowSpd"), (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6));
     bindField($("shareSpd"), (v)=>trimDecimalsLive(v,6), (v)=>toAspdDisplay(v,6));
@@ -827,6 +824,7 @@
     $("ultReset").addEventListener("change", validateAndRender);
     $("ultStopsGauge").addEventListener("change", validateAndRender);
     $("aUseGainMana5").addEventListener("change", validateAndRender);
+    $("aType").addEventListener("change", validateAndRender);
     $("critABShortenUlt2s").addEventListener("change", validateAndRender);
     $("ultEventType").addEventListener("change", validateAndRender);
     $("bType").addEventListener("change", () => { syncSkillBMode(); validateAndRender(); });
@@ -953,6 +951,7 @@
 
   function normalizeAll() {
     $("atk").value = toAtkDisplay($("atk").value);
+    $("basicMulPct").value = toPctDisplay($("basicMulPct").value, 6, 6);
     $("baseSpd").value = toAspdDisplay($("baseSpd").value, 6);
     $("bowSpd").value = toAspdDisplay($("bowSpd").value, 6);
     $("shareSpd").value = toAspdDisplay($("shareSpd").value, 6);
@@ -1015,6 +1014,7 @@
 
   function getValInternal() {
     const atk = readInt($("atk").value);
+    const basicMul = readNumber($("basicMulPct").value) / 100;
     const baseSpd = readNumber($("baseSpd").value);
     const bowSpd = readNumber($("bowSpd").value);
     const shareSpd = readNumber($("shareSpd").value);
@@ -1086,7 +1086,7 @@
   }
 
   function clearErrAll() {
-    const ids = ["atk","baseSpd","bowSpd","shareSpd","aspd","gaugeMax","sameUnitCount","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","ultImpactF","ultEventAmount","aMulPct","aPPct","aF","aImpactF","bMulPct","bThird","bF","bImpactF","ext1Amount","ext1Base","ext1Count","ext2Amount","ext2Base","ext2Count","ext3Amount","ext3Base","ext3Count","ext4Amount","ext4Base","ext4Count","ext5Amount","ext5Base","ext5Count","ext6Amount","ext6Base","ext6Count"];
+    const ids = ["atk","basicMulPct","baseSpd","bowSpd","shareSpd","aspd","gaugeMax","sameUnitCount","manaRegenPct","defReduce","critChancePct","critPhysBonusPct","critMagicBonusPct","ultMulPct","ultF","ultImpactF","ultEventAmount","aMulPct","aPPct","aF","aImpactF","bMulPct","bThird","bF","bImpactF","ext1Amount","ext1Base","ext1Count","ext2Amount","ext2Base","ext2Count","ext3Amount","ext3Base","ext3Count","ext4Amount","ext4Base","ext4Count","ext5Amount","ext5Base","ext5Count","ext6Amount","ext6Base","ext6Count"];
     ids.forEach(id => setErr($(id), false));
     setLblErr($("regenLbl"), false);
   }
@@ -1098,6 +1098,9 @@
 
     const atk = readInt($("atk").value);
     if (atk <= 0) { setErr($("atk"), true); errors.push("攻撃力は1以上"); }
+
+    const basicMulPct = readNumber($("basicMulPct").value);
+    if (!(basicMulPct >= 0 && basicMulPct <= 999999)) { setErr($("basicMulPct"), true); errors.push("基本攻撃倍率は0〜999999%"); }
 
     const baseSpd = readNumber($("baseSpd").value);
     const bowSpd = readNumber($("bowSpd").value);
@@ -1222,7 +1225,7 @@
       const expACount = EA;
       const expBCount = 1;
       const expFrames = T0 * expBasicCount + fA * expACount + fB * expBCount;
-      const expDamage = v.atk * (expBasicCount * 1 + mA * expACount + mB * expBCount);
+      const expDamage = v.atk * (expBasicCount * v.basicMul + mA * expACount + mB * expBCount);
       const nonUltDPS = expDamage / (expFrames / F);
       const basicPerFrame = expBasicCount / expFrames;
       const aPerFrame = expACount / expFrames;
@@ -1288,7 +1291,7 @@
       return rate * v.atk * mul * basicMul * attrSupport * envMul * critMul * ext.finalMul;
     }
 
-    const basicNonUltDPS = componentNonUltDps("basic", basicPerSec_nonUlt, v.basicAttr, 1);
+    const basicNonUltDPS = componentNonUltDps("basic", basicPerSec_nonUlt, v.basicAttr, v.basicMul);
     const aNonUltDPS = componentNonUltDps("a", aPerSec_nonUlt, v.aAttr, v.aMul);
     const bNonUltDPS = componentNonUltDps("b", bPerSec_nonUlt, v.bAttr, (v.bType === "none" ? 0 : v.bMul));
     const nonUltDPS_adj = basicNonUltDPS + aNonUltDPS + bNonUltDPS;
@@ -1392,7 +1395,7 @@
     const mA = v.aMul;
     const mB = (v.bType === "none") ? 0 : v.bMul;
 
-    const basicDPS0 = basicPerSec * v.atk * 1;
+    const basicDPS0 = basicPerSec * v.atk * v.basicMul;
     const aDPS0 = aPerSec * v.atk * mA;
     const bDPS0 = bPerSec * v.atk * mB;
     const ultDPS0 = ultPerSec * v.atk * (hasUlt ? v.ultMul : 0);
@@ -1468,20 +1471,20 @@
 
     if (d.mode === "prob") {
       const denom = (d.avgFrames / 40);
-      const physW = (v.basicAttr === "phys" ? d.p0 * 1 : 0)
+      const physW = (v.basicAttr === "phys" ? d.p0 * v.basicMul : 0)
                   + (v.aAttr === "phys" ? d.pA * mA : 0)
                   + (v.bAttr === "phys" ? d.pB * mB : 0);
-      const magW  = (v.basicAttr === "magic" ? d.p0 * 1 : 0)
+      const magW  = (v.basicAttr === "magic" ? d.p0 * v.basicMul : 0)
                   + (v.aAttr === "magic" ? d.pA * mA : 0)
                   + (v.bAttr === "magic" ? d.pB * mB : 0);
       return { phys: v.atk * physW / denom, magic: v.atk * magW / denom };
     }
 
     const denom = d.expFrames / 40;
-    const physW = (v.basicAttr === "phys" ? d.expBasicCount * 1 : 0)
+    const physW = (v.basicAttr === "phys" ? d.expBasicCount * v.basicMul : 0)
                 + (v.aAttr === "phys" ? d.expACount * mA : 0)
                 + (v.bAttr === "phys" ? d.expBCount * mB : 0);
-    const magW  = (v.basicAttr === "magic" ? d.expBasicCount * 1 : 0)
+    const magW  = (v.basicAttr === "magic" ? d.expBasicCount * v.basicMul : 0)
                 + (v.aAttr === "magic" ? d.expACount * mA : 0)
                 + (v.bAttr === "magic" ? d.expBCount * mB : 0);
     return { phys: v.atk * physW / denom, magic: v.atk * magW / denom };
@@ -1631,8 +1634,8 @@ function calcBoundaryRange(v, res) {
       lines.push(`  = 1 − ${r6(d.pA)} − ${r6(d.pB)} = ${r6(d.p0)}`);
       lines.push("平均行動F = 基本攻撃確率×基本攻撃F + スキルA確率×スキルA_F + スキルB確率×スキルB_F");
       lines.push(`  = ${r6(d.p0)}×${r6(d.T0)} + ${r6(d.pA)}×${v.aF} + ${r6(d.pB)}×${v.bF} = ${r6(d.avgFrames)}`);
-      lines.push("平均倍率 = 基本攻撃確率×100% + スキルA確率×スキルA倍率 + スキルB確率×スキルB倍率");
-      lines.push(`  = ${r6(d.p0)}×1 + ${r6(d.pA)}×${r6(v.aMul)} + ${r6(d.pB)}×${r6(v.bMul)} = ${r6(d.avgMul)}`);
+      lines.push("平均倍率 = 基本攻撃確率×基本攻撃倍率 + スキルA確率×スキルA倍率 + スキルB確率×スキルB倍率");
+      lines.push(`  = ${r6(d.p0)}×${r6(v.basicMul)} + ${r6(d.pA)}×${r6(v.aMul)} + ${r6(d.pB)}×${r6(v.bMul)} = ${r6(d.avgMul)}`);
       lines.push("非究極DPS = 攻撃力 × 平均倍率 / (平均行動F / 40)");
       lines.push(`  = ${r6(v.atk)} × ${r6(d.avgMul)} / (${r6(d.avgFrames)} / 40) = ${r6(d.nonUltDPS)}`);
     } else if (d.mode === "countBasic") {
@@ -1644,8 +1647,8 @@ function calcBoundaryRange(v, res) {
       lines.push(`  = ${r6(d.T0)}×${r6(d.expBasicCount)} + ${v.aF}×${r6(d.expACount)} + ${v.bF} = ${r6(d.expFrames)}`);
       lines.push("非究極周期秒 = 非究極周期F / 40");
       lines.push(`  = ${r6(d.expFrames)} / 40 = ${r6(secPerUnit)}`);
-      lines.push("非究極周期ダメージ = 攻撃力 × (基本攻撃回数×100% + 期待スキルA回数×スキルA倍率 + スキルB倍率)");
-      lines.push(`  = ${r6(v.atk)} × (${r6(d.expBasicCount)}×1 + ${r6(d.expACount)}×${r6(v.aMul)} + ${r6(v.bMul)}) = ${r6(d.expDamage)}`);
+      lines.push("非究極周期ダメージ = 攻撃力 × (基本攻撃回数×基本攻撃倍率 + 期待スキルA回数×スキルA倍率 + スキルB倍率)");
+      lines.push(`  = ${r6(v.atk)} × (${r6(d.expBasicCount)}×${r6(v.basicMul)} + ${r6(d.expACount)}×${r6(v.aMul)} + ${r6(v.bMul)}) = ${r6(d.expDamage)}`);
       lines.push("非究極DPS = 非究極周期ダメージ / (非究極周期F / 40)");
       lines.push(`  = ${r6(d.expDamage)} / (${r6(d.expFrames)} / 40) = ${r6(d.nonUltDPS)}`);
       lines.push("※ 既存仕様どおり、期待回数ベースの平均周期近似です。");
@@ -1755,7 +1758,7 @@ function calcBoundaryRange(v, res) {
 
     lines.push("");
     lines.push("■ ダメージ内訳（DPS成分）");
-    lines.push(`基本DPS成分 = ${r6(ex.basicPerSec)} × ${r6(v.atk)} × 1 × ${r6(ex.basicBaseMul)} × ${r6(ex.basicCritMul)} = ${r6(ex.basicDPS)}`);
+    lines.push(`基本DPS成分 = ${r6(ex.basicPerSec)} × ${r6(v.atk)} × ${r6(v.basicMul)} × ${r6(ex.basicBaseMul)} × ${r6(ex.basicCritMul)} = ${r6(ex.basicDPS)}`);
     lines.push(`スキルA DPS成分 = ${r6(ex.aPerSec)} × ${r6(v.atk)} × ${r6(v.aMul)} × ${r6(ex.aBaseMul)} × ${r6(ex.aCritMul)} = ${r6(ex.aDPS)}`);
     lines.push(`スキルB DPS成分 = ${r6(ex.bPerSec)} × ${r6(v.atk)} × ${r6((v.bType === "none") ? 0 : v.bMul)} × ${r6(ex.bBaseMul)} × ${r6(ex.bCritMul)} = ${r6(ex.bDPS)}`);
     lines.push(`究極DPS成分 = ${r6(ex.ultPerSec)} × ${r6(v.atk)} × ${r6(hasUlt ? v.ultMul : 0)} × ${r6(ex.uBaseMul)} × ${r6(ex.uCritMul)} = ${r6(ex.ultDPS)}`);
@@ -2482,6 +2485,8 @@ function render() {
       state.assistPengBowSpd = state.assistPengBowSpd ?? "1";
       state.assistPengShareSpd = state.assistPengShareSpd ?? "1";
     }
+    if (state.aType === "use") state.aType = "prob";
+    if (state.basicMulPct == null || state.basicMulPct === "") state.basicMulPct = "100%";
     if ((state.baseSpd == null || state.baseSpd === "") && state.aspd != null) {
       state.baseSpd = state.aspd;
       state.bowSpd = state.bowSpd ?? "1";
@@ -2551,6 +2556,7 @@ function render() {
 
   function seedDefaults() {
     $("atk").value = "1500";
+    $("basicMulPct").value = "100%";
     $("baseSpd").value = "2.40";
     $("bowSpd").value = "1.00";
     $("shareSpd").value = "1.00";
@@ -2575,6 +2581,7 @@ function render() {
     $("ultStopsGauge").checked = true;
     $("critABShortenUlt2s").checked = false;
 
+    $("aType").value = "prob";
     $("aMulPct").value = "600%";
     $("aPPct").value = "10.0%";
     $("aF").value = "32";
