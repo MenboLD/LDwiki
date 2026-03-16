@@ -1,7 +1,7 @@
 (() => {
-  const APP_VERSION = "v8_9_17";
+  const APP_VERSION = "v8_9_18";
   const F = 40;
-  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_17", "LD_DPS_TOOL_V8_9_12", "LD_DPS_TOOL_V8_9_10", "LD_DPS_TOOL_V8_9_9", "LD_DPS_TOOL_V8_9_8", "LD_DPS_TOOL_V8_9_7", "LD_DPS_TOOL_V8_9_6", "LD_DPS_TOOL_V8_9_5", "LD_DPS_TOOL_V8_9_4", "LD_DPS_TOOL_V8_9_3", "LD_DPS_TOOL_V8_9_2", "LD_DPS_TOOL_V8_9_1", "LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
+  const STORAGE_KEYS = ["LD_DPS_TOOL_V8_9_18", "LD_DPS_TOOL_V8_9_17", "LD_DPS_TOOL_V8_9_12", "LD_DPS_TOOL_V8_9_10", "LD_DPS_TOOL_V8_9_9", "LD_DPS_TOOL_V8_9_8", "LD_DPS_TOOL_V8_9_7", "LD_DPS_TOOL_V8_9_6", "LD_DPS_TOOL_V8_9_5", "LD_DPS_TOOL_V8_9_4", "LD_DPS_TOOL_V8_9_3", "LD_DPS_TOOL_V8_9_2", "LD_DPS_TOOL_V8_9_1", "LD_DPS_TOOL_V8_8_19", "LD_DPS_TOOL_V8_8_18", "LD_DPS_TOOL_V8_8_13", "LD_DPS_TOOL_V8_8_8", "LD_DPS_TOOL_V8_8_7"];
   const MANUAL_SLOT_KEYS = ["LD_DPS_TOOL_SLOT1", "LD_DPS_TOOL_SLOT2", "LD_DPS_TOOL_SLOT3"];
   // ---------- PVカウント（SupabaseへINSERT） ----------
   const PV_SITE_NAME = "BaseDPS";
@@ -1050,6 +1050,7 @@
     const ultStopsGauge = $("ultStopsGauge").checked;
     const critABShortenUlt2s = $("critABShortenUlt2s").checked;
 
+    const aType = $("aType").value;
     const aMul = readNumber($("aMulPct").value) / 100;
     const aP = readNumber($("aPPct").value) / 100;
     const aF = readInt($("aF").value);
@@ -1076,10 +1077,10 @@
 
     const supports = getSupportRows();
 
-    const base = { atk, baseSpd, bowSpd, shareSpd, aspd, gaugeMax, sameUnitCount, manaPerSec, envDiff, baseDef, defReduce, realDef, physMul,
+    const base = { atk, basicMul, baseSpd, bowSpd, shareSpd, aspd, gaugeMax, sameUnitCount, manaPerSec, envDiff, baseDef, defReduce, realDef, physMul,
       critChancePct, critPhysBonusPct, critMagicBonusPct, critChance, critPhysBonus, critMagicBonus, critPhysMul, critMagicMul,
       ultType, ultReset, ultMul, ultF, ultImpactF, ultEventType, ultEventAmount, ultStopsGauge, critABShortenUlt2s,
-      aMul, aP, aF, aImpactF, aUseGainMana5, bType, bMul, bF, bImpactF, bP, bN,
+      aType, aMul, aP, aF, aImpactF, aUseGainMana5, bType, bMul, bF, bImpactF, bP, bN,
       basicAttr, basicTarget, aAttr, aTarget, bAttr, bTarget, uAttr, uTarget, supports };
     base.ext = calcExternalSupportAgg(base);
     return base;
@@ -1140,6 +1141,7 @@
       }
     }
 
+    const aType = $("aType").value;
     const aPpct = readNumber($("aPPct").value);
     if (aPpct < 0 || aPpct > 90) { setErr($("aPPct"), true); errors.push("スキルA確率は0〜90.0%"); }
     const aImpactF = readInt($("aImpactF").value);
@@ -1152,10 +1154,11 @@
       const bPpct = readNumber($("bThird").value);
       if (bPpct < 0 || bPpct > 90) { setErr($("bThird"), true); errors.push("スキルB確率は0〜90.0%"); }
 
-      if (aPpct + bPpct > 100) {
+      const effectiveAPpct = (aType === "none") ? 0 : aPpct;
+      if (effectiveAPpct + bPpct > 100) {
         errors.push("スキルA確率 + スキルB確率 が100%を超えています");
-        if (aPpct > bPpct) setErr($("aPPct"), true);
-        else if (bPpct > aPpct) setErr($("bThird"), true);
+        if (effectiveAPpct > bPpct) setErr($("aPPct"), true);
+        else if (bPpct > effectiveAPpct) setErr($("bThird"), true);
         else { setErr($("aPPct"), true); setErr($("bThird"), true); }
       }
     }
@@ -1203,14 +1206,14 @@
   function calcNonUlt(v) {
     const T0 = F / v.aspd;
     const ext = v.ext || calcExternalSupportAgg(v);
-    let pA = clamp01(v.aP);
+    let pA = (v.aType === "none") ? 0 : clamp01(v.aP);
     let pBsrc = (v.bType === "prob") ? clamp01(v.bP) : 0;
     if (ext.procCoverage > 0 && ext.procMult > 0) {
       pA = (1 - ext.procCoverage) * pA + ext.procCoverage * Math.min(1, pA * ext.procMult);
       pBsrc = (1 - ext.procCoverage) * pBsrc + ext.procCoverage * Math.min(1, pBsrc * ext.procMult);
     }
-    const mA = v.aMul;
-    const fA = v.aF;
+    const mA = (v.aType === "none") ? 0 : v.aMul;
+    const fA = (v.aType === "none") ? 0 : v.aF;
 
     if (v.bType === "count") {
       const N = v.bN;
@@ -2486,6 +2489,7 @@ function render() {
       state.assistPengShareSpd = state.assistPengShareSpd ?? "1";
     }
     if (state.aType === "use") state.aType = "prob";
+    if (state.aType == null || state.aType === "") state.aType = "prob";
     if (state.basicMulPct == null || state.basicMulPct === "") state.basicMulPct = "100%";
     if ((state.baseSpd == null || state.baseSpd === "") && state.aspd != null) {
       state.baseSpd = state.aspd;
