@@ -1,0 +1,198 @@
+.ld-unit-info {
+  --ld-ui-border: #cfd6dd;
+  --ld-ui-bg: #ffffff;
+  --ld-ui-bg-sub: #f7f9fb;
+  --ld-ui-text: #1f2937;
+  --ld-ui-muted: #6b7280;
+  --ld-ui-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  --ld-ui-radius: 14px;
+  --ld-ui-row-h: 44px;
+  --ld-ui-image-size: calc(var(--ld-ui-row-h) * 3 - 8px);
+  --ld-ui-material-size: calc(var(--ld-ui-image-size) / 4);
+  color: var(--ld-ui-text);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.ld-unit-info *,
+.ld-unit-info *::before,
+.ld-unit-info *::after {
+  box-sizing: border-box;
+}
+
+.ld-unit-info__controls {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.ld-unit-info__control-label {
+  font-weight: 700;
+}
+
+.ld-unit-info__select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--ld-ui-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ld-ui-text);
+  font: inherit;
+}
+
+.ld-unit-info__status {
+  margin: 0 0 12px;
+  color: var(--ld-ui-muted);
+}
+
+.ld-unit-info__status.is-error {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+.ld-unit-info__panel[hidden] {
+  display: none !important;
+}
+
+.ld-unit-info__card {
+  overflow: hidden;
+  border: 1px solid var(--ld-ui-border);
+  border-radius: var(--ld-ui-radius);
+  background: var(--ld-ui-bg);
+  box-shadow: var(--ld-ui-shadow);
+}
+
+.ld-unit-info__table-wrap {
+  overflow-x: auto;
+}
+
+.ld-unit-info__table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: var(--ld-ui-bg);
+}
+
+.ld-unit-info__table th,
+.ld-unit-info__table td {
+  border: 1px solid var(--ld-ui-border);
+  padding: 8px 10px;
+}
+
+.ld-unit-info__table th.ld-unit-info__label {
+  width: 88px;
+  min-width: 88px;
+  text-align: right;
+  vertical-align: middle;
+  background: var(--ld-ui-bg-sub);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ld-unit-info__table td.ld-unit-info__value,
+.ld-unit-info__table td.ld-unit-info__name-value {
+  text-align: center;
+  vertical-align: middle;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.ld-unit-info__table td.ld-unit-info__name-value {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.ld-unit-info__table td.ld-unit-info__image-cell,
+.ld-unit-info__table td.ld-unit-info__materials-cell {
+  width: 132px;
+  min-width: 132px;
+  text-align: center;
+  vertical-align: middle;
+  background: #fff;
+}
+
+.ld-unit-info__image-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ld-ui-image-size);
+  margin: 0 auto;
+}
+
+.ld-unit-info__image {
+  width: var(--ld-ui-image-size);
+  height: var(--ld-ui-image-size);
+  object-fit: contain;
+  display: block;
+}
+
+.ld-unit-info__image--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ld-ui-image-size);
+  height: var(--ld-ui-image-size);
+  padding: 10px;
+  border: 1px dashed var(--ld-ui-border);
+  border-radius: 12px;
+  background: var(--ld-ui-bg-sub);
+  color: var(--ld-ui-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ld-unit-info__materials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: calc(var(--ld-ui-material-size) + 6px);
+  flex-wrap: wrap;
+}
+
+.ld-unit-info__material {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ld-unit-info__material-image {
+  width: var(--ld-ui-material-size);
+  height: var(--ld-ui-material-size);
+  object-fit: contain;
+  display: block;
+}
+
+.ld-unit-info__material-empty {
+  color: var(--ld-ui-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .ld-unit-info {
+    --ld-ui-row-h: 38px;
+  }
+
+  .ld-unit-info__table th,
+  .ld-unit-info__table td {
+    padding: 7px 8px;
+    font-size: 13px;
+  }
+
+  .ld-unit-info__table td.ld-unit-info__name-value {
+    font-size: 15px;
+  }
+
+  .ld-unit-info__table th.ld-unit-info__label {
+    width: 72px;
+    min-width: 72px;
+  }
+
+  .ld-unit-info__table td.ld-unit-info__image-cell,
+  .ld-unit-info__table td.ld-unit-info__materials-cell {
+    width: 108px;
+    min-width: 108px;
+  }
+}
