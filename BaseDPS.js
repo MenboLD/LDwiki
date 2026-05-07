@@ -1311,7 +1311,7 @@
     if (v.ultType === "mana") {
       const timeManaPerFrame_nonUlt = v.manaPerSec / F;
       const basicManaPerFrame_nonUlt = nu.basicPerFrame * 1;
-      const aManaPerFrame_nonUlt = v.aUseGainMana5 ? (nu.aPerFrame * 8) : 0;
+      const aManaPerFrame_nonUlt = v.aUseGainMana5 ? (nu.aPerFrame * 12) : 0;
       const extManaPerFrame = ext.addManaPerSec / F;
       const manaPerFrame_nonUlt = timeManaPerFrame_nonUlt + basicManaPerFrame_nonUlt + aManaPerFrame_nonUlt + extManaPerFrame;
 
