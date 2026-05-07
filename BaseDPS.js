@@ -365,8 +365,8 @@
         else if (s.type==="procMul") { agg.procCoverage=effective; agg.procMult=effectValue; }
       } else {
         const rate=Math.max(0, baseNum)*count;
-        const effectValue=amountNum/100;
-        const addManaPerSec=(s.type==="manaPct") ? (rate * vLike.gaugeMax * effectValue) : 0;
+        const effectValue=amountNum;
+        const addManaPerSec=(s.type==="manaPct") ? (rate * effectValue) : 0;
         const addCoolPerSec=(s.type==="coolRemainPct") ? (rate * vLike.gaugeMax * effectValue * 0.5) : 0;
         agg.rows.push({ idx:s.idx, type:s.type, count, mode:"rate", unitRate:Math.max(0, baseNum), totalRate:rate, amountNum:effectValue, addManaPerSec, addCoolPerSec });
         agg.addManaPerSec += addManaPerSec;
