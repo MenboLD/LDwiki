@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>刈木ニウ → メンボウ</title>
+<style>
+    body {
+        margin: 0;
+        background: #000;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    canvas {
+        background: #000;
+        width: 100vw;
+        height: 100vh;
+    }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const startText = '刈木ニウ';
+const endText = 'メンボウ';
+
+const duration = 5000;
+const hold = 1200;
+
+let startTime = performance.now();
+
+function lerp(a, b, t) {
+    return a + (b - a) * t;
+}
+
+function easeInOut(t) {
+    return t < 0.5
+        ? 2 * t * t
+        : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+
+function drawGlowText(text, x, y, opacity = 1) {
+    ctx.save();
+    ctx.globalAlpha = opacity;
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#66aaff';
+    ctx.shadowColor = '#66aaff';
+    ctx.shadowBlur = 15;
+
+    ctx.strokeText(text, x, y);
+
+    ctx.strokeStyle = '#ffaa66';
+    ctx.shadowColor = '#ffaa66';
+    ctx.shadowBlur = 8;
+
+    ctx.strokeText(text, x + 1, y + 1);
+
+    ctx.restore();
+}
+
+function getCharacterPositions(text, spacing = 120) {
+    const positions = [];
+    const totalWidth = (text.length - 1) * spacing;
+    const startX = canvas.width / 2 - totalWidth / 2;
+
+    for (let i = 0; i < text.length; i++) {
+        positions.push({
+            char: text[i],
+            x: startX + i * spacing,
+            y: canvas.height / 2
+        });
+    }
+
+    return positions;
+}
+
+function drawFragment(char, x, y, progress, index) {
+    const angle = progress * Math.PI * 2 + index;
+    const radius = Math.sin(progress * Math.PI) * 140;
+
+    const fx = x + Math.cos(angle) * radius;
+    const fy = y + Math.sin(angle * 1.7) * radius;
+
+    ctx.save();
+    ctx.translate(fx, fy);
+    ctx.rotate(progress * Math.PI * 1.5);
+
+    drawGlowText(char, 0, 0, 1 - Math.abs(progress - 0.5));
+
+    ctx.restore();
+}
+
+function render(now) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.font = 'bold 96px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const elapsed = now - startTime;
+    const total = duration + hold;
+    const cycle = elapsed % total;
+
+    const startPositions = getCharacterPositions(startText);
+    const endPositions = getCharacterPositions(endText);
+
+    if (cycle < duration) {
+        const raw = cycle / duration;
+        const t = easeInOut(raw);
+
+        for (let i = 0; i < startPositions.length; i++) {
+            const s = startPositions[i];
+            const e = endPositions[i];
+
+            if (t < 0.25) {
+                drawGlowText(s.char, s.x, s.y, 1);
+            }
+            else if (t < 0.75) {
+                const mid = (t - 0.25) / 0.5;
+                drawFragment(s.char, s.x, s.y, mid, i);
+            }
+            else {
+                const fade = (t - 0.75) / 0.25;
+                const x = lerp(s.x, e.x, fade);
+                const y = lerp(s.y, e.y, fade);
+
+                drawGlowText(e.char, x, y, fade);
+            }
+        }
+    } else {
+        for (const p of endPositions) {
+            drawGlowText(p.char, p.x, p.y, 1);
+        }
+    }
+
+    requestAnimationFrame(render);
+}
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
